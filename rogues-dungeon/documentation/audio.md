@@ -5,7 +5,7 @@ Audio files are bundled under `public/assets/audio/`. The Music and SFX buses ha
 For silent browser automation and AI sessions, open the app with `?mute=1`, for example:
 
 ```text
-http://localhost:5173/babylon-lite-rogues-dungeon/?mute=1
+http://localhost:5173/blockchain-rogues-dungeon-game/?mute=1
 ```
 
 The query override is checked before playback and silences both buses for the page session even if saved preferences are audible. It does not erase saved player settings. Browsers may wait for a user gesture before allowing music to start.

@@ -2,7 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 const host = "127.0.0.1";
 const port = 4173;
-const basePath = "/babylon-lite-rogues-dungeon/";
+const basePath = "/blockchain-rogues-dungeon-game/";
 const baseURL = `http://${host}:${port}${basePath}`;
 
 export default defineConfig({

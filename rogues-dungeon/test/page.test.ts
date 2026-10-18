@@ -6,7 +6,7 @@ import { aspectRatioPresets, classifyPlatform, defaultLayout, fitViewport, layou
 import { statusCapMarker } from '../src/game/status-cap-marker.ts';
 
 test("builds Rogue's Dungeon from its GitHub Pages base", () => {
-  assert.equal(viteConfig.root, 'rogues-dungeon'); assert.equal(viteConfig.base, '/babylon-lite-rogues-dungeon/');
+  assert.equal(viteConfig.root, 'rogues-dungeon'); assert.equal(viteConfig.base, '/blockchain-rogues-dungeon-game/');
 });
 test('fits both landscape and portrait command-desk surfaces', () => {
   assert.equal(defaultLayout.label, '16:9'); assert.equal(aspectRatioPresets.portrait.label, '9:16');

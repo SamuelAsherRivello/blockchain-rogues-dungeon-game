@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { openSavedGame } from "./start-saved-game.ts";
 
-const appPath = "/babylon-lite-rogues-dungeon/?mute=1";
+const appPath = "/blockchain-rogues-dungeon-game/?mute=1";
 const evidenceDirectory = join(tmpdir(), "rogues-dungeon-visual-review");
 mkdirSync(evidenceDirectory, { recursive: true });
 

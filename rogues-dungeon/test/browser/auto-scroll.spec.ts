@@ -2,9 +2,9 @@ declare global { interface Window { renderScrollAreas: () => void } }
 import { expect, test } from "@playwright/test";
 
 test("auto scroll starts at the bottom, pauses, resumes, and supports opt-out", async ({ page }) => {
-  await page.goto("/babylon-lite-rogues-dungeon/?mute=1");
+  await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
   await page.evaluate(async () => {
-    const fixtureUrl = "/babylon-lite-rogues-dungeon/test/browser/fixtures/scroll-area.tsx";
+    const fixtureUrl = "/blockchain-rogues-dungeon-game/test/browser/fixtures/scroll-area.tsx";
     const { createElement, createRoot, ScrollArea } = await import(/* @vite-ignore */ fixtureUrl) as typeof import('./fixtures/scroll-area.tsx');
     const host = document.createElement("div");
     document.body.append(host);

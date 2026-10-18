@@ -6,7 +6,7 @@ import { defineConfig } from "vite";
 const repositoryRoot = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  base: "/babylon-lite-rogues-dungeon/",
+  base: "/blockchain-rogues-dungeon-game/",
   plugins: [react()],
   root: "rogues-dungeon",
   server: {

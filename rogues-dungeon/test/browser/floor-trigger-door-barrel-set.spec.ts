@@ -17,7 +17,7 @@ test("@smoke pushes a barrel onto its floor trigger in a muted Edge session", as
       player: { x: 47, y: 50, resources: { health: resource(30, 30), stamina: resource(16, 16), offense: resource(8, 8), defense: resource(1, 1), mana: resource(12, 12), xp: { ...resource(0, 100), level: 1 } }, equipment: { weapons: [null, null], armor: [null, null] }, inventory: [], inventoryCapacity: 10, abilities: ["heal", "wand", null], sneaking: false }, counters: { keys: 0, gold: 0 }, objective: "Find the exit", log: [],
     }));
   }, GENERATOR_VERSION);
-  await page.goto("/babylon-lite-rogues-dungeon/?mute=1");
+  await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
   await page.getByRole("button", { name: /Saved Game 1/ }).click();
   await expect(page.locator(".world-view")).toBeVisible();
   await expect(page.locator(".world-view canvas")).toHaveCount(1);

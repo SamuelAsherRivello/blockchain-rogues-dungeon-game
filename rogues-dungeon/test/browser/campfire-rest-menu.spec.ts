@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test("opens the campfire rest menu without a turn and rests for exactly one turn", async ({ page }) => {
-  await page.goto("/babylon-lite-rogues-dungeon/?seed=1&level=1&level-1-test-mode=true&slot=3&mute=1");
+  await page.goto("/blockchain-rogues-dungeon-game/?seed=1&level=1&level-1-test-mode=true&slot=3&mute=1");
   await expect(page.locator(".world-view canvas")).toBeVisible();
   await page.keyboard.press("ArrowDown");
   await expect.poll(() => page.evaluate(() => {

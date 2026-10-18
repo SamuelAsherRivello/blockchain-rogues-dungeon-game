@@ -20,7 +20,7 @@ ignored by Git.
 
 `playwright.config.ts` discovers the `.spec.ts` files in
 `rogues-dungeon/test/browser/`. The auto-scroll check dynamically loads
-`/babylon-lite-rogues-dungeon/test/browser/fixtures/scroll-area.tsx` through Vite.
+`/blockchain-rogues-dungeon-game/test/browser/fixtures/scroll-area.tsx` through Vite.
 This React test fixture is executable TypeScript; public Tiled `.tsx` XML assets
 are excluded from compilation. Run `npm run typecheck` to check both the browser
 application and the tests/configuration; `npm test` runs the five Node suites
@@ -45,7 +45,7 @@ npm run test:browser:full
 Every automated Rogue's Dungeon URL includes `?mute=1`; the entry smoke check uses:
 
 ```text
-http://127.0.0.1:4173/babylon-lite-rogues-dungeon/?mute=1
+http://127.0.0.1:4173/blockchain-rogues-dungeon-game/?mute=1
 ```
 
 ## OpenSpec policy

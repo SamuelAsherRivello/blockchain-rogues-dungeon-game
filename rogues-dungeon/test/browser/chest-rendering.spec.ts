@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test("@smoke renders a closed test chest left of the level-one entrance", async ({ page }) => {
-  await page.goto("/babylon-lite-rogues-dungeon/?seed=1&level=1&level-1-test-mode=true&slot=3&mute=1");
+  await page.goto("/blockchain-rogues-dungeon-game/?seed=1&level=1&level-1-test-mode=true&slot=3&mute=1");
   await expect(page.locator(".world-view canvas")).toBeVisible();
   await expect.poll(() => page.evaluate(() => {
     const campaign = JSON.parse(localStorage.getItem("rogues-dungeon.slot.3") ?? "null");

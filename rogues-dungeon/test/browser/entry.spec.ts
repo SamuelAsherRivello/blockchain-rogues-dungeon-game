@@ -4,7 +4,7 @@ import path from "node:path";
 import { openSavedGame } from "./start-saved-game.ts";
 
 test("@smoke opens the muted saved-game entry screen", async ({ page }) => {
-  await page.goto("/babylon-lite-rogues-dungeon/?mute=1");
+  await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
 
   await expect(page).toHaveURL(/\/babylon-lite-rogues-dungeon\/\?mute=1$/);
   await expect(page.getByRole("heading", { name: "Rogue's Dungeon" })).toBeVisible();
@@ -13,7 +13,7 @@ test("@smoke opens the muted saved-game entry screen", async ({ page }) => {
 });
 
 test("@smoke shows My First Quest in a new muted Saved Game", async ({ page }) => {
-  await page.goto("/babylon-lite-rogues-dungeon/?mute=1");
+  await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
   await openSavedGame(page);
   await expect(page.getByText("My First Quest", { exact: true })).toBeVisible();
   await expect(page.getByText("Walk through the stairs", { exact: true })).toBeVisible();
@@ -22,7 +22,7 @@ test("@smoke shows My First Quest in a new muted Saved Game", async ({ page }) =
 });
 
 test("@smoke clears local storage from the main menu", async ({ page }) => {
-  await page.goto("/babylon-lite-rogues-dungeon/?mute=1");
+  await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
   await page.evaluate(() => {
     localStorage.setItem("rogues-dungeon.slot.1", "saved-game");
     localStorage.setItem("rogues-dungeon.preferences.v1", "preferences");
@@ -35,7 +35,7 @@ test("@smoke clears local storage from the main menu", async ({ page }) => {
 });
 
 test("@smoke anchors settings to its menu panel or live game view", async ({ page }) => {
-  await page.goto("/babylon-lite-rogues-dungeon/?mute=1");
+  await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   const menuPlacement = await page.evaluate(() => {
     const panel = document.querySelector(".main-menu-window")!.getBoundingClientRect();
@@ -67,7 +67,7 @@ test("@smoke anchors settings to its menu panel or live game view", async ({ pag
 });
 
 test("@smoke opens How To Play above Settings and returns without advancing time", async ({ page }) => {
-  await page.goto("/babylon-lite-rogues-dungeon/?mute=1");
+  await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
   await openSavedGame(page);
   await expect(page.locator(".game-screen")).toBeVisible();
   await page.keyboard.press("x");
@@ -86,7 +86,7 @@ test("@smoke opens How To Play above Settings and returns without advancing time
 });
 
 test("@smoke opens the named manual tile scenario and exports its editable map", async ({ page }) => {
-  await page.goto("/babylon-lite-rogues-dungeon/?world=1&level=1&slot=1&seed=13579&mute=1&debug-fix-map-autotiled=1&scenario=corridor-joins");
+  await page.goto("/blockchain-rogues-dungeon-game/?world=1&level=1&slot=1&seed=13579&mute=1&debug-fix-map-autotiled=1&scenario=corridor-joins");
   await expect(page.getByRole("button", { name: "Open Editable Copy" })).toBeVisible();
   await page.keyboard.press("ArrowRight");
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("rogues-dungeon.slot.1")!).floor.scenario)).toBe("corridor-joins");
@@ -96,7 +96,7 @@ test("@smoke opens the named manual tile scenario and exports its editable map",
 });
 
 test("@smoke Tab never changes focus in the menu, game, or settings", async ({ page }) => {
-  await page.goto("/babylon-lite-rogues-dungeon/?mute=1");
+  await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
   const assertTabDoesNothing = async () => {
     const before = await page.evaluateHandle(() => document.activeElement);
     for (const key of ["Tab", "Tab", "Shift+Tab"]) {
@@ -138,7 +138,7 @@ test("@smoke expands the keyboard tray and logs temporary controls", async ({ pa
   }, GENERATOR_VERSION);
   const temporaryPresses: string[] = [];
   page.on("console", (message) => { if (message.text().includes("[keyboard-controls] Q pressed")) temporaryPresses.push(message.text()); });
-  await page.goto("/babylon-lite-rogues-dungeon/?mute=1");
+  await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
   await openSavedGame(page);
   await expect(page.locator(".controls-area")).toBeVisible();
   await expect(page.locator(".keyboard_tray_panel")).toHaveAttribute("aria-hidden", "true");
@@ -220,7 +220,7 @@ test("@smoke exposes only ability positions 1–3 and ignores key 4", async ({ p
       counters: { keys: 1, gold: 0 }, objective: "Find the exit", log: [],
     }));
   }, GENERATOR_VERSION);
-  await page.goto("/babylon-lite-rogues-dungeon/?mute=1");
+  await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
   await openSavedGame(page);
   const abilityRows = page.locator(".information-panels .info-panel--primary .slot_item--ability");
   await expect(abilityRows).toHaveCount(3);
@@ -244,7 +244,7 @@ test("@smoke displays the non-blocking Attribute Points callout", async ({ page 
       counters: { keys: 1, gold: 55 }, objective: "Find the exit", log: [],
     }));
   }, GENERATOR_VERSION);
-  await page.goto("/babylon-lite-rogues-dungeon/?mute=1");
+  await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
   await openSavedGame(page);
   await expect(page.getByRole("heading", { name: "LEVEL UP", exact: true }).first()).toBeVisible();
   await expect(page.getByRole("dialog", { name: "Progression" })).toHaveCount(0);
@@ -263,7 +263,7 @@ test("@smoke keeps moving when Shift is added to a held direction", async ({ pag
       counters: { keys: 1, gold: 55 }, objective: "Find the exit", log: [],
     }));
   }, GENERATOR_VERSION);
-  await page.goto("/babylon-lite-rogues-dungeon/?mute=1");
+  await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
   await openSavedGame(page);
   await page.keyboard.down("ArrowRight");
   await page.waitForTimeout(40);
@@ -292,7 +292,7 @@ test("@smoke opens a valid slot deep link and exposes map-fix controls only with
       counters: { keys: 1, gold: 0 }, objective: "Find the exit", log: [],
     }));
   }, GENERATOR_VERSION);
-  await page.goto("/babylon-lite-rogues-dungeon/?world=1&level=1&slot=1&seed=17&mute=1&debug-fix-map-autotiled=1");
+  await page.goto("/blockchain-rogues-dungeon-game/?world=1&level=1&slot=1&seed=17&mute=1&debug-fix-map-autotiled=1");
   await expect(page.getByRole("heading", { name: "3 Saved Games" })).toBeHidden();
   await expect(page.getByRole("button", { name: "Open Editable Copy" })).toBeVisible();
   await expect(page.getByText("Map Fix")).toBeVisible();

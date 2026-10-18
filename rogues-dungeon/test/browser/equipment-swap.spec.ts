@@ -11,7 +11,7 @@ test("previews and commits a muted occupied weapon-slot swap", async ({ page }) 
       player: { x: 50, y: 50, resources: { health: resource(30, 30), stamina: resource(16, 16), offense: resource(8, 8), defense: resource(1, 1), mana: resource(12, 12), xp: { ...resource(0, 100), level: 1 } }, equipment: { weapons: [{ id: "sword", name: "Sword", group: "weapons", modifiers: { offense: 8 }, hitChance: 82, critChance: 16 }, null], armor: [null, null] }, inventory: [{ id: "dagger", name: "Dagger (Magic)", group: "weapons", modifiers: { offense: 3, mana: 2 }, hitChance: 94, critChance: 4 }], inventoryCapacity: 10, abilities: ["heal", "wand", null], sneaking: false }, counters: { keys: 1, gold: 0 }, objective: "Find the exit", log: [],
     }));
   });
-  await page.goto("/babylon-lite-rogues-dungeon/?mute=1");
+  await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
   await page.getByRole("button", { name: /Saved Game 2/ }).click();
   const dagger = page.getByRole("button", { name: "Drag Dagger (Magic)" });
   const sword = page.getByRole("button", { name: "Drag Sword" });

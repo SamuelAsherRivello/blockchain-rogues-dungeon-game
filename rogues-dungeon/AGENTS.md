@@ -2,7 +2,7 @@
 
 This is an existing game project with an explicit two-aspect requirement. Support 16:9 landscape on PC and 9:16 portrait on mobile, with a session-only developer aspect override on PC. This project-specific requirement supersedes the generic template rule that new projects choose one aspect.
 
-Keep primary game UI within the fitted viewport. In portrait, preserve the order Title, Game, Status (with Control/Info toggle), and Bottom Content. The bottom shows either mobile controls or the information panels, starting on Control. Keep only the Log, equipment Slots, and Inventory content internally scrollable. Preserve the Babylon Lite WebGPU-only renderer and the `/babylon-lite-rogues-dungeon/` Vite deployment base.
+Keep primary game UI within the fitted viewport. In portrait, preserve the order Title, Game, Status (with Control/Info toggle), and Bottom Content. The bottom shows either mobile controls or the information panels, starting on Control. Keep only the Log, equipment Slots, and Inventory content internally scrollable. Preserve the Babylon Lite WebGPU-only renderer and the `/blockchain-rogues-dungeon-game/` Vite deployment base.
 
 Name every new file with lowercase kebab case in the form `blah-foo.extension`.
 For compound extensions, retain each extension, such as `turn-rules.test.ts`.
@@ -32,10 +32,10 @@ rendering, input, fullscreen, layout, or browser behavior:
 
 1. Start exactly one project-owned server through `ai-skills-project-run-start`.
    Use a browser-safe AI port such as `6080` and verify
-   `/babylon-lite-rogues-dungeon/`. Do not use port `6000`: Chromium blocks it
+   `/blockchain-rogues-dungeon-game/`. Do not use port `6000`: Chromium blocks it
    as an unsafe port. Keep the server running while checking all three contexts.
 2. Use Playwright CLI with Microsoft Edge and navigate to
-   `http://127.0.0.1:<port>/babylon-lite-rogues-dungeon/?mute=1`. Select a save
+   `http://127.0.0.1:<port>/blockchain-rogues-dungeon-game/?mute=1`. Select a save
    slot, then verify that `.game-screen` is visible, at least one canvas exists,
    the WebGPU-unavailable message is absent, and the console has no errors.
 3. Use the desktop Edge browser through `cua_repl` on the same muted URL. Select

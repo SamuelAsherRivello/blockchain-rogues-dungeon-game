@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 const slotKey = "rogues-dungeon.slot.1";
 
 async function openRolledCampaign(page: import("@playwright/test").Page) {
-  await page.goto("/babylon-lite-rogues-dungeon/?mute=1");
+  await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
   await page.getByRole("button", { name: /Saved Game 1/ }).click();
   const dialog = page.getByRole("dialog", { name: "Create Character" });
   await expect(dialog).toBeVisible();
@@ -16,7 +16,7 @@ test("creates only confirmed characters and resumes the saved campaign", async (
   const consoleErrors: string[] = [];
   page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(message.text()); });
   page.on("pageerror", (error) => consoleErrors.push(error.message));
-  await page.goto("/babylon-lite-rogues-dungeon/?mute=1");
+  await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
   await page.getByRole("button", { name: /Saved Game 1/ }).click();
   const dialog = page.getByRole("dialog", { name: "Create Character" });
   await expect(dialog).toHaveClass(/create-character-window--menu/);

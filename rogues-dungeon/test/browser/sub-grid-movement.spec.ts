@@ -14,7 +14,7 @@ test("@smoke retargets muted movement without delaying the next turn", async ({ 
       counters: { keys: 1, gold: 0 }, objective: "Find the exit", log: [],
     }));
   }, GENERATOR_VERSION);
-  await page.goto("/babylon-lite-rogues-dungeon/?mute=1");
+  await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
   await page.getByRole("button", { name: /Saved Game 1/ }).click();
   await expect(page.locator(".world-view")).toBeVisible();
   const moveRight = page.locator(".mobile-controls__arrows button").filter({ hasText: "→" });

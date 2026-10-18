@@ -515,9 +515,9 @@ button:focus-visible { outline:2px solid #f6de92; outline-offset:2px; }
     var(--text-color);
 }
 
-@font-face { font-family:"Libron"; src:url("/babylon-lite-rogues-dungeon/assets/fonts/libron/Libron-Regular.woff2") format("woff2"); font-style:normal; font-weight:400; font-display:swap; }
-@font-face { font-family:"Libron"; src:url("/babylon-lite-rogues-dungeon/assets/fonts/libron/Libron-Bold.woff2") format("woff2"); font-style:normal; font-weight:700; font-display:swap; }
-@font-face { font-family:"Libron"; src:url("/babylon-lite-rogues-dungeon/assets/fonts/libron/Libron-Italic.woff2") format("woff2"); font-style:italic; font-weight:400; font-display:swap; }
-@font-face { font-family:"Libron"; src:url("/babylon-lite-rogues-dungeon/assets/fonts/libron/Libron-BoldItalic.woff2") format("woff2"); font-style:italic; font-weight:700; font-display:swap; }
+@font-face { font-family:"Libron"; src:url("/blockchain-rogues-dungeon-game/assets/fonts/libron/Libron-Regular.woff2") format("woff2"); font-style:normal; font-weight:400; font-display:swap; }
+@font-face { font-family:"Libron"; src:url("/blockchain-rogues-dungeon-game/assets/fonts/libron/Libron-Bold.woff2") format("woff2"); font-style:normal; font-weight:700; font-display:swap; }
+@font-face { font-family:"Libron"; src:url("/blockchain-rogues-dungeon-game/assets/fonts/libron/Libron-Italic.woff2") format("woff2"); font-style:italic; font-weight:400; font-display:swap; }
+@font-face { font-family:"Libron"; src:url("/blockchain-rogues-dungeon-game/assets/fonts/libron/Libron-BoldItalic.woff2") format("woff2"); font-style:italic; font-weight:700; font-display:swap; }
 #browser_surface,#browser_surface * { font-family:"Libron",serif !important; }
 
