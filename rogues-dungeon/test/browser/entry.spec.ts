@@ -6,10 +6,21 @@ import { openSavedGame } from "./start-saved-game.ts";
 test("@smoke opens the muted saved-game entry screen", async ({ page }) => {
   await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
 
-  await expect(page).toHaveURL(/\/babylon-lite-rogues-dungeon\/\?mute=1$/);
+  await expect(page).toHaveURL(/\/blockchain-rogues-dungeon-game\/\?mute=1$/);
   await expect(page.getByRole("heading", { name: "Rogue's Dungeon" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Start Game" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Saved Game [1-3]/ })).toHaveCount(3);
+});
+
+test("waits for menu art before showing the main menu", async ({ page }) => {
+  await page.route("**/dungeon-hero.png", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    await route.continue();
+  });
+  await page.goto("/blockchain-rogues-dungeon-game/?mute=1", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "Start Game" })).toBeHidden();
+  await expect(page.getByText("Loading Rogue's Dungeon...")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Start Game" })).toBeVisible();
 });
 
 test("@smoke shows My First Quest in a new muted Saved Game", async ({ page }) => {

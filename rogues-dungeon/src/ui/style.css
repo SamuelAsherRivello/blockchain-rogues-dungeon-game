@@ -73,6 +73,7 @@ body {
 .menu-screen__layer--hero { --menu-depth:3; --menu-scale:.64; left:20px; right:auto; transform-origin:72% 100%; }
 .menu-screen__layer--rocks { --menu-depth:4; }
 .menu-screen__logo { position:absolute; z-index:2; top:calc(8% - 15px); left:46%; width:48%; max-height:34%; object-fit:contain; filter:drop-shadow(0 .35rem .3rem rgb(0 0 0 / 75%)); pointer-events:none; }
+.menu-screen__loading { position:absolute; z-index:2; inset:auto 0 12%; margin:0; color:#f9f5e7; font-family:Georgia,serif; text-align:center; text-shadow:0 .15rem .3rem #000; }
 .main-menu-window { position:absolute; z-index:2; top:15%; left:8%; display:grid; width:29%; min-width:15rem; max-width:24rem; min-height:calc(63% + 50px); align-content:center; gap:.8rem; box-sizing:border-box; padding:clamp(1.25rem,3vw,2.75rem); border:3px solid #f9f5e7; outline:1px solid #4f321b; outline-offset:-8px; background:linear-gradient(135deg,rgb(255 254 245 / 97%),rgb(226 214 180 / 96%)); box-shadow:.55rem .65rem 1.5rem rgb(0 0 0 / 65%); color:#2e2117; }
 .main-menu-window__saved-game-list { display:grid; gap:.35rem; }
 .main-menu-window__footer { display:flex; gap:.8rem; margin-top:-.45rem; align-items:stretch; }
