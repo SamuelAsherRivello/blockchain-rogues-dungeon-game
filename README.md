@@ -18,7 +18,7 @@ Use assets formatted for Tiled. I'll provide folders to copy from and use for th
 
 ## Live Demo
 
-- [Play Rogue's Dungeon](https://samuelasherrivello.github.io/babylon-lite-rogues-dungeon/)
+- [Play Rogue's Dungeon](https://samuelasherrivello.github.io/blockchain-rogues-dungeon-game/)
 
 ## Images
 

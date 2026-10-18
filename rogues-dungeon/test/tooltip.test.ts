@@ -67,7 +67,7 @@ test("wires UI tooltips to pointer and keyboard focus with accessible descriptio
   assert.match(game, /function abilityHelp\(ability: [^)]+\)/);
   assert.match(game, /function equipmentSlotHelp\(item: [^)]+\)/);
   assert.match(game, /tooltip=\{abilityHelp\(ability\)\}/);
-  assert.match(game, /tooltip=\{equipmentSlotHelp\(item\)\}/);
+  assert.match(game, /tooltip=\{secondary \? `\$\{item\.name\} occupies this position\.` : equipmentSlotHelp\(item\)\}/);
   assert.doesNotMatch(game, /Key \$\{index \+ 1\}|slotName/);
   assert.doesNotMatch(game, /tooltip_demo_trigger|Tooltip help/);
   const css = await readFile(new URL("../src/ui/style.css", import.meta.url), "utf8");
@@ -75,7 +75,7 @@ test("wires UI tooltips to pointer and keyboard focus with accessible descriptio
   assert.match(css, /\.ui_tooltip \{[^}]*max-width:min\(38ch/);
   assert.doesNotMatch(css, /\.ui_tooltip \{[^}]*text-overflow/);
   assert.match(game, /function inventoryItemHelp\(item: [^)]+\)/);
-  assert.match(game, /tooltip=\{inventoryItemHelp\(item\)\}/);
+  assert.match(game, /tooltip=\{secondary \? `\$\{item\.name\} occupies this position\.` : inventoryItemHelp\(item\)\}/);
   assert.match(game, /No stats · Double-click to equip\./);
   assert.match(game, /<Tooltip content="Show movement and ability controls\."/);
   assert.match(game, /<Tooltip content="Show stats, gear, quest, and log\."/);

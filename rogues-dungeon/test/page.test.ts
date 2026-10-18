@@ -32,18 +32,18 @@ test('renders equipment and Inventory details for combat properties and two-slot
   assert.match(game, /HIT \$\{item\.hitChance\}%/);
   assert.match(game, /CRIT \$\{item\.critChance\}%/);
   assert.match(game, /item\.perks\.join\(", "\)/);
-  assert.match(game, /item\.slotSpan === 2 \? " · 2 slots"/);
-  assert.match(game, /details=\{details\}/);
+  assert.match(game, /item\.slotSpan === 2 \? "\. Uses both positions\."/);
+  assert.match(game, /effects=\{itemPresentation\(item\)\}/);
   assert.match(game, /slot_item_details/);
 });
 test('renders an occupied-or-empty equipment swap comparison with complete deltas', async () => {
-  const [game, panels, css] = await Promise.all(['../src/game/game.tsx', '../src/game/panels/information-panels.tsx', '../src/ui/style.css'].map((path) => readFile(new URL(path, import.meta.url), 'utf8')));
+  const [game, css] = await Promise.all(['../src/game/game.tsx', '../src/ui/style.css'].map((path) => readFile(new URL(path, import.meta.url), 'utf8')));
   assert.match(game, /aria-label="Equipment comparison"/);
   assert.match(game, /Before:/);
   assert.match(game, /After:/);
-  assert.match(game, /\["offense", "defense", "mana"\]/);
+  assert.match(game, /\["offense", "defense", "mana"\] as const/);
   assert.match(game, /destination\.index \+ 1\} \+ \$\{destination\.index === 0 \? 2 : 1/);
-  assert.match(panels, /<EquipmentComparison campaign=\{campaign\} drag=\{drag\} \/>/);
+  assert.match(game, /<EquipmentComparison campaign=\{campaign\} drag=\{dragPresentation\} \/>/);
   assert.match(css, /\.equipment_comparison/);
 });
 test('recovers a wall-adjacent barrel only when its current and starting cells are both offscreen', async () => {
@@ -207,9 +207,9 @@ test('exposes independent persisted SFX and Music controls in Settings', async (
 test('uses the inventory grabber as a cue while the whole row is draggable', async () => {
   const game = await readFile(new URL('../src/game/game.tsx', import.meta.url), 'utf8');
   assert.match(game, /function SlotItem/);
-  assert.match(game, /<SlotItem key=\{item\.id\} type="inventory"/);
+  assert.match(game, /key=\{`\$\{item\.id\}-\$\{slotIndex\}`\} type="inventory"/);
   assert.match(game, /"data-drag-kind": "inventory", "data-drag-id": item\.id/);
-  assert.match(game, /"aria-label": `Drag \$\{item\.name\}`/);
+  assert.match(game, /"aria-label": `Drag \$\{displayName\}`/);
   assert.match(game, /\{\.\.\.dropTarget\} \{\.\.\.dragSource\}/);
   const css = await readFile(new URL('../src/ui/style.css', import.meta.url), 'utf8');
   assert.match(css, /\.slot_item\[data-drag-kind\]\{cursor:grab/);
@@ -259,10 +259,11 @@ test('matches inventory row spacing to the abilities list', async () => {
 });
 test('fills unused inventory capacity with empty plus slots', async () => {
   const game = await readFile(new URL('../src/game/game.tsx', import.meta.url), 'utf8');
-  assert.match(game, /const emptySlots = Math\.max\(0, campaign\.player\.inventoryCapacity - campaign\.player\.inventory\.length\)/);
+  assert.match(game, /const usedSlots = stacks\.reduce\(\(total, \{ item \}\) => total \+ \(item\.slotSpan \?\? 1\), 0\)/);
+  assert.match(game, /const emptySlots = Math\.max\(0, campaign\.player\.inventoryCapacity - usedSlots\)/);
   assert.match(game, /Array\.from\(\{ length: emptySlots \}/);
   assert.match(game, /data-drop-inventory-slot/);
-  assert.match(game, /drag\?\.destination\?\.kind === "inventory" && drag\.destination\.index === index/);
+  assert.match(game, /drag\?\.destination\?\.kind === "inventory" && \(\(drag\.source\.item as Item\)\.slotSpan === 2/);
   assert.doesNotMatch(game, /data-drop-inventory>/);
 });
 test('uses permanent in-game scrollbars for the log and inventory', async () => {
