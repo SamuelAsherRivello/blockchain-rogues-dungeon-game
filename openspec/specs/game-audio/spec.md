@@ -50,6 +50,10 @@ Cryptbound SHALL use a restrained catalog of 4 to 10 event-based sound effects a
 - **WHEN** an equipment drag is accepted or rejected
 - **THEN** the corresponding documented non-diegetic confirmation or rejection cue plays, subject to audio settings
 
+#### Scenario: Level gain
+- **WHEN** an XP award increases the character level
+- **THEN** the documented non-diegetic level-gain chime plays once, subject to audio settings
+
 #### Scenario: Muted event
 - **WHEN** any documented event occurs while its bus or Mute All is muted
 - **THEN** gameplay proceeds normally without audible output
@@ -65,6 +69,7 @@ The initial cue inventory is:
 | Diegetic | Potion is collected | Small glass and liquid chime |
 | Diegetic | Chest opens | Brief latch and hinge sound |
 | Diegetic | Player enters stairs to descend | Stone mechanism and short descending transition |
+| Non-diegetic | Character gains a level | Clear, brief chime paired with the inward sparkle celebration |
 | Non-diegetic | Compatible equipment drop is accepted | Quiet confirmation click |
 | Non-diegetic | Equipment drop is rejected | Soft, short rejection tick |
 | Non-diegetic | Ability activation succeeds | Brief UI confirmation |

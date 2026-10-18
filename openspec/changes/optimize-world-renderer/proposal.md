@@ -12,6 +12,7 @@ The renderer currently recalculates and rewrites static terrain and wall sprites
 - Replace the asset-heavy minimap presentation with a compact semantic cell vocabulary derived from the same world coordinates.
 - Keep landed combat marks as independent decals that fade and remove after ten seconds.
 - Establish separate fog-discovery and continuous-light mask inputs so future per-cell visibility and lighting do not invalidate static terrain chunks.
+- Profile sustained player running across all zoom levels and pursue stable 120 FPS as the optimization target, without making it a device-independent release gate.
 
 ## Capabilities
 

@@ -18,6 +18,7 @@ See proposal.md for motivation. The current Babylon Lite render loop creates a l
 - Use separate per-cell discovery and normalized light-intensity data as overlay inputs. Fog is expected to update relatively rarely and may be binary; lighting may update more frequently and remain continuous. Neither causes static chunk recompilation.
 - Use a small minimap cell palette instead of gameplay PNG atlases. This retains shared geometry and prepares the minimap to honor future discovery state.
 - Keep each landed combat decal as an individual record and layer/visual unit. It fades after landing and is removed at ten seconds; it is not baked or merged because independent lifetime is required.
+- Make camera culling a full deactivation boundary: chunks and dynamic visuals outside it are invisible and receive neither sprite patches nor animation sampling. Profile sustained running at every zoom as an optimization target, reporting frame data rather than enforcing a universal hardware gate.
 
 ## Risks / Trade-offs
 
@@ -25,6 +26,7 @@ See proposal.md for motivation. The current Babylon Lite render loop creates a l
 - [Culling misses edge sprites] → Expand visible bounds by one tile/chunk margin.
 - [Future fog/light shader needs differ] → Keep masks as renderer-agnostic cell data and choose the compositing technique later.
 - [Individual decals raise temporary layer count] → Cap only by natural ten-second expiry and cull offscreen visuals; do not batch their lifetime.
+- [Frame target varies by device] → Record the reference browser/device and measured running frame data; use 120 FPS as a target, not a binary release criterion.
 
 ## Migration Plan
 

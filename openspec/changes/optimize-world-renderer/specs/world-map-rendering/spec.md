@@ -14,7 +14,7 @@ The game view SHALL preserve compiled static terrain while applying per-cell dis
 - **THEN** that cell's presentation can change without rebuilding unrelated static terrain
 
 ### Requirement: Render the minimap with semantic cell markers
-The minimap SHALL use a compact colored cell vocabulary for terrain and key world objects rather than the game-view sprite artwork, while retaining matching world coordinates and player position.
+The minimap SHALL use a compact colored cell vocabulary for terrain and key world objects rather than the game-view sprite artwork or its gameplay sprite atlases, while retaining matching world coordinates and player position.
 
 #### Scenario: Display a populated floor
 - **WHEN** the minimap renders terrain, walls, the player, exit, pickups, and enemies

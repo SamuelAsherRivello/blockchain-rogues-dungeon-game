@@ -56,3 +56,10 @@ The enemy world popup placement SHALL use the hovered grid spot's center and ext
 #### Scenario: World view geometry changes
 - **WHEN** the game-world frame resizes or its camera or zoom changes the projected grid spot positions
 - **THEN** the world popup placement is recalculated from the updated frame and grid spot geometry
+
+### Requirement: Keep Status values readable in UI tooltips
+Status tooltips SHALL retain their live-value prefix and concise explanation when displayed by hover or keyboard focus. Their complete text SHALL remain within the application viewport.
+
+#### Scenario: Focus a Status row near an edge
+- **WHEN** a player focuses a Status row whose tooltip would extend beyond the viewport
+- **THEN** the live-value prefix and explanation remain visible within the viewport

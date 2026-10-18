@@ -9,7 +9,7 @@ export function ItemDragPreview({ campaign, drag }: { campaign: Campaign; drag: 
     return ability && <div className="item-drag-preview" style={{ left: drag.x, top: drag.y }} aria-hidden="true"><SlotItem type="ability" number={drag.source.index} text={ability.title} icon={ability.icon} cost={ability.manaCost} accentColor="#c0aaff" /></div>;
   }
   const item = drag.source.item as Item;
-  const presentation = itemPresentation(item);
+  const effects = itemPresentation(item);
   const quantity = drag.source.kind === "quick-slot" ? campaign.player.quickSlots?.[drag.source.index]?.quantity ?? 1 : drag.source.kind === "inventory" ? stackInventoryItems(campaign.player.inventory).find((stack) => stack.item.id === item.id)?.quantity ?? 1 : 1;
-  return <div className="item-drag-preview" style={{ left: drag.x, top: drag.y }} aria-hidden="true"><SlotItem type={drag.source.kind === "slot" ? "equipment" : drag.source.kind === "quick-slot" ? "quick" : "inventory"} text={itemDisplayName(item, quantity)} icon={presentation.icon} cost={presentation.cost} /></div>;
+  return <div className="item-drag-preview" style={{ left: drag.x, top: drag.y }} aria-hidden="true"><SlotItem type={drag.source.kind === "slot" ? "equipment" : drag.source.kind === "quick-slot" ? "quick" : "inventory"} text={itemDisplayName(item, quantity)} effects={effects} /></div>;
 }

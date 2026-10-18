@@ -6,22 +6,33 @@ Communicate current resources, attribute-defined limits, and resource changes th
 ## Requirements
 
 ### Requirement: Order resource meters consistently
-Resources SHALL contain Health, Stamina, Offense, Defense, Mana, and XP in that order. Each row SHALL contain an icon and a bar without a visible name or numeric label, except for the level number on XP. Accessible resource names and values SHALL remain available.
+Status SHALL contain Health, Stamina, Offense, Defense, Mana, and XP in that order. Each row SHALL contain an icon and a bar without a visible resource name or numeric label, except XP, which SHALL center `LVL NN` in the bar. The level text SHALL remain legible over both filled and unfilled regions. Accessible resource names and values SHALL remain available.
 
 #### Scenario: Read Resources
-- **WHEN** Resources is displayed
-- **THEN** the six icon-and-bar rows appear in the specified order, and XP alone carries its level number
+- **WHEN** Status is displayed
+- **THEN** the six icon-and-bar rows appear in the specified order and XP carries a readable centered `LVL NN` label
 
 ### Requirement: Show current resource and attribute maximum
-Each non-XP resource SHALL have a maximum set by its matching attribute and a current amount between zero and that maximum. A bar SHALL represent the 0–100 domain, with a vertical marker at its current maximum, normal color to its current amount, and a dark variant in the remaining space. Full health SHALL mean the current amount equals the Health attribute.
+Each non-XP resource SHALL have a maximum set by its matching attribute and a current amount between zero and that maximum. A shared 0-to-99 bar SHALL show a cap marker and fill to the current value; a full resource SHALL reach its cap marker, not necessarily the track end. Ranks 1 through 5 SHALL map to visibly significant markers from about 10 through 50 percent, rank 14 SHALL remain below the track end, and rank 99 SHALL not overflow it.
 
 #### Scenario: Attribute caps Health at 25
-- **WHEN** the Health attribute is 25 and current Health is 20
-- **THEN** the cap marker is at 25% of full bar width and normal fill ends at 20%, representing 80% of available Health
+- **WHEN** the Health attribute has rank 5 and current Health is full
+- **THEN** the fill reaches a cap marker near the midpoint of the track
 
 #### Scenario: Reach current maximum
-- **WHEN** current Health reaches 25 with a Health attribute of 25
+- **WHEN** a resource reaches its current maximum
 - **THEN** the normal fill reaches the cap marker and cannot exceed it
+
+### Requirement: Give Status rows live-value tooltips
+Every Status row tooltip SHALL begin with its current and maximum values before its concise explanation. The XP tooltip SHALL begin with level and XP progress toward the next level.
+
+#### Scenario: Inspect Health
+- **WHEN** the player hovers or focuses Health at 47 of 50
+- **THEN** its tooltip begins `47 / 50` before explaining Health
+
+#### Scenario: Inspect XP
+- **WHEN** the player hovers or focuses XP at Level 1 with 32 of 100 XP
+- **THEN** its tooltip begins with `Level 01` and `32 / 100 XP` before explaining XP progress
 
 ### Requirement: Preserve fullness when a maximum changes
 When equipment changes a positive resource maximum, the system SHALL preserve the current-to-maximum ratio and bound current to the new maximum. A zero maximum SHALL produce zero current and SHALL NOT cause invalid arithmetic. Offense and Defense SHALL instead remain derived from Stamina.

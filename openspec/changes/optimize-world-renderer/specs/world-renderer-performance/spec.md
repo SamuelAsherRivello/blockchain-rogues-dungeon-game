@@ -24,6 +24,13 @@ The game view SHALL present static chunks and dynamic visuals only when they int
 - **WHEN** the camera changes its visible cell area
 - **THEN** newly visible content appears at its correct world position and offscreen content is not drawn
 
+### Requirement: Deactivate culled presentation work
+The renderer SHALL deactivate every static chunk and dynamic visual outside the camera-visible area and SHALL skip its sprite updates and animation sampling until it becomes visible again.
+
+#### Scenario: Sustain player running
+- **WHEN** the player runs continuously through a large floor at any supported zoom
+- **THEN** offscreen presentation work remains inactive and profiling reports sustained-running frame performance toward the 120 FPS optimization target
+
 ### Requirement: Keep landed combat marks independently transient
 Each landed combat mark SHALL keep its own fade timeline, remain independently positioned, and be removed ten seconds after it lands.
 

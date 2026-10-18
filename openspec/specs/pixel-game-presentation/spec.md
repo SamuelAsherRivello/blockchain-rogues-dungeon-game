@@ -44,7 +44,7 @@ Portrait SHALL render cardinal movement buttons, ability buttons 1–3, Sneak, Q
 - **THEN** the game requests one wait action without moving the player
 
 ### Requirement: Display turn and game status
-The titlebar SHALL show the title `Dungeon Roguelite (DR)`, world, Dungeon Level, Time, keys, and gold; the secondary panel SHALL show Minimap, Quest, and Log; and the primary panel SHALL show Resources, Attributes, Abilities, Slots, and Inventory. Statusbar content SHALL be vertically centered within its region. Difficulty SHALL remain hidden. A level-up selection SHALL appear in a modal window while an upgrade choice is pending. Item-decision overlays SHALL be removed.
+The titlebar SHALL show the title `Dungeon Roguelite (DR)`, world, Dungeon Level, Time, keys, and gold; the secondary panel SHALL show Minimap, Quest, and Log; and the primary panel SHALL show Status, Attributes, Abilities, Slots, and Inventory. Statusbar content SHALL be vertically centered within its region. Difficulty SHALL remain hidden. A level gain SHALL not force a modal stat-choice window. Item-decision overlays SHALL be removed.
 
 #### Scenario: Show turn counter
 - **WHEN** an accepted action advances one time unit
@@ -63,8 +63,8 @@ The titlebar SHALL show the title `Dungeon Roguelite (DR)`, world, Dungeon Level
 - **THEN** the control legend and developer content are vertically centered within the statusbar
 
 #### Scenario: Choose a level-up stat
-- **WHEN** a player has a pending level-up choice
-- **THEN** the game displays a modal level-up window until the player selects one option
+- **WHEN** a player gains a level during play
+- **THEN** gameplay remains available after the celebration and no modal stat-choice window blocks it
 
 ### Requirement: Scale interface typography consistently with browser zoom
 All interface text SHALL respond consistently to browser zoom while the world retains its selected game Zoom. Browser zoom, shell fitting, and fullscreen SHALL not change the stored game Zoom or add template corner text.
@@ -121,7 +121,7 @@ The titlebar SHALL order title, centered World/Dungeon Level space, Time/Keys/Go
 - **THEN** World/Dungeon Level is centered between title and Time, Settings is at the far right, and the counters have no separating divider lines
 
 ### Requirement: Render bordered cards and plain Quest
-Each panel card SHALL have a border with its title interrupting the top edge, left aligned by default. The secondary panel SHALL order minimap, Quest, Log; the primary panel SHALL order Resources, Attributes, Abilities, Slots, Inventory. Quest SHALL show plain active objective text without numbered slots, icons, artwork, or scrolling.
+Each panel card SHALL have a border with its title interrupting the top edge, left aligned by default. The secondary panel SHALL order Minimap, Quest, Log; the primary panel SHALL order Status, Attributes, Abilities, Slots, Inventory. Quest SHALL show plain active objective text without numbered slots, icons, artwork, or scrolling.
 
 #### Scenario: Read the objective
 - **WHEN** the active objective is Find the exit
