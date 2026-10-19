@@ -22,7 +22,7 @@ import { loadSpriteAtlasFrame } from "../../content/characters/hero-warrior/hero
 import { createEnemyIdleAnimationEntities, type EnemyIdleAnimationName } from "../../content/enemies/enemy-idle-animation.ts";
 import { createFloorTriggerAnimationEntity } from "../../content/world/floor-trigger-animation.ts";
 import { particleBoundsAt, particleBoundsAtTile, particleExpired, particleFrame, particleFrameUrl, particleOpacity, particlePosition, particleProgress, particleSizePx, type ParticleEffect } from "../animation/particle-effects-system.ts";
-import { UiIrisTransition, useUiMotion, type UiIrisPhase } from "../../ui/ui-transition-system.tsx";
+import { UiCutsceneTransition, UiIrisTransition, UiPassiveTransition, useUiMotion, type UiCutscenePhase, type UiIrisPhase } from "../../ui/ui-transition-system.tsx";
 import { easeInCubic, easeOutCubic } from "../animation/tween-animation-system.ts";
 import { GRID_RENDER_PASS, orderWorldRenderEntries, type GridRenderEntry } from "./grid-render-order-system.ts";
 import { CHEST_MAIN_ART_ANCHOR_OFFSET_PX, DUNGEON_STAIR_UP_FRAME, doorMainArtAnchorOffset, itemSpriteFrame, OBJECTS_OVERLAY_CRATE_CLOSED_FRAME, pickupMainArtPresentation, puzzleObjectSpriteFrame } from "./world-object-sprite-system.ts";
@@ -50,12 +50,12 @@ const texturePaths = {
   objectsOverlay: `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/tilesets/objects-overlay.png`,
 };
 
-export type DungeonTheme = 1 | 2;
+export type DungeonTheme = 1 | 2 | 3;
 
 function dungeonTileTexturePath(theme: DungeonTheme) {
-  return theme === 2
-    ? `${import.meta.env.BASE_URL}assets/art/custom/tilesets/tileset-dungeon-theme-2.png`
-    : texturePaths.tiles;
+  if (theme === 2) return `${import.meta.env.BASE_URL}assets/art/custom/tilesets/tileset-dungeon-theme-2.png`;
+  if (theme === 3) return `${import.meta.env.BASE_URL}assets/art/custom/tilesets/tileset-dungeon-theme-3.png`;
+  return texturePaths.tiles;
 }
 
 const goldCoinFramePaths = Array.from({ length: 4 }, (_, index) => `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/items/animated/frames/gold-coin/${String(index).padStart(2, "0")}.png`);
@@ -87,6 +87,7 @@ const FLOOR_TRAP_RENDER_ORDER = FLOOR_DECAL_RENDER_ORDER + 1;
 const OVERLAY_RENDER_ORDER = 1_000_000;
 const WORLD_TIE_BREAK = { wall: 0, decoration: 10, stair: 20, prop: 30, pickup: 40, entity: 50, effect: 60 } as const;
 const LANDED_DAMAGE_PARTICLE_RENDER_ORDER = FLOOR_TRAP_RENDER_ORDER + 1;
+const CUTSCENE_OPENING_DELAY_MS = 200;
 let sharedEnginePromise: Promise<SharedEngine> | null = null;
 
 interface WorldDepthEntry extends GridRenderEntry {
@@ -190,7 +191,7 @@ function visibleTarget(selector: string) {
 
 export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, camera = "center", cameraAnimationToken = 0, stairDepartureStartedAt = null, mouseInteraction = false, mouseScreenEdgeTarget = null, mouseDirection = null, showPivotPoints = false, floatingFeedback = [], resourceChangeEffects = [], particleEffects = [], itemThrows = [], uiAnimations = [], selectedCell = null, selectedCellReachable = null, campfireMenu = null, campfireRestConfirming = false, campfireRestTransition = false, turnPresentation, onCampfireRestClosed, onSelectedCellChange, onMouseScreenEdgeAdvance, onWorldAliveChange, onStairDepartureComplete, onStairDescentStep, onWallAdjacentBarrelOffscreen, onUiAnimationComplete, onFpsChange, onZoom }: { campaign: Campaign; theme?: DungeonTheme; zoom?: number; minimap?: boolean; camera?: string; cameraAnimationToken?: number; stairDepartureStartedAt?: number | null; mouseInteraction?: boolean; mouseScreenEdgeTarget?: Position | null; mouseDirection?: Direction | null; showPivotPoints?: boolean; floatingFeedback?: Feedback[]; resourceChangeEffects?: ResourceChangeEffect[]; particleEffects?: ParticleEffect[]; itemThrows?: ItemThrow[]; uiAnimations?: GameViewToUiAnimation[]; selectedCell?: SelectedCell | null; selectedCellReachable?: boolean | null; campfireMenu?: Position | null; campfireRestConfirming?: boolean; campfireRestTransition?: boolean; turnPresentation?: TurnPresentationSystem; onCampfireRestClosed?(): void; onSelectedCellChange?(cell: SelectedCell | null): void; onMouseScreenEdgeAdvance?(direction: Direction): boolean; onWorldAliveChange?(alive: boolean): void; onStairDepartureComplete?(): void; onStairDescentStep?(): void; onWallAdjacentBarrelOffscreen?(setId: string): boolean; onUiAnimationComplete?(id: string): void; onFpsChange?(fps: number | null): void; onZoom?(step: number): void }) {
   const [presentedCampaign, setPresentedCampaign] = useState(campaign);
-  const hostRef = useRef<HTMLDivElement>(null); const canvasRef = useRef<HTMLCanvasElement>(null); const sceneRef = useRef<{ draw(): void; activate(): void; beginStairClip(origin: Position): void; clearStairClip(): void; setTheme(theme: DungeonTheme): void } | null>(null); const latestRef = useRef({ campaign: presentedCampaign, zoom, minimap, camera, showPivotPoints, particleEffects, itemThrows, stairDepartureStartedAt });
+  const hostRef = useRef<HTMLDivElement>(null); const canvasRef = useRef<HTMLCanvasElement>(null); const sceneRef = useRef<{ draw(): void; activate(): void; beginStairClip(origin: Position): void; clearStairClip(): void; setTheme(theme: DungeonTheme): void } | null>(null); const latestRef = useRef({ campaign: presentedCampaign, zoom, minimap, camera, showPivotPoints, particleEffects, itemThrows, stairDescentStartedAt: null as number | null });
   const cameraCenterRef = useRef<(Position & { key: string }) | null>(null);
   // This is updated only by the completed world draw, so pickup flights can
   // launch from the camera framing the player actually saw before a move.
@@ -208,7 +209,12 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
   const [irisPhase, setIrisPhase] = useState<UiIrisPhase>("open");
   const [irisMounted, setIrisMounted] = useState(false);
   const [irisRequested, setIrisRequested] = useState(false);
+  const [cutscenePhase, setCutscenePhase] = useState<UiCutscenePhase>("open");
+  const [cutsceneMounted, setCutsceneMounted] = useState(false);
+  const [stairDescentStartedAt, setStairDescentStartedAt] = useState<number | null>(null);
+  const cutsceneOpeningTimerRef = useRef<number | null>(null);
   const stairDepartureAwaitingIrisRef = useRef(false);
+  const stairCutsceneActiveRef = useRef(false);
   const [rendererLoaded, setRendererLoaded] = useState(minimap);
   const [worldAlive, setWorldAlive] = useState(minimap);
   const [tooltipPosition, setTooltipPosition] = useState<{ left: number; top: number } | null>(null);
@@ -218,7 +224,7 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
   const campfireMenuRef = useRef<HTMLElement>(null);
   const [campfireMenuPosition, setCampfireMenuPosition] = useState<{ left: number; top: number } | null>(null);
   const recoveredBarrelIdsRef = useRef(new Set<string>());
-  latestRef.current = { campaign: presentedCampaign, zoom, minimap, camera, showPivotPoints, particleEffects, itemThrows, stairDepartureStartedAt };
+  latestRef.current = { campaign: presentedCampaign, zoom, minimap, camera, showPivotPoints, particleEffects, itemThrows, stairDescentStartedAt };
   selectedCellRef.current = selectedCell;
   onFpsChangeRef.current = onFpsChange;
   useEffect(() => {
@@ -269,9 +275,18 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
   useEffect(() => { onWorldAliveChange?.(worldAlive); if (worldAlive) sceneRef.current?.activate(); }, [onWorldAliveChange, worldAlive]);
   useEffect(() => {
     if (!stairDepartureStartedAt || minimap) return undefined;
+    stairCutsceneActiveRef.current = true;
     setWorldAlive(false);
+    setStairDescentStartedAt(null);
+    setCutsceneMounted(true);
+    setCutscenePhase("open");
+    const frame = requestAnimationFrame(() => setCutscenePhase("closing"));
+    return () => cancelAnimationFrame(frame);
+  }, [minimap, stairDepartureStartedAt]);
+  useEffect(() => {
+    if (!stairDescentStartedAt || minimap) return undefined;
     const stairOrigin = { x: campaign.player.x, y: campaign.player.y };
-    const maskStartAt = stairDepartureStartedAt + CHARACTER_MOVEMENT_DURATION_MS;
+    const maskStartAt = stairDescentStartedAt + CHARACTER_MOVEMENT_DURATION_MS;
     const clipTimer = window.setTimeout(() => sceneRef.current?.beginStairClip(stairOrigin), Math.max(0, maskStartAt - performance.now()));
     let animationFrame = 0;
     const footstepTimers = Array.from({ length: STAIR_DESCENT_STEP_COUNT }, (_, index) => window.setTimeout(
@@ -279,7 +294,7 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
       Math.max(0, maskStartAt + index * STAIR_DESCENT_STEP_INTERVAL_MS + STAIR_DESCENT_STEP_DURATION_MS - performance.now()),
     ));
     const completeWhenMasked = () => {
-      const elapsed = performance.now() - stairDepartureStartedAt - CHARACTER_MOVEMENT_DURATION_MS;
+      const elapsed = performance.now() - stairDescentStartedAt - CHARACTER_MOVEMENT_DURATION_MS;
       if (stairDescentIsMasked(elapsed)) {
         footstepTimers.forEach(window.clearTimeout);
         stairDepartureAwaitingIrisRef.current = true;
@@ -289,13 +304,16 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
     };
     animationFrame = requestAnimationFrame(completeWhenMasked);
     return () => { window.clearTimeout(clipTimer); cancelAnimationFrame(animationFrame); footstepTimers.forEach(window.clearTimeout); if (!stairDepartureAwaitingIrisRef.current) sceneRef.current?.clearStairClip(); };
-  }, [minimap, onStairDepartureComplete, onStairDescentStep, stairDepartureStartedAt]);
+  }, [campaign.player.x, campaign.player.y, minimap, onStairDepartureComplete, onStairDescentStep, stairDescentStartedAt]);
   useEffect(() => { sceneRef.current?.setTheme(theme); }, [theme]);
   useEffect(() => {
     if (!cameraAnimationToken || minimap || !worldAlive) return;
     cameraAnimation.play(PLAYER_TAKE_DAMAGE_ANIMATION, { transform: cameraTransformRef.current, render: () => sceneRef.current?.draw() });
   }, [cameraAnimation, cameraAnimationToken, minimap, worldAlive]);
   useEffect(() => () => cameraAnimation.dispose(), [cameraAnimation]);
+  useEffect(() => () => {
+    if (cutsceneOpeningTimerRef.current !== null) window.clearTimeout(cutsceneOpeningTimerRef.current);
+  }, []);
   useEffect(() => {
     if (minimap || !worldAlive || !turnPresentation) return;
     const host = hostRef.current;
@@ -456,12 +474,20 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
           if (cancelled) { acquiredTexturePaths.forEach(releaseSharedTexture); acquiredTexturePaths = []; releaseSharedSurface(surface); surface = null; return; }
           textures[key] = texture;
         }
-        const loadedTileThemes = await Promise.all(([1, 2] as const).map(async (tileTheme) => {
+        const loadedTileThemes = await Promise.all(([1, 2, 3] as const).map(async (tileTheme) => {
           const response = await fetch(dungeonTileTexturePath(tileTheme));
-          if (!response.ok) throw new Error(`Could not load dungeon theme ${tileTheme}.`);
-          return [tileTheme, await createImageBitmap(await response.blob())] as const;
+          if (!response.ok) {
+            if (tileTheme === theme) throw new Error(`Could not load dungeon theme ${tileTheme}.`);
+            return null;
+          }
+          try {
+            return [tileTheme, await createImageBitmap(await response.blob())] as const;
+          } catch (error) {
+            if (tileTheme === theme) throw error;
+            return null;
+          }
         }));
-        loadedTileThemes.forEach(([tileTheme, image]) => tileThemeImages.set(tileTheme, image));
+        loadedTileThemes.forEach((entry) => { if (entry) tileThemeImages.set(entry[0], entry[1]); });
         if (cancelled) { tileThemeImages.forEach((image) => image.close()); tileThemeImages.clear(); acquiredTexturePaths.forEach(releaseSharedTexture); acquiredTexturePaths = []; releaseSharedSurface(surface); surface = null; return; }
         tileTexture = createDynamicTexture(engine, 384, 288, { minFilter: "nearest", magFilter: "nearest", mipMaps: false });
         updateDynamicTexture(engine, tileTexture, tileThemeImages.get(theme)!, { invertY: false });
@@ -652,12 +678,12 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
           }
           for (const y of new Set(world.walls.map((wall) => wall.y))) addLayerDepth(`wall-row-${y}`, (y + 1) * 32, WORLD_TIE_BREAK.wall, wallLayers[y]!);
           const basePlayerHeading = turnPresentation?.headingOf("player", state.player.heading ?? "e") ?? state.player.heading ?? "e";
-          const playerHeading = latestRef.current.stairDepartureStartedAt !== null ? stairDescentHeading(basePlayerHeading) : basePlayerHeading;
+          const playerHeading = latestRef.current.stairDescentStartedAt !== null ? stairDescentHeading(basePlayerHeading) : basePlayerHeading;
           const desiredIdleAnimation = heroWarriorIdleAnimationForHeading(playerHeading);
           if (activeHeroAnimation.getState().animation !== desiredIdleAnimation) activeHeroAnimation.selectAnimation(desiredIdleAnimation);
           const activeHeroFrame = activeHeroAnimation.getState().frame;
           const playerPosition = turnPresentation?.playerPositionOf(state.player) ?? state.player;
-          const departureElapsed = latestRef.current.stairDepartureStartedAt === null ? 0 : now - latestRef.current.stairDepartureStartedAt - CHARACTER_MOVEMENT_DURATION_MS;
+          const departureElapsed = latestRef.current.stairDescentStartedAt === null ? 0 : now - latestRef.current.stairDescentStartedAt - CHARACTER_MOVEMENT_DURATION_MS;
           const departureProgress = Math.max(0, Math.min(1, departureElapsed / STAIR_DEPARTURE_DURATION_MS));
           const departureOffsetY = departureElapsed > 0 ? stairDescentOffset(departureElapsed) : 0;
           const playerDepthPosition = turnPresentation?.playerDepthPositionOf(state.player, now) ?? state.player;
@@ -884,10 +910,34 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
         // before the game installs the next floor.
         sceneRef.current?.clearStairClip();
         stairDepartureAwaitingIrisRef.current = false;
+        setStairDescentStartedAt(null);
         onStairDepartureComplete?.();
       }
     }
-    if (phase === "opening") { setIrisPhase("open"); setIrisMounted(false); setIrisRequested(false); if (rendererLoaded) setWorldAlive(true); }
+    if (phase === "opening") {
+      setIrisPhase("open"); setIrisMounted(false); setIrisRequested(false);
+      if (stairCutsceneActiveRef.current) {
+        cutsceneOpeningTimerRef.current = window.setTimeout(() => {
+          cutsceneOpeningTimerRef.current = null;
+          setCutscenePhase("opening");
+        }, CUTSCENE_OPENING_DELAY_MS);
+      }
+      else if (rendererLoaded) setWorldAlive(true);
+    }
   };
-  return <div tabIndex={-1} className={minimap ? "minimap-view" : "world-view"} ref={hostRef} data-renderer="babylon-lite" data-content-style="2d" onMouseMove={mouseInteraction && worldAlive ? pointerMove : undefined} onMouseLeave={mouseInteraction && worldAlive ? pointerLeave : undefined} onMouseDown={mouseInteraction && worldAlive ? pointerDown : undefined} onMouseUp={mouseInteraction && worldAlive ? pointerUp : undefined} onWheel={mouseInteraction && worldAlive ? (event) => { event.preventDefault(); onZoom?.(event.deltaY < 0 ? 1 : -1); } : undefined} onContextMenu={mouseInteraction && worldAlive ? (event) => event.preventDefault() : undefined}><canvas tabIndex={-1} ref={canvasRef} className={minimap ? "minimap-view__canvas" : "world-view__canvas"} aria-label={minimap ? "Dungeon minimap" : "Pixel-perfect dungeon map"}/>{!minimap && resourceChangeEffects.map((effect) => <i key={effect.id} className={`world-view__resource-change-effect world-view__resource-change-effect--${effect.color}`} aria-hidden="true" />)}{chestSprites}{worldAlive && !minimap && feedbackCenter && floatingFeedback.map((effect) => { const key = `${effect.x},${effect.y}`; const index = offsets.get(key) ?? 0; offsets.set(key, index + 1); const position = getWorldScreenPosition({ x: effect.x, y: effect.y, center: feedbackCenter, viewportWidth: feedbackRect!.width, viewportHeight: feedbackRect!.height, tileCssSize: feedbackCellSize }); const zoomScale = typeof zoom === "number" ? zoom : 1; return <span key={effect.id} className={`world-view__floating-text world-view__floating-text--${effect.color} world-view__floating-text--${effect.kind}`} style={{ left: position.left, top: position.top - index * 12 * zoomScale, fontSize: `${14 * zoomScale}px`, "--world-floating-travel": `${11 * zoomScale}px` } as CSSProperties} aria-hidden="true">{effect.text}</span>; })}{tooltipEnemy && !minimap && <section ref={tooltipRef} className="world-view__enemy-tooltip" aria-label={`${tooltipEnemy.name} information`} style={{ left: tooltipPosition?.left ?? -10000, top: tooltipPosition?.top ?? -10000, visibility: tooltipPosition ? "visible" : "hidden", ...tooltipMotion }}><div className="world-view__enemy-tooltip-section world-view__enemy-tooltip-section--portrait"><h2>Enemy: {tooltipEnemy.name}</h2><div className={`world-view__enemy-tooltip-portrait-box world-view__enemy-tooltip-portrait-box--${tooltipEnemy.name.toLowerCase()}`}><img src={tooltipEnemy.name === "Skeleton" ? texturePaths.skeleton : texturePaths.rat} alt="" /></div></div><div className="world-view__enemy-tooltip-section world-view__enemy-tooltip-section--resource-panel"><h2>RESOURCES</h2><EnemyResourceRows resources={tooltipEnemy.resources} /></div></section>}{campfireMenu && !minimap && <section ref={campfireMenuRef} className="world-view__campfire-menu" aria-label="Campfire menu" style={{ left: campfireMenuPosition?.left ?? -10000, top: campfireMenuPosition?.top ?? -10000, visibility: campfireMenuPosition ? "visible" : "hidden" }} onMouseDown={(event) => event.stopPropagation()}><h2>Campfire</h2><p>You may rest one turn</p><p className={campfireRestConfirming ? "world-view__campfire-menu-rest--confirming" : "world-view__campfire-menu-rest"}>Bump again to rest<br /><i>Or walk away to cancel</i></p></section>}{mouseInteraction && worldAlive && selectedCell && reticleStyle && <i className={`world-view__grid-reticle world-view__grid-reticle--${reticleKind}`} style={reticleStyle}>{showPivotPoints && <span className="world-view__grid-reticle-code" aria-hidden="true">({String(selectedCell.y).padStart(2, "0")},{String(selectedCell.x).padStart(2, "0")})</span>}</i>}{!minimap && irisMounted && <UiIrisTransition phase={irisPhase} label={message} onPhaseComplete={finishIrisPhase} />}{!minimap && irisPhase === "open" && !rendererLoaded && message && <div role="status" className={minimap ? "minimap-view__message" : "world-view__message"}>{message}</div>}</div>;
+  const finishCutscenePhase = (phase: UiCutscenePhase) => {
+    if (phase === "closing") {
+      setCutscenePhase("closed");
+      if (stairCutsceneActiveRef.current) setStairDescentStartedAt(performance.now());
+    }
+    if (phase === "opening") {
+      stairCutsceneActiveRef.current = false;
+      setCutscenePhase("open"); setCutsceneMounted(false);
+      if (rendererLoaded) setWorldAlive(true);
+    }
+  };
+  const passiveMounted = cutsceneMounted;
+  const passivePhase = cutscenePhase;
+  const finishPassivePhase = finishCutscenePhase;
+  return <div tabIndex={-1} className={minimap ? "minimap-view" : "world-view"} ref={hostRef} data-renderer="babylon-lite" data-content-style="2d" onMouseMove={mouseInteraction && worldAlive ? pointerMove : undefined} onMouseLeave={mouseInteraction && worldAlive ? pointerLeave : undefined} onMouseDown={mouseInteraction && worldAlive ? pointerDown : undefined} onMouseUp={mouseInteraction && worldAlive ? pointerUp : undefined} onWheel={mouseInteraction && worldAlive ? (event) => { event.preventDefault(); onZoom?.(event.deltaY < 0 ? 1 : -1); } : undefined} onContextMenu={mouseInteraction && worldAlive ? (event) => event.preventDefault() : undefined}><canvas tabIndex={-1} ref={canvasRef} className={minimap ? "minimap-view__canvas" : "world-view__canvas"} aria-label={minimap ? "Dungeon minimap" : "Pixel-perfect dungeon map"}/>{!minimap && resourceChangeEffects.map((effect) => <i key={effect.id} className={`world-view__resource-change-effect world-view__resource-change-effect--${effect.color}`} aria-hidden="true" />)}{chestSprites}{worldAlive && !minimap && feedbackCenter && floatingFeedback.map((effect) => { const key = `${effect.x},${effect.y}`; const index = offsets.get(key) ?? 0; offsets.set(key, index + 1); const position = getWorldScreenPosition({ x: effect.x, y: effect.y, center: feedbackCenter, viewportWidth: feedbackRect!.width, viewportHeight: feedbackRect!.height, tileCssSize: feedbackCellSize }); const zoomScale = typeof zoom === "number" ? zoom : 1; return <span key={effect.id} className={`world-view__floating-text world-view__floating-text--${effect.color} world-view__floating-text--${effect.kind}`} style={{ left: position.left, top: position.top - index * 12 * zoomScale, fontSize: `${14 * zoomScale}px`, "--world-floating-travel": `${11 * zoomScale}px` } as CSSProperties} aria-hidden="true">{effect.text}</span>; })}{tooltipEnemy && !minimap && <section ref={tooltipRef} className="world-view__enemy-tooltip" aria-label={`${tooltipEnemy.name} information`} style={{ left: tooltipPosition?.left ?? -10000, top: tooltipPosition?.top ?? -10000, visibility: tooltipPosition ? "visible" : "hidden", ...tooltipMotion }}><div className="world-view__enemy-tooltip-section world-view__enemy-tooltip-section--portrait"><h2>Enemy: {tooltipEnemy.name}</h2><div className={`world-view__enemy-tooltip-portrait-box world-view__enemy-tooltip-portrait-box--${tooltipEnemy.name.toLowerCase()}`}><img src={tooltipEnemy.name === "Skeleton" ? texturePaths.skeleton : texturePaths.rat} alt="" /></div></div><div className="world-view__enemy-tooltip-section world-view__enemy-tooltip-section--resource-panel"><h2>RESOURCES</h2><EnemyResourceRows resources={tooltipEnemy.resources} /></div></section>}{campfireMenu && !minimap && <section ref={campfireMenuRef} className="world-view__campfire-menu" aria-label="Campfire menu" style={{ left: campfireMenuPosition?.left ?? -10000, top: campfireMenuPosition?.top ?? -10000, visibility: campfireMenuPosition ? "visible" : "hidden" }} onMouseDown={(event) => event.stopPropagation()}><h2>Campfire</h2><p className={campfireRestConfirming ? "world-view__campfire-menu-rest--confirming" : "world-view__campfire-menu-rest"}>Bump again to rest<br /><i>Or walk away to cancel</i></p></section>}{mouseInteraction && worldAlive && selectedCell && reticleStyle && <i className={`world-view__grid-reticle world-view__grid-reticle--${reticleKind}`} style={reticleStyle}>{showPivotPoints && <span className="world-view__grid-reticle-code" aria-hidden="true">({String(selectedCell.y).padStart(2, "0")},{String(selectedCell.x).padStart(2, "0")})</span>}</i>}{!minimap && passiveMounted && <UiPassiveTransition phase={passivePhase} onPhaseComplete={finishPassivePhase} />}{!minimap && irisMounted && <UiIrisTransition phase={irisPhase} label={message} onPhaseComplete={finishIrisPhase} />}{!minimap && irisPhase === "open" && !rendererLoaded && message && <div role="status" className={minimap ? "minimap-view__message" : "world-view__message"}>{message}</div>}</div>;
 }

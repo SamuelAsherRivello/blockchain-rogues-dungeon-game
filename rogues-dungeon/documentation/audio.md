@@ -17,6 +17,7 @@ When the main menu opens, the audio manager begins loading every known music and
 | Type | Event | Asset | Source entry | Intent |
 |---|---|---|---|---|
 | Diegetic | Player moves one tile | `sfx/footstep.ogg` | `sfx100v2_footstep_01.ogg` | Quiet stone step; rate-limited during held movement |
+| Diegetic | Player waits one turn | `sfx/footstep.ogg` | `sfx100v2_footstep_01.ogg` | Same quiet stone step used for movement |
 | Diegetic | Player successfully pushes a barrel | `sfx/barrel-slide.wav` | Procedurally synthesized for Rogue's Dungeon | 0.28-second muted wood-and-stone slide |
 | Diegetic | Player hits a crate | `sfx/crate-hit.wav` | Procedurally synthesized for Rogue's Dungeon | 0.18-second wooden knock |
 | Diegetic | Player hits an enemy | `sfx/weapon_hit.ogg` | `sfx100v2_metal_hit_01.ogg` | Brief weapon impact |
@@ -24,6 +25,7 @@ When the main menu opens, the audio manager begins loading every known music and
 | Diegetic | Enemy is defeated | `sfx/enemy_fall.ogg` | `sfx100v2_hit_02.ogg` | Short defeat cue |
 | Diegetic | Potion is collected | `sfx/potion.ogg` | `sfx100v2_glass_01.ogg` | Small glass chime |
 | Non-diegetic | Any world pickup is collected | `sfx/pickup-click.wav` | `click.wav` | Immediate click before its UI flight; created by qubodup and sourced from [OpenGameArt](https://opengameart.org/content/click), CC0 |
+| Non-diegetic | Any enabled menu button is clicked | `sfx/pickup-click.wav` | `click.wav` | Shared click confirmation for menu actions |
 | Non-diegetic | A key pickup starts its UI flight | `sfx/key.ogg` | `sfx100v2_metal_01.ogg` | Immediate key credit confirmation |
 | Non-diegetic | A gold pickup starts its UI flight | `sfx/inventory.ogg` | `sfx100v2_items_02.ogg` | Immediate coin confirmation |
 | Non-diegetic | A Health or Mana pickup starts its UI flight | `sfx/collect.ogg` | `sfx100v2_glass_02.ogg` | Immediate potion confirmation |
@@ -33,7 +35,10 @@ When the main menu opens, the audio manager begins loading every known music and
 | Non-diegetic | Character gains a level | `sfx/ui_accept.ogg` | bundled UI accept | Brief level-gain chime |
 | Non-diegetic | Compatible equipment drop is accepted | `sfx/ui_accept.ogg` | `sfx100v2_switch_01.ogg` | Quiet confirmation |
 | Non-diegetic | Equipment drop is rejected | `sfx/ui_reject.ogg` | `sfx100v2_switch_02.ogg` | Soft rejection tick |
-| Non-diegetic | Ability activation succeeds | `sfx/ability.ogg` | `sfx100v2_items_01.ogg` | Brief UI confirmation |
+| Non-diegetic | Heal ability activation succeeds | `sfx/magic-heal.ogg` | [Spell sounds](https://opengameart.org/content/spell-sounds), healing.ogg by Augmentality / Brandon Morris; CC0 | Short rising healing spell |
+| Non-diegetic | Wand ability activation succeeds | `sfx/magic-wand.ogg` | [Magic Spell SFX](https://opengameart.org/content/magic-spell-sfx), magical_1.ogg by JaggedStone; CC0 | Short spellcast cue for the wand |
+| Non-diegetic | Generic or future ability activation | `sfx/magic-teleport.ogg` | [Spell sounds](https://opengameart.org/content/spell-sounds), teleport.ogg by Augmentality / Brandon Morris; CC0 | Ancient, resonant magic fallback |
+| Non-diegetic | Character attributes are rerolled | `sfx/dice-roll.mp3` | User-supplied `DiceRoll01.mp3` | Dice roll during character creation |
 
 Fourteen OGG SFX are selected from rubberduck's **100 CC0 SFX #2** pack on [OpenGameArt](https://opengameart.org/content/100-cc0-sfx-2), licensed CC0. The additional `pickup-click.wav` is the CC0 click by qubodup listed above. `barrel-slide.wav` and `crate-hit.wav` are original, procedurally synthesized effects. The source archives are not shipped; only the listed files are included. Original entry names are recorded to make each selection traceable.
 

@@ -302,6 +302,14 @@ test('renders transient item drag feedback without intercepting drops', async ()
   assert.match(game, /window\.addEventListener\("pointercancel", pointerCancel\)/);
   assert.match(css, /\.item-drag-preview\{[^}]*pointer-events:none/); assert.match(css, /\.item-drag-preview\{[^}]*width:min\(11rem/); assert.match(css, /\.drag_departure/); assert.match(css, /\.drag_landing/);
 });
+test('anchors item comparison to the inventory panel with a fixed ten-pixel gap', async () => {
+  const game = await readFile(new URL('../src/game/game.tsx', import.meta.url), 'utf8');
+  assert.match(game, /\[data-slot-type="inventory"\]/);
+  assert.match(game, /closest<HTMLElement>\("\.game-card"\)/);
+  assert.match(game, /right: window\.innerWidth - inventoryPanel\.left \+ 10/);
+  assert.match(game, /transform: "translateY\(-50%\)"/);
+  assert.doesNotMatch(game, /rect\.left - 36/);
+});
 test('dims keyboard inputs while their ability or quick slot is being dragged', async () => {
   const [game, css] = await Promise.all(['src/game/game.tsx', 'src/ui/style.css'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));
   assert.match(game, /drag\?\.source\.kind === "ability"/); assert.match(game, /drag\?\.source\.kind === "quick-slot"/); assert.match(game, /<StatusControls[^>]*drag=\{dragPresentation\}/);

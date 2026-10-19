@@ -28,6 +28,13 @@ test("prefers the side opposite the trigger and vertically centers on it", () =>
   assert.deepEqual(findTooltipPosition(viewport, { left: 350, top: 90, right: 380, bottom: 110 }, tooltip), { left: 242, top: 90 });
 });
 
+test("places title-bar tooltips below their trigger without changing horizontal placement", () => {
+  const viewport = { left: 0, top: 0, right: 400, bottom: 300 };
+  const target = { left: 20, top: 4, right: 50, bottom: 20 };
+  const tooltip = { width: 100, height: 20 };
+  assert.deepEqual(findTooltipPosition(viewport, target, tooltip, 5, "below"), { left: 55, top: 25 });
+});
+
 test("keeps a narrow viewport tooltip inside and centers vertically when possible", () => {
   const viewport = { left: 0, top: 0, right: 180, bottom: 200 };
   const position = findTooltipPosition(viewport, { left: 150, top: 75, right: 170, bottom: 95 }, { width: 120, height: 16 });
@@ -76,7 +83,8 @@ test("wires UI tooltips to pointer and keyboard focus with accessible descriptio
   assert.doesNotMatch(css, /\.ui_tooltip \{[^}]*text-overflow/);
   assert.match(game, /function inventoryItemHelp\(item: [^)]+\)/);
   assert.match(game, /tooltip=\{secondary \? `\$\{item\.name\} occupies this position\.` : inventoryItemHelp\(item\)\}/);
-  assert.match(game, /No stats · Double-click to equip\./);
+  assert.match(game, /No stats · Drag to equip\./);
+  assert.doesNotMatch(game, /onDoubleClick|Double-click/);
   assert.match(game, /<Tooltip content="Show movement and ability controls\."/);
   assert.match(game, /<Tooltip content="Show stats, gear, quest, and log\."/);
   assert.match(titleBar, /<Tooltip content="Time advances 1 per tick\."/);

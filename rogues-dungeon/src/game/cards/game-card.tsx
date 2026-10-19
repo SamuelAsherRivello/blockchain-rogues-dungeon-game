@@ -17,7 +17,7 @@ const cardHelp: Partial<Record<string, string>> = {
   Attributes: "Character stats and current values.",
   Abilities: "Assigned abilities; each costs Mana.",
   Equipment: "Equipped items change your attributes.",
-  Inventory: "Carried items; double-click to equip.",
+  Inventory: "Carried items; drag gear to equipment to equip it.",
 };
 
 export function GameCard({ title, children, className = "", showTab = false, tabOffsetY = "0px", tabExpanded, onTabClick, tabAriaLabel, contentHidden = false, panelPopup }: {

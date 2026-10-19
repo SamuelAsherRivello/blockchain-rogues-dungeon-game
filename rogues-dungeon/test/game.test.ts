@@ -2,7 +2,7 @@ import type { ActionResult, Campaign, Enemy, Entity, Item, Direction } from '../
 import type { TileLayer } from '../src/systems/rendering/tile-map-system.ts';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { applyAction, combatReadiness, createCampaign, createGameSession, createResourcesModel, createRunCampaign, effectiveAttributes, ensureNearbyStairs, entrancePosition, FLOOR_CENTER, FLOOR_HEIGHT, FLOOR_WIDTH, GAME_TUNING, generateFloor, headingFromMovement, isNonBlockingChestPlacementCell, isNonBlockingObjectPlacementCell, isObjectSetBlocked, isObjectSetDoorOpen, previewEquipment, resourceState, rollStartingAttributes, STAIRS_MAX_DISTANCE_FROM_START, upgradeCampaignResources } from '../src/systems/procedural/world-procedural-system.ts';
+import { applyAction, combatReadiness, createCampaign, createGameSession, createResourcesModel, createRunCampaign, effectiveAttributes, ensureNearbyStairs, entrancePosition, FLOOR_CENTER, FLOOR_HEIGHT, FLOOR_WIDTH, GAME_TUNING, generateFloor, headingFromMovement, isNonBlockingChestPlacementCell, isNonBlockingObjectPlacementCell, isObjectSetBlocked, isObjectSetDoorOpen, isStairPlacementCell, previewEquipment, resourceState, rollStartingAttributes, STAIRS_MAX_DISTANCE_FROM_START, upgradeCampaignResources } from '../src/systems/procedural/world-procedural-system.ts';
 import { worldFloorSeed } from '../src/systems/procedural/world-seed-system.ts';
 import { projectLogEvents } from '../src/game/log-policy.ts';
 import { projectFloatingFeedback, removeFloatingFeedback } from '../src/game/floating-feedback.ts';
@@ -302,9 +302,22 @@ test('keeps stairs out of cardinal door-adjacent cells', () => {
   }
 });
 
+test('keeps every generated stair away from cardinal non-walkable cells', () => {
+  for (const level of [1, 2, 3, 5]) {
+    for (const seed of [1, 17, 77, 914, 13579, 2818867945]) {
+      const floors = [generateFloor(level, seed, level), ...(level === 1 ? [generateFloor(level, seed, level, { level1TestMode: true })] : [])];
+      for (const floor of floors) {
+        for (const stair of floor.entities.filter((entity) => entity.kind === 'stairs')) {
+          assert.equal(isStairPlacementCell(floor, stair), true, `${level}:${seed}:${stair.id} must have walkable cardinal neighbors`);
+        }
+      }
+    }
+  }
+});
+
 test('places a return stair near the start and leaves the forward stair distant after level one', () => {
   const floor = generateFloor(2, 77);
-  assert.deepEqual(floor.entities.find((entity) => entity.id === 'stairs-back'), { id: 'stairs-back', kind: 'stairs', direction: 'back', name: 'Stairs down', x: floor.start.x - 3, y: floor.start.y });
+  assert.deepEqual(floor.entities.find((entity) => entity.id === 'stairs-back'), { id: 'stairs-back', kind: 'stairs', direction: 'back', name: 'Stairs down', x: floor.start.x - 2, y: floor.start.y });
   const forward = present(floor.entities.find((entity) => entity.id === 'stairs-forward'));
   assert.ok(Math.hypot(forward.x - floor.start.x, forward.y - floor.start.y) >= 20);
   assert.equal(floor.entities.some((entity) => entity.id === 'test-rat' || entity.id === 'test-skeleton'), false);
@@ -536,6 +549,17 @@ test('abilities commit Mana before their effect and resolve one tactical turn on
   assert.equal(completion.state.player.resources.health.current, Math.min(cast.state.player.resources.health.current + 8, completion.state.player.resources.health.currentMax));
 });
 
+test('Heal is rejected at full Health without spending Mana or advancing time', () => {
+  const campaign = createCampaign(913);
+  const mana = campaign.player.resources.mana.current;
+  const time = campaign.floor.time;
+  const result = applyAction(campaign, { type: 'ability', index: 0 });
+  assert.equal(result.accepted, false);
+  assert.equal(result.events[0]?.facts.reason, 'health-full');
+  assert.equal(result.state.player.resources.mana.current, mana);
+  assert.equal(result.state.floor.time, time);
+});
+
 test('Wand resolves only its locked target and harmlessly completes when it is gone', () => {
   const campaign = createCampaign(912); const target = legacyEnemy({ id: 'locked-target', kind: 'enemy', name: 'Locked Rat', x: campaign.player.x + 2, y: campaign.player.y, hp: 12, damage: 0, xp: 1 });
   campaign.floor.map![target.y][target.x] = 0; campaign.floor.entities = [target];
@@ -546,6 +570,23 @@ test('Wand resolves only its locked target and harmlessly completes when it is g
   const missing = applyAction(cast.state, { type: 'resolve-ability', abilityId: 'wand', targetId: 'missing-target' });
   assert.equal(missing.events.some((event) => event.type === 'combat.hit'), false);
   assert.equal(missing.ticks, 1);
+});
+
+test('Wand requires a clear cardinal line through walkable tiles', () => {
+  const campaign = createCampaign(914); const target = legacyEnemy({ id: 'behind-wall', kind: 'enemy', name: 'Behind Wall', x: campaign.player.x + 3, y: campaign.player.y, hp: 12, damage: 0, xp: 1 });
+  const setWalkable = (x: number, y: number, walkable: boolean) => { campaign.floor.cells[y][x].walkable = walkable; campaign.floor.map![y][x] = walkable ? 0 : 1; };
+  campaign.floor.entities = [target];
+  setWalkable(campaign.player.x + 1, campaign.player.y, false);
+  const blocked = applyAction(campaign, { type: 'ability', index: 1 });
+  assert.equal(blocked.accepted, false);
+  assert.equal(blocked.events[0]?.facts.reason, 'no-valid-target');
+  setWalkable(campaign.player.x, campaign.player.y, false);
+  setWalkable(target.x, target.y, false);
+  setWalkable(campaign.player.x + 1, campaign.player.y, true);
+  setWalkable(campaign.player.x + 2, campaign.player.y, true);
+  const clear = applyAction(campaign, { type: 'ability', index: 1 });
+  assert.equal(clear.accepted, true);
+  assert.equal(clear.events.find((event) => event.type === 'ability.used')?.facts.targetId, target.id);
 });
 
 test('enemy damage is deterministic, stamina-scaled, and never reduced below one', () => {
@@ -620,6 +661,7 @@ test('wait advances one turn without moving the player and resolves a due enemy 
   campaign.floor.map![y][x + 1] = 0;
   campaign.floor.entities = [legacyEnemy({ id: 'waiting-enemy', kind: 'enemy', name: 'Waiting Enemy', x: x + 1, y, hp: 10, damage: 2, xp: 1, actionCooldown: 1, nextActionAt: 1 })];
   const result = applyAction(campaign, { type: 'wait' });
+  assert.ok(result.events.some((event) => event.type === 'player.waited'));
   assert.equal(result.accepted, true); assert.equal(result.ticks, 1); assert.equal(result.state.floor.time, 2);
   assert.deepEqual({ x: result.state.player.x, y: result.state.player.y }, { x, y });
   assert.ok(result.events.some((event) => event.type === 'time.advanced'));
@@ -1147,6 +1189,18 @@ test('equipment swaps use the same validated projection for one-slot and two-slo
   assert.equal(rejected.accepted, false); assert.equal(rejected.ticks, 0); assert.deepEqual(rejected.state, before);
 });
 
+test('a one-slot weapon replaces a two-slot weapon at the exact hovered position', () => {
+  const campaign = createCampaign(393); campaign.floor.entities = [];
+  const twoHanded = { id: 'two-handed', name: 'Two-Handed Sword', group: 'weapons' as const, slotSpan: 2 as const, modifiers: { offense: 15 } };
+  const sword = { id: 'sword', name: 'Sword', group: 'weapons' as const, modifiers: { offense: 6 } };
+  campaign.player.equipment.weapons = [twoHanded, twoHanded]; campaign.player.inventory = [sword];
+  const equipped = applyAction(campaign, { type: 'equip', itemId: sword.id, group: 'weapons', index: 1 });
+  assert.equal(equipped.accepted, true);
+  assert.deepEqual(equipped.state.player.equipment.weapons.map((item) => item?.id ?? null), [null, sword.id]);
+  assert.deepEqual(equipped.state.player.inventory.map((item) => item.id), [twoHanded.id]);
+  assert.deepEqual(present(equipped.events.find((event) => event.type === 'equipment.changed')).facts.occupiedSlots, [1]);
+});
+
 test('equipment swap events retain occupancy facts and project into the Log before the commit event', () => {
   const campaign = createCampaign(394); campaign.floor.entities = [];
   const dagger = { id: 'dagger', name: 'Dagger (Magic)', group: 'weapons' as const, modifiers: { offense: 3 } };
@@ -1290,7 +1344,7 @@ test('drag descriptions share valid drop actions with transient equip and unequi
 
 test('abilities reject empty or unaffordable bindings and reassignment updates key positions', () => {
   const campaign = createCampaign(41); campaign.floor.entities = [];
-  const insufficient = structuredClone(campaign); insufficient.player.resources.mana.current = 0;
+  const insufficient = structuredClone(campaign); insufficient.player.resources.health.current -= 1; insufficient.player.resources.mana.current = 0;
   const rejected = applyAction(insufficient, { type: 'ability', index: 0 });
   assert.equal(rejected.accepted, false); assert.equal(rejected.ticks, 0); assert.equal(rejected.events[0].facts.reason, 'insufficient-mana');
   const empty = applyAction(campaign, { type: 'ability', index: 2 }); assert.equal(empty.accepted, false); assert.equal(empty.state.floor.time, 1);

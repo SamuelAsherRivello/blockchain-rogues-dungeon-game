@@ -54,6 +54,10 @@ function emitFloorTriggerChanges(events: GameEvent[], previous: Campaign, curren
 export function floorTriggerDoorSets(floor: Floor) { return (floor.objectSets ?? []).filter((set): set is FloorTriggerDoorBarrelSet => set.kind === "floor-trigger-door-barrel"); }
 function barrelSetAt(floor: Floor, x: number, y: number) { return floorTriggerDoorSets(floor).find((set) => set.barrel.x === x && set.barrel.y === y); }
 export function isBarrelAdjacentToWall(floor: Parameters<typeof isWalkable>[0], barrel: Position) { return [[0, -1], [1, 0], [0, 1], [-1, 0]].some(([dx, dy]) => !isWalkable(floor, barrel.x + dx, barrel.y + dy)); }
+export function isStairPlacementCell(floor: Parameters<typeof isWalkable>[0], position: Position) {
+  return isWalkable(floor, position.x, position.y)
+    && [[0, -1], [1, 0], [0, 1], [-1, 0]].every(([dx, dy]) => isWalkable(floor, position.x + dx, position.y + dy));
+}
 export function isObjectSetBlocked(floor: Floor, player: MassBearingPosition, x: number, y: number) {
   return floorTriggerDoorSets(floor).some((set) => samePosition(set.barrel, { x, y }) || (samePosition(set.door, { x, y }) && !isObjectSetDoorOpen(set, player, floor.entities)));
 }
@@ -61,15 +65,18 @@ export function isObjectSetBlocked(floor: Floor, player: MassBearingPosition, x:
 function stairsForLevel(level: number, start: Position, forward: Position): Extract<Entity, { kind: "stairs" }>[] {
   const forwardStair = { id: "stairs-forward", kind: "stairs" as const, direction: "forward" as const, name: "Stairs up", ...forward };
   return level > 1
-    ? [{ id: "stairs-back", kind: "stairs" as const, direction: "back" as const, name: "Stairs down", x: start.x - 3, y: start.y }, forwardStair]
+    ? [{ id: "stairs-back", kind: "stairs" as const, direction: "back" as const, name: "Stairs down", x: start.x - 2, y: start.y }, forwardStair]
     : [forwardStair];
 }
 
 export function ensureNearbyStairs(floor: Floor) {
   const level = floor.level ?? floor.depth ?? 1;
   const forward = floor.entities?.find((entity) => entity.kind === "stairs" && entity.direction !== "back") ?? { x: floor.start.x + 3, y: floor.start.y };
-  const expected = stairsForLevel(level, floor.start, forward).filter((stair) => isWalkable(floor, stair.x, stair.y));
-  if (!expected.length) return floor;
+  const expected = stairsForLevel(level, floor.start, forward).filter((stair) => isStairPlacementCell(floor, stair));
+  if (!expected.length) {
+    floor.entities = (floor.entities ?? []).filter((entity) => entity.kind !== "stairs");
+    return floor;
+  }
   floor.entities = [...(floor.entities ?? []).filter((entity) => entity.kind !== "stairs"), ...expected];
   return floor;
 }
@@ -84,7 +91,7 @@ export function headingFromMovement(dx: number, dy: number, fallback: Direction 
   return fallback;
 }
 export const resourceNames: readonly ResourceName[] = Object.freeze(["health", "stamina", "offense", "defense", "mana", "xp"]);
-export const EVENT_TYPES = Object.freeze(["action.committed", "action.rejected", "time.advanced", "player.moved", "player.sneak.changed", "combat.hit", "enemy.defeated", "resource.changed", "item.collected", "item.collection.rejected", "potion.consumed", "quick-slot.changed", "quick-slot.use.rejected", "chest.opened", "crate.bumped", "crate.opened", "equipment.changed", "ability.used", "ability.assignment.changed", "barrel.pushed", "floor-trigger.changed", "xp.gained", "xp.level.changed", "progression.points.spent", "realm.entered", "player.died", "campaign.save.succeeded", "campaign.save.failed"]);
+export const EVENT_TYPES = Object.freeze(["action.committed", "action.rejected", "time.advanced", "player.moved", "player.waited", "player.sneak.changed", "combat.hit", "enemy.defeated", "resource.changed", "item.collected", "item.collection.rejected", "potion.consumed", "quick-slot.changed", "quick-slot.use.rejected", "chest.opened", "crate.bumped", "crate.opened", "equipment.changed", "ability.used", "ability.assignment.changed", "barrel.pushed", "floor-trigger.changed", "xp.gained", "xp.level.changed", "progression.points.spent", "realm.entered", "player.died", "campaign.save.succeeded", "campaign.save.failed"]);
 export const progressionStatNames: readonly AttributeName[] = Object.freeze(["health", "stamina", "offense", "defense", "mana", "vitality", "strength", "luck", "recovery", "stealth"]);
 export const attributeLabels = Object.freeze({ health: "Health", stamina: "Stamina", offense: "Offense", defense: "Defense", mana: "Mana", vitality: "Vitality", strength: "Strength", luck: "Luck", recovery: "Recovery", stealth: "Stealth" });
 export const statLabels = attributeLabels;
@@ -416,12 +423,15 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
   // Keep the nearby test-mode stair one clear tile away from the sealed door.
   // A stair beside a door makes its interaction hard to distinguish from opening
   // the door and violates the shared object-placement spacing rule.
-  const forward = level1TestMode ? { x: start.x + 2, y: start.y } : regionRole === "exit" ? sealedGoal : distantExit;
+  const routeForward = level1TestMode ? { x: start.x + 2, y: start.y } : regionRole === "exit" ? sealedGoal : distantExit;
   if (level === 1 && !level1TestMode && regionRole !== "exit") {
     const bypass = { x: start.x, y: start.y + 4 };
     connectRooms(map, start, bypass, corridorWidth);
-    connectRooms(map, bypass, forward, corridorWidth);
+    connectRooms(map, bypass, routeForward, corridorWidth);
   }
+  const isClearStairMapCell = (position: Position) => map[position.y]?.[position.x] === 0
+    && [map[position.y - 1]?.[position.x], map[position.y]?.[position.x + 1], map[position.y + 1]?.[position.x], map[position.y]?.[position.x - 1]].every((cell) => cell === 0);
+  const forward = isClearStairMapCell(routeForward) ? routeForward : exitCandidates.find(isClearStairMapCell) ?? { x: start.x + 3, y: start.y };
   const stairs = stairsForLevel(level, start, forward);
   const exit = stairs.find((stair) => stair.direction === "forward")!;
   const context = createLevelContext({ worldId: "One", realmId: `Underground ${level}`, levelId: level, seed, width: FLOOR_WIDTH, height: FLOOR_HEIGHT, start, exit });
@@ -776,7 +786,7 @@ function occupiedIndexes(slots: (Item | null)[], item: Item) { return slots.flat
 function targetIndexes(slots: (Item | null)[], item: Item, index: number) {
   if (item.slotSpan === 2) return [0, 1];
   const target = slots[index];
-  return target?.slotSpan === 2 ? occupiedIndexes(slots, target) : [index];
+  return target?.slotSpan === 2 ? [index, ...occupiedIndexes(slots, target).filter((occupied) => occupied !== index)] : [index];
 }
 function uniqueItems(items: (Item | null | undefined)[]) { const seen = new Set<string>(); return items.filter((item): item is Item => { if (!item || seen.has(item.id)) return false; seen.add(item.id); return true; }); }
 function applyEquipmentItem(slots: (Item | null)[], item: Item, indexes: number[]) {
@@ -865,7 +875,7 @@ export function applyAction(campaign: Campaign, action: Action): ActionResult {
     const from = { ...set.barrel }; set.barrel = { ...start }; set.barrelReturnUsed = true;
     emit(events, "barrel.returned", { id: set.id, from, to: { ...start } }, state); return { state, events, accepted: true, ticks: 0 };
   }
-  if (action.type === "wait") { tick(state, events); return { state, events, accepted: true, ticks: 1 }; }
+  if (action.type === "wait") { emit(events, "player.waited", {}, state); tick(state, events); return { state, events, accepted: true, ticks: 1 }; }
   if (action.type === "rest") { tick(state, events, true); return { state, events, accepted: true, ticks: 1 }; }
   if (action.type === "enter-stairs") {
     const stair = state.floor.entities.find((entity): entity is Extract<Entity, { kind: "stairs" }> => entity.kind === "stairs" && entity.x === state.player.x && entity.y === state.player.y);
@@ -944,7 +954,7 @@ export function applyAction(campaign: Campaign, action: Action): ActionResult {
     }
     tick(state, events); return { state, events, accepted: true, ticks: 1 };
   }
-  if (action.type === "ability") { if (!Number.isInteger(action.index) || action.index < 0 || action.index >= 3) return reject("invalid-ability-slot"); const abilityId = state.player.abilities[action.index]; const ability = abilityId ? abilityCatalog[abilityId] : null; if (!ability) return reject("empty-ability"); if (state.player.resources.mana.current < ability.manaCost) return reject("insufficient-mana"); const enemy = ability.kind === "wand" ? [...state.floor.entities.filter((entry): entry is Enemy => entry.kind === "enemy" && Math.abs(entry.x - state.player.x) + Math.abs(entry.y - state.player.y) <= ability.range)].sort((a, b) => Math.abs(a.x - state.player.x) + Math.abs(a.y - state.player.y) - Math.abs(b.x - state.player.x) - Math.abs(b.y - state.player.y) || a.id.localeCompare(b.id))[0] : null; if (ability.kind === "wand" && !enemy) return reject("no-valid-target"); changeResource(state, events, "mana", state.player.resources.mana.current - ability.manaCost, "ability"); emit(events, "ability.used", { id: ability.id, abilityId: ability.id, title: ability.title, manaCost: ability.manaCost, target: ability.target, targetId: enemy?.id, position: { x: state.player.x, y: state.player.y } }, state); return { state, events, accepted: true, ticks: 0 }; }
+  if (action.type === "ability") { if (!Number.isInteger(action.index) || action.index < 0 || action.index >= 3) return reject("invalid-ability-slot"); const abilityId = state.player.abilities[action.index]; const ability = abilityId ? abilityCatalog[abilityId] : null; if (!ability) return reject("empty-ability"); if (ability.kind === "heal" && state.player.resources.health.current >= state.player.resources.health.currentMax) return reject("health-full"); if (state.player.resources.mana.current < ability.manaCost) return reject("insufficient-mana"); const enemy = ability.kind === "wand" ? [...state.floor.entities.filter((entry): entry is Enemy => entry.kind === "enemy" && Math.abs(entry.x - state.player.x) + Math.abs(entry.y - state.player.y) <= ability.range && hasClearCardinalLine(state.floor, state.player, entry))].sort((a, b) => Math.abs(a.x - state.player.x) + Math.abs(a.y - state.player.y) - Math.abs(b.x - state.player.x) - Math.abs(b.y - state.player.y) || a.id.localeCompare(b.id))[0] : null; if (ability.kind === "wand" && !enemy) return reject("no-valid-target"); changeResource(state, events, "mana", state.player.resources.mana.current - ability.manaCost, "ability"); emit(events, "ability.used", { id: ability.id, abilityId: ability.id, title: ability.title, manaCost: ability.manaCost, target: ability.target, targetId: enemy?.id, position: { x: state.player.x, y: state.player.y } }, state); return { state, events, accepted: true, ticks: 0 }; }
   if (action.type === "resolve-ability") { const ability = abilityCatalog[action.abilityId]; if (!ability) return reject("unknown-ability"); if (ability.kind === "heal") changeResource(state, events, "health", state.player.resources.health.current + ability.amount, "heal"); else { const target = state.floor.entities.find((entry): entry is Enemy => entry.kind === "enemy" && entry.id === action.targetId); if (target) { const health = target.resources.health; const damage = integerDamage(ability.damage); const previousHealth = health.current; health.current = Math.max(0, health.current - damage); target.hp = health.current; emit(events, "combat.hit", { target: target.name, targetId: target.id, targetPosition: { x: target.x, y: target.y }, damage, previousHealth, currentHealth: health.current, source: ability.id }, state); if (health.current <= 0) { state.floor.entities = state.floor.entities.filter((entry) => entry.id !== target.id); gainXp(state, events, target.resources.xp.current, "kill"); emit(events, "enemy.defeated", { name: target.name, xp: target.resources.xp.current }, state); } } } tick(state, events); return { state, events, accepted: true, ticks: 1 }; }
   if (action.type === "assign-ability") { const { from, to } = action; if (![from, to].every((index) => Number.isInteger(index) && index >= 0 && index < 3) || from === to) return reject("invalid-ability-slot"); [state.player.abilities[from], state.player.abilities[to]] = [state.player.abilities[to], state.player.abilities[from]]; emit(events, "ability.assignment.changed", { from, to }, state); tick(state, events); return { state, events, accepted: true, ticks: 1 }; }
   if (action.type === "assign-quick-slot") {

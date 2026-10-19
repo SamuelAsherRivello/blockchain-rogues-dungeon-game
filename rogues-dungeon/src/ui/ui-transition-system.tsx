@@ -31,8 +31,10 @@ interface CompletedUiMotion {
 
 export type UiMotionStyle = CSSProperties;
 export type UiIrisPhase = "open" | "closing" | "closed" | "opening";
+export type UiCutscenePhase = UiIrisPhase;
 
 export const defaultIrisTransition = Object.freeze({ durationMs: 350 });
+export const defaultCutsceneTransition = Object.freeze({ durationMs: 500 });
 
 const uiTweenSystem = new TweenAnimationSystem();
 const reduceMotion = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
@@ -44,10 +46,12 @@ const toStyle = (motion: CompletedUiMotion): UiMotionStyle => ({ transform: `tra
  * or vertical position, opacity, and explicit stacking depth. New targets
  * cancel the in-flight tween and continue from its current visual value.
  */
-export function useUiMotion(_kind: UiAnimationKind, target: UiMotion, duration = 250, easing: TweenEasing = easeOutCubic): UiMotionStyle {
+export function useUiMotion(_kind: UiAnimationKind, target: UiMotion, duration = 250, easing: TweenEasing = easeOutCubic, onComplete?: () => void): UiMotionStyle {
   const targetMotion = complete(target);
   const current = useRef(targetMotion);
   const cancel = useRef<(() => void) | null>(null);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
   const [style, setStyle] = useState(() => toStyle(targetMotion));
   const targetKey = `${targetMotion.x},${targetMotion.xOffsetRem},${targetMotion.xOffsetPx},${targetMotion.y},${targetMotion.opacity},${targetMotion.scale},${targetMotion.depth},${targetMotion.leftPercent},${targetMotion.leftOffsetRem},${targetMotion.widthPercent}`;
 
@@ -60,6 +64,7 @@ export function useUiMotion(_kind: UiAnimationKind, target: UiMotion, duration =
     if (reduceMotion()) {
       current.current = next;
       setStyle(toStyle(next));
+      onCompleteRef.current?.();
       return undefined;
     }
     const started = performance.now();
@@ -84,7 +89,7 @@ export function useUiMotion(_kind: UiAnimationKind, target: UiMotion, duration =
         current.current = value;
         setStyle(toStyle(value));
       },
-      onComplete() { current.current = next; },
+      onComplete() { current.current = next; onCompleteRef.current?.(); },
     });
     cancel.current = stop;
     return () => {
@@ -109,3 +114,16 @@ export function UiIrisTransition({ phase, label = "Loading world", onPhaseComple
   const covered = phase === "closing" || phase === "closed";
   return <div className={`ui_iris_transition ui_iris_transition--${phase}`} style={{ "--ui-transition-duration": `${defaultIrisTransition.durationMs}ms` } as CSSProperties} aria-live="polite" aria-busy={covered}>{covered && <span>{label}</span>}</div>;
 }
+
+/** Cover only the game view with cinematic top and bottom bars. */
+export function UiCutsceneTransition({ phase, onPhaseComplete }: { phase: UiCutscenePhase; onPhaseComplete?(phase: UiCutscenePhase): void }) {
+  useEffect(() => {
+    if (phase !== "closing" && phase !== "opening") return undefined;
+    const delay = reduceMotion() ? 0 : defaultCutsceneTransition.durationMs;
+    const timer = window.setTimeout(() => onPhaseComplete?.(phase), delay);
+    return () => window.clearTimeout(timer);
+  }, [onPhaseComplete, phase]);
+  return <div className={`ui_cutscene_transition ui_cutscene_transition--${phase}`} style={{ "--ui-transition-duration": `${defaultCutsceneTransition.durationMs}ms` } as CSSProperties} aria-hidden="true"><span className="ui_cutscene_transition__bar ui_cutscene_transition__bar--top" /><span className="ui_cutscene_transition__bar ui_cutscene_transition__bar--bottom" /></div>;
+}
+
+export const UiPassiveTransition = UiCutsceneTransition;

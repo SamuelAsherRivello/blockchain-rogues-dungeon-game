@@ -1,9 +1,9 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cloneElement, isValidElement, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { findTooltipPosition } from "./tooltip-position.ts";
+import { findTooltipPosition, type TooltipPlacement } from "./tooltip-position.ts";
 
-export function Tooltip({ content, children }: { content: ReactNode; children: ReactNode }) {
+export function Tooltip({ content, children, placement = "side" }: { content: ReactNode; children: ReactNode; placement?: TooltipPlacement }) {
   const anchorRef = useRef<HTMLElement | SVGElement | null>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [hovered, setHovered] = useState(false);
@@ -20,7 +20,7 @@ export function Tooltip({ content, children }: { content: ReactNode; children: R
         const uiLayer = document.getElementById("ui_layer");
         const bounds = viewportElement?.getBoundingClientRect();
         if (bounds && uiLayer) {
-          const result = findTooltipPosition({ left: 0, top: 0, right: bounds.width, bottom: bounds.height, originLeft: bounds.left, originTop: bounds.top }, anchorRef.current.getBoundingClientRect(), tooltipRef.current.getBoundingClientRect());
+          const result = findTooltipPosition({ left: 0, top: 0, right: bounds.width, bottom: bounds.height, originLeft: bounds.left, originTop: bounds.top }, anchorRef.current.getBoundingClientRect(), tooltipRef.current.getBoundingClientRect(), placement === "below" ? 5 : 8, placement);
           setPosition({ left: result.left, top: result.top });
         }
       }
@@ -36,7 +36,7 @@ export function Tooltip({ content, children }: { content: ReactNode; children: R
       window.removeEventListener("resize", update);
       window.removeEventListener("scroll", update, true);
     };
-  }, [visible, content]);
+  }, [visible, content, placement]);
 
   if (!isValidElement<HTMLAttributes<HTMLElement | SVGElement>>(children)) return children ?? null;
   const originalEnter = children.props.onPointerEnter;

@@ -31,21 +31,25 @@ export const AUDIO_ASSETS = Object.freeze({
     stairs: `${baseUrl}assets/audio/sfx/stairs.ogg`,
     accepted: `${baseUrl}assets/audio/sfx/ui_accept.ogg`,
     rejected: `${baseUrl}assets/audio/sfx/ui_reject.ogg`,
-    ability: `${baseUrl}assets/audio/sfx/ability.ogg`,
+    menuClick: `${baseUrl}assets/audio/sfx/pickup-click.wav`,
+    magicHeal: `${baseUrl}assets/audio/sfx/magic-heal.ogg`,
+    magicWand: `${baseUrl}assets/audio/sfx/magic-wand.ogg`,
+    magicAncient: `${baseUrl}assets/audio/sfx/magic-teleport.ogg`,
     barrelSlide: `${baseUrl}assets/audio/sfx/barrel-slide.wav`,
     crateHit: `${baseUrl}assets/audio/sfx/crate-hit.wav`,
+    diceRoll: `${baseUrl}assets/audio/sfx/dice-roll.mp3`,
   }),
 });
 
 const eventCues: Readonly<Partial<Record<string, keyof typeof AUDIO_ASSETS.sfx>>> = Object.freeze({
   "player.moved": "footstep",
+  "player.waited": "footstep",
   "enemy.defeated": "enemyFall",
   "potion.consumed": "potion",
   "item.collected": "pickupClick",
   "chest.opened": "chest",
-  "crate.bumped": "crateHit",
+  "crate.bumped": "inventory",
   "realm.entered": "stairs",
-  "ability.used": "ability",
   "barrel.pushed": "barrelSlide",
   "floor-trigger.changed": "barrelSlide",
   "xp.level.changed": "accepted",
@@ -57,6 +61,7 @@ const SFX_VOLUME_MULTIPLIERS: Readonly<Partial<Record<keyof typeof AUDIO_ASSETS.
   inventory: 0.5,
   barrelSlide: 0.45,
   crateHit: 0.5,
+  diceRoll: 0.8,
 });
 
 function readVolume(value: unknown, fallback: number) { return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 100 ? value : fallback; }
@@ -89,7 +94,6 @@ export function createAudioManager({ search = "", createAudio = (src) => new Aud
   const prewarmedMusic: AudioHandle[] = [];
   const prewarmedSfx = new Map<keyof typeof AUDIO_ASSETS.sfx, AudioHandle[]>();
   const nextSfxHandle = new Map<keyof typeof AUDIO_ASSETS.sfx, number>();
-  let lastFootstepAt = -Infinity;
   let warmupComplete = hardMuted;
   let warmup: Promise<void> | null = null;
 
@@ -123,10 +127,6 @@ export function createAudioManager({ search = "", createAudio = (src) => new Aud
     // preserves the user-gesture authorization that unlocked audio. Waiting for
     // canplay here loses that authorization on slower connections.
     prewarm();
-    if (cue === "footstep") {
-      if (now - lastFootstepAt < 90) return false;
-      lastFootstepAt = now;
-    }
     const handles = prewarmedSfx.get(cue);
     if (!handles?.length) return false;
     const index = nextSfxHandle.get(cue) ?? 0;
@@ -142,6 +142,9 @@ export function createAudioManager({ search = "", createAudio = (src) => new Aud
     for (const event of events) {
       if (event.outcome === "rejected") continue;
       let cue = eventCues[event.type];
+      if (event.type === "ability.used") {
+        cue = event.facts?.abilityId === "heal" ? "magicHeal" : event.facts?.abilityId === "wand" ? "magicWand" : "magicAncient";
+      }
       if (event.type === "combat.hit" && !event.facts?.source) cue = "weaponHit";
       if (event.type === "resource.changed" && event.facts?.cause === "enemy-attack") cue = "enemyHit";
       if (cue) playCue(cue);
