@@ -36,7 +36,9 @@ export const AUDIO_ASSETS = Object.freeze({
     magicWand: `${baseUrl}assets/audio/sfx/magic-wand.ogg`,
     magicAncient: `${baseUrl}assets/audio/sfx/magic-teleport.ogg`,
     barrelSlide: `${baseUrl}assets/audio/sfx/barrel-slide.wav`,
-    crateHit: `${baseUrl}assets/audio/sfx/crate-hit.wav`,
+    crateHit01: `${baseUrl}assets/audio/sfx/wood-hit-01.ogg`,
+    crateHit02: `${baseUrl}assets/audio/sfx/wood-hit-02.ogg`,
+    crateHit03: `${baseUrl}assets/audio/sfx/wood-hit-03.ogg`,
     diceRoll: `${baseUrl}assets/audio/sfx/dice-roll.mp3`,
   }),
 });
@@ -48,7 +50,6 @@ const eventCues: Readonly<Partial<Record<string, keyof typeof AUDIO_ASSETS.sfx>>
   "potion.consumed": "potion",
   "item.collected": "pickupClick",
   "chest.opened": "chest",
-  "crate.bumped": "inventory",
   "realm.entered": "stairs",
   "barrel.pushed": "barrelSlide",
   "floor-trigger.changed": "barrelSlide",
@@ -60,7 +61,9 @@ const SFX_VOLUME_MULTIPLIERS: Readonly<Partial<Record<keyof typeof AUDIO_ASSETS.
   key: 0.5,
   inventory: 0.5,
   barrelSlide: 0.45,
-  crateHit: 0.5,
+  crateHit01: 0.5,
+  crateHit02: 0.5,
+  crateHit03: 0.5,
   diceRoll: 0.8,
 });
 
@@ -142,6 +145,10 @@ export function createAudioManager({ search = "", createAudio = (src) => new Aud
     for (const event of events) {
       if (event.outcome === "rejected") continue;
       let cue = eventCues[event.type];
+      if (event.type === "crate.bumped") {
+        const crateHitCues = ["crateHit01", "crateHit02", "crateHit03"] as const;
+        cue = crateHitCues[Math.min(crateHitCues.length - 1, Math.floor(random() * crateHitCues.length))];
+      }
       if (event.type === "ability.used") {
         cue = event.facts?.abilityId === "heal" ? "magicHeal" : event.facts?.abilityId === "wand" ? "magicWand" : "magicAncient";
       }

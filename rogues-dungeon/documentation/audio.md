@@ -19,7 +19,7 @@ When the main menu opens, the audio manager begins loading every known music and
 | Diegetic | Player moves one tile | `sfx/footstep.ogg` | `sfx100v2_footstep_01.ogg` | Quiet stone step; rate-limited during held movement |
 | Diegetic | Player waits one turn | `sfx/footstep.ogg` | `sfx100v2_footstep_01.ogg` | Same quiet stone step used for movement |
 | Diegetic | Player successfully pushes a barrel | `sfx/barrel-slide.wav` | Procedurally synthesized for Rogue's Dungeon | 0.28-second muted wood-and-stone slide |
-| Diegetic | Player hits a crate | `sfx/crate-hit.wav` | Procedurally synthesized for Rogue's Dungeon | 0.18-second wooden knock |
+| Diegetic | Player hits a crate | `sfx/wood-hit-01.ogg`, `sfx/wood-hit-02.ogg`, `sfx/wood-hit-03.ogg` | `bfh1_wood_hit_01/02/03.ogg` from [75 CC0 breaking / falling / hit sfx](https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx), CC0 | Randomly selected short wooden impacts |
 | Diegetic | Player hits an enemy | `sfx/weapon_hit.ogg` | `sfx100v2_metal_hit_01.ogg` | Brief weapon impact |
 | Diegetic | Enemy hits the player | `sfx/enemy_hit.ogg` | `sfx100v2_hit_01.ogg` | Muted impact |
 | Diegetic | Enemy is defeated | `sfx/enemy_fall.ogg` | `sfx100v2_hit_02.ogg` | Short defeat cue |
@@ -40,7 +40,7 @@ When the main menu opens, the audio manager begins loading every known music and
 | Non-diegetic | Generic or future ability activation | `sfx/magic-teleport.ogg` | [Spell sounds](https://opengameart.org/content/spell-sounds), teleport.ogg by Augmentality / Brandon Morris; CC0 | Ancient, resonant magic fallback |
 | Non-diegetic | Character attributes are rerolled | `sfx/dice-roll.mp3` | User-supplied `DiceRoll01.mp3` | Dice roll during character creation |
 
-Fourteen OGG SFX are selected from rubberduck's **100 CC0 SFX #2** pack on [OpenGameArt](https://opengameart.org/content/100-cc0-sfx-2), licensed CC0. The additional `pickup-click.wav` is the CC0 click by qubodup listed above. `barrel-slide.wav` and `crate-hit.wav` are original, procedurally synthesized effects. The source archives are not shipped; only the listed files are included. Original entry names are recorded to make each selection traceable.
+Fourteen OGG SFX are selected from rubberduck's **100 CC0 SFX #2** pack on [OpenGameArt](https://opengameart.org/content/100-cc0-sfx-2), licensed CC0. The three crate-hit variations come from rubberduck's [75 CC0 breaking / falling / hit sfx](https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx), also licensed CC0. The additional `pickup-click.wav` is the CC0 click by qubodup listed above. `barrel-slide.wav` and `crate-hit.wav` are original, procedurally synthesized effects. The source archives are not shipped; only the listed files are included. Original entry names are recorded to make each selection traceable.
 
 ## Music Tracks
 

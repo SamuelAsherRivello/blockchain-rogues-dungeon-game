@@ -9,7 +9,7 @@ import {
   createSpriteRenderer, createSurface, disposeEngine, disposeSpriteAtlas, disposeSpriteRenderer, disposeSurface,
   enableSprite2DYSort, loadTexture2D, registerSpriteRenderer, releaseTexture, resizeSurface, setSprite2DShaderParams, startEngine, updateDynamicTexture, updateSprite2D,
 } from "@babylonjs/lite";
-import { getCameraCenter, getMouseScreenEdgeExit, getVisibleWorldCellBounds, getWorldCellAtScreenPosition, getWorldCellScreenCenter, getWorldScreenPosition, isWorldCellVisible, WorldRender } from "./world-render-system.ts";
+import { getCameraCenter, getMouseScreenEdgeExit, getVisibleWorldCellBounds, getWorldCellAtScreenPosition, getWorldCellScreenCenter, getWorldScreenPosition, isWorldCellVisible, isWorldChunkVisible, WorldRender } from "./world-render-system.ts";
 import { getRenderedTileCssSize } from "../../content/world/zoom.ts";
 import { pixelPerfectOptions } from "../../content/babylon/config.ts";
 import { getInitializationMessage } from "../../content/babylon/initialization.ts";
@@ -538,8 +538,23 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
         const heroFrameIndexes = new Map(heroAtlasPaths.map((path, index) => [path, index]));
         const enemyFrameIndexes = new Map(enemyAtlasPaths.map((path, index) => [path, index]));
         const model = WorldRender.Render({ cells: campaign.floor.cells, entities: campaign.floor.entities, decorations: campaign.floor.decorations, objectSets: campaign.floor.objectSets, player: campaign.player, start: campaign.floor.start, groundTiles: campaign.floor.tiledGrounds, wallTiles: campaign.floor.tiledWalls, view: minimap ? "minimap" : "game", detail: minimap ? "simplified" : "full" });
-        const terrainLayer = createSprite2DLayer(tileAtlas, { pivot: [0.5, 0.5], order: TERRAIN_RENDER_ORDER });
-        const wallLayers = Array.from({ length: model.height }, () => createSprite2DLayer(tileAtlas, { pivot: [0.5, 0.5] }));
+        // Static tiles are allocated once into fixed-size chunks.  A chunk is a
+        // renderer-level culling boundary: hidden chunks have no draw work and
+        // do not receive view updates while the camera is elsewhere.
+        const staticChunkSize = 16;
+        const staticChunks = new Map<string, { minX: number; maxX: number; minY: number; maxY: number; terrain: Sprite2DLayer; walls: Sprite2DLayer }>();
+        const chunkFor = (x: number, y: number) => {
+          const chunkX = Math.floor(x / staticChunkSize); const chunkY = Math.floor(y / staticChunkSize); const key = `${chunkX},${chunkY}`;
+          let chunk = staticChunks.get(key);
+          if (!chunk) {
+            chunk = { minX: chunkX * staticChunkSize, maxX: chunkX * staticChunkSize + staticChunkSize - 1, minY: chunkY * staticChunkSize, maxY: chunkY * staticChunkSize + staticChunkSize - 1, terrain: createSprite2DLayer(tileAtlas, { pivot: [0.5, 0.5], order: TERRAIN_RENDER_ORDER }), walls: createSprite2DLayer(tileAtlas, { pivot: [0.5, 0.5] }) };
+            staticChunks.set(key, chunk);
+          }
+          return chunk;
+        };
+        model.grounds.forEach((tile) => { const chunk = chunkFor(tile.x, tile.y); addSprite2D(chunk.terrain, { positionPx: tile.frame === null ? [-10000, -10000] : [tile.worldX, tile.worldY], sizePx: [32, 32], frame: tile.frame ?? 0 }); });
+        model.walls.forEach((tile) => { const chunk = chunkFor(tile.x, tile.y); addSprite2D(chunk.walls, { positionPx: tile.frame === null ? [-10000, -10000] : [tile.worldX, tile.worldY], sizePx: [32, 32], frame: tile.frame ?? 0 }); });
+        const staticChunkList = [...staticChunks.values()];
         const debugLayer = createSprite2DLayer(debugAtlas, { pivot: [0.5, 0.5] });
         const pivotMarkerLayer = createSprite2DLayer(pivotAtlas, { pivot: [0.5, 0.5] });
         debugLayer.order = OVERLAY_RENDER_ORDER;
@@ -565,8 +580,6 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
           { handle: addSprite2D(playerLayers.main, { positionPx: [-10000, -10000], sizePx: [32, 48], frame: 0 }), offsetPx: [-1, 6] },
           { handle: addSprite2D(playerLayers.shadow, { positionPx: [-10000, -10000], sizePx: [32, 32], frame: heroFrameIndexes.get(heroShadowPath) ?? 0 }), offsetPx: [0, -5] },
         ) : null;
-        const terrainHandles = model.grounds.map(({ worldX, worldY, frame }) => addSprite2D(terrainLayer, { positionPx: frame === null ? [-10000, -10000] : [worldX, worldY], sizePx: [32, 32], frame: frame ?? 0 }));
-        const wallHandles = model.walls.map(({ y, worldX, worldY, frame }) => addSprite2D(wallLayers[y], { positionPx: frame === null ? [-10000, -10000] : [worldX, worldY], sizePx: [32, 32], frame: frame ?? 0 }));
         const debugHandles = [...model.diagnostics, ...model.wallDiagnostics].map(({ worldX, worldY }) => addSprite2D(debugLayer, { positionPx: [worldX, worldY], sizePx: [32, 32], frame: 0 }));
         const actors: Record<EnemyIdleAnimationName, CharacterSprite[]> = { rat: [], skeleton: [] };
         const actorPivotMarkers: Record<EnemyIdleAnimationName, Sprite2DHandle[][]> = { rat: [], skeleton: [] };
@@ -606,17 +619,21 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
         const particles = particleLayers.map((layer) => addSprite2D(layer, { positionPx: [-10000,-10000], sizePx: [32,32], frame: 0 }));
         const projectiles = projectileLayers.map((layer) => addSprite2D(layer, { positionPx: [-10000,-10000], sizePx: [16,16], frame: 1 }));
         const projectileStartedAt = new Map<string, number>();
-        const viewLayers = [terrainLayer, ...triggerLayers, ...wallLayers, debugLayer, ...itemLayers.flatMap((layers) => [layers.shadow, layers.main]), ...chestLayers.flatMap((layers) => [layers.shadow, layers.main]), ...closedCrateLayers, ...openCrateLayers, ...doorLayers, ...barrelLayers.flatMap((layers) => [layers.shadow, layers.main]), ...goldCoinLayers.flatMap((layers) => [layers.shadow, layers.main]), ...chestCoinLayers, ...torchLayers, ...trapLayers, ...campfireLayers, ...stairLayers, ...projectileLayers, ...particleLayers, ...actorLayers.rat.flatMap((layers) => [layers.shadow, layers.main]), ...actorLayers.skeleton.flatMap((layers) => [layers.shadow, layers.main]), ...(playerLayers ? [playerLayers.shadow, playerLayers.main] : []), pivotMarkerLayer];
+        const staticLayers = staticChunkList.flatMap((chunk) => [chunk.terrain, chunk.walls]);
+        const viewLayers = [...staticLayers, ...triggerLayers, debugLayer, ...itemLayers.flatMap((layers) => [layers.shadow, layers.main]), ...chestLayers.flatMap((layers) => [layers.shadow, layers.main]), ...closedCrateLayers, ...openCrateLayers, ...doorLayers, ...barrelLayers.flatMap((layers) => [layers.shadow, layers.main]), ...goldCoinLayers.flatMap((layers) => [layers.shadow, layers.main]), ...chestCoinLayers, ...torchLayers, ...trapLayers, ...campfireLayers, ...stairLayers, ...projectileLayers, ...particleLayers, ...actorLayers.rat.flatMap((layers) => [layers.shadow, layers.main]), ...actorLayers.skeleton.flatMap((layers) => [layers.shadow, layers.main]), ...(playerLayers ? [playerLayers.shadow, playerLayers.main] : []), pivotMarkerLayer];
         // Terrain and overlays use fixed passes. Every participating world layer
         // receives a shared order below, while its own sprites retain stable Y sort.
-        viewLayers.filter((layer) => layer !== terrainLayer && layer !== debugLayer && layer !== pivotMarkerLayer).forEach((layer) => enableSprite2DYSort(layer));
+        viewLayers.filter((layer) => !staticLayers.includes(layer) && layer !== debugLayer && layer !== pivotMarkerLayer).forEach((layer) => enableSprite2DYSort(layer));
+        // Pools start dormant.  A draw only reactivates layers with a visible
+        // occupant, so hidden pool capacity has neither a draw call nor camera
+        // transform work.
+        viewLayers.filter((layer) => !staticLayers.includes(layer) && layer !== debugLayer && layer !== pivotMarkerLayer && !(playerLayers && (layer === playerLayers.main || layer === playerLayers.shadow))).forEach((layer) => { layer.visible = false; });
         renderer = createSpriteRenderer(surface, { layers: viewLayers, clear: true, clearValue: clear });
         registerSpriteRenderer(renderer);
         let stairClipTopWorldY: number | null = null;
         const clearStairClip = () => { stairClipTopWorldY = null; };
         const beginStairClip = (origin: Position) => { stairClipTopWorldY = origin.y * 32 + 32; };
-        let renderedStaticGrounds = model.grounds;
-        let renderedStaticWalls = model.walls;
+        let visibleEnemyAnimationKeys = new Set<EnemyIdleAnimationName>();
         const draw = () => {
           const now = performance.now();
           const triggerDeltaMs = now - previousTriggerDrawAt;
@@ -645,17 +662,13 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
           const centerX = cameraCenter.x * 32 + 16;
           const centerY = cameraCenter.y * 32 + 16;
           cameraTransform.positionPx = [centerX, centerY];
-          viewLayers.forEach((layer) => {
-            layer.view.zoom = viewScale;
-            centerSprite2DView(layer.view, cameraTransform.positionPx[0], cameraTransform.positionPx[1], renderWidth, renderHeight);
-          });
           if (playerLayers) {
             const clipY = stairClipTopWorldY === null ? -10000 : (stairClipTopWorldY - playerLayers.main.view.positionPx[1]) * playerLayers.main.view.zoom;
             const clipActive = stairClipTopWorldY === null ? 0 : 1;
             setSprite2DShaderParams(playerLayers.main, [clipY, 0, clipActive, 0]);
             setSprite2DShaderParams(playerLayers.shadow, [clipY, 0, clipActive, 0]);
           }
-          terrainLayer.order = TERRAIN_RENDER_ORDER;
+          staticChunkList.forEach((chunk) => { chunk.terrain.order = TERRAIN_RENDER_ORDER; });
           debugLayer.order = OVERLAY_RENDER_ORDER;
           pivotMarkerLayer.order = OVERLAY_RENDER_ORDER + 1;
           const worldDepthEntries: WorldDepthEntry[] = [];
@@ -663,20 +676,6 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
           const addLayerPairDepth = (id: string, y: number, tieBreak: number, shadow: Sprite2DLayer, main: Sprite2DLayer) => worldDepthEntries.push({ id, pass: GRID_RENDER_PASS.world, y, tieBreak, applyOrder: (order) => { shadow.order = order; main.order = order + 1; } });
           const addCharacterDepth = (id: string, y: number, character: CharacterSprite, bumpTieBreak = 0) => worldDepthEntries.push({ id, pass: GRID_RENDER_PASS.world, y, tieBreak: WORLD_TIE_BREAK.entity + bumpTieBreak, applyOrder: (order) => setCharacterSpriteOrder(character, order) });
           const addPickupDepth = (id: string, y: number, pickup: CharacterSprite) => worldDepthEntries.push({ id, pass: GRID_RENDER_PASS.world, y, tieBreak: WORLD_TIE_BREAK.pickup, applyOrder: (order) => setCharacterSpriteOrder(pickup, order) });
-          if (world.grounds !== renderedStaticGrounds || world.walls !== renderedStaticWalls) {
-            while (terrainHandles.length < world.grounds.length) terrainHandles.push(addSprite2D(terrainLayer, { positionPx: [-10000, -10000], sizePx: [32, 32], frame: 0 }));
-            while (wallHandles.length < world.walls.length) { const wall = world.walls[wallHandles.length]!; wallHandles.push(addSprite2D(wallLayers[wall.y]!, { positionPx: [-10000, -10000], sizePx: [32, 32], frame: 0 })); }
-            while (debugHandles.length < world.diagnostics.length + world.wallDiagnostics.length) debugHandles.push(addSprite2D(debugLayer, { positionPx: [-10000, -10000], sizePx: [32, 32], frame: 0 }));
-            world.grounds.forEach((tile, index) => updateSprite2D(terrainHandles[index], { positionPx: tile.frame === null ? [-10000, -10000] : [tile.worldX, tile.worldY], frame: tile.frame ?? 0 }));
-            terrainHandles.slice(world.grounds.length).forEach((sprite) => updateSprite2D(sprite, { positionPx: [-10000, -10000] }));
-            world.walls.forEach((tile, index) => updateSprite2D(wallHandles[index], { positionPx: tile.frame === null ? [-10000, -10000] : [tile.worldX, tile.worldY], frame: tile.frame ?? 0 }));
-            wallHandles.slice(world.walls.length).forEach((sprite) => updateSprite2D(sprite, { positionPx: [-10000, -10000] }));
-            [...world.diagnostics, ...world.wallDiagnostics].forEach((cell, index) => updateSprite2D(debugHandles[index], { positionPx: [cell.worldX, cell.worldY], frame: 0 }));
-            debugHandles.slice(world.diagnostics.length + world.wallDiagnostics.length).forEach((sprite) => updateSprite2D(sprite, { positionPx: [-10000, -10000] }));
-            renderedStaticGrounds = world.grounds;
-            renderedStaticWalls = world.walls;
-          }
-          for (const y of new Set(world.walls.map((wall) => wall.y))) addLayerDepth(`wall-row-${y}`, (y + 1) * 32, WORLD_TIE_BREAK.wall, wallLayers[y]!);
           const basePlayerHeading = turnPresentation?.headingOf("player", state.player.heading ?? "e") ?? state.player.heading ?? "e";
           const playerHeading = latestRef.current.stairDescentStartedAt !== null ? stairDescentHeading(basePlayerHeading) : basePlayerHeading;
           const desiredIdleAnimation = heroWarriorIdleAnimationForHeading(playerHeading);
@@ -691,34 +690,39 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
           if (playerSprite) { const positionPx: [number, number] = [playerPosition.x * 32 + 16, playerPosition.y * 32 + 16 + departureOffsetY]; const damageScale = (isMinimap ? 1 : turnPresentation?.damageScaleOf("player", now) ?? 1) * (1 - departureProgress * .15); updateCharacterSprite(playerSprite, positionPx, 0, { sizePx: [activeHeroFrame.widthPx * damageScale, activeHeroFrame.heightPx * damageScale], frame: heroFrameIndexes.get(activeHeroFrame.path) ?? 0, flipX: playerHeading === "w", color: [1, 1, 1, 1] }, playerMovementPulse, PLAYER_HOP_HEIGHT_PX, 1); addCharacterDepth("player", groundContactY(playerDepthPosition), playerSprite, turnPresentation?.bumpDepthTieBreakOf("player", now) ?? 0); updatePivotMarkers(playerPivotMarkers, playerSprite, positionPx, pivotsVisible); }
           const visibleBounds = getVisibleWorldCellBounds(cameraCenter, rect.width / cellSizeAt(rect), rect.height / cellSizeAt(rect));
           const dynamicVisible = (position: { x: number; y: number }) => isMinimap || isWorldCellVisible(position, visibleBounds);
-          wallLayers.forEach((layer, row) => { layer.visible = isMinimap || (row >= visibleBounds.minY - 1 && row <= visibleBounds.maxY + 1); });
+          staticChunkList.forEach((chunk) => {
+            const visible = isMinimap || isWorldChunkVisible(chunk, visibleBounds);
+            chunk.terrain.visible = visible; chunk.walls.visible = visible;
+            if (visible) addLayerDepth(`wall-chunk-${chunk.minX}-${chunk.minY}`, (chunk.maxY + 1) * 32, WORLD_TIE_BREAK.wall, chunk.walls);
+          });
           const byKind: Record<string, typeof world.actors> = { rat: world.actors.filter((actor) => actor.kind === "rat" && dynamicVisible(actor)), skeleton: world.actors.filter((actor) => actor.kind === "skeleton" && dynamicVisible(actor)) };
-          for (const key of Object.keys(actors) as EnemyIdleAnimationName[]) { const frame = activeEnemyAnimations[key].getState().frame; actors[key].forEach((character, i) => { const actor = byKind[key][i]; const position = actor && turnPresentation?.positionOf(actor.id, actor); if (!position) { hideCharacterSprite(character); updatePivotMarkers(actorPivotMarkers[key][i], character, [-10000, -10000], false); return; } const positionPx: [number, number] = [position.x * 32 + 16, position.y * 32 + 16]; const movementPulse = isMinimap ? 0 : turnPresentation?.movementPulseOf(actor.id, now) ?? 0; const damageScale = isMinimap ? 1 : turnPresentation?.damageScaleOf(actor.id, now) ?? 1; updateCharacterSprite(character, positionPx, 0, { sizePx: [frame.widthPx * damageScale, frame.heightPx * damageScale], frame: enemyFrameIndexes.get(frame.path) ?? 0, flipX: actor?.heading === "w" }, movementPulse); addCharacterDepth(actor.id, groundContactY(position), character, turnPresentation?.bumpDepthTieBreakOf(actor.id, now) ?? 0); updatePivotMarkers(actorPivotMarkers[key][i], character, positionPx, pivotsVisible); }); }
+          visibleEnemyAnimationKeys = new Set((Object.keys(byKind) as EnemyIdleAnimationName[]).filter((key) => byKind[key].length > 0));
+          for (const key of Object.keys(actors) as EnemyIdleAnimationName[]) { const frame = activeEnemyAnimations[key].getState().frame; actors[key].forEach((character, i) => { const actor = byKind[key][i]; const position = actor && turnPresentation?.positionOf(actor.id, actor); const visible = Boolean(position); actorLayers[key][i].main.visible = visible; actorLayers[key][i].shadow.visible = visible; if (!position) { hideCharacterSprite(character); updatePivotMarkers(actorPivotMarkers[key][i], character, [-10000, -10000], false); return; } const positionPx: [number, number] = [position.x * 32 + 16, position.y * 32 + 16]; const movementPulse = isMinimap ? 0 : turnPresentation?.movementPulseOf(actor.id, now) ?? 0; const damageScale = isMinimap ? 1 : turnPresentation?.damageScaleOf(actor.id, now) ?? 1; updateCharacterSprite(character, positionPx, 0, { sizePx: [frame.widthPx * damageScale, frame.heightPx * damageScale], frame: enemyFrameIndexes.get(frame.path) ?? 0, flipX: actor?.heading === "w" }, movementPulse); addCharacterDepth(actor.id, groundContactY(position), character, turnPresentation?.bumpDepthTieBreakOf(actor.id, now) ?? 0); updatePivotMarkers(actorPivotMarkers[key][i], character, positionPx, pivotsVisible); }); }
           const itemObjects = world.objects.filter((entity) => (entity.kind === "item" || entity.kind === "potion" || entity.kind === "key" || entity.kind === "discovery") && dynamicVisible(entity));
-          const chestObjects = world.objects.filter((entity) => entity.kind === "chest");
-          const closedCrateObjects = world.objects.filter((entity) => entity.kind === "crate" && !entity.opened);
-          const openCrateObjects = world.objects.filter((entity) => entity.kind === "crate" && entity.opened);
-          chests.forEach((sprite, i) => { const chestObject = chestObjects[i]; updateSprite2D(sprite.shadow, { positionPx: chestObject ? [chestObject.worldX, chestObject.worldY] : [-10000, -10000] }); updateSprite2D(sprite.main, { positionPx: chestObject ? [chestObject.worldX, chestObject.worldY + CHEST_MAIN_ART_ANCHOR_OFFSET_PX] : [-10000, -10000], sizePx: [32, chestObject?.opened ? 48 : 32], frame: chestObject?.opened ? 1 : 0 }); if (chestObject) addLayerPairDepth(chestObject.id, groundContactY(chestObject), WORLD_TIE_BREAK.pickup, chestLayers[i].shadow, chestLayers[i].main); });
-          closedCrates.forEach((sprite, i) => { const crate = closedCrateObjects[i]; updateSprite2D(sprite, { frame: OBJECTS_OVERLAY_CRATE_CLOSED_FRAME, positionPx: crate ? [crate.worldX, crate.worldY + 16] : [-10000, -10000] }); if (crate) addLayerDepth(crate.id, groundContactY(crate), WORLD_TIE_BREAK.prop, closedCrateLayers[i]); });
-          openCrates.forEach((sprite, i) => { const crate = openCrateObjects[i]; updateSprite2D(sprite, { frame: crate?.openFrame ?? 1, positionPx: crate ? [crate.worldX, crate.worldY + 16] : [-10000, -10000] }); if (crate) addLayerDepth(crate.id, groundContactY(crate), WORLD_TIE_BREAK.prop, openCrateLayers[i]); });
+          const chestObjects = world.objects.filter((entity) => entity.kind === "chest" && dynamicVisible(entity));
+          const closedCrateObjects = world.objects.filter((entity) => entity.kind === "crate" && !entity.opened && dynamicVisible(entity));
+          const openCrateObjects = world.objects.filter((entity) => entity.kind === "crate" && entity.opened && dynamicVisible(entity));
+          chests.forEach((sprite, i) => { const chestObject = chestObjects[i]; chestLayers[i].shadow.visible = Boolean(chestObject); chestLayers[i].main.visible = Boolean(chestObject); updateSprite2D(sprite.shadow, { positionPx: chestObject ? [chestObject.worldX, chestObject.worldY] : [-10000, -10000] }); updateSprite2D(sprite.main, { positionPx: chestObject ? [chestObject.worldX, chestObject.worldY + CHEST_MAIN_ART_ANCHOR_OFFSET_PX] : [-10000, -10000], sizePx: [32, chestObject?.opened ? 48 : 32], frame: chestObject?.opened ? 1 : 0 }); if (chestObject) addLayerPairDepth(chestObject.id, groundContactY(chestObject), WORLD_TIE_BREAK.pickup, chestLayers[i].shadow, chestLayers[i].main); });
+          closedCrates.forEach((sprite, i) => { const crate = closedCrateObjects[i]; closedCrateLayers[i].visible = Boolean(crate); updateSprite2D(sprite, { frame: OBJECTS_OVERLAY_CRATE_CLOSED_FRAME, positionPx: crate ? [crate.worldX, crate.worldY + 16] : [-10000, -10000] }); if (crate) addLayerDepth(crate.id, groundContactY(crate), WORLD_TIE_BREAK.prop, closedCrateLayers[i]); });
+          openCrates.forEach((sprite, i) => { const crate = openCrateObjects[i]; openCrateLayers[i].visible = Boolean(crate); updateSprite2D(sprite, { frame: crate?.openFrame ?? 1, positionPx: crate ? [crate.worldX, crate.worldY + 16] : [-10000, -10000] }); if (crate) addLayerDepth(crate.id, groundContactY(crate), WORLD_TIE_BREAK.prop, openCrateLayers[i]); });
           const activeItemThrows = latestRef.current.itemThrows.filter((throwItem) => !itemThrowExpired(throwItem, performance.now()));
           const flightIds = new Set(activeItemThrows.map((throwItem) => throwItem.id));
           const goldObjects = world.objects.filter((entity) => entity.kind === "gold" && !flightIds.has(entity.id) && dynamicVisible(entity));
           const stairObjects = world.objects.filter((entity) => entity.kind === "stairs");
-          items.forEach((pickup, i) => { const entity = itemObjects[i]; if (!entity) { hideCharacterSprite(pickup); return; } const kind = entity.kind as "item" | "potion" | "key" | "discovery"; const presentation = pickupMainArtPresentation(kind, entity.resource); const oscillationPx = isMinimap ? 0 : pickupOscillationOffset(now, presentation.oscillationAmplitudePx); const shadowWidthScale = presentation.shadowWidthScale * (isMinimap ? 1 : pickupShadowWidthScale(oscillationPx, presentation.oscillationAmplitudePx)); updateCharacterSprite(pickup, [entity.worldX, entity.worldY], 0, { frame: itemSpriteFrame(kind, entity.resource), sizePx: kind === "key" ? [16, 16] : [32, 32] }, 0, 0); updateSprite2D(pickup.shadow.handle, { sizePx: [32 * shadowWidthScale, 32 * presentation.shadowHeightScale] }); updateSprite2D(pickup.main.handle, { positionPx: [entity.worldX, entity.worldY + presentation.mainOffsetPx + oscillationPx] }); addPickupDepth(entity.id, groundContactY(entity), pickup); });
-          const doorObjects = world.puzzleObjects.filter((entity) => entity.kind === "door");
+          items.forEach((pickup, i) => { const entity = itemObjects[i]; itemLayers[i].shadow.visible = Boolean(entity); itemLayers[i].main.visible = Boolean(entity); if (!entity) { hideCharacterSprite(pickup); return; } const kind = entity.kind as "item" | "potion" | "key" | "discovery"; const presentation = pickupMainArtPresentation(kind, entity.resource); const oscillationPx = isMinimap ? 0 : pickupOscillationOffset(now, presentation.oscillationAmplitudePx); const shadowWidthScale = presentation.shadowWidthScale * (isMinimap ? 1 : pickupShadowWidthScale(oscillationPx, presentation.oscillationAmplitudePx)); updateCharacterSprite(pickup, [entity.worldX, entity.worldY], 0, { frame: itemSpriteFrame(kind, entity.resource), sizePx: kind === "key" ? [16, 16] : [32, 32] }, 0, 0); updateSprite2D(pickup.shadow.handle, { sizePx: [32 * shadowWidthScale, 32 * presentation.shadowHeightScale] }); updateSprite2D(pickup.main.handle, { positionPx: [entity.worldX, entity.worldY + presentation.mainOffsetPx + oscillationPx] }); addPickupDepth(entity.id, groundContactY(entity), pickup); });
+          const doorObjects = world.puzzleObjects.filter((entity) => entity.kind === "door" && dynamicVisible(entity));
           doors.forEach((sprite, i) => {
-            const door = doorObjects[i];
-            updateSprite2D(sprite, { frame: door ? puzzleObjectSpriteFrame(door.kind, door.active) : 0, positionPx: door ? [door.x * 32 + 16, door.y * 32 + 16 + doorMainArtAnchorOffset(door.active)] : [-10000,-10000], sizePx: [32, door ? 48 : 32] });
+            const door = doorObjects[i]; doorLayers[i].visible = Boolean(door);
+            updateSprite2D(sprite, { frame: door ? puzzleObjectSpriteFrame("door", door.active) : 0, positionPx: door ? [door.x * 32 + 16, door.y * 32 + 16 + doorMainArtAnchorOffset(door.active)] : [-10000,-10000], sizePx: [32, door ? 48 : 32] });
             if (door) addLayerDepth(door.id, groundContactY(door), WORLD_TIE_BREAK.prop, doorLayers[i]);
           });
-          const barrelObjects = world.puzzleObjects.filter((entity) => entity.kind === "barrel");
-          barrels.forEach((barrel, i) => { const entity = barrelObjects[i]; const position = entity && (turnPresentation?.positionOf(entity.id, entity) ?? entity); if (!position) { hideCharacterSprite(barrel); return; } const positionPx: [number, number] = [position.x * 32 + 16, position.y * 32 + 16]; updateCharacterSprite(barrel, positionPx, 0, { sizePx: [32, 32], frame: 0 }); addCharacterDepth(entity.id, groundContactY(position), barrel); });
-          const triggerObjects = world.puzzleObjects.filter((entity) => entity.kind === "trigger");
+          const barrelObjects = world.puzzleObjects.filter((entity) => entity.kind === "barrel" && dynamicVisible(entity));
+          barrels.forEach((barrel, i) => { const entity = barrelObjects[i]; const position = entity && (turnPresentation?.positionOf(entity.id, entity) ?? entity); barrelLayers[i].shadow.visible = Boolean(position); barrelLayers[i].main.visible = Boolean(position); if (!position) { hideCharacterSprite(barrel); return; } const positionPx: [number, number] = [position.x * 32 + 16, position.y * 32 + 16]; updateCharacterSprite(barrel, positionPx, 0, { sizePx: [32, 32], frame: 0 }); addCharacterDepth(entity.id, groundContactY(position), barrel); });
+          const triggerObjects = world.puzzleObjects.filter((entity) => entity.kind === "trigger" && dynamicVisible(entity));
           const liveTriggerIds = new Set(triggerObjects.map((trigger) => trigger.id));
           for (const [id, animation] of triggerAnimations) if (!liveTriggerIds.has(id)) { animation.dispose(); triggerAnimations.delete(id); }
           triggers.forEach((sprite, i) => {
-            const trigger = triggerObjects[i];
+            const trigger = triggerObjects[i]; triggerLayers[i].visible = Boolean(trigger);
             if (!trigger) { updateSprite2D(sprite, { positionPx: [-10000, -10000] }); return; }
             const animation = triggerAnimations.get(trigger.id) ?? createFloorTriggerAnimationEntity(import.meta.env.BASE_URL);
             triggerAnimations.set(trigger.id, animation);
@@ -731,23 +735,24 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
             updateSprite2D(sprite, { frame, positionPx: [trigger.worldX, trigger.worldY + 16], sizePx: [32, 32] });
           });
           const goldCoinFrame = Math.floor(performance.now() / 120) % goldCoinFramePaths.length;
-          goldCoins.forEach((pickup, i) => { const entity = goldObjects[i]; if (!entity) { hideCharacterSprite(pickup); return; } updateCharacterSprite(pickup, [entity.worldX, entity.worldY - 10], 0, { frame: goldCoinFrame }, 0, 0); updateSprite2D(pickup.shadow.handle, { positionPx: [entity.worldX, entity.worldY], sizePx: [16, 16], color: [1, 1, 1, 0.5] }); addPickupDepth(entity.id, groundContactY(entity), pickup); });
-          chestCoins.forEach((sprite, i) => { const throwItem = activeItemThrows[i]; const position = throwItem ? itemThrowPosition(throwItem, performance.now()) : null; updateSprite2D(sprite, { frame: goldCoinFrame, positionPx: position ? [position.x * 32 + 16, position.y * 32 + 16] : [-10000, -10000] }); if (position) addLayerDepth(throwItem!.id, groundContactY(position), WORLD_TIE_BREAK.effect, chestCoinLayers[i]); });
+          goldCoins.forEach((pickup, i) => { const entity = goldObjects[i]; goldCoinLayers[i].shadow.visible = Boolean(entity); goldCoinLayers[i].main.visible = Boolean(entity); if (!entity) { hideCharacterSprite(pickup); return; } updateCharacterSprite(pickup, [entity.worldX, entity.worldY - 10], 0, { frame: goldCoinFrame }, 0, 0); updateSprite2D(pickup.shadow.handle, { positionPx: [entity.worldX, entity.worldY], sizePx: [16, 16], color: [1, 1, 1, 0.5] }); addPickupDepth(entity.id, groundContactY(entity), pickup); });
+          chestCoins.forEach((sprite, i) => { const throwItem = activeItemThrows[i]; const position = throwItem ? itemThrowPosition(throwItem, performance.now()) : null; chestCoinLayers[i].visible = Boolean(position && dynamicVisible(position)); if (!position || !dynamicVisible(position)) return; updateSprite2D(sprite, { frame: goldCoinFrame, positionPx: [position.x * 32 + 16, position.y * 32 + 16] }); addLayerDepth(throwItem.id, groundContactY(position), WORLD_TIE_BREAK.effect, chestCoinLayers[i]); });
           const torchFrame = Math.floor(performance.now() / 200) % torchFramePaths.length;
-          const wallTorches = world.wallDecorations.filter((decoration) => decoration.kind === "torch");
-          const wallTraps = world.wallDecorations.filter((decoration) => decoration.kind === "trap");
-          torches.forEach((sprite, i) => { const decoration = wallTorches[i]; updateSprite2D(sprite, { frame: torchFrame, positionPx: decoration ? [decoration.worldX, decoration.worldY] : [-10000,-10000] }); if (decoration) addLayerDepth(decoration.id, groundContactY(decoration), WORLD_TIE_BREAK.decoration, torchLayers[i]); });
+          const wallTorches = world.wallDecorations.filter((decoration) => decoration.kind === "torch" && dynamicVisible(decoration));
+          const wallTraps = world.wallDecorations.filter((decoration) => decoration.kind === "trap" && dynamicVisible(decoration));
+          torches.forEach((sprite, i) => { const decoration = wallTorches[i]; torchLayers[i].visible = Boolean(decoration); updateSprite2D(sprite, { frame: torchFrame, positionPx: decoration ? [decoration.worldX, decoration.worldY] : [-10000,-10000] }); if (decoration) addLayerDepth(decoration.id, groundContactY(decoration), WORLD_TIE_BREAK.decoration, torchLayers[i]); });
           const trapFrame = trapFrameAt(performance.now());
-          traps.forEach((sprite, i) => { const decoration = wallTraps[i]; trapLayers[i].order = FLOOR_TRAP_RENDER_ORDER; updateSprite2D(sprite, { frame: trapFrame, positionPx: decoration ? [decoration.worldX, decoration.worldY] : [-10000,-10000] }); });
+          traps.forEach((sprite, i) => { const decoration = wallTraps[i]; trapLayers[i].visible = Boolean(decoration); trapLayers[i].order = FLOOR_TRAP_RENDER_ORDER; updateSprite2D(sprite, { frame: trapFrame, positionPx: decoration ? [decoration.worldX, decoration.worldY] : [-10000,-10000] }); });
           const campfireFrame = Math.floor(performance.now() / CAMPFIRE_IDLE_FRAME_DURATION_MS) % CAMPFIRE_IDLE_FRAME_COUNT;
-          const campfireObjects = world.objects.filter((entity) => entity.kind === "campfire");
-          campfires.forEach((sprite, i) => { const campfire = campfireObjects[i]; campfireLayers[i].order = FLOOR_TRAP_RENDER_ORDER; updateSprite2D(sprite, { frame: campfireFrame, positionPx: campfire ? [campfire.worldX, campfire.worldY] : [-10000, -10000] }); });
-          stairs.forEach((sprite, i) => { const entity = stairObjects[i]; updateSprite2D(sprite, { frame: DUNGEON_STAIR_UP_FRAME, positionPx: entity ? [entity.worldX, entity.worldY] : [-10000,-10000], flipY: entity?.direction === "back" }); if (entity) addLayerDepth(entity.id, groundContactY(entity), WORLD_TIE_BREAK.stair, stairLayers[i]); });
+          const campfireObjects = world.objects.filter((entity) => entity.kind === "campfire" && dynamicVisible(entity));
+          campfires.forEach((sprite, i) => { const campfire = campfireObjects[i]; campfireLayers[i].visible = Boolean(campfire); campfireLayers[i].order = FLOOR_TRAP_RENDER_ORDER; updateSprite2D(sprite, { frame: campfireFrame, positionPx: campfire ? [campfire.worldX, campfire.worldY] : [-10000, -10000] }); });
+          const visibleStairObjects = stairObjects.filter(dynamicVisible);
+          stairs.forEach((sprite, i) => { const entity = visibleStairObjects[i]; stairLayers[i].visible = Boolean(entity); updateSprite2D(sprite, { frame: DUNGEON_STAIR_UP_FRAME, positionPx: entity ? [entity.worldX, entity.worldY] : [-10000,-10000], flipY: entity?.direction === "back" }); if (entity) addLayerDepth(entity.id, groundContactY(entity), WORLD_TIE_BREAK.stair, stairLayers[i]); });
           const activeProjectiles = state.floor.projectiles ?? [];
           const activeProjectileIds = new Set(activeProjectiles.map((projectile) => projectile.id));
           for (const id of projectileStartedAt.keys()) if (!activeProjectileIds.has(id)) projectileStartedAt.delete(id);
           projectiles.forEach((sprite, index) => {
-            const projectile = activeProjectiles[index];
+            const projectile = activeProjectiles[index]; projectileLayers[index].visible = Boolean(projectile && dynamicVisible({ x: projectile.to.x, y: projectile.to.y }));
             if (!projectile) { updateSprite2D(sprite, { positionPx: [-10000, -10000] }); return; }
             const startedAt = projectileStartedAt.get(projectile.id) ?? now;
             projectileStartedAt.set(projectile.id, startedAt);
@@ -755,11 +760,19 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
             const x = projectile.from.x + (projectile.to.x - projectile.from.x) * progress;
             const y = projectile.from.y + (projectile.to.y - projectile.from.y) * progress;
             const rotation = projectile.direction === "s" ? Math.PI / 2 : projectile.direction === "w" ? Math.PI : projectile.direction === "n" ? -Math.PI / 2 : 0;
+            if (!dynamicVisible({ x, y })) return;
             updateSprite2D(sprite, { positionPx: [x * 32 + 16, y * 32 + 16], rotation });
             addLayerDepth(projectile.id, y * 32 + 16, WORLD_TIE_BREAK.effect, projectileLayers[index]!);
           });
           const activeParticles = latestRef.current.particleEffects.filter((effect) => !particleExpired(effect)).slice(-particleLayers.length);
-          particles.forEach((sprite, i) => { const effect = activeParticles[i]; const now = performance.now(); const progress = effect ? particleProgress(effect, now) : 0; const ramp = effect?.kind === "damage" ? particleOpacity(effect, now) : progress < .25 ? progress / .25 : progress > .75 ? (1 - progress) / .25 : 1; const target = effect?.targetId ? world.actors.find((actor) => actor.id === effect.targetId) ?? null : null; const position = effect ? particlePosition(effect, target, now) : null; const offscreen = !isMinimap && position && isPositionOffscreen(position, cameraCenter, rect.width / cellSizeAt(rect) / 2 + 1, rect.height / cellSizeAt(rect) / 2 + 1); const sizePx = effect ? particleSizePx(effect, now) : 32; const purple = effect?.kind === "heal" || effect?.kind === "wand"; const damage = effect?.kind === "damage"; if (effect?.kind === "heal" || (damage && progress < 1)) particleLayers[i].order = OVERLAY_RENDER_ORDER - 1; else if (damage) particleLayers[i].order = LANDED_DAMAGE_PARTICLE_RENDER_ORDER; else if (effect && position && !offscreen) addLayerDepth(effect.id, groundContactY(position), WORLD_TIE_BREAK.effect, particleLayers[i]); updateSprite2D(sprite, { positionPx: position && !offscreen ? [position.x * 32 + 16, position.y * 32 + 16] : [-10000, -10000], sizePx: [sizePx, sizePx], frame: effect ? particleFrame(effect, now) : 0, rotation: effect?.rotation, color: purple ? [.72, .48, 1, ramp] : damage ? [1, .16, .08, ramp] : [1, 1, 1, ramp] }); });
+          particles.forEach((sprite, i) => { const effect = activeParticles[i]; const now = performance.now(); const target = effect?.targetId ? world.actors.find((actor) => actor.id === effect.targetId) ?? null : null; const position = effect ? particlePosition(effect, target, now) : null; const offscreen = !isMinimap && position && isPositionOffscreen(position, cameraCenter, rect.width / cellSizeAt(rect) / 2 + 1, rect.height / cellSizeAt(rect) / 2 + 1); const visible = Boolean(effect && position && !offscreen); particleLayers[i].visible = visible; if (!visible || !effect || !position) return; const progress = particleProgress(effect, now); const ramp = effect.kind === "damage" ? particleOpacity(effect, now) : progress < .25 ? progress / .25 : progress > .75 ? (1 - progress) / .25 : 1; const sizePx = particleSizePx(effect, now); const purple = effect.kind === "heal" || effect.kind === "wand"; const damage = effect.kind === "damage"; if (effect.kind === "heal" || (damage && progress < 1)) particleLayers[i].order = OVERLAY_RENDER_ORDER - 1; else if (damage) particleLayers[i].order = LANDED_DAMAGE_PARTICLE_RENDER_ORDER; else addLayerDepth(effect.id, groundContactY(position), WORLD_TIE_BREAK.effect, particleLayers[i]); updateSprite2D(sprite, { positionPx: [position.x * 32 + 16, position.y * 32 + 16], sizePx: [sizePx, sizePx], frame: particleFrame(effect, now), rotation: effect.rotation, color: purple ? [.72, .48, 1, ramp] : damage ? [1, .16, .08, ramp] : [1, 1, 1, ramp] }); });
+          // Only active layers follow the camera. Hidden chunks and dormant
+          // sprite-pool entries are deliberately excluded from per-frame work.
+          viewLayers.forEach((layer) => {
+            if (!layer.visible) return;
+            layer.view.zoom = viewScale;
+            centerSprite2DView(layer.view, cameraTransform.positionPx[0], cameraTransform.positionPx[1], renderWidth, renderHeight);
+          });
           applyWorldDepth(worldDepthEntries);
         };
         let animationStarted = false;
@@ -772,7 +785,7 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
           const animate = (time: number) => {
             if (cancelled) return;
             activeHeroAnimation.update(Math.max(0, time - lastAnimationTime));
-            Object.values(activeEnemyAnimations).forEach((animation) => animation.update(Math.max(0, time - lastAnimationTime)));
+            visibleEnemyAnimationKeys.forEach((key) => activeEnemyAnimations[key].update(Math.max(0, time - lastAnimationTime)));
             lastAnimationTime = time;
             draw();
             if (acquired.isPrimary && onFpsChangeRef.current) {

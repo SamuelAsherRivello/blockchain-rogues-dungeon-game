@@ -46,7 +46,7 @@ test('music begins from the activating gesture before preloading completes', () 
 });
 
 test('committed simulation events map to one cue and rejected events stay quiet', async () => {
-  const fake = recorder(); const audio = createAudioManager({ createAudio: fake.createAudio });
+  const fake = recorder(); const audio = createAudioManager({ createAudio: fake.createAudio, random: () => 0 });
   audio.setPreferences({ sfxVolume: 80, musicVolume: 20, muteAll: false });
   await audio.prewarm();
   audio.playEvents([
@@ -71,8 +71,8 @@ test('committed simulation events map to one cue and rejected events stay quiet'
     { type: 'xp.level.changed', outcome: 'committed', facts: { level: 3 } },
     { type: 'combat.hit', outcome: 'rejected', facts: {} },
   ]);
-  assert.deepEqual(new Set(fake.made.filter(({ playCount }) => playCount > 0).map(({ src }) => src)), new Set([AUDIO_ASSETS.sfx.footstep, AUDIO_ASSETS.sfx.weaponHit, AUDIO_ASSETS.sfx.enemyHit, AUDIO_ASSETS.sfx.enemyFall, AUDIO_ASSETS.sfx.pickupClick, AUDIO_ASSETS.sfx.potion, AUDIO_ASSETS.sfx.chest, AUDIO_ASSETS.sfx.stairs, AUDIO_ASSETS.sfx.magicHeal, AUDIO_ASSETS.sfx.magicWand, AUDIO_ASSETS.sfx.magicAncient, AUDIO_ASSETS.sfx.barrelSlide, AUDIO_ASSETS.sfx.inventory, AUDIO_ASSETS.sfx.accepted]));
-  assert.equal(fake.made.filter(({ src }) => src === AUDIO_ASSETS.sfx.inventory).reduce((total, audio) => total + audio.playCount, 0), 2);
+  assert.deepEqual(new Set(fake.made.filter(({ playCount }) => playCount > 0).map(({ src }) => src)), new Set([AUDIO_ASSETS.sfx.footstep, AUDIO_ASSETS.sfx.weaponHit, AUDIO_ASSETS.sfx.enemyHit, AUDIO_ASSETS.sfx.enemyFall, AUDIO_ASSETS.sfx.pickupClick, AUDIO_ASSETS.sfx.potion, AUDIO_ASSETS.sfx.chest, AUDIO_ASSETS.sfx.stairs, AUDIO_ASSETS.sfx.magicHeal, AUDIO_ASSETS.sfx.magicWand, AUDIO_ASSETS.sfx.magicAncient, AUDIO_ASSETS.sfx.barrelSlide, AUDIO_ASSETS.sfx.crateHit01, AUDIO_ASSETS.sfx.accepted]));
+  assert.equal(fake.made.filter(({ src }) => src === AUDIO_ASSETS.sfx.crateHit01).reduce((total, audio) => total + audio.playCount, 0), 2);
   assert.equal(fake.made.filter(({ src }) => src === AUDIO_ASSETS.sfx.accepted).reduce((total, audio) => total + audio.playCount, 0), 2);
 });
 
@@ -94,10 +94,22 @@ test('each movement plays a footstep and bundled audio assets exist', async () =
   audio.playCue('inventory'); assert.equal(fake.made.find(({ src }) => src === AUDIO_ASSETS.sfx.inventory)?.volume, 0.4);
   const root = new URL('../public/assets/audio/', import.meta.url);
   const docs = await readFile(new URL('../documentation/audio.md', import.meta.url), 'utf8');
-  assert.equal(AUDIO_ASSETS.music.length, 3); assert.equal(Object.keys(AUDIO_ASSETS.sfx).length, 20);
+  assert.equal(AUDIO_ASSETS.music.length, 3); assert.equal(Object.keys(AUDIO_ASSETS.sfx).length, 22);
   for (const path of [...AUDIO_ASSETS.music, ...Object.values(AUDIO_ASSETS.sfx)]) {
     await access(new URL(path.replace(/^.*?assets\/audio\//, ''), root));
     assert.ok(docs.includes(path.split('/').at(-1)!), `missing provenance entry for ${path}`);
   }
   assert.match(docs, /Diegetic/); assert.match(docs, /Non-diegetic/); assert.match(docs, /CC0/);
+});
+
+test('crate bumps randomly choose among the three wood hit variations', async () => {
+  const fake = recorder(); const values = [0, 0.34, 0.99];
+  const audio = createAudioManager({ createAudio: fake.createAudio, random: () => values.shift() ?? 0 });
+  await audio.prewarm();
+  audio.playEvents([
+    { type: 'crate.bumped', outcome: 'committed', facts: {} },
+    { type: 'crate.bumped', outcome: 'committed', facts: {} },
+    { type: 'crate.bumped', outcome: 'committed', facts: {} },
+  ]);
+  assert.deepEqual(fake.made.filter(({ playCount }) => playCount > 0).map(({ src }) => src), [AUDIO_ASSETS.sfx.crateHit01, AUDIO_ASSETS.sfx.crateHit02, AUDIO_ASSETS.sfx.crateHit03]);
 });

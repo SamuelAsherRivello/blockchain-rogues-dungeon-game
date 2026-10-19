@@ -99,6 +99,11 @@ export function isWorldCellVisible(position: Position, bounds: WorldCellBounds) 
   return position.x >= bounds.minX && position.x <= bounds.maxX && position.y >= bounds.minY && position.y <= bounds.maxY;
 }
 
+/** True when a fixed static chunk intersects the camera cull rectangle. */
+export function isWorldChunkVisible(chunk: WorldCellBounds, bounds: WorldCellBounds) {
+  return !(chunk.maxX < bounds.minX || chunk.minX > bounds.maxX || chunk.maxY < bounds.minY || chunk.minY > bounds.maxY);
+}
+
 function clampCameraAxis(value: number, visibleSpan: number, mapSpan: number | undefined) {
   if (!Number.isFinite(mapSpan) || mapSpan! < visibleSpan) return value;
   const min = visibleSpan / 2 - 0.5;
