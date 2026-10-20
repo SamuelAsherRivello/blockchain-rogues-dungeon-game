@@ -85,9 +85,9 @@ function ItemComparisonItemPanel({ title, item, baseline }: { title: "Before" | 
 function ItemComparisonPanel({ before, after, destination }: { before: Item | null; after: Item; destination: Extract<DropDestination, { kind: "slot" }> }) {
   const target = document.querySelector<HTMLElement>(`[data-drop-group="${destination.group}"][data-drop-index="${destination.index}"]`);
   const rect = target?.getBoundingClientRect();
-  const targetPanel = target?.closest<HTMLElement>(".info-panel--primary");
-  const targetPanelRect = targetPanel?.getBoundingClientRect();
-  const style = rect && targetPanelRect ? { right: window.innerWidth - targetPanelRect.left + 10, top: rect.top + rect.height / 2, transform: "translateY(-50%)" } : undefined;
+  const inventoryPanel = document.querySelector<HTMLElement>(".info-panel__inventory-card");
+  const inventoryPanelRect = inventoryPanel?.getBoundingClientRect();
+  const style = rect && inventoryPanelRect ? { right: window.innerWidth - inventoryPanelRect.left + 10, top: rect.top + rect.height / 2, transform: "translateY(-50%)" } : undefined;
   return <aside className="item-comparison-panel" aria-label="Equipment comparison" style={style}><GameCard title="Item Comparison"><ItemComparisonItemPanel title="Before" item={before} baseline={before} /><ItemComparisonItemPanel title="After" item={after} baseline={before} /></GameCard></aside>;
 }export function stackInventoryItems(inventory: Item[]): InventoryStack[] {
   const stacks: InventoryStack[] = [];
