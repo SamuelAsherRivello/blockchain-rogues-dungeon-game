@@ -50,24 +50,43 @@
   </animation>
  </tile>
  <wangsets>
-  <wangset name="Dungeon room walls" type="mixed" tile="-1">
-   <wangcolor name="Walkable floor" color="#ff0000" tile="-1" probability="1"/>
+  <wangset name="Room frame" type="mixed" tile="-1">
+   <wangcolor name="Wall" color="#ff0000" tile="-1" probability="1"/>
    <wangtile tileid="0" wangid="0,0,1,1,1,0,0,0"/>
    <wangtile tileid="1" wangid="0,0,1,1,1,1,1,0"/>
    <wangtile tileid="5" wangid="0,0,0,0,1,1,1,0"/>
-   <wangtile tileid="6" wangid="1,1,1,0,1,1,1,1"/>
-   <wangtile tileid="8" wangid="1,1,1,1,1,0,1,1"/>
    <wangtile tileid="12" wangid="1,1,1,1,1,0,0,0"/>
    <wangtile tileid="13" wangid="1,1,1,1,1,1,1,1"/>
    <wangtile tileid="17" wangid="1,0,0,0,1,1,1,1"/>
-   <wangtile tileid="30" wangid="1,0,1,1,1,1,1,1"/>
-   <wangtile tileid="32" wangid="1,1,1,1,1,1,1,0"/>
    <wangtile tileid="48" wangid="1,1,1,0,0,0,0,0"/>
-   <wangtile tileid="49" wangid="1,1,1,0,0,0,1,1"/>
+   <wangtile tileid="52" wangid="1,1,1,0,0,0,1,1"/>
    <wangtile tileid="53" wangid="1,0,0,0,0,0,1,1"/>
    <properties>
-    <property name="tiled-ai:terrain-names" value="[&quot;Walkable floor&quot;]"/>
+   <property name="tiled-ai:terrain-names" value="[&quot;Wall&quot;]"/>
    </properties>
+  </wangset>
+  <wangset name="Void frame" type="mixed" tile="-1">
+   <wangcolor name="Wall" color="#ff0000" tile="-1" probability="1"/>
+   <wangtile tileid="6" wangid="0,0,1,1,1,0,0,0"/>
+   <wangtile tileid="7" wangid="0,0,1,1,1,1,1,0"/>
+   <wangtile tileid="8" wangid="0,0,0,0,1,1,1,0"/>
+   <wangtile tileid="18" wangid="1,1,1,1,1,0,0,0"/>
+   <wangtile tileid="19" wangid="1,1,1,1,1,1,1,1"/>
+   <wangtile tileid="20" wangid="1,0,0,0,1,1,1,1"/>
+   <wangtile tileid="30" wangid="1,1,1,0,0,0,0,0"/>
+   <wangtile tileid="31" wangid="1,1,1,0,0,0,1,1"/>
+   <wangtile tileid="32" wangid="1,0,0,0,0,0,1,1"/>
+  </wangset>
+  <wangset name="Details" type="mixed" tile="-1">
+   <wangcolor name="Details" color="#ff0000" tile="-1" probability="1"/>
+   <wangtile tileid="9" wangid="0,0,0,0,1,0,0,0"/>
+   <wangtile tileid="11" wangid="1,0,0,0,1,1,1,0"/>
+   <wangtile tileid="21" wangid="1,0,0,0,1,0,0,0"/>
+   <wangtile tileid="23" wangid="1,0,1,1,1,0,0,0"/>
+   <wangtile tileid="33" wangid="1,0,0,0,0,0,0,0"/>
+   <wangtile tileid="35" wangid="0,0,1,1,1,1,1,0"/>
+   <wangtile tileid="47" wangid="1,0,0,0,1,1,1,0"/>
+   <wangtile tileid="59" wangid="1,0,1,1,1,0,0,0"/>
   </wangset>
  </wangsets>
 </tileset>

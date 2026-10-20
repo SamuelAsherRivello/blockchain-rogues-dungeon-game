@@ -69,6 +69,7 @@ Every accepted move advances Time by one and gives enemies one action. Blocked m
 - `openspec/changes/rename-to-rogues-dungeon/` contains the active rename proposal, design, and task list.
 - [`rogues-dungeon/documentation/original-prompt.md`](rogues-dungeon/documentation/original-prompt.md) records the original game request and clarifications.
 - [`rogues-dungeon/documentation/asset-provenance.md`](rogues-dungeon/documentation/asset-provenance.md) records artwork origin and license status.
+- [`rogues-dungeon/documentation/world-generation-attribute-sets.md`](rogues-dungeon/documentation/world-generation-attribute-sets.md) proposes player-friendly world-generation attribute sets.
 
 ## Release
 

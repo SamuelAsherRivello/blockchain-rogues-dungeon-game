@@ -2,10 +2,24 @@
 
 ## Input, movement, and interaction
 
+- Use this as a visual reference for character dialogue: a portrait anchored at the bottom-left, dialogue text across the lower screen, and a name label beneath the portrait.
+
+![Character dialogue reference](dialog.jpg)
+
 - Show a dot on every grid cell in the walking path previewed by the mouse reticle.
 - Consider custom cursors for walking, interacting, and fighting.
 - Use bump interactions: bump once to show an option and bump again to accept it. Walking away declines.
 - Animate the rat prompt when it appears. Slide it in from the left, stop 30 pixels before its final position, fade it in, then snap it into place.
+- Add a developer toggle with three movement modes:
+  - Grid-snap: move instantly between grid-cell centers.
+  - Grid-tween: tween between grid-cell centers. This is the current movement behavior.
+  - Gridless: move freely and stop on any whole pixel, while game logic still assigns the player to exactly one grid cell at a time.
+
+## Kill your darlings
+
+- Decide whether to remove the zoom controls.
+- Decide whether to remove the camera modes.
+- Consider making movement spend a limited resource, so every move becomes a tactical choice.
 
 ## New game and character creation
 
@@ -37,6 +51,7 @@
 
 ## Dungeon flow and world interactions
 
+- Add an introductory story sequence.
 - Add campfires. Bumping into one shows "Rest? (20 gold)."
 - Resting costs 20 gold, restores health, and updates the checkpoint.
 - Support NPC interactions through the shared bump-to-confirm pattern.
@@ -67,6 +82,14 @@
 
 - Restore mobile mode, including touch controls and responsive layout.
 - Update the main menu. Make the background rise upward while fading in from black.
+
+## Animation and special effects
+
+- Add sprite sheets for transient particle effects that play over gameplay actions.
+- Add a particle-effects system that spawns and removes short-lived groups of effect sprites.
+- Add a separate special-effects system for action visuals, such as a sword-slash arc when an attack lands.
+- Extend the in-game art animation system so it can tween a whole character, its main sprite, or its shadow sprite independently.
+- Support programmatic effects such as flashing a target white for 0.1 seconds, then fading back to its original color.
 
 ## Dungeon content and technical work
 
