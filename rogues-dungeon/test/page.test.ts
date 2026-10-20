@@ -302,11 +302,10 @@ test('renders transient item drag feedback without intercepting drops', async ()
   assert.match(game, /window\.addEventListener\("pointercancel", pointerCancel\)/);
   assert.match(css, /\.item-drag-preview\{[^}]*pointer-events:none/); assert.match(css, /\.item-drag-preview\{[^}]*width:min\(11rem/); assert.match(css, /\.drag_departure/); assert.match(css, /\.drag_landing/);
 });
-test('anchors item comparison to the inventory panel with a fixed ten-pixel gap', async () => {
+test('anchors item comparison to the primary information panel with a fixed ten-pixel gap', async () => {
   const game = await readFile(new URL('../src/game/game.tsx', import.meta.url), 'utf8');
-  assert.match(game, /\[data-slot-type="inventory"\]/);
-  assert.match(game, /closest<HTMLElement>\("\.game-card"\)/);
-  assert.match(game, /right: window\.innerWidth - inventoryPanel\.left \+ 10/);
+  assert.match(game, /closest<HTMLElement>\("\.info-panel--primary"\)/);
+  assert.match(game, /right: window\.innerWidth - targetPanelRect\.left \+ 10/);
   assert.match(game, /transform: "translateY\(-50%\)"/);
   assert.doesNotMatch(game, /rect\.left - 36/);
 });
