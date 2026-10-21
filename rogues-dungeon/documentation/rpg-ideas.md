@@ -21,6 +21,14 @@
 - Decide whether to remove the camera modes.
 - Consider making movement spend a limited resource, so every move becomes a tactical choice.
 
+## Inventory and ability slots
+
+- Add a vertical color strip to the left edge of every inventory item, showing the valid destination slot type for drag-and-drop.
+- Use the same color on empty destination slots so players can see where an item can be dropped.
+- Use purple for Ability slots, green for Quick slots, and blue for Equipment slots.
+- Store the slot colors in shared constants and reuse them wherever slot types appear.
+- Compare the new colors with the existing status-bar colors and adjust them if they conflict or reduce readability.
+
 ## New game and character creation
 
 - When a player selects a new save slot, present three setup screens:
@@ -49,6 +57,16 @@
 - Drive level generation from these values.
 - Update the minimap preview after every world roll.
 
+## Mapping
+
+- Audit the current map folders and reorganize them around their actual use.
+- Identify which maps, tilesets, and supporting files are production content, test fixtures, or unused. Rename or move folders such as `examples` when they contain production content.
+- Add a `prefabs` folder for reusable map fragments that generation can incorporate into a larger map.
+- Support prefabs for interiors, starting areas, shop interiors, and other authored spaces.
+- Treat enterable buildings as a separate feature:
+  - Define the exterior and interior appearance of each building.
+  - Decide whether entering a building loads a separate map or keeps one map and hides roof-covering tiles.
+
 ## Dungeon flow and world interactions
 
 - Add an introductory story sequence.
@@ -64,8 +82,15 @@
 
 ## Progression, crafting, and upgrades
 
+Use this progression-window reference for the attribute-allocation items below.
+
+![Progression attribute-point reference](progression-attribute-points.png)
+
 - Award experience points.
 - Let players spend level-up points on character statistics.
+- Update the attribute hover text to describe the gameplay effect without showing the raw point delta. For example, use "Decrease Health 2-5" rather than "Decrease Health 2-5 (-1)."
+- Under "Spend 3 Attribute Points", add a permanent, empty three-line summary box. As points are assigned, show one plain-language line per affected attribute that totals the pending gameplay benefit. For example, health points should state the resulting maximum-health percentage increase rather than repeat "Health +1".
+- Combine multiple pending points assigned to one attribute into one line showing their total effect. Show only the lines for attributes with pending changes.
 - Support crafting: combine two existing items and ore to create a new item, consuming all inputs.
 - Support upgrades: combine an item and ore to create the same item with improved statistics, consuming both inputs.
 - For a level-up, send sparkles inward from all directions, merge them on the character, then play a chime.
