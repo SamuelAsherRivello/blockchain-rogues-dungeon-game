@@ -2,9 +2,10 @@ import type { ActionResult, Campaign, Enemy, Entity, Item, Direction } from '../
 import type { TileLayer } from '../src/systems/rendering/tile-map-system.ts';
 import assert from 'node:assert/strict';
 import './movement-modes.test.ts';
+import './tactical-area.test.ts';
 import './world-attributes.test.ts';
 import test from 'node:test';
-import { applyAction, combatReadiness, createCampaign, createGameSession, createResourcesModel, createRunCampaign, effectiveAttributes, effectiveInventoryCapacity, ensureNearbyStairs, entrancePosition, FLOOR_CENTER, FLOOR_HEIGHT, FLOOR_WIDTH, GAME_TUNING, generateFloor, headingFromMovement, inventoryFitsCapacity, isNonBlockingChestPlacementCell, isNonBlockingObjectPlacementCell, isObjectSetBlocked, isObjectSetDoorOpen, isStairPlacementCell, previewEquipment, resourceState, rollStartingAttributes, STAIRS_MAX_DISTANCE_FROM_START, upgradeCampaignResources } from '../src/systems/procedural/world-procedural-system.ts';
+import { applyAction, cardinalAdjacentPosition, combatReadiness, createCampaign, createGameSession, createResourcesModel, createRunCampaign, effectiveAttributes, effectiveInventoryCapacity, ensureNearbyStairs, entrancePosition, FLOOR_CENTER, FLOOR_HEIGHT, FLOOR_WIDTH, GAME_TUNING, generateFloor, headingFromMovement, inventoryFitsCapacity, isNonBlockingChestPlacementCell, isNonBlockingObjectPlacementCell, isObjectSetBlocked, isObjectSetDoorOpen, isStairPlacementCell, previewEquipment, resourceState, rollStartingAttributes, STAIRS_MAX_DISTANCE_FROM_START, upgradeCampaignResources, WORLD_DROPPABLE_ITEM_NAMES } from '../src/systems/procedural/world-procedural-system.ts';
 import { worldFloorSeed } from '../src/systems/procedural/world-seed-system.ts';
 import { projectLogEvents } from '../src/game/log-policy.ts';
 import { projectFloatingFeedback, removeFloatingFeedback } from '../src/game/floating-feedback.ts';
@@ -131,12 +132,29 @@ test('reads a validated randomSeed URL parameter for reproducible campaigns', ()
   for (const search of ['', '?randomSeed=', '?randomSeed=-1', '?randomSeed=1.5', '?randomSeed=4294967296', '?randomSeed=abc']) assert.equal(randomSeedFromSearch(search), null);
 });
 
-test('parses deterministic world, level, slot, seed, map-fix, and level-one test URL options', () => {
-  assert.deepEqual(parseGameUrlOptions('?world=2&level=3&slot=2&run=4&seed=7&mute=1&level-1-test-mode=true&debug-fix-map-autotiled=1&scenario=corridor-joins'), { world: 2, level: 3, run: 4, slot: '2', seed: 7, hasCompleteRunIdentity: true, mute: true, level1TestMode: true, mapFix: true, scenario: 'corridor-joins', map: null });
+test('parses deterministic world, level, slot, seed, map-fix, and item/enemy test URL options', () => {
+  assert.deepEqual(parseGameUrlOptions('?world=2&level=3&slot=2&run=4&seed=7&mute=1&debug-fix-map-autotiled=1&scenario=corridor-joins'), { world: 2, level: 3, run: 4, slot: '2', seed: 7, hasCompleteRunIdentity: true, mute: true, level1ObjectTestMode: false, level1EnemyTestMode: false, mapFix: true, scenario: 'corridor-joins', map: null });
   assert.equal(parseGameUrlOptions('?slot=4').slot, null);
   assert.equal(parseGameUrlOptions('?seed=-1').seed, null);
-  assert.equal(parseGameUrlOptions('?level-1-test-mode=1').level1TestMode, false);
+  assert.equal('level1TestMode' in parseGameUrlOptions('?leveltest=1'), false);
   assert.equal(parseGameUrlOptions('?randomSeed=9').seed, 9);
+});
+
+test('places one deterministic legal teleport arrow per generated level', () => {
+  const first = generateFloor(2, 611, 2);
+  const second = generateFloor(2, 611, 2);
+  const arrows = first.entities.filter((entity) => entity.kind === 'teleport-arrow');
+  assert.equal(arrows.length, 1);
+  assert.deepEqual(arrows[0], second.entities.find((entity) => entity.kind === 'teleport-arrow'));
+  assert.equal(first.cells[arrows[0]!.y]![arrows[0]!.x]!.walkable, true);
+  assert.equal(first.entities.filter((entity) => entity.x === arrows[0]!.x && entity.y === arrows[0]!.y).length, 1);
+});
+
+test('leveltest keeps the level-one teleport arrow within 50 cells of the start', () => {
+  const floor = generateFloor(1, 612, 1, { level1TestMode: true });
+  const arrow = floor.entities.find((entity) => entity.kind === 'teleport-arrow')!;
+  assert.ok(Math.hypot(arrow.x - floor.start.x, arrow.y - floor.start.y) <= 50);
+  assert.equal(floor.entities.filter((entity) => entity.x === arrow.x && entity.y === arrow.y).length, 1);
 });
 
 test('writes compact generated-level deltas and reconstructs changed runtime state', () => {
@@ -367,6 +385,47 @@ test('places the player away from an enemy when entering a saved level', () => {
   assert.notDeepEqual({ x: entered.player.x, y: entered.player.y }, blockedEntry);
   assert.equal(entered.floor.entities.some((entity) => entity.x === entered.player.x && entity.y === entered.player.y), false);
   assert.equal(entered.floor.cells[entered.player.y]?.[entered.player.x]?.walkable, true);
+});
+
+test('teleports between the dungeon and player home without advancing time', () => {
+  const campaign = createCampaign(613, 1, 1, { level1TestMode: true });
+  const arrow = campaign.floor.entities.find((entity) => entity.kind === 'teleport-arrow')!;
+  campaign.player.x = arrow.x; campaign.player.y = arrow.y; campaign.player.pixel = { x: arrow.x * 32 + 16, y: arrow.y * 32 + 16 };
+  const dungeonTime = campaign.floor.time;
+  const entered = applyAction(campaign, { type: 'enter-teleport' });
+  assert.equal(entered.accepted, true);
+  assert.equal(entered.ticks, 0);
+  assert.equal(entered.state.activePrefab?.id, 'player-home');
+  assert.equal(entered.state.floor.level, campaign.floor.level);
+  assert.notDeepEqual({ x: entered.state.player.x, y: entered.state.player.y }, { x: arrow.x, y: arrow.y });
+  assert.equal(entered.state.floor.time, dungeonTime);
+  const homeArrow = entered.state.floor.entities.find((entity) => entity.kind === 'teleport-arrow')!;
+  entered.state.player.x = homeArrow.x; entered.state.player.y = homeArrow.y;
+  const returned = applyAction(entered.state, { type: 'enter-teleport' });
+  assert.equal(returned.accepted, true);
+  assert.equal(returned.ticks, 0);
+  assert.equal(returned.state.activePrefab, undefined);
+  assert.equal(returned.state.floor.level, campaign.floor.level);
+  assert.equal(returned.state.floor.time, dungeonTime);
+  assert.equal(Math.abs(returned.state.player.x - arrow.x) + Math.abs(returned.state.player.y - arrow.y), 1);
+  assert.equal(returned.events.some((event) => event.type === 'time.advanced'), false);
+});
+
+test('persists an active player-home map and restores it without changing dungeon identity', () => {
+  const storage = new MemoryStorage();
+  const campaign = createCampaign(614, 1, 1, { level1TestMode: true });
+  const arrow = campaign.floor.entities.find((entity) => entity.kind === 'teleport-arrow')!;
+  campaign.player.x = arrow.x; campaign.player.y = arrow.y;
+  const entered = applyAction(campaign, { type: 'enter-teleport' }).state;
+  entered.player.x = 4; entered.player.y = 8;
+  writeSlot(storage, '1', entered);
+  const restored = present(readSlot(storage, '1'));
+  assert.equal(restored.activePrefab?.id, 'player-home');
+  assert.deepEqual({ x: restored.player.x, y: restored.player.y }, { x: 4, y: 8 });
+  assert.equal(restored.floor.level, campaign.floor.level);
+  assert.equal(restored.floor.seed, entered.floor.seed);
+  const malformed = structuredClone(entered); malformed.activePrefab = { id: 'unknown' } as never;
+  assert.equal(migrateCampaign(malformed).activePrefab, undefined);
 });
 
 test('linked stairs return to the previously visited floor', () => {
@@ -663,12 +722,38 @@ test('new-character starter equipment is limited to World 1 Level 1 without chan
   assert.deepEqual(later.player.inventory.map((item) => item.name), ['Health Potion', 'Mana Potion', 'Extra Space']);
 });
 
-test('capacity removal is rejected when remaining contents exceed the derived base capacity', () => {
+test('dropping Extra Space restores base capacity by dropping deterministic overflow items', () => {
   const campaign = createCampaign(125);
   const extra = campaign.player.inventory.find((item) => item.category === 'capacity')!;
-  const remaining = campaign.player.inventory.filter((item) => item.id !== extra.id).concat(Array.from({ length: 9 }, (_, index) => ({ id: `extra-${index}`, name: `Extra ${index}`, group: 'weapons' as const, modifiers: {} })));
+  campaign.player.inventory.push(...Array.from({ length: 9 }, (_, index) => ({ id: `extra-${index}`, name: `Extra ${index}`, group: 'weapons' as const, modifiers: {} })));
   assert.equal(effectiveInventoryCapacity(campaign), 15);
-  assert.equal(inventoryFitsCapacity(campaign, remaining), false);
+  assert.equal(inventoryFitsCapacity(campaign), true);
+  const dropped = applyAction(campaign, { type: 'drop-item', source: { kind: 'inventory', itemId: extra.id } });
+  assert.equal(dropped.accepted, true);
+  assert.equal(effectiveInventoryCapacity(dropped.state), 10);
+  assert.equal(inventoryFitsCapacity(dropped.state), true);
+  assert.equal(dropped.state.player.inventory.some((item) => item.id === extra.id), false);
+  const dropEvents = dropped.events.filter((event) => event.type === 'item.dropped');
+  assert.equal(dropEvents.length, 2);
+  assert.equal(dropEvents.filter((event) => event.facts.cause === 'capacity-overflow').length, 1);
+  const droppedEntities = dropped.state.floor.entities.filter((entry): entry is Extract<Entity, { kind: 'item' }> => entry.kind === 'item' && dropEvents.some((event) => event.facts.itemId === entry.item.id));
+  assert.equal(droppedEntities.length, 2);
+  assert.equal(new Set(droppedEntities.map((entity) => `${entity.x},${entity.y}`)).size, droppedEntities.length);
+});
+
+test('capacity overflow expands beyond the immediate ring when every nearby cell is occupied', () => {
+  const campaign = createCampaign(126);
+  const extra = campaign.player.inventory.find((item) => item.category === 'capacity')!;
+  campaign.player.inventory.push(...Array.from({ length: 9 }, (_, index) => ({ id: `overflow-${index}`, name: `Overflow ${index}`, group: 'weapons' as const, modifiers: {} })));
+  for (const [index, [dx, dy]] of [[-1, -1], [1, -1], [0, -1], [-1, 0], [1, 0], [0, 1], [-1, 1], [1, 1]].entries()) {
+    const x = campaign.player.x + dx; const y = campaign.player.y + dy;
+    if (campaign.floor.cells[y]?.[x]) campaign.floor.entities.push({ id: `nearby-blocker-${index}`, kind: 'item', x, y, item: { id: `nearby-blocker-item-${index}`, name: 'Nearby Blocker', group: 'weapons', modifiers: {} } });
+  }
+  const dropped = applyAction(campaign, { type: 'drop-item', source: { kind: 'inventory', itemId: extra.id } });
+  assert.equal(dropped.accepted, true);
+  const droppedEntities = dropped.state.floor.entities.filter((entry): entry is Extract<Entity, { kind: 'item' }> => entry.kind === 'item' && (entry.item.id === extra.id || entry.item.id.startsWith('overflow-')));
+  assert.equal(droppedEntities.length, 2);
+  assert.ok(droppedEntities.every((entity) => Math.max(Math.abs(entity.x - campaign.player.x), Math.abs(entity.y - campaign.player.y)) > 1));
 });
 
 test('normalizes capacity items in inventory and dropped world entities', () => {
@@ -1557,6 +1642,17 @@ test('WorldRender shares exact terrain and entity coordinates while camera polic
   assert.deepEqual(game.diagnostics.map(({ x, y, mask }) => [x, y, mask]), minimap.diagnostics.map(({ x, y, mask }) => [x, y, mask]));
 });
 
+test('WorldRender projects teleport arrows in both game and minimap views', () => {
+  const campaign = createCampaign(615);
+  const arrow = campaign.floor.entities.find((entity) => entity.kind === 'teleport-arrow')!;
+  const game = WorldRender.Render({ cells: campaign.floor.cells, entities: campaign.floor.entities, player: campaign.player, view: 'game' });
+  const minimap = WorldRender.Render({ cells: campaign.floor.cells, entities: campaign.floor.entities, player: campaign.player, view: 'minimap' });
+  const gameArrow = game.objects.find((object) => object.kind === 'teleport-arrow');
+  const mapArrow = minimap.objects.find((object) => object.kind === 'teleport-arrow');
+  assert.deepEqual([gameArrow?.x, gameArrow?.y, gameArrow?.worldX, gameArrow?.worldY], [arrow.x, arrow.y, arrow.x * 32 + 16, arrow.y * 32 + 16]);
+  assert.deepEqual([mapArrow?.x, mapArrow?.y, mapArrow?.worldX, mapArrow?.worldY], [gameArrow?.x, gameArrow?.y, gameArrow?.worldX, gameArrow?.worldY]);
+});
+
 test('characters face the direction of movement and bump interactions', () => {
   assert.equal(headingFromMovement(-1, 0), 'w');
   assert.equal(headingFromMovement(1, 0), 'e');
@@ -1944,17 +2040,34 @@ test('drops equipment, quick-slot stacks, and abilities through the same world p
   const weapon = equipped.player.equipment.weapons[0]!;
   const equipmentDrop = applyAction(equipped, { type: 'drop-item', source: { kind: 'slot', group: 'weapons', index: 0 } });
   assert.equal(equipmentDrop.accepted, true); assert.equal(equipmentDrop.state.player.equipment.weapons[0], null);
-  assert.ok(equipmentDrop.state.floor.entities.some((entry) => entry.kind === 'item' && entry.item.id === weapon.id));
+  assert.ok(equipmentDrop.state.floor.entities.some((entry): entry is Extract<Entity, { kind: 'item' }> => entry.kind === 'item' && entry.item.id === weapon.id));
 
   const quick = createCampaign(1905);
   const health = quick.player.inventory.find((item) => item.name === 'Health Potion')!;
   const assigned = applyAction(quick, { type: 'assign-quick-slot', itemId: health.id, index: 0 });
   const quickDrop = applyAction(assigned.state, { type: 'drop-item', source: { kind: 'quick-slot', index: 0 } });
   assert.equal(quickDrop.accepted, true); assert.equal(quickDrop.state.player.quickSlots?.[0], null);
-  assert.equal(quickDrop.state.floor.entities.find((entry) => entry.kind === 'item' && entry.item.id === health.id)?.item.quantity, 1);
+  assert.equal(quickDrop.state.floor.entities.find((entry): entry is Extract<Entity, { kind: 'item' }> => entry.kind === 'item' && entry.item.id === health.id)?.item.quantity, 1);
 
   const ability = createCampaign(1906);
   const abilityDrop = applyAction(ability, { type: 'drop-item', source: { kind: 'ability', index: 0 } });
   assert.equal(abilityDrop.accepted, true); assert.equal(abilityDrop.state.player.abilities[0], null);
-  assert.equal(abilityDrop.state.floor.entities.find((entry) => entry.kind === 'item' && entry.item.category === 'ability')?.item.abilityId, 'heal');
+  assert.equal(abilityDrop.state.floor.entities.find((entry): entry is Extract<Entity, { kind: 'item' }> => entry.kind === 'item' && entry.item.category === 'ability')?.item.abilityId, 'heal');
+});
+
+test('normal levels seed one approved world item deterministically', () => {
+  const first = generateFloor(2, 2201, 1);
+  const second = generateFloor(2, 2201, 1);
+  const firstItems = first.entities.filter((entry): entry is Extract<Entity, { kind: 'item' }> => entry.kind === 'item');
+  const secondItems = second.entities.filter((entry): entry is Extract<Entity, { kind: 'item' }> => entry.kind === 'item');
+  assert.equal(firstItems.length, 1);
+  assert.deepEqual(firstItems.map((entry) => entry.item.name), secondItems.map((entry) => entry.item.name));
+  assert.ok(WORLD_DROPPABLE_ITEM_NAMES.includes(firstItems[0].item.name as typeof WORLD_DROPPABLE_ITEM_NAMES[number]));
+});
+
+test('item-test mode places every approved world item near the level start', () => {
+  const floor = generateFloor(1, 2202, 1, { level1ObjectTestMode: true });
+  const items = floor.entities.filter((entry): entry is Extract<Entity, { kind: 'item' }> => entry.kind === 'item');
+  assert.deepEqual(new Set(items.map((entry) => entry.item.name)), new Set(WORLD_DROPPABLE_ITEM_NAMES));
+  assert.ok(items.every((entry) => Math.hypot(entry.x - floor.start.x, entry.y - floor.start.y) <= 50));
 });

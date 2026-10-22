@@ -1,4 +1,4 @@
-import type { Position } from "../../game/types.ts";
+import type { AbilityId, Position } from "../../game/types.ts";
 
 export interface ParticleEffect extends Position { id: string; name: "smoke-poff"; startedAt: number; kind?: "movement" | "heal" | "wand" | "damage"; targetId?: string; direction?: Position; sizePx?: number; rotation?: number }
 export interface ParticleRenderBounds { x: number; y: number; width: number; height: number }
@@ -22,7 +22,7 @@ export const DAMAGE_PARTICLE_VERTICAL_OFFSET_TILES = .12;
 /** The player and enemy shadows are centered 5px above the tile center; this reaches their 32px bottom edge. */
 export const DAMAGE_PARTICLE_SHADOW_BOTTOM_OFFSET_TILES = 11 / 32;
 export function createSmokePuff(position: Position, startedAt = performance.now()): ParticleEffect { return { id: `smoke-poff-${startedAt}-${position.x}-${position.y}`, name: "smoke-poff", kind: "movement", x: position.x, y: position.y, startedAt }; }
-export function createAbilityParticle(kind: "heal" | "wand", position: Position, targetId?: string, startedAt = performance.now()): ParticleEffect { return { id: `${kind}-${startedAt}-${position.x}-${position.y}`, name: "smoke-poff", kind, targetId, x: position.x, y: position.y, startedAt }; }
+export function createAbilityParticle(kind: AbilityId | "wand", position: Position, targetId?: string, startedAt = performance.now()): ParticleEffect { const particleKind = kind === "heal" ? "heal" : "wand"; return { id: `${kind}-${startedAt}-${position.x}-${position.y}`, name: "smoke-poff", kind: particleKind, targetId, x: position.x, y: position.y, startedAt }; }
 /** Eight inward sparkles make each earned level visible without leaving a world decal. */
 export function createLevelUpSparkles(position: Position, levelCount = 1, startedAt = performance.now()): ParticleEffect[] {
   const offsets = [{ x: -1, y: -1 }, { x: 0, y: -1 }, { x: 1, y: -1 }, { x: -1, y: 0 }, { x: 1, y: 0 }, { x: -1, y: 1 }, { x: 0, y: 1 }, { x: 1, y: 1 }];

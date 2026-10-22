@@ -7,7 +7,7 @@ import { ensureSemanticCells, isWalkable } from "../systems/procedural/level-gri
 // https://github.com/SamuelAsherRivello/babylon-lite-ascii-rpg
 const cellKey = ({ x, y }: Position) => `${x},${y}`;
 const isWalkableTerrain = (floor: Grid, x: number, y: number) => isWalkable(floor, x, y);
-const passableEntityKinds = new Set(["potion", "key", "gold", "item", "stairs", "discovery"]);
+const passableEntityKinds = new Set(["potion", "key", "gold", "item", "stairs", "teleport-arrow", "discovery"]);
 type PathEntity = Position & { id?: string; kind?: string; hasMass?: boolean };
 type PathFloor = Grid & { entities?: PathEntity[]; decorations?: (Position & { kind?: string })[]; objectSets?: { kind?: string; barrel: Position & { hasMass?: boolean }; trigger: Position; door: Position }[] };
 export interface CardinalPathOptions { maxNodes?: number; isBlocked?: (position: Position) => boolean; respectObjectSets?: boolean }

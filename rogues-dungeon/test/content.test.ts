@@ -3,7 +3,7 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import test from 'node:test';
 import { contentConfig, getRenderingPolicy, pixelPerfectOptions } from '../src/content/babylon/config.ts';
 import { getInitializationMessage } from '../src/content/babylon/initialization.ts';
-import { gameZoomPresets, getRenderedTileCssSize, getTileCssSize } from '../src/content/world/zoom.ts';
+import { availableGameZoomPresets, gameZoomPresets, getCutsceneBarHeightPx, getRenderedTileCssSize, getTileCssSize } from '../src/content/world/zoom.ts';
 import { GRID_RENDER_PASS, orderWorldRenderEntries, sortGridRenderEntries } from '../src/systems/rendering/grid-render-order-system.ts';
 import { DUNGEON_FLOOR_TILE_GIDS } from '../src/systems/rendering/tile-map-system.ts';
 
@@ -72,10 +72,20 @@ test('uses Zoom presets whose 32-unit tile stays independent of backing density'
   for (const zoom of gameZoomPresets) for (const dpr of [1, 1.5, 2, 3]) assert.equal(getTileCssSize(zoom), 32 * zoom);
 });
 
+test('keeps zoom testing off by default while allowing all presets when enabled', () => {
+  assert.deepEqual(availableGameZoomPresets(), [1, 2]);
+  assert.deepEqual(availableGameZoomPresets(false), [1, 2]);
+  assert.deepEqual(availableGameZoomPresets(true), gameZoomPresets);
+});
+
 test('derives CSS tile size from the same backing scale used by the sprite view', () => {
   assert.equal(getRenderedTileCssSize({ zoom: 2, devicePixelRatio: 1, backingPixelsPerCssPixel: 1 }), 64);
   assert.equal(getRenderedTileCssSize({ zoom: 2, devicePixelRatio: 1.5, backingPixelsPerCssPixel: 1.5 }), 64);
   assert.equal(getRenderedTileCssSize({ zoom: 2, devicePixelRatio: 1.5, backingPixelsPerCssPixel: 2 }), 48);
+});
+
+test('rounds cutscene bars to zoom-aware grid rows', () => {
+  assert.deepEqual(gameZoomPresets.map((zoom) => getCutsceneBarHeightPx(zoom)), [64, 64, 64, 128, 128]);
 });
 
 test('mounts the dungeon and minimap in Babylon Lite from the same world component', async () => {

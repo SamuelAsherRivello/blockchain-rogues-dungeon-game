@@ -29,7 +29,6 @@ export function parseGameUrlOptions(search = "") {
     seed,
     hasCompleteRunIdentity: params.has("world") && params.has("level") && params.has("slot") && params.has("run") && params.has("seed") && slot !== null && seed !== null,
     mute: params.get("mute") === "1",
-    level1TestMode: params.get("level-1-test-mode") === "true",
     level1ObjectTestMode: params.get("level-1-item-test") === "true",
     level1EnemyTestMode: params.get("level-1-enemy-test") === "true",
     mapFix: params.get(MAP_FIX_FLAG) === "1",

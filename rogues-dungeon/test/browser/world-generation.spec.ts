@@ -11,6 +11,7 @@ test('creates a rolled world after a character and persists its visible identity
   const world = page.getByRole('dialog', { name: 'Create World', exact: true });
   await expect(world).toBeVisible();
   await expect.poll(() => page.evaluate(() => localStorage.getItem('rogues-dungeon.slot.2'))).toBeNull();
+  await expect(world.getByRole('button', { name: 'Confirm', exact: true })).toBeDisabled();
   await world.getByRole('button', { name: 'Roll', exact: true }).click();
   await expect(world.getByRole('button', { name: 'Confirm', exact: true })).toBeEnabled();
   await expect(world.locator('[data-renderer-ready="true"]')).toBeVisible();

@@ -8,6 +8,32 @@ function recorder() {
   return { made, createAudio(src: string) { const audio = { src, volume: 1, loop: false, playCount: 0, play() { this.playCount++; return Promise.resolve(); } }; made.push(audio); return audio; } };
 }
 
+test('mode soundtrack crossfades for 500ms, reverses smoothly and retains positions', async () => {
+  let time = 0; let id = 0;
+  const frames = new Map<number, FrameRequestCallback>();
+  const made: { src: string; volume: number; currentTime: number; loop: boolean; paused: boolean; play(): Promise<void>; pause(): void }[] = [];
+  const audio = createAudioManager({ now: () => time, requestFrame: (callback) => { frames.set(++id, callback); return id; }, cancelFrame: (key) => { frames.delete(key); },
+    createAudio: (src) => { const handle = { src, volume: 0, currentTime: 0, loop: false, paused: true, play() { this.paused = false; return Promise.resolve(); }, pause() { this.paused = true; } }; made.push(handle); return handle; } });
+  const advance = (ms: number) => { time += ms; const callbacks = [...frames.values()]; frames.clear(); callbacks.forEach((callback) => callback(time)); };
+  audio.setPreferences({ musicVolume: 100 }); audio.startMusic(); await Promise.resolve();
+  const [general, battle, unused] = made;
+  general.currentTime = 24; battle.currentTime = 8;
+  assert.equal(general.volume, 1); assert.equal(battle.volume, 0); assert.equal(unused.paused, true);
+  audio.setGameMode('Battle'); advance(250);
+  assert.equal(general.volume, .5); assert.equal(battle.volume, .5);
+  audio.setGameMode('General'); advance(250);
+  assert.equal(general.volume, .75); assert.equal(battle.volume, .25);
+  audio.setPreferences({ musicVolume: 40 }); assert.ok(Math.abs(general.volume - .3) < 1e-10);
+  audio.setPreferences({ musicVolume: 40, muteAll: true });
+  advance(250); assert.equal(general.volume, 0); assert.equal(battle.volume, 0); assert.equal(battle.paused, true);
+  audio.setPreferences({ musicVolume: 100 }); assert.equal(general.volume, 1);
+  audio.setGameMode('Battle'); advance(500);
+  assert.equal(general.paused, true); assert.equal(battle.volume, 1);
+  audio.setGameMode('General'); advance(500);
+  assert.equal(general.currentTime, 24); assert.equal(battle.currentTime, 8);
+  audio.setGameMode('Battle'); audio.dispose(); assert.equal(frames.size, 0); assert.equal(general.paused, true); assert.equal(battle.paused, true);
+});
+
 test('query mute prevents audio creation and stays authoritative over preferences', () => {
   const fake = recorder(); const audio = createAudioManager({ search: '?seed=abc&mute=1', createAudio: fake.createAudio });
   audio.setPreferences({ sfxVolume: 100, musicVolume: 100, muteAll: false });

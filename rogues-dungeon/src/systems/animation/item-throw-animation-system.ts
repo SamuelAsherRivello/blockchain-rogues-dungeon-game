@@ -3,6 +3,7 @@ import type { Position } from "../../game/types.ts";
 export interface ThrownItem {
   id: string;
   kind: string;
+  itemName?: string;
   destination: Position;
 }
 

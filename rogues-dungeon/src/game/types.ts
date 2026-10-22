@@ -19,10 +19,10 @@ export interface Resource { current: number; currentMax: number; level?: number 
 export type Resources = Record<ResourceName, Resource>;
 export type ResourceInput = Partial<Record<ResourceName, Partial<Resource> | number>>;
 export type EquipmentGroup = "weapons" | "armor";
-export type ConsumableResource = "health" | "mana";
-export type AbilityId = "heal" | "wand";
+export type ConsumableResource = "health" | "stamina" | "mana";
+export type AbilityId = "heal" | "wand" | "throwing-knives";
 export type ItemCategory = "equipment" | "consumable" | "ability" | "capacity";
-export interface Item { id: string; name: string; group: EquipmentGroup; modifiers: Partial<Attributes>; slotSpan?: 1 | 2; hitChance?: number; critChance?: number; perks?: readonly string[]; category?: ItemCategory; abilityId?: AbilityId; capacityBonus?: number; consumableResource?: ConsumableResource; isStackable?: boolean; quantity?: number }
+export interface Item { id: string; name: string; group: EquipmentGroup; modifiers: Partial<Attributes>; slotSpan?: 1 | 2; hitChance?: number; critChance?: number; perks?: readonly string[]; category?: ItemCategory; abilityId?: AbilityId; capacityBonus?: number; consumableResource?: ConsumableResource; quickSlotAction?: "restore-resource" | "throwing-knives"; isStackable?: boolean; quantity?: number }
 export interface QuickSlot { item: Item; quantity: number }
 export type Equipment = Record<EquipmentGroup, (Item | null)[]>;
 export interface TerrainCell { walkable: boolean; role: string; protected?: boolean }
@@ -31,6 +31,8 @@ export interface EnemyAi { state: EnemyAiState; targetId: "player" | null }
 export interface Enemy extends MassBearingPosition {
   id: string; kind: "enemy"; name: string; hp: number; maxHp: number; damage: number; xp: number;
   resources: Resources; awareness: number; actionCooldown: number; nextActionAt: number; heading?: CharacterHeading;
+  /** World-generation presentation contract. */
+  character?: string; graphic?: string; idle?: string;
   /** Slime lineage depth. Map-born enemies start at generation 1. */
   generation?: number;
   ai: EnemyAi;
@@ -38,9 +40,10 @@ export interface Enemy extends MassBearingPosition {
   attackKind?: "melee" | "ranged"; attackRange?: number;
 }
 export type Entity = Enemy
-  | (Position & { id: string; kind: "potion"; resource: "health" | "mana"; name?: string; quantity?: number })
+  | (Position & { id: string; kind: "potion"; resource: ConsumableResource; name?: string; quantity?: number })
   | (Position & { id: string; kind: "key" | "gold"; amount?: number; name?: string })
   | (Position & { id: string; kind: "stairs"; direction?: "forward" | "back"; name?: string })
+  | (Position & { id: string; kind: "teleport-arrow"; destination: string; name?: string })
   | (Position & { id: string; kind: "discovery"; name?: string })
   | (Position & { id: string; kind: "chest"; opened?: boolean; rewardAmount?: number; rewardQuality?: number; rewardItem?: Item })
   | (Position & { id: string; kind: "crate"; health: number; opened?: boolean; openFrame?: 1 | 5; rewardAmount?: number; rewardQuality?: number; rewardItem?: Item })
@@ -67,7 +70,7 @@ export interface Floor {
   prefabPlacements?: { prefabId: string; origin: Position }[];
   projectiles?: RangedProjectile[];
 }
-export interface RangedProjectile { id: string; sourceId: string; from: Position; to: Position; direction: Direction; createdAt: number; kind?: "arrow" | "magic" | "web" }
+export interface RangedProjectile { id: string; sourceId: string; from: Position; to: Position; direction: Direction; createdAt: number; kind?: "arrow" | "magic" | "web" | "throwing-knife" }
 /** The persisted difference between a deterministic base floor and its current runtime state. */
 export interface LevelStateDelta {
   time: number;
@@ -81,6 +84,8 @@ export interface QuestItem { id: QuestItemId; title: string; complete: boolean }
 export interface Quest { id: "my-first-quest"; title: "My First Quest"; items: QuestItem[]; activeItemId: QuestItemId | null }
 export interface Campaign {
   version: number; world: string; realm: string; floor: Floor; combatRollState?: number;
+  /** The currently presented standalone map, when the player is inside a teleport prefab. */
+  activePrefab?: { id: "player-home"; returnLevel: number; returnPosition: Position; prefabPosition: Position };
   /** Inputs used to regenerate this run's floors deterministically. */
   worldSeed?: number; slot?: number; run?: number; generatorVersion?: string;
   /** Compact state for visited generated levels, keyed by level. */
@@ -106,6 +111,7 @@ export type Action =
   | { type: "move"; direction: string; hazardElapsedMs?: number }
   | { type: "trap-strike"; hazardElapsedMs: number }
   | { type: "enter-stairs" }
+  | { type: "enter-teleport" }
   | { type: "return-barrel"; setId: string }
   | { type: "wait" }
   | { type: "rest" }

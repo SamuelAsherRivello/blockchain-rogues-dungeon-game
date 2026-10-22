@@ -1,12 +1,15 @@
 import type { Position, TerrainCell } from "../../game/types.ts";
 
 export interface PrefabCell extends Partial<Pick<TerrainCell, "walkable" | "role">> { protected?: boolean }
+export type PrefabKind = "stamp" | "teleport";
 export interface PrefabDefinition {
   id: string;
+  kind: PrefabKind;
   width: number;
   height: number;
   origin: Position;
   entrances: Position[];
+  assetPath?: string;
   cells: PrefabCell[][];
 }
 
@@ -23,6 +26,7 @@ export interface PrefabPlacement { prefabId: string; origin: Position }
 export function validatePrefab(definition: PrefabDefinition): string[] {
   const errors: string[] = [];
   if (!definition.id || !Number.isInteger(definition.width) || !Number.isInteger(definition.height) || definition.width < 1 || definition.height < 1) errors.push("invalid dimensions");
+  if (!["stamp", "teleport"].includes(definition.kind)) errors.push("invalid prefab kind");
   if (definition.cells.length !== definition.height || definition.cells.some((row) => row.length !== definition.width)) errors.push("cell footprint does not match dimensions");
   if (!Number.isInteger(definition.origin.x) || !Number.isInteger(definition.origin.y)) errors.push("invalid origin");
   for (const entrance of definition.entrances) if (entrance.x < 0 || entrance.y < 0 || entrance.x >= definition.width || entrance.y >= definition.height) errors.push("entrance outside footprint");
@@ -59,9 +63,25 @@ export function stampPrefab(target: PrefabPlacementTarget, definition: PrefabDef
 
 export const HERO_HOUSE_PREFAB: PrefabDefinition = {
   id: "hero-house",
+  kind: "stamp",
   width: 7,
   height: 7,
   origin: { x: 0, y: 0 },
   entrances: [{ x: 3, y: 6 }],
   cells: Array.from({ length: 7 }, (_, y) => Array.from({ length: 7 }, (_, x) => ({ walkable: x > 0 && x < 6 && y > 0 && y < 6, role: x > 0 && x < 6 && y > 0 && y < 6 ? "ground" : "wall", protected: true }))),
+};
+
+/** Runtime footprint for the authored player-home.tmx teleport destination. */
+export const PLAYER_HOME_PREFAB: PrefabDefinition = {
+  id: "player-home",
+  kind: "teleport",
+  assetPath: "assets/art/game-view/maps/prefabs/player-home.tmx",
+  width: 10,
+  height: 10,
+  origin: { x: 0, y: 0 },
+  entrances: [{ x: 4, y: 9 }],
+  cells: Array.from({ length: 10 }, (_, y) => Array.from({ length: 10 }, (_, x) => ({
+    walkable: y > 0 && y < 9 && x > 0 && x < 9 || y === 9 && (x === 4 || x === 5),
+    role: y > 0 && y < 9 && x > 0 && x < 9 || y === 9 && (x === 4 || x === 5) ? "ground" : "wall",
+  }))),
 };

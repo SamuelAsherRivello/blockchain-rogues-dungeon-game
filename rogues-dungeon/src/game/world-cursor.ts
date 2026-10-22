@@ -17,6 +17,6 @@ export function resolveWorldCursor(campaign: Campaign, target: SelectedCell | nu
     return isWalkable(campaign.floor, x, y) && !isObjectSetBlocked(campaign.floor, campaign.player, x, y) && !campaign.floor.entities.some((entry) => entry.x === x && entry.y === y) ? "interact" : "blocked";
   }
   if (entity?.kind === "crate" && !entity.opened) return canApproach ? "interact" : "blocked";
-  if (entity && ["item", "potion", "key", "gold", "chest", "campfire", "stairs"].includes(entity.kind)) return "interact";
+  if (entity && ["item", "potion", "key", "gold", "chest", "campfire", "stairs", "teleport-arrow"].includes(entity.kind)) return "interact";
   return reachable ? "walk" : "blocked";
 }

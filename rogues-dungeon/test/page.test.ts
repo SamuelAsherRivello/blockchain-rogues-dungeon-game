@@ -180,7 +180,7 @@ test('saves and quits on Escape during play while Settings keeps Escape for clos
 test('uses randomSeed to seed only a newly selected save slot', async () => {
   const game = await readFile(new URL('../src/game/game.tsx', import.meta.url), 'utf8');
   assert.match(game, /parseGameUrlOptions\(window\.location\.search\)/);
-  assert.match(game, /const initial = unsavedUrlRun \|\| urlOptions\.level1TestMode \? freshTestCampaign : existing \?\? freshTestCampaign/);
+  assert.match(game, /const initial = unsavedUrlRun \|\| objectTest \|\| enemyTestMode \? freshTestCampaign : existing \?\? freshTestCampaign/);
   assert.match(game, /New Game · Seed \$\{randomSeed\}/);
 });
 test('supports deterministic direct-slot map-fix URLs', async () => {
@@ -270,10 +270,12 @@ test('fills unused inventory capacity with empty plus slots', async () => {
   assert.match(game, /data-drop-inventory-slot/);
   assert.match(game, /drag\?\.destination\?\.kind === "inventory" && \(\(drag\.source\.item as Item\)\.slotSpan === 2/);
   assert.doesNotMatch(game, /data-drop-inventory>/);
-  assert.match(game, /text="Drop Item"/);
+  assert.match(game, /text="\[ Drop Item \]"/);
   assert.match(game, /data-drop-item/);
   assert.match(game, /inventory_drop_item/);
   assert.match(game, /effectiveInventoryCapacity\(campaign\)/);
+  assert.match(game, /const dropItemSlot = <SlotItem type="inventory"/);
+  assert.match(game, /dropItemSlot\}<ScrollArea className="inventory_scroll">/);
 });
 test('uses permanent in-game scrollbars for the log and inventory', async () => {
   const css = await readFile(new URL('../src/ui/style.css', import.meta.url), 'utf8');
@@ -282,6 +284,7 @@ test('uses permanent in-game scrollbars for the log and inventory', async () => 
   assert.match(css, /\.info-panel--primary \.inventory_scroll,\.info-panel__log-card \.log_scroll \{ height:calc\(100% - 4px\); margin-top:0; \}/);
   assert.match(css, /\.scroll-area__track \{ position:absolute; top:0; right:-2px; bottom:0; width:4px;/);
   assert.match(css, /\.scroll-area__thumb \{ width:4px; min-height:12px;[^}]*background:#e4b85e;/);
+  assert.match(css, /\.inventory_drop_item \{ justify-content:center; color:var\(--slot-disabled-color\); text-align:center; \}/);
   assert.match(css, /\.slot_scroll \{ height:100%; min-height:0;[^}]*overflow-y:auto/);
 });
 test('removes the permanent green tint from the game view', async () => {

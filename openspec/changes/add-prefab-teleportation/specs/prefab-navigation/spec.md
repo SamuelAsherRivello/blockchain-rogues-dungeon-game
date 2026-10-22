@@ -39,19 +39,23 @@ The teleport arrow SHALL use a dedicated object-layer representation with a temp
 - **WHEN** a generated floor containing a teleport-arrow is rendered
 - **THEN** the four-direction arrow visual appears above the floor and participates in normal world-object depth ordering
 
-### Requirement: Enter a standalone teleport prefab
-Walking onto a teleport-arrow object SHALL transition the player into its configured standalone prefab destination through the iris effect.
+### Requirement: Enter and leave the player-home teleport prefab
+Walking onto either member of the dungeon/home teleport-arrow pair SHALL transition the player between the active dungeon floor and the standalone player-home prefab through the iris effect.
 
 #### Scenario: Enter the player home
-- **WHEN** the player enters the World 1, Level 1 teleport arrow configured for `player-home.tmx`
-- **THEN** the iris closes, the active view changes to the player-home prefab, the player appears at its authored entrance, and the iris opens to reveal only the prefab
+- **WHEN** the player enters the dungeon teleport arrow configured for `player-home.tmx`
+- **THEN** the iris closes, the active view changes to the player-home prefab, the player appears in a viable cardinal-adjacent cell to the home arrow, and the iris opens to reveal only the prefab
+
+#### Scenario: Return from the player home
+- **WHEN** the player enters the return arrow in `player-home.tmx`
+- **THEN** the iris closes, the active view changes back to the originating dungeon floor, the player appears in a viable cardinal-adjacent cell to the originating dungeon arrow, and the iris opens to reveal only that floor
 
 #### Scenario: Preserve dungeon identity during entry
 - **WHEN** the player enters a teleport prefab
 - **THEN** the dungeon level and world identity remain unchanged instead of advancing as they do for stairs
 
 #### Scenario: Avoid a second turn
-- **WHEN** a teleport-arrow entry is accepted
+- **WHEN** either direction of the teleport-arrow pair is accepted
 - **THEN** it does not advance dungeon time or run an additional enemy phase during the iris transition
 
 ### Requirement: Keep prefab navigation distinct from stair travel
@@ -63,10 +67,21 @@ Stair entry SHALL continue to change dungeon levels, while teleport-arrow entry 
 - **AND WHEN** the player enters a teleport arrow
 - **THEN** the game performs the standalone prefab transition instead
 
-### Requirement: Defer prefab return travel
-The initial teleport-prefab release SHALL support entry into the player home but SHALL NOT require a return trigger or return transition.
+### Requirement: Author paired arrows in both maps
+The generated dungeon floor and `player-home.tmx` SHALL each contain one teleport arrow for the initial player-home use case.
 
 #### Scenario: Explore the player home
 - **WHEN** the player arrives in the player-home prefab
-- **THEN** the player can move within its walkable footprint without automatically returning to the dungeon
+- **THEN** the player can move within its walkable footprint and can return only by entering its paired return arrow
+
+### Requirement: Arrive beside, not on, teleport arrows
+Teleport arrival SHALL select a viable cardinally adjacent cell that is walkable and unoccupied rather than placing the player on the destination arrow cell.
+
+#### Scenario: Select a valid arrival cell
+- **WHEN** a teleport completes
+- **THEN** the player occupies one of the available north, south, east, or west neighboring cells of the destination arrow
+
+#### Scenario: No valid arrival cell
+- **WHEN** all cardinal neighbors of the destination arrow are blocked, occupied, or outside the map
+- **THEN** the teleport is rejected without changing active map context or advancing time
 

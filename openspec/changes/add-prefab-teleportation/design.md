@@ -11,14 +11,14 @@ See proposal.md for motivation. The repository already has a validated in-memory
 - Keep stamp prefabs and teleport prefabs as separate behaviors sharing validation and authored entrance metadata.
 - Add a deterministic, legal teleport-arrow object to generated floors.
 - Support a `leveltest=1` developer placement near the World 1, Level 1 start and a normal one-per-level pseudo-random placement.
-- Enter `player-home.tmx` through the existing iris transition and render it as the complete active map.
+- Enter and leave `player-home.tmx` through the existing iris transition and render it as the complete active map.
 - Preserve dungeon identity and avoid a time tick during entry.
-- Persist enough active-map state to resume safely inside the prefab.
+- Persist enough active-map and originating-floor state to resume safely inside the prefab or after returning.
 
 **Non-Goals:**
 
-- Returning from the player home to the dungeon.
-- Adding a second arrow or return arrow inside the player home.
+- Supporting prefab destinations other than the player home.
+- Supporting more than one dungeon/home arrow pair per active map.
 - Replacing or renaming the existing stair-based dungeon-level transition.
 - Adding a general-purpose prefab editor or new external runtime dependency.
 
@@ -44,13 +44,19 @@ The existing URL/dev-setting normalization should map the user-facing `leveltest
 
 ### Load the authored player-home map into the active map context
 
-The prefab system will expose a runtime definition for `player-home.tmx`, including its dimensions, walkable cells, render tile layers where available, and authored entrance at the bottom-center position. The campaign will retain the generated dungeon floor as the return-capable source context even though this first release does not implement a return action.
+The prefab system will expose a runtime definition for `player-home.tmx`, including its dimensions, walkable cells, render tile layers where available, and one authored return arrow. The campaign will retain the generated dungeon floor and the originating arrow context while the player is in the home.
 
 The active map context must be explicit rather than inferred from `realm`. The dungeon level and world identity remain those of the source floor; prefab context identifies the standalone map currently being rendered and the player's local position within it.
 
+### Use paired arrows and cardinal-adjacent arrival
+
+The dungeon arrow and the home arrow form one bidirectional pair for this release. Entering either arrow selects a viable unoccupied cardinal neighbor on the destination map, using deterministic randomness tied to the campaign/map context. The arrival cell must not be the arrow cell, and if no cardinal neighbor is available the teleport is rejected without changing context.
+
+This follows the existing stair arrival convention rather than placing the player directly on the destination trigger, avoiding immediate retriggering and preserving room for future multiple-destination rules.
+
 ### Reuse the iris transition as a map-context boundary
 
-Arrow entry will follow the same cover-then-reveal lifecycle as stair transitions. While the iris covers the view, movement and turn dispatch are blocked, the active map context is committed, and the player is placed at the prefab entrance. The transition does not call the stair action, emit a dungeon-level arrival, advance time, or run an enemy phase.
+Arrow entry and return will follow the same cover-then-reveal lifecycle as stair transitions. While the iris covers the view, movement and turn dispatch are blocked, the active map context is committed, and the player is placed in a viable cardinal-adjacent destination cell. The transition does not call the stair action, emit a dungeon-level arrival, advance time, or run an enemy phase.
 
 ### Keep minimap behavior aligned with the active context
 
@@ -68,7 +74,7 @@ The game view and minimap will receive the same active map context. During prefa
 
 1. Add normalized active-map fields as optional campaign data, defaulting legacy campaigns to the generated dungeon floor.
 2. Add the teleport-arrow entity and deterministic placement without changing existing stair placement.
-3. Add the player-home runtime asset definition and one-way entry action.
+3. Add the player-home runtime asset definition and paired bidirectional entry action.
 4. Add focused Node tests for placement, action semantics, and save normalization.
 5. Run one muted focused browser check for arrow entry, iris completion, active prefab rendering, and unchanged Dungeon Level; reserve the full browser suite for finalization.
 

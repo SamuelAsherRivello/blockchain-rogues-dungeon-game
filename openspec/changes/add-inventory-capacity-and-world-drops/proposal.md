@@ -10,7 +10,7 @@ The current project baseline is 10 inventory slots. This proposal assumes that b
 
 - Add an Extra Space inventory item that is included in the starter pack, occupies one inventory slot, and grants +5 effective capacity while present.
 - Make inventory capacity calculations consistent for collection, stacking, equipment transfers, quick-slot transfers, saves, and display counts.
-- Add a non-draggable Drop Item row below the final inventory slot. It accepts valid drags from Inventory, Equipment, Quick Slots, and Abilities, shows a red landing state, and drops the committed item into the world.
+- Add a non-draggable Drop Item row at the top of Inventory. It accepts valid drags from Inventory, Equipment, Quick Slots, and Abilities, shows a red landing state, and drops the committed item into the world.
 - Allow abilities to move through Inventory while retaining positional ability assignment and activation rules when they are placed back into ability slots.
 - Make Inventory the common source and destination for compatible transfers among Equipment, Quick Slots, Abilities, and the world-drop destination.
 - Spawn dropped items at a player-adjacent upper-left or upper-right world cell using the existing parabolic item-throw presentation, with deterministic fallback when a preferred cell is unavailable.

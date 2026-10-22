@@ -1,13 +1,22 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createSemanticCells } from "../src/systems/procedural/level-grid-system.ts";
-import { HERO_HOUSE_PREFAB, stampPrefab, validatePrefab, validatePrefabPlacement } from "../src/systems/procedural/prefab-system.ts";
+import { HERO_HOUSE_PREFAB, PLAYER_HOME_PREFAB, stampPrefab, validatePrefab, validatePrefabPlacement } from "../src/systems/procedural/prefab-system.ts";
 import { generateFloor } from "../src/systems/procedural/world-procedural-system.ts";
 
 test("validates the hero-house prefab contract and footprint", () => {
   assert.deepEqual(validatePrefab(HERO_HOUSE_PREFAB), []);
   assert.deepEqual(validatePrefabPlacement({ width: 20, height: 20, cells: createSemanticCells(20, 20) }, HERO_HOUSE_PREFAB, { x: 4, y: 4 }), []);
   assert.match(validatePrefabPlacement({ width: 20, height: 20, cells: createSemanticCells(20, 20) }, HERO_HOUSE_PREFAB, { x: 18, y: 18 }).join(" "), /outside map/);
+});
+
+test("distinguishes the authored player-home teleport prefab from the stamp prefab", () => {
+  assert.deepEqual(validatePrefab(PLAYER_HOME_PREFAB), []);
+  assert.equal(PLAYER_HOME_PREFAB.kind, "teleport");
+  assert.equal(PLAYER_HOME_PREFAB.assetPath, "assets/art/game-view/maps/prefabs/player-home.tmx");
+  assert.deepEqual(PLAYER_HOME_PREFAB.entrances, [{ x: 4, y: 9 }]);
+  assert.equal(PLAYER_HOME_PREFAB.cells[9][4].walkable, true);
+  assert.equal(PLAYER_HOME_PREFAB.cells[0][0].walkable, false);
 });
 
 test("prefab stamping is atomic for protected overlap and coherent when valid", () => {

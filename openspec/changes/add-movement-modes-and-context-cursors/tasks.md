@@ -22,7 +22,7 @@ Both three-question reviews and their planning updates are complete. Confirmed d
 - [x] 3.1 Implement General/Battle from living-enemy effective awareness using the existing distance rule independently of Perception, line of sight, and walls; preserve selected movement mode and verify blocked-line threats, low-Perception threats, death, multiple enemies, out-of-range exit, and stale input cancellation with state-transition tests.
 - [x] 3.2 Enforce one click or fresh directional press per legal Battle step and its ordinary action charge; tween an off-center Gridless player to the occupied cell center on Battle entry without a time increment, extra turn, or alignment enemy phase; verify keyboard repeat, long routes, screen-edge advance, and centering cannot add steps or duplicate turns.
 - [x] 3.3 Add the monochrome walking-person Movement dropdown immediately right of Camera and the 2 px red inset Battle border with accessible state text; verify selected values, tooltip/accessible name, unchanged view dimensions, both aspects, and fullscreen, and document the two states.
-- [x] 3.4 Add contextual cursor intent and local assets/hotspots with native fallbacks following the design table; verify reachable ground, interaction, combat, blocked push, UI/help/drag precedence, and passive minimap with focused resolver checks and record asset provenance.
+- [x] 3.4 Add contextual cursor intent and local assets/hotspots with native fallbacks following the design table; verify reachable ground, interaction, combat, blocked push, UI/help/drag precedence, and passive minimap with focused resolver checks and record asset provenance. The approved crate mapping is interaction, matching the current resolver.
 
 ## 4. Existing preview and integration verification
 

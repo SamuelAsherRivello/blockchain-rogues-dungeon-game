@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createEnemyAnimationDefinitions, createEnemyAnimationEntities, createEnemyIdleAnimationDefinitions } from "../src/content/enemies/enemy-idle-animation.ts";
+import { createEnemyAnimationDefinitions, createEnemyAnimationEntities, createEnemyIdleAnimationDefinitions, enemyCharacterForName, enemyStaticIdleFramePath } from "../src/content/enemies/enemy-idle-animation.ts";
 
 test("enemy idle definitions enumerate the source frames at their native dimensions", () => {
   const definitions = createEnemyIdleAnimationDefinitions("/game/");
@@ -31,4 +31,10 @@ test("full animation definitions preserve directional and prefixed source paths"
   const blueSlime = createEnemyAnimationDefinitions("/game/", "slime-blue");
   const blueIdle = blueSlime.find((definition) => definition.name === "idle")?.source;
   assert.equal(blueIdle?.kind === "frames" ? blueIdle.frames[0].path : "", "/game/assets/art/game-view/enemies/slime-blue/frames/idle/idle00.png");
+});
+
+test("generated character IDs resolve to their authored static idle poses", () => {
+  assert.equal(enemyCharacterForName("skeleton-warrior"), "skeleton-warrior");
+  assert.equal(enemyCharacterForName("slime-blue"), "slime-blue");
+  assert.equal(enemyStaticIdleFramePath("/game/", "skeleton-mage"), "/game/assets/art/game-view/enemies/skeleton-mage/frames/idle/down/00.png");
 });

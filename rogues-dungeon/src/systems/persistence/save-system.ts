@@ -102,12 +102,18 @@ function rebuildBalanceProfile(campaign: Campaign, legacyAttributes: LegacyAttri
   const caps = effectiveAttributes(campaign);
   campaign.player.resources = createResourcesModel(Object.fromEntries((["health", "stamina", "mana"] as const).map((name) => [name, { current: caps[name] * resourceFraction(legacyResources, legacyAttributes, name), currentMax: caps[name] }])));
 }
+function normalizeActivePrefab(campaign: Campaign) {
+  const prefab = campaign.activePrefab;
+  if (!prefab) return;
+  if (prefab.id !== "player-home" || !Number.isInteger(prefab.returnLevel) || prefab.returnLevel < 1 || !Number.isSafeInteger(prefab.returnPosition?.x) || !Number.isSafeInteger(prefab.returnPosition?.y) || !Number.isSafeInteger(prefab.prefabPosition?.x) || !Number.isSafeInteger(prefab.prefabPosition?.y)) delete campaign.activePrefab;
+}
 export function migrateCampaign(value: unknown): Campaign {
   if (isValidCampaign(value)) {
     const campaign = structuredClone(value);
     initializeWorldCampaign(campaign);
+    normalizeActivePrefab(campaign);
     if (!Array.isArray(campaign.floor.cells) || campaign.floor.cells.length === 0) return restoreCompactCampaign(campaign);
-    if (campaign.floor.cells.length !== FLOOR_HEIGHT || (campaign.floor.cells[0]?.length ?? 0) !== FLOOR_WIDTH) expandUndersizedFloor(campaign);
+    if (!campaign.activePrefab && (campaign.floor.cells.length !== FLOOR_HEIGHT || (campaign.floor.cells[0]?.length ?? 0) !== FLOOR_WIDTH)) expandUndersizedFloor(campaign);
     campaign.player.abilities = normalizeAbilityBindings(campaign);
     campaign.quest = normalizeQuest(campaign.quest);
     return upgradeCampaignResources(campaign);
@@ -175,7 +181,7 @@ export function readSlot(storage: StorageAccess, slot: string | number) {
   }
   if (!candidate(original)?.worldSchemaVersion) storage.setItem(BACKUP_PREFIX + slot, raw);
   const campaign = migrateCampaign(original);
-  if (campaign?.floor?.generatorVersion === GENERATOR_VERSION) ensureNearbyStairs(campaign.floor);
+  if (campaign?.floor?.generatorVersion === GENERATOR_VERSION && !campaign.activePrefab) ensureNearbyStairs(campaign.floor);
   return campaign;
 }
 export function writeSlot(storage: StorageAccess, slot: string | number, campaign: Campaign) {

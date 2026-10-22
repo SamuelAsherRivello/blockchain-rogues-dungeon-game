@@ -3,16 +3,18 @@ import { buildDungeonWangWalls } from "../../src/systems/rendering/tile-map-syst
 import { buildManualTileScenario } from "../../src/systems/procedural/manual-tile-scenarios.ts";
 import { createRunCampaign } from "../../src/systems/procedural/world-procedural-system.ts";
 
-for (const fixture of ["production-17", "production-914", "production-13579", "production-3266798470", "corridor-joins", "wang-topology-matrix", "wang-focus-widths", "wang-focus-bend", "wang-focus-t", "wang-focus-plus", "wang-focus-hole", "wang-focus-socket"]) {
+for (const fixture of ["production-17", "production-914", "production-13579", "production-42-level-3", "production-404-level-8", "production-777-level-12", "production-3266798470", "corridor-joins", "wang-topology-matrix", "wang-focus-widths", "wang-focus-bend", "wang-focus-t", "wang-focus-plus", "wang-focus-hole", "wang-focus-socket"]) {
   test(`@smoke production Wang artwork ${fixture}`, async ({ page }, info) => {
     const errors: string[] = [];
     page.on("pageerror", error => errors.push(error.message));
     page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
     const scenario = !fixture.startsWith("production-");
     const seed = scenario ? 13579 : Number(fixture.split("-")[1]);
-    const floor = scenario ? buildManualTileScenario(fixture, seed, 1)! : createRunCampaign(seed, 1, 1, 1, 1).floor;
+    const level = Number(fixture.split("-level-")[1] ?? 1);
+    if (level > 1) await page.setViewportSize(level === 3 ? { width: 960, height: 720 } : level === 8 ? { width: 1600, height: 900 } : { width: 1920, height: 1080 });
+    const floor = scenario ? buildManualTileScenario(fixture, seed, 1)! : createRunCampaign(seed, 1, 1, 1, level).floor;
     const expected = buildDungeonWangWalls({ cells: floor.cells }).walls;
-    await page.goto(`/blockchain-rogues-dungeon-game/?mute=1&world=1&level=1&slot=1&run=1&seed=${seed}${scenario ? `&debug-fix-map-autotiled=1&scenario=${fixture}` : ""}`);
+    await page.goto(`/blockchain-rogues-dungeon-game/?mute=1&world=1&level=${level}&slot=1&run=1&seed=${seed}${scenario ? `&debug-fix-map-autotiled=1&scenario=${fixture}` : ""}`);
     await expect(page.locator(".game-screen")).toBeVisible();
     await expect(page.getByText(/requires WebGPU|WebGPU.*unavailable|WebGPU.*not supported/i)).toHaveCount(0);
     const world = page.locator(".world-view");

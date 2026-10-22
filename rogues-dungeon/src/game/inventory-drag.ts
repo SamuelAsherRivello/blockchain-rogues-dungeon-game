@@ -1,5 +1,5 @@
 import type { Action, Campaign, DragSource, DropDestination, EquipmentGroup, Item } from "./types.ts";
-import { effectiveAttributes, isQuickSlottableItem, previewEquipment, projectEquipmentSwap } from "../systems/procedural/world-procedural-system.ts";
+import { effectiveAttributes, isQuickSlottableItem, previewEquipment, projectEquipmentSwap, quickSlotKey } from "../systems/procedural/world-procedural-system.ts";
 
 export function previewInventoryDrop(campaign: Campaign, drag: DragSource | null, group: EquipmentGroup, index: number, targetItem: Item | null) {
   if (!drag) return null;
@@ -27,10 +27,10 @@ export function resolveInventoryDrop(drag: DragSource | null, destination: DropD
   if (isQuickSlottableItem(drag.item) && destination.kind === "slot") return null;
   if (destination.kind === "quick-slot") {
     if (drag.kind === "quick-slot") {
-      if (drag.index === destination.index || (targetItem && (!isQuickSlottableItem(targetItem) || targetItem.consumableResource !== drag.item.consumableResource))) return null;
+      if (drag.index === destination.index || (targetItem && (!isQuickSlottableItem(targetItem) || quickSlotKey(targetItem) !== quickSlotKey(drag.item)))) return null;
       return { type: "move-quick-slot", from: drag.index, to: destination.index };
     }
-    if (drag.kind !== "inventory" || !isQuickSlottableItem(drag.item) || (targetItem && (!isQuickSlottableItem(targetItem) || targetItem.consumableResource !== drag.item.consumableResource))) return null;
+    if (drag.kind !== "inventory" || !isQuickSlottableItem(drag.item) || (targetItem && (!isQuickSlottableItem(targetItem) || quickSlotKey(targetItem) !== quickSlotKey(drag.item)))) return null;
     return { type: "assign-quick-slot", itemId: drag.item.id, index: destination.index };
   }
   if (destination.kind === "slot") {

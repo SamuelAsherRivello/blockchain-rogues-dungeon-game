@@ -48,7 +48,7 @@ Developer settings SHALL expose `E-VIS` with variant values `1` and `2`. Variant
 - **AND** cells outside it are darker
 
 ### Requirement: Transition music with Battle state
-General Mode SHALL play the normal music track, and Battle Mode SHALL temporarily play the action-oriented track with a 0.5-second crossfade on entry and exit. Leaving Battle SHALL resume the General track at its existing playback position.
+General Mode SHALL play Spooky Dungeon, and Battle Mode SHALL play JRPG - End Dungeon with a 0.5-second crossfade on entry and exit. The outgoing track SHALL pause after fading out, and each track SHALL retain its playback position for its next activation. Existing mute and volume controls SHALL govern both tracks throughout fades.
 
 #### Scenario: Enter Battle music
 - **WHEN** the game changes from General to Battle
@@ -65,3 +65,14 @@ When Battle is active but no qualifying enemy is currently detected by the playe
 - **WHEN** an enemy triggers Battle through awareness but remains outside current detection conditions
 - **THEN** the Battle icon remains visible
 - **AND** no enemy-specific tactical area, portrait, marker, or direction cue is shown
+
+### Requirement: Extend Battle warning with Perception
+Battle SHALL activate when any living active-floor enemy is within the greater of its effective awareness range and the player's detection range of max(1, twice Perception), using Chebyshev distance. Walls SHALL not prevent this warning. Enemy AI awareness SHALL retain its existing range and detection SHALL still require line of sight.
+
+#### Scenario: Receive an early warning
+- **WHEN** an enemy is beyond its own awareness but within the player's Perception detection range
+- **THEN** Battle activates without granting the enemy additional awareness
+
+#### Scenario: Hidden warning
+- **WHEN** a wall blocks detection of an enemy inside Battle warning range
+- **THEN** Battle activates without revealing that enemy

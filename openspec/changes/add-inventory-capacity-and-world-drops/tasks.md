@@ -21,7 +21,7 @@
 ## 4. World presentation and assets
 
 - [x] 4.1 Generalize the item-throw presentation and Babylon Lite renderer for item-specific flight and settled sprites, shared world depth, minimap parity, and dropped-object visibility; verify renderer tests cover flight expiration and matching game/minimap coordinates.
-- [ ] 4.2 Create the approved droppable-item representation table and author/register required new sprites; verify reused Health Potion, Mana Potion, and coin atlas entries plus asset provenance and selected Tiled tileset metadata.
+- [x] 4.2 Create the approved droppable-item representation table and author/register required new sprites; verify reused Health Potion, Mana Potion, and coin atlas entries plus dedicated runtime-atlas provenance and frame metadata.
 - [x] 4.3 Add focused browser coverage for thrown/settled world rendering and recollection using `?mute=1`; verify the dropped object remains collectible after the flight completes.
 
 ## 5. Integration verification

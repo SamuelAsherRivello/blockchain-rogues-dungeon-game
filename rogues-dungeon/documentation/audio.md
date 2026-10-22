@@ -1,5 +1,7 @@
 # Rogue's Dungeon Audio
 
+General mode selects Spooky Dungeon and Battle mode selects JRPG - End Dungeon. Each mode change crossfades for 0.5 seconds. The outgoing track pauses after fading out and resumes at its retained playback position when selected again. Reversing a fade starts from the current volumes. Dungeon 04 remains bundled with its credits but is not selected by this soundtrack. Music volume, Mute All, and the hard ?mute=1 override apply throughout transitions.
+
 Audio files are bundled under `public/assets/audio/`. The Music and SFX buses have independent 0–100 levels and a persisted **Mute All** checkbox in Settings. New preferences default to SFX 80, Music 20, and Mute All off. Zero on either slider silences only that bus.
 
 For silent browser automation and AI sessions, open the app with `?mute=1`, for example:

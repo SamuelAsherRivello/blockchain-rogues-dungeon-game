@@ -4,7 +4,8 @@ export const ENEMY_CHARACTER_NAMES = ["rat", "skeleton-warrior", "slime", "spide
 export type EnemyCharacterName = typeof ENEMY_CHARACTER_NAMES[number];
 export type EnemyIdleAnimationName = EnemyCharacterName;
 type AnimationName = "idle" | "move" | "attack" | "death";
-type EnemyDescriptor = Readonly<{ folder: string; dimensions: readonly [number, number]; animations: Readonly<Record<AnimationName, number>>; folderNames?: Readonly<Partial<Record<AnimationName, string>>>; filePrefix?: Readonly<Record<AnimationName, string>>; directional: boolean }>;
+export type EnemyCharacterDescriptor = Readonly<{ folder: string; dimensions: readonly [number, number]; animations: Readonly<Record<AnimationName, number>>; folderNames?: Readonly<Partial<Record<AnimationName, string>>>; filePrefix?: Readonly<Record<AnimationName, string>>; directional: boolean }>;
+type EnemyDescriptor = EnemyCharacterDescriptor;
 
 const descriptors: Readonly<Record<EnemyCharacterName, EnemyDescriptor>> = Object.freeze({
   rat: { folder: "rat", dimensions: [32, 32], animations: { idle: 5, move: 5, attack: 4, death: 4 }, directional: false },
@@ -48,8 +49,15 @@ export function createEnemyAnimationEntities(baseUrl = "/", speed = 0.5): Record
 }
 export const createEnemyIdleAnimationEntities = createEnemyAnimationEntities;
 export function enemyAnimationCatalog(baseUrl = "/", name: EnemyCharacterName): readonly SpriteAnimationSummary[] { return createEnemyAnimationEntities(baseUrl, 0.5)[name].listAnimations(); }
-export function enemyCharacterDescriptor(name: EnemyCharacterName) { return descriptors[name]; }
+export function enemyCharacterDescriptor(name: EnemyCharacterName): EnemyCharacterDescriptor { return descriptors[name]; }
+export function enemyStaticIdleFramePath(baseUrl = "/", name: EnemyCharacterName, frame = 0) {
+  const descriptor = descriptors[name];
+  const direction = descriptor.directional ? "/down" : "";
+  const folder = descriptor.folderNames?.idle ?? "idle";
+  return `${baseUrl}assets/art/game-view/enemies/${descriptor.folder}/frames/${folder}${direction}/${frameFile(descriptor, "idle", frame)}`;
+}
 export function enemyCharacterForName(name: string): EnemyCharacterName {
+  if ((ENEMY_CHARACTER_NAMES as readonly string[]).includes(name)) return name as EnemyCharacterName;
   if (name === "Skeleton" || name === "Skeleton Warrior") return "skeleton-warrior";
   if (name === "Skeleton Archer") return "skeleton-archer";
   if (name === "Skeleton Mage") return "skeleton-mage";

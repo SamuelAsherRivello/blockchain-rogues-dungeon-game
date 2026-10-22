@@ -78,7 +78,7 @@ Order: Zoom, Camera, Movement, Fullscreen, Settings. Use a small monochrome inli
 | Hover or travel toward reachable ground | Walking boot; running variant while sprint input applies |
 | Hover enemy; approach or bump attack | Crossed swords; do not imply ranged targeting |
 | Pickup, unopened chest, campfire, usable stairs | Open interaction hand |
-| Unopened breakable crate | Strike icon shared with fighting |
+| Unopened breakable crate | Open interaction hand; forbidden when no legal approach or adjacent interaction exists |
 | Legally pushable barrel | Pushing hand |
 | Blocked terrain, sealed route, illegal push | Forbidden symbol |
 | Walking onto a trigger or open door | Walking boot; trigger itself is not a separate click command |

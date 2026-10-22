@@ -28,6 +28,10 @@ Dropped objects SHALL settle one walkable, unoccupied cell diagonally above-left
 - **WHEN** both preferred cells are blocked
 - **THEN** the drop uses the first valid deterministic nearby cell, or is rejected without losing the source if no valid cell exists
 
+#### Scenario: Removing capacity forces overflow drops
+- **WHEN** Extra Space is dropped while the remaining inventory exceeds the base capacity
+- **THEN** the game drops enough additional inventory stacks to restore the post-drop capacity, uses a deterministic selection, and gives each spawned object a distinct walkable cell by expanding through cardinal neighbors when the preferred cells are occupied
+
 ### Requirement: Represent every droppable object distinctly
 Every equipment item, ability, consumable, and capacity item that can be dropped SHALL have a stable world representation and SHALL be distinguishable from unrelated world pickups.
 

@@ -3,11 +3,12 @@
 ## ADDED Requirements
 
 ### Requirement: Show a binary tactical area for detected enemies
-During Battle, the game view SHALL divide visible world cells into exactly two presentation zones: tactical area and non-tactical area. The tactical area SHALL be the union of the rectilinear engagement areas connecting the player to each currently detected qualifying enemy.
+During Battle, the game view SHALL divide visible world cells into exactly two presentation zones. The tactical area SHALL include the player cell and the union of filled inclusive rectangles from the player to each detected enemy within Battle warning range. Each rectangle SHALL extend one full grid row upward before union, with its sides and bottom unchanged. Overlap SHALL not increase brightness.
 
 #### Scenario: One detected enemy
 - **WHEN** Battle is active with one detected qualifying enemy
 - **THEN** the player cell, enemy cell, and rectilinear engagement area between them belong to the tactical area
+- **AND** one full row above the rectangle is included to protect character artwork
 - **AND** all other visible cells belong to the non-tactical area
 
 #### Scenario: Multiple detected enemies
@@ -18,6 +19,7 @@ During Battle, the game view SHALL divide visible world cells into exactly two p
 #### Scenario: No detected enemy
 - **WHEN** Battle is active but no qualifying enemy is detected
 - **THEN** no enemy-specific tactical area is shown
+- **AND** only the player cell and the cell directly above it belong to the tactical area
 - **AND** the presentation does not reveal hidden enemy location information
 
 ### Requirement: Preserve world geometry and interaction
