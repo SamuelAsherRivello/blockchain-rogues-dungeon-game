@@ -640,10 +640,13 @@ test('starts a current campaign with a valid rolled character and bindings', () 
   assert.deepEqual(Object.keys(campaign.progression.attributes), ['health', 'stamina', 'offense', 'defense', 'mana', 'perception', 'strength', 'luck', 'recovery', 'stealth']);
 });
 
-test('new-character starter equipment grants one copy of each new item without changing later runs', () => {
+test('new-character starter equipment is limited to World 1 Level 1 without changing later runs', () => {
   const starter = createRunCampaign(123, 1, 1, 1, 1, { starterEquipment: true });
-  assert.deepEqual(starter.player.inventory.filter((item) => item.category !== 'consumable').map((item) => item.name), ['Dagger (Magic)', 'Sword', 'Two-Handed Sword', 'Leg Armor (Magic)', 'Chest Armor', 'Suit of Armor']);
-  assert.equal(starter.player.inventory.length, 8);
+  assert.deepEqual(starter.player.inventory.filter((item) => item.category !== 'consumable').map((item) => item.name), ['Dagger (Magic)', 'Two-Handed Sword', 'Leg Armor (Magic)', 'Suit of Armor']);
+  assert.equal(starter.player.inventory.length, 6);
+  assert.deepEqual(starter.player.inventory.filter((item) => item.category !== 'consumable').map((item) => item.slotSpan ?? 1), [1, 2, 1, 2]);
+  const laterLevel = createRunCampaign(123, 1, 1, 1, 2, { starterEquipment: true });
+  assert.deepEqual(laterLevel.player.inventory.map((item) => item.name), ['Health Potion', 'Mana Potion']);
   const later = createRunCampaign(123, 1, 2);
   assert.deepEqual(later.player.inventory.map((item) => item.name), ['Health Potion', 'Mana Potion']);
 });

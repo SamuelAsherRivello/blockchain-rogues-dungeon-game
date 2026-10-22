@@ -17,3 +17,17 @@ test("movement feedback: dropdown keyboard focus and centered Gridless mouse tra
   const verify = runInNewContext(`(${source.replaceAll("http://127.0.0.1:6080/blockchain-rogues-dungeon-game/", baseURL!)})`) as (page: Page) => Promise<{ errors: string[] }>;
   expect((await verify(page)).errors).toEqual([]);
 });
+
+test("trap hazards retain red preview dots and require a fresh gesture to cross", async ({ page, baseURL }) => {
+  test.setTimeout(120_000);
+  const source = await readFile(new URL("./trap-routing-check.js", import.meta.url), "utf8");
+  const verify = runInNewContext(`(${source.replaceAll("http://127.0.0.1:6080/blockchain-rogues-dungeon-game/", baseURL!)})`) as (page: Page) => Promise<{ errors: string[] }>;
+  expect((await verify(page)).errors).toEqual([]);
+});
+
+test("mouse travel is limited to thirty grid steps per gesture", async ({ page, baseURL }) => {
+  test.setTimeout(120_000);
+  const source = await readFile(new URL("./mouse-travel-limit-check.js", import.meta.url), "utf8");
+  const verify = runInNewContext(`(${source.replaceAll("http://127.0.0.1:6080/blockchain-rogues-dungeon-game/", baseURL!)})`) as (page: Page) => Promise<{ errors: string[] }>;
+  expect((await verify(page)).errors).toEqual([]);
+});

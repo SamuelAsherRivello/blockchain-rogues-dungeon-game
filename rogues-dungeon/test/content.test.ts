@@ -121,6 +121,8 @@ test('mounts the dungeon and minimap in Babylon Lite from the same world compone
   assert.match(source, /chests\.forEach\(\(sprite, i\) => \{ const chestObject = chestObjects\[i\]/);
   assert.match(source, /getInitializationMessage\(Boolean\(navigator\.gpu\), error\)/);
   assert.doesNotMatch(source, /shouldRenderWorld/, 'the main renderer mounts immediately behind the loading iris');
+  assert.match(source, /useState<UiIrisPhase>\("closed"\)/, 'the game starts fully covered by the iris');
+  assert.match(source, /useState\(true\);[\s\S]*const \[irisRequested/, 'the startup iris is mounted before the renderer opens it');
   assert.match(source, /irisPhase === "closed" && rendererLoaded/, 'the iris reveals only after the mounted renderer is ready');
   assert.doesNotMatch(source, /getContext\(["'](?:2d|webgl2?)["']/i);
 });

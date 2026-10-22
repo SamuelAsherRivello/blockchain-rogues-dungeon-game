@@ -6,6 +6,7 @@ export type Direction = "n" | "s" | "w" | "e";
 /** The last cardinal direction in which a character successfully moved. */
 export type CharacterHeading = Direction;
 export type ResourceName = "health" | "stamina" | "offense" | "defense" | "mana" | "xp";
+export const RESOURCE_WILL_REPLENISH: Readonly<Record<ResourceName, boolean>> = Object.freeze({ health: true, stamina: true, offense: true, defense: true, mana: true, xp: false });
 export type AttributeName = Exclude<ResourceName, "xp"> | "perception" | "strength" | "luck" | "recovery" | "stealth";
 export type MovementMode = "grid-snap" | "grid-tween" | "gridless";
 export type GameMode = "General" | "Battle";

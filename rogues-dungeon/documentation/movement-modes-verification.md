@@ -2,6 +2,12 @@
 
 Change: `add-movement-modes-and-context-cursors`.
 
+## Mouse travel courtesy update
+
+The latest checks pass 245 unit tests and type checking. Mouse preview and travel are capped at 30 cardinal steps per gesture, independent of attributes and layout. Trap cells remain in the preview with red dots; movement stops before the first unconfirmed trap, and a fresh adjacent click confirms crossing only that trap. Keyboard input clears any old mouse confirmation. Closed-door behavior is unchanged.
+
+Playwright CLI Edge passed `trap-routing-check.js` in all three modes, verifying full previews, a red hazard dot, the courtesy stop at cell 52, and second-click arrival at cell 56. `mouse-travel-limit-check.js` passed in all three modes at quarter Zoom: a target 40 cells away showed 30 dots and stopped exactly 30 steps away, without later continuation. Both groups reported zero page/console errors and are included in the configured movement browser spec. The React review retained transient travel budgets and confirmations in refs instead of adding per-frame state.
+
 ## Playtest follow-up
 
 The latest `npm test` run passes all 243 tests, including 14 focused movement tests. Type checking and strict OpenSpec validation pass. The earlier counts and browser results below document the initial implementation, not a new full-suite run.

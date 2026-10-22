@@ -4,6 +4,8 @@ import { findCardinalApproachPath, findCardinalPath } from "./a-star.ts";
 import { ensureSemanticCells, isWalkable } from "../systems/procedural/level-grid-system.ts";
 
 export interface MousePathResult { path: ReturnType<typeof findCardinalPath>; reachable: boolean }
+export const MAX_MOUSE_TRAVEL_STEPS = 30;
+export const isMouseHazard = (floor: MouseCampaign["floor"], cell: Position) => floor.decorations?.some(entry => entry.kind === "trap" && entry.x === cell.x && entry.y === cell.y) ?? false;
 
 export function getMousePathResult(selectedCell: SelectedCell | null, campaign: MouseCampaign | null): MousePathResult {
   if (!selectedCell || !campaign?.player || !campaign?.floor) return { path: null, reachable: false };
@@ -12,7 +14,19 @@ export function getMousePathResult(selectedCell: SelectedCell | null, campaign: 
   if (!isWalkable(ensureSemanticCells(campaign.floor), selectedCell.x, selectedCell.y)) return { path: null, reachable: false };
   const pathOptions = { respectObjectSets: true };
   const path = findCardinalPath(campaign.floor, campaign.player, selectedCell, pathOptions);
-  return path ? { path, reachable: true } : { path: findCardinalApproachPath(campaign.floor, campaign.player, selectedCell, pathOptions), reachable: false };
+  const preview = path ?? findCardinalApproachPath(campaign.floor, campaign.player, selectedCell, pathOptions);
+  return { path: preview ? Object.freeze(preview.slice(0, MAX_MOUSE_TRAVEL_STEPS + 1)) : null, reachable: Boolean(path && path.length <= MAX_MOUSE_TRAVEL_STEPS + 1) };
+}
+
+/** The preview may cross hazards; one click stops before the first unconfirmed one. */
+export function planMouseTravel(selected: SelectedCell, campaign: MouseCampaign, warnedHazard: Position | null = null) {
+  const result = getMousePathResult(selected, campaign);
+  const path = result.path;
+  const same = (a: Position, b: Position) => a.x === b.x && a.y === b.y;
+  const confirmedHazard = path?.[1] && warnedHazard && same(path[1], warnedHazard) ? warnedHazard : null;
+  const hazardIndex = path?.findIndex((cell, index) => index > 0 && isMouseHazard(campaign.floor, cell) && (!confirmedHazard || !same(cell, confirmedHazard))) ?? -1;
+  const stop = hazardIndex > 0 ? path![hazardIndex - 1] : path?.length === MAX_MOUSE_TRAVEL_STEPS + 1 ? path.at(-1) : null;
+  return { destination: stop ? { ...selected, ...stop, pixel: undefined } : selected, warnedHazard: hazardIndex > 0 ? path![hazardIndex] : null, confirmedHazard };
 }
 
 export function getMousePathFromSelectedCell(selectedCell: SelectedCell | null, campaign: MouseCampaign | null) {

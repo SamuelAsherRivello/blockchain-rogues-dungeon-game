@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { getMousePathResult, getMouseMovementFromSelectedCell } from "../src/game/mouse-selection.ts";
+import { getMousePathResult, getMouseMovementFromSelectedCell, MAX_MOUSE_TRAVEL_STEPS, planMouseTravel } from "../src/game/mouse-selection.ts";
 import { applyAction, createCampaign, effectiveAttributes, gameMode, progressionStatNames, upgradeCampaignResources } from "../src/systems/procedural/world-procedural-system.ts";
 import { normalizePreferences, migrateCampaign } from "../src/systems/persistence/save-system.ts";
 import { cellCenter, centerCrossings, normalizePlayerPosition, occupiedCell, PixelMovementIntegrator } from "../src/game/player-position.ts";
@@ -213,4 +213,40 @@ test("existing cardinal previews and closed-door approaches remain authoritative
   assert.ok(renderer.includes('targetKind === "item" || targetKind === "enemy" ? targetKind : selectedCellReachable === false ? "invalid" : targetKind'));
   const palette = await readFile(new URL("../src/ui/interaction-colors.ts", import.meta.url), "utf8");
   for (const color of ["#f5f1e6", "#6dd873", "#dc3d40", "#090909"]) assert.ok(palette.includes(color));
+});
+
+test("mouse previews cross hazards but each fresh gesture pauses before an unconfirmed trap", () => {
+  const campaign = arena();
+  campaign.floor.decorations = [{ id: "trap", kind: "trap", x: 23, y: 20, wallMounted: false }];
+  for (let y = 0; y < 100; y++) for (let x = 0; x < 100; x++) setCell(campaign.floor, x, y, { walkable: y === 20 && x >= 20 && x <= 26 });
+  for (const target of [{ x: 23, y: 20 }, { x: 26, y: 20 }]) {
+    const result = getMousePathResult(target, campaign);
+    assert.equal(result.reachable, true);
+    assert.ok(result.path?.some(cell => cell.x === 23));
+    assert.equal(getMouseMovementFromSelectedCell({ ...target, pressed: true }, campaign, result.path)?.direction, "e");
+    const plan = planMouseTravel({ ...target, pressed: true }, campaign);
+    assert.equal(plan.destination.x, 22); assert.deepEqual(plan.warnedHazard, { x: 23, y: 20 });
+    campaign.player.x = 22; campaign.player.pixel = cellCenter(campaign.player);
+    assert.equal(getMouseMovementFromSelectedCell(planMouseTravel({ ...target, pressed: true }, campaign).destination, campaign), null);
+    const confirmed = planMouseTravel({ ...target, pressed: true }, campaign, plan.warnedHazard);
+    assert.equal(confirmed.destination.x, target.x); assert.deepEqual(confirmed.confirmedHazard, { x: 23, y: 20 });
+    campaign.player.x = 20; campaign.player.pixel = cellCenter(campaign.player);
+  }
+  campaign.floor.decorations.push({ id: "second-trap", kind: "trap", x: 25, y: 20, wallMounted: false });
+  campaign.player.x = 22; campaign.player.pixel = cellCenter(campaign.player);
+  const nextHazard = planMouseTravel({ x: 26, y: 20, pressed: true }, campaign, { x: 23, y: 20 });
+  assert.equal(nextHazard.destination.x, 24); assert.deepEqual(nextHazard.warnedHazard, { x: 25, y: 20 });
+  // Deliberate keyboard/domain movement still permits entering a trap.
+  campaign.player.x = 22; campaign.player.pixel = cellCenter(campaign.player);
+  assert.equal(applyAction(campaign, { type: "move", direction: "e", hazardElapsedMs: 0 }).state.player.x, 23);
+});
+
+test("mouse previews and click destinations have a thirty-step UX limit", () => {
+  const campaign = arena();
+  const target = { x: 80, y: 20, pressed: true };
+  const preview = getMousePathResult(target, campaign);
+  assert.equal(MAX_MOUSE_TRAVEL_STEPS, 30); assert.equal(preview.path!.length, 31);
+  assert.equal(preview.reachable, false); assert.deepEqual(preview.path!.at(-1), { x: 50, y: 20 });
+  assert.equal(planMouseTravel(target, campaign).destination.x, 50);
+  assert.equal(getMousePathResult({ x: 50, y: 20 }, campaign).reachable, true);
 });

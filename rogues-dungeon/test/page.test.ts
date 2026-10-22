@@ -22,7 +22,7 @@ test('status capacity markers make creation ranks legible without reaching the f
 test('labels character meters as Status and exposes exact current values with the XP level', async () => {
   const [game, panels] = await Promise.all(['../src/game/game.tsx', '../src/game/panels/information-panels.tsx'].map((path) => readFile(new URL(path, import.meta.url), 'utf8')));
   assert.match(panels, /GameCard title="Status"/);
-  assert.match(game, /Level \$\{String\(value\.level\)\.padStart\(2, "0"\)\}\. \$\{value\.current\} \/ \$\{value\.currentMax\} XP\./);
+  assert.match(game, /Level \$\{String\(displayedValue\.level\)\.padStart\(2, "0"\)\}\. \$\{displayedValue\.current\} \/ \$\{displayedValue\.currentMax\} XP\./);
   assert.match(game, /resource_level--empty/);
   assert.match(game, /resource_level--filled/);
   assert.match(game, /LVL \$\{String\(value\.level\)\.padStart\(2, "0"\)\}/);
@@ -165,7 +165,8 @@ test('saves a running game before returning to the main menu', async () => {
   const [game, settingsWindow] = await Promise.all(['../src/game/game.tsx', '../src/game/windows/settings-window.tsx'].map((path) => readFile(new URL(path, import.meta.url), 'utf8')));
   assert.match(settingsWindow, /Save &amp; Exit/);
   assert.match(game, /const saveAndQuit = useCallback/);
-  assert.match(game, /writeSlot\(localStorage, slot, campaign\);[\s\S]*setSummaries\(readSlotSummary\(localStorage\)\);[\s\S]*returnToMainMenu\(\);/);
+  assert.match(game, /const currentCampaign = sessionRef\.current\?\.getState\(\) \?\? campaign;/);
+  assert.match(game, /writeSlot\(localStorage, slot, currentCampaign\);[\s\S]*setSummaries\(readSlotSummary\(localStorage\)\);[\s\S]*returnToMainMenu\(\);/);
   assert.match(game, /onSaveAndQuit=\{saveAndQuit\}/);
 });
 
@@ -305,14 +306,15 @@ test('renders transient item drag feedback without intercepting drops', async ()
   assert.match(game, /window\.addEventListener\("pointercancel", pointerCancel\)/);
   assert.match(css, /\.item-drag-preview\{[^}]*pointer-events:none/); assert.match(css, /\.item-drag-preview\{[^}]*width:min\(11rem/); assert.match(css, /\.drag_departure/); assert.match(css, /\.drag_landing/);
 });
-test('anchors item comparison to the inventory panel with a fixed ten-pixel gap', async () => {
-  const game = await readFile(new URL('../src/game/game.tsx', import.meta.url), 'utf8');
+test('anchors item comparison over the world immediately left of the inventory panel', async () => {
+  const [game, css] = await Promise.all(['../src/game/game.tsx', '../src/ui/style.css'].map((path) => readFile(new URL(path, import.meta.url), 'utf8')));
   const panels = await readFile(new URL('../src/game/panels/information-panels.tsx', import.meta.url), 'utf8');
   assert.match(panels, /className="info-panel__inventory-card"/);
   assert.match(game, /querySelector<HTMLElement>\("\.info-panel__inventory-card"\)/);
-  assert.match(game, /right: window\.innerWidth - inventoryPanelRect\.left \+ 10/);
-  assert.match(game, /transform: "translateY\(-50%\)"/);
-  assert.doesNotMatch(game, /rect\.left - 36/);
+  assert.match(game, /querySelector<HTMLElement>\("\.world-view-region"\)/);
+  assert.match(game, /left: inventoryPanelRect\.left - worldViewRect\.left - 10/);
+  assert.match(game, /transform: "translate\(-100%, -50%\)"/);
+  assert.match(css, /\.item-comparison-panel \{ position:absolute;/);
 });
 test('dims keyboard inputs while their ability or quick slot is being dragged', async () => {
   const [game, css] = await Promise.all(['src/game/game.tsx', 'src/ui/style.css'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));

@@ -1,7 +1,7 @@
 import type { CSSProperties, PointerEvent as ReactPointerEvent, PointerEventHandler } from "react";
 import type { Orientation } from "../ui/layout.ts";
 import { SLOT_COLORS, type SlotCategory } from "../ui/slot-colors.ts";
-import type { AbilityId, Action, Attributes, AttributeName, Campaign, Direction, DragSource, DropDestination, EquipmentGroup, Feedback, Floor, Item, Position, Preferences, QuickSlot, Resource, ResourceName, SelectedCell } from "./types.ts";
+import { RESOURCE_WILL_REPLENISH, type AbilityId, type Action, type Attributes, type AttributeName, type Campaign, type Direction, type DragSource, type DropDestination, type EquipmentGroup, type Feedback, type Floor, type Item, type Position, type Preferences, type QuickSlot, type Resource, type ResourceName, type SelectedCell } from "./types.ts";
 type Ability = typeof abilityCatalog[AbilityId];
 interface Gain { from: number; to: number; max: number }
 export type Gains = Partial<Record<ResourceName, Gain>>;
@@ -35,13 +35,13 @@ import { projectResourceChangeEffects, removeResourceChangeEffect, type Resource
 import { getLatestMovement, getMovementKey, getMoveRepeatDelay, getMoveScheduleDelay } from "./keyboard-input.ts";
 import { ControlsArea } from "../ui/ControlsArea.tsx";
 import { useUiMotion, type UiMotionStyle } from "../ui/ui-transition-system.tsx";
-import { getMouseMovementFromSelectedCell, getMousePathResult } from "./mouse-selection.ts";
+import { getMouseMovementFromSelectedCell, getMousePathResult, isMouseHazard, MAX_MOUSE_TRAVEL_STEPS, planMouseTravel } from "./mouse-selection.ts";
 import { clearRoguesDungeonStorage, formatSavedAgo, readPreferences, readSlot, readSlotSummary, readWorldSeed, writePreferences, writeSlot } from "../systems/persistence/save-system.ts";
 import { runUrlForCampaign } from "./run-url-system.ts";
 import { BabylonWorld, type DungeonTheme, type GameViewToUiAnimation } from "../systems/rendering/babylon-render-system.tsx";
 import { ITEM_THROW_DURATION_MS, throwItems, type ItemThrow } from "../systems/animation/item-throw-animation-system.ts";
 import { CHARACTER_MOVEMENT_DURATION_MS, INTERACTIVE_BUMP_APEX_MS, TurnPresentationSystem } from "../systems/animation/turn-presentation-system.ts";
-import { createQuestGameSession as createGameSession } from "../systems/quests/quest-progression-system.ts";
+import { createQuestGameSession as createGameSession, currentQuest } from "../systems/quests/quest-progression-system.ts";
 import { Tooltip } from "../ui/Tooltip.tsx";
 import { LayoutContext } from "../ui/layout-context.ts";
 import { dialogBounds, type DialogBounds, type DialogCenter } from "../ui/Dialog.tsx";
@@ -69,8 +69,8 @@ export { DeltaValue } from "./panels/attribute-panel.tsx";
 
 const icons: Partial<Record<string, string>> = { health: "♥", stamina: "◈", offense: "⚔", defense: "⛨", mana: "✦", xp: "★" };
 const resourceHelp: Record<ResourceName, string> = { health: "Health remaining; potions restore it.", stamina: "Low Stamina lowers damage.", offense: "Attack power after Stamina readiness.", defense: "Defense reduces incoming damage.", mana: "Mana is spent on abilities.", xp: "Experience toward next level." };
-function ResourceBar({ name, value, gain, rank }: { name: ResourceName; value: Resource; gain?: Gain; rank?: number }) { const cap = name === "xp" ? Math.max(0, Math.min(100, value.currentMax ?? 100)) : statusCapMarker(rank ?? 1); const fill = Math.max(0, Math.min(cap, value.currentMax > 0 ? value.current / value.currentMax * cap : 0)); const gainStart = gain ? Math.min(cap, Math.max(0, gain.from / value.currentMax * cap)) : 0; const gainEnd = gain ? Math.min(cap, Math.max(0, gain.to / value.currentMax * cap)) : 0; const levelText = `LVL ${String(value.level).padStart(2, "0")}`; return <div className={"resource resource_" + name} aria-label={name + ": " + value.current + " of " + value.currentMax}><span>{icons[name]}</span><div className="resource_track"><i style={{ width: fill + "%" }} />{gain && <strong className="resource_gain" style={{ left: gainStart + "%", width: Math.max(0, gainEnd - gainStart) + "%" }} />}<b style={{ left: cap + "%" }} />{name === "xp" && <><em className="resource_level resource_level--empty">{levelText}</em><em className="resource_level resource_level--filled" style={{ clipPath: `inset(0 ${100 - fill}% 0 0)` }}>{levelText}</em></>}</div></div>; }
-export function ResourceList({ campaign, gains = {} }: { campaign: Campaign; gains?: Gains }) { const resources = resourceState(campaign); return <div className="resource_list">{(["health", "stamina", "offense", "defense", "mana", "xp"] as const).map((name) => { const value = resources[name]; const prefix = name === "xp" ? `Level ${String(value.level).padStart(2, "0")}. ${value.current} / ${value.currentMax} XP.` : `${value.current} / ${value.currentMax}.`; return <Tooltip key={name} content={`${prefix} ${resourceHelp[name]}`}><button tabIndex={-1} type="button" className="resource_tooltip_trigger" aria-label={`${name}: ${value.current} of ${value.currentMax}`}><ResourceBar name={name} value={value} gain={gains[name]} rank={name === "xp" ? undefined : campaign.progression.attributes[name]} /></button></Tooltip>; })}</div>; }
+function ResourceBar({ name, value, gain, rank }: { name: ResourceName; value: Resource; gain?: Gain; rank?: number }) { const cap = name === "xp" ? Math.max(0, Math.min(100, value.currentMax ?? 100)) : statusCapMarker(rank ?? 1); const fill = Math.max(0, Math.min(cap, value.currentMax > 0 ? value.current / value.currentMax * cap : 0)); const gainStart = gain ? Math.min(cap, Math.max(0, gain.from / value.currentMax * cap)) : 0; const gainEnd = gain ? Math.min(cap, Math.max(0, gain.to / value.currentMax * cap)) : 0; const levelText = `LVL ${String(value.level).padStart(2, "0")}`; return <div className={"resource resource_" + name} data-will-replenish={RESOURCE_WILL_REPLENISH[name]} aria-label={name + ": " + value.current + " of " + value.currentMax}><span>{icons[name]}</span><div className="resource_track"><i style={{ width: fill + "%" }} />{gain && <strong className="resource_gain" style={{ left: gainStart + "%", width: Math.max(0, gainEnd - gainStart) + "%" }} />}<b style={{ left: cap + "%" }} />{name === "xp" && <><em className="resource_level resource_level--empty">{levelText}</em><em className="resource_level resource_level--filled" style={{ clipPath: `inset(0 ${100 - fill}% 0 0)` }}>{levelText}</em></>}</div></div>; }
+export function ResourceList({ campaign, gains = {}, statusReplenishProgress = null }: { campaign: Campaign; gains?: Gains; statusReplenishProgress?: number | null }) { const resources = resourceState(campaign); return <div className="resource_list">{(["health", "stamina", "offense", "defense", "mana", "xp"] as const).map((name) => { const value = resources[name]; const progress = statusReplenishProgress == null || !RESOURCE_WILL_REPLENISH[name] ? 0 : Math.max(0, Math.min(1, statusReplenishProgress)); const replenishGain = gains[name]?.to === value.currentMax ? gains[name] : undefined; const baseline = replenishGain?.from ?? value.current; const displayedCurrent = progress === 0 ? value.current : baseline + (value.currentMax - baseline) * progress; const displayedValue = progress === 0 ? value : { ...value, current: displayedCurrent }; const segmentStart = progress >= 1 ? .5 : 0; const displayedGain = progress > 0 ? { from: baseline + (value.currentMax - baseline) * segmentStart, to: displayedCurrent, max: value.currentMax } : gains[name]; const prefix = name === "xp" ? `Level ${String(displayedValue.level).padStart(2, "0")}. ${displayedValue.current} / ${displayedValue.currentMax} XP.` : `${displayedValue.current} / ${displayedValue.currentMax}.`; return <Tooltip key={name} content={`${prefix} ${resourceHelp[name]}`}><button tabIndex={-1} type="button" className="resource_tooltip_trigger" aria-label={`${name}: ${displayedValue.current} of ${displayedValue.currentMax}`}><ResourceBar name={name} value={displayedValue} gain={displayedGain} rank={name === "xp" ? undefined : campaign.progression.attributes[name]} /></button></Tooltip>; })}</div>; }
 /** Renders an attribute number that pulses only when its color changes to a delta. */
 export function AttributeViewItemList({ campaign, preview = null }: { campaign: Campaign; preview?: Attributes | null }) { return <AttributePanel attributes={campaign.progression.attributes} preview={preview} help={attributeHelp} />; }
 export function itemPresentation(item: Item | null) { return Object.entries(item?.modifiers ?? {}).flatMap(([attribute, amount]) => Number.isFinite(amount) ? [{ icon: icons[attribute] ?? "◆", cost: `${amount! >= 0 ? "+" : ""}${amount}` }] : []); }
@@ -90,7 +90,9 @@ function ItemComparisonPanel({ before, after, destination }: { before: Item | nu
   const rect = target?.getBoundingClientRect();
   const inventoryPanel = document.querySelector<HTMLElement>(".info-panel__inventory-card");
   const inventoryPanelRect = inventoryPanel?.getBoundingClientRect();
-  const style = rect && inventoryPanelRect ? { right: window.innerWidth - inventoryPanelRect.left + 10, top: rect.top + rect.height / 2, transform: "translateY(-50%)" } : undefined;
+  const worldView = document.querySelector<HTMLElement>(".world-view-region");
+  const worldViewRect = worldView?.getBoundingClientRect();
+  const style = rect && inventoryPanelRect && worldViewRect ? { left: inventoryPanelRect.left - worldViewRect.left - 10, top: rect.top - worldViewRect.top + rect.height / 2, transform: "translate(-100%, -50%)" } : undefined;
   return <aside className="item-comparison-panel" aria-label="Equipment comparison" style={style}><GameCard title="Item Comparison"><ItemComparisonItemPanel title="Before" item={before} baseline={before} /><ItemComparisonItemPanel title="After" item={after} baseline={before} /></GameCard></aside>;
 }export function stackInventoryItems(inventory: Item[]): InventoryStack[] {
   const stacks: InventoryStack[] = [];
@@ -266,7 +268,7 @@ export function Game() {
   const [summaryNow, setSummaryNow] = useState(() => Date.now());
   const [slot, setSlot] = useState<string | null>(null); const [campaign, setCampaign] = useState<Campaign | null>(null); const [worldAlive, setWorldAlive] = useState(false); const [stairDepartureStartedAt, setStairDepartureStartedAt] = useState<number | null>(null); const [settings, setSettings] = useState(false); const [howToPlay, setHowToPlay] = useState(false); const [gameSettingsCenter, setGameSettingsCenter] = useState<DialogCenter | null>(null); const [progressionOpen, setProgressionOpen] = useState(false); const [creationSlot, setCreationSlot] = useState<string | null>(null); const [creationAttributes, setCreationAttributes] = useState<Attributes | null>(null); const [menuExiting, setMenuExiting] = useState(false); const [saveError, setSaveError] = useState(""); const [preview, setPreview] = useState<Attributes | null>(null); const [dragPresentation, setDragPresentation] = useState<DragPresentation | null>(null); const [gains, setGains] = useState<Gains>({}); const [floatingFeedback, setFloatingFeedback] = useState<Feedback[]>([]); const [resourceChangeEffects, setResourceChangeEffects] = useState<ResourceChangeEffect[]>([]); const [particleEffects, setParticleEffects] = useState<ParticleEffect[]>([]); const [itemThrows, setItemThrows] = useState<ItemThrow[]>([]); const [abilityCooldowns, setAbilityCooldowns] = useState<Partial<Record<AbilityId, number>>>({}); const [cameraAnimationToken, setCameraAnimationToken] = useState(0); const [fps, setFps] = useState<number | null>(null);
   const [primaryInfoOpen, setPrimaryInfoOpen] = useState(true); const [secondaryInfoOpen, setSecondaryInfoOpen] = useState(true); const [uiAnimations, setUiAnimations] = useState<GameViewToUiAnimation[]>([]); const [pendingUiCredits, setPendingUiCredits] = useState<{ id: string; previous: Campaign; shineKeys: string[] }[]>([]); const [shineTokens, setShineTokens] = useState<Record<string, number>>({});
-  const [selectedGridSpot, setSelectedGridSpot] = useState<SelectedCell | null>(null); const [campfireMenu, setCampfireMenu] = useState<Position | null>(null); const [campfireRestConfirming, setCampfireRestConfirming] = useState(false); const [campfireRestTransition, setCampfireRestTransition] = useState(false); const [mobilePanel, setMobilePanel] = useState("controls"); const [mapTest, setMapTest] = useState(false);
+  const [selectedGridSpot, setSelectedGridSpot] = useState<SelectedCell | null>(null); const [campfireMenu, setCampfireMenu] = useState<Position | null>(null); const [campfireRestConfirming, setCampfireRestConfirming] = useState(false); const [campfireRestTransition, setCampfireRestTransition] = useState(false); const [statusReplenishProgress, setStatusReplenishProgress] = useState<number | null>(null); const [mobilePanel, setMobilePanel] = useState("controls"); const [mapTest, setMapTest] = useState(false);
   const [dungeonTheme, setDungeonTheme] = useState<DungeonTheme>(1);
   const gainTimers = useRef(new Map<ResourceName, ReturnType<typeof setTimeout>>()); const abilityTimers = useRef(new Set<ReturnType<typeof setTimeout>>()); const abilityCooldownsRef = useRef<Partial<Record<AbilityId, number>>>({}); const sessionGenerationRef = useRef(0); const settingsBoundsRef = useRef<DialogBounds | null>(null); const creationBoundsRef = useRef<DialogBounds | null>(null); const helpBoundsRef = useRef<DialogBounds | null>(null);
   const floatingTimers = useRef(new Map<string | undefined, ReturnType<typeof setTimeout>>()); const resourceChangeEffectTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>()); const shineTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>()); const pendingMenuStartRef = useRef<(() => void) | null>(null);
@@ -303,6 +305,8 @@ export function Game() {
   const sessionRef = useRef<ReturnType<typeof createGameSession> | null>(null);
   const pixelSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const campaignRef = useRef<Campaign | null>(null);
+  const initialQuestShimmerPendingRef = useRef(false);
+  const [initialWorldRevealComplete, setInitialWorldRevealComplete] = useState(false);
   const collectedItemIdsRef = useRef(new Set<string>());
   const shineSlot = useCallback((key: string) => {
     setShineTokens((current) => ({ ...current, [key]: (current[key] ?? 0) + 1 }));
@@ -313,6 +317,23 @@ export function Game() {
   const shineSlots = useCallback((keys: string[]) => { keys.forEach(shineSlot); }, [shineSlot]);
   useLayoutEffect(() => {
     const previous = campaignRef.current;
+    if (campaign) {
+      const previousQuest = previous ? currentQuest(previous) : null;
+      const nextQuest = currentQuest(campaign);
+      const questStarted = !previousQuest || previousQuest.id !== nextQuest.id || previousQuest.activeItemId === null && nextQuest.activeItemId !== null;
+      const questFinished = previousQuest?.activeItemId !== null && nextQuest.activeItemId === null;
+      if (questStarted || questFinished) {
+        if (questStarted && !previousQuest) initialQuestShimmerPendingRef.current = true;
+        if (!questStarted || initialWorldRevealComplete) {
+          shineSlot("quest");
+          initialQuestShimmerPendingRef.current = false;
+        }
+      }
+    }
+    if (initialWorldRevealComplete && initialQuestShimmerPendingRef.current) {
+      shineSlot("quest");
+      initialQuestShimmerPendingRef.current = false;
+    }
     if (campaign && previous) for (const entity of previous.floor.entities) {
       const collected = collectedItemIdsRef.current.has(entity.id) || (entity.kind === "item" && collectedItemIdsRef.current.has(entity.item.id));
       if (entity.kind === "crate") continue;
@@ -333,7 +354,7 @@ export function Game() {
     }
     collectedItemIdsRef.current.clear();
     campaignRef.current = campaign;
-  }, [audio, campaign]);
+  }, [audio, campaign, initialWorldRevealComplete, shineSlot]);
   const pointerDragRef = useRef<PointerDrag | null>(null);
   const suppressSlotClickRef = useRef(false);
   const completeUiAnimation = useCallback((id: string) => {
@@ -352,13 +373,16 @@ export function Game() {
   const mouseDirection = mouseScreenEdgeMove.current?.direction ?? null;
   const previousSelectedGridSpot = useRef<SelectedCell | null>(null);
   const clickedDestination = useRef<SelectedCell | null>(null);
+  const warnedMouseHazard = useRef<Position | null>(null);
+  const mouseTravelBudget = useRef(MAX_MOUSE_TRAVEL_STEPS);
+  const confirmedMouseHazard = useRef<Position | null>(null);
   const movementRuntime = useRef({ preferences, settings, progressionOpen, worldAlive });
   movementRuntime.current = { preferences, settings, progressionOpen, worldAlive };
   const effectiveMovementMode = campaign && gameMode(campaign) === "Battle" && preferences.movementMode === "gridless" ? "grid-tween" : preferences.movementMode;
   turnPresentation.setPlayerMode(effectiveMovementMode);
-  const requestCampfireRest = useCallback(() => { if ((sessionRef.current?.getState().counters.gold ?? 0) < REST_GOLD_COST) return; setCampfireMenu(null); setCampfireRestTransition(true); }, []);
+  const requestCampfireRest = useCallback(() => { if ((sessionRef.current?.getState().counters.gold ?? 0) < REST_GOLD_COST) return; setCampfireMenu(null); setStatusReplenishProgress(0); setCampfireRestTransition(true); }, []);
   const dispatch = useCallback((action: Action) => { if (stairDepartureActiveRef.current || campfireRestTransition) return null; if (campfireMenu && action.type !== "move") setCampfireMenu(null); if (action.type === "move" && !Number.isFinite(action.hazardElapsedMs)) action = { ...action, hazardElapsedMs: performance.now() }; if (action.type === "move") { const current = sessionRef.current?.getState(); const direction = directions[action.direction as Direction]; const now = performance.now(); if (current && turnPresentation.isBumping("player", now)) return null; if (current && direction) { const [dx, dy] = direction; const target = current.floor.entities.find((entity) => entity.x === current.player.x + dx && entity.y === current.player.y + dy); if (target?.kind === "campfire") { if (campfireMenu?.x === target.x && campfireMenu.y === target.y && current.counters.gold >= REST_GOLD_COST) { turnPresentation.beginBump("player", current.player, { x: dx, y: dy }, now); setCampfireRestConfirming(true); const generation = sessionGenerationRef.current; const timer = setTimeout(() => { abilityTimers.current.delete(timer); if (generation !== sessionGenerationRef.current) return; setCampfireRestConfirming(false); if ((sessionRef.current?.getState().counters.gold ?? 0) >= REST_GOLD_COST) requestCampfireRest(); }, INTERACTIVE_BUMP_APEX_MS); abilityTimers.current.add(timer); } else if (!campfireMenu || campfireMenu.x !== target.x || campfireMenu.y !== target.y) setCampfireMenu({ x: target.x, y: target.y }); return { accepted: false, events: [], state: current, ticks: 0 }; } if (campfireMenu) setCampfireMenu(null); if (target && (target.kind === "enemy" || target.kind === "crate" && !target.opened || target.kind === "chest" && !target.opened)) { turnPresentation.beginBump("player", current.player, { x: dx, y: dy }, now); const generation = sessionGenerationRef.current; const timer = setTimeout(() => { abilityTimers.current.delete(timer); if (generation === sessionGenerationRef.current) sessionRef.current?.dispatch(action); }, INTERACTIVE_BUMP_APEX_MS); abilityTimers.current.add(timer); return { accepted: true, events: [], state: current, ticks: 0 }; } } } if (action.type === "ability") { const current = sessionRef.current?.getState(); const id = current?.player.abilities[action.index]; if (id && (abilityCooldownsRef.current[id] ?? 0) > performance.now()) return null; const result = sessionRef.current?.dispatch(action); if (result?.accepted && id) { const generation = sessionGenerationRef.current; const cast = result.events.find((event) => event.type === "ability.used"); const origin = cast?.facts.position; if (origin) { const puff = createAbilityParticle(id, origin, cast?.facts.targetId); setParticleEffects((effects) => [...effects.filter((effect) => !particleExpired(effect)), puff]); const resolveTimer = setTimeout(() => { abilityTimers.current.delete(resolveTimer); if (sessionGenerationRef.current !== generation) return; setParticleEffects((effects) => effects.filter((effect) => effect.id !== puff.id)); sessionRef.current?.dispatch({ type: "resolve-ability", abilityId: id, targetId: cast?.facts.targetId }); }, particleDurationMs(puff)); abilityTimers.current.add(resolveTimer); } const until = performance.now() + 1000; abilityCooldownsRef.current = { ...abilityCooldownsRef.current, [id]: until }; setAbilityCooldowns(abilityCooldownsRef.current); const cooldownTimer = setTimeout(() => { abilityTimers.current.delete(cooldownTimer); if (sessionGenerationRef.current !== generation) return; const next = { ...abilityCooldownsRef.current }; delete next[id]; abilityCooldownsRef.current = next; setAbilityCooldowns(next); }, 1000); abilityTimers.current.add(cooldownTimer); } return result; } const result = sessionRef.current?.dispatch(action); if (action.type === "move" && result?.accepted) { const trap = result.state.floor.decorations?.find((decoration) => decoration.kind === "trap" && decoration.x === result.state.player.x && decoration.y === result.state.player.y); if (trap && trapIsDangerous(trapFrameAt(action.hazardElapsedMs!))) trapStrikeRef.current = `${result.state.floor.seed}:${trap.id}:${Math.floor(action.hazardElapsedMs! / TRAP_CYCLE_MS)}`; } return result; }, [campfireMenu, campfireRestTransition, requestCampfireRest, turnPresentation]);
-  const completeCampfireRest = useCallback(() => { const result = sessionRef.current?.dispatch({ type: "rest" }); setCampfireRestTransition(false); return result; }, []);
+  const completeCampfireRest = useCallback((progress: number) => { setStatusReplenishProgress(progress); shineSlot("status"); if (progress < 1) return; const result = sessionRef.current?.dispatch({ type: "rest" }); setCampfireRestTransition(false); return result; }, [shineSlot]);
   const trapStrikeRef = useRef<string | null>(null);
   useEffect(() => {
     if (!campaign) return;
@@ -399,12 +423,14 @@ export function Game() {
     pointerDragRef.current = null; sessionGenerationRef.current++; sessionRef.current = null;
     gainTimers.current.forEach(clearTimeout); gainTimers.current.clear(); abilityTimers.current.forEach(clearTimeout); abilityTimers.current.clear(); abilityCooldownsRef.current = {}; setAbilityCooldowns({}); setGains({});
     floatingTimers.current.forEach(clearTimeout); floatingTimers.current.clear(); resourceChangeEffectTimers.current.forEach(clearTimeout); resourceChangeEffectTimers.current.clear(); setFloatingFeedback([]); setResourceChangeEffects([]); setParticleEffects([]); setItemThrows([]); setUiAnimations([]); setPendingUiCredits([]);
-    setSelectedGridSpot(null); setCampfireMenu(null); setPreview(null); setDragPresentation(null); setShineTokens({}); shineTimers.current.forEach(clearTimeout); shineTimers.current.clear(); setHowToPlay(false); setSettings(false); setMenuExiting(false); setWorldAlive(false); setCampaign(null); setSlot(null);
+    setSelectedGridSpot(null); setCampfireMenu(null); setPreview(null); setDragPresentation(null); setShineTokens({}); shineTimers.current.forEach(clearTimeout); shineTimers.current.clear(); campaignRef.current = null; initialQuestShimmerPendingRef.current = false; setInitialWorldRevealComplete(false); setHowToPlay(false); setSettings(false); setMenuExiting(false); setWorldAlive(false); setCampaign(null); setSlot(null);
   }, []);
   const saveAndQuit = useCallback(() => {
-    if (!campaign || !slot) return;
+    const currentCampaign = sessionRef.current?.getState() ?? campaign;
+    if (!currentCampaign || !slot) return;
     try {
-      writeSlot(localStorage, slot, campaign);
+      if (pixelSaveTimer.current) { clearTimeout(pixelSaveTimer.current); pixelSaveTimer.current = null; }
+      writeSlot(localStorage, slot, currentCampaign);
       setSummaries(readSlotSummary(localStorage));
       setSaveError("");
       returnToMainMenu();
@@ -456,19 +482,23 @@ export function Game() {
     const freshPress = selectedGridSpot?.pressed && !previousSelectedGridSpot.current?.pressed;
     previousSelectedGridSpot.current = selectedGridSpot;
     if (!freshPress || !campaign || settings || progressionOpen) return;
+    const plan = planMouseTravel(selectedGridSpot, campaign, warnedMouseHazard.current);
+    warnedMouseHazard.current = plan.warnedHazard; confirmedMouseHazard.current = plan.confirmedHazard;
+    mouseTravelBudget.current = MAX_MOUSE_TRAVEL_STEPS;
     heldMovements.current.clear(); activeMovement.current = null;
     if (moveTimer.current) { clearTimeout(moveTimer.current); moveTimer.current = null; }
     if (gameMode(campaign) === "Battle") {
       clickedDestination.current = null;
-      const movement = getMouseMovementFromSelectedCell(selectedGridSpot, campaign, selectedMousePath);
+      const movement = getMouseMovementFromSelectedCell(plan.destination, campaign);
       if (movement) dispatch({ type: "move", direction: movement.direction });
     } else {
       if (movementRuntime.current.preferences.movementMode === "gridless") dispatch({ type: "center-player" });
-      clickedDestination.current = { ...selectedGridSpot };
+      clickedDestination.current = { ...plan.destination };
     }
   }, [campaign, selectedGridSpot, dispatch, settings, progressionOpen]);
   useEffect(() => {
     clickedDestination.current = null; heldMovements.current.clear(); heldShift.current.clear(); activeMovement.current = null; mouseMovement.current = null; mouseScreenEdgeMove.current = null;
+    warnedMouseHazard.current = null; confirmedMouseHazard.current = null;
     if (moveTimer.current) { clearTimeout(moveTimer.current); moveTimer.current = null; }
     const current = sessionRef.current?.getState();
     if (current && (preferences.movementMode !== "gridless" || gameMode(current) === "Battle")) {
@@ -485,6 +515,12 @@ export function Game() {
       const runtime = movementRuntime.current; const current = sessionRef.current?.getState();
       if (current && runtime.worldAlive && !runtime.settings && !runtime.progressionOpen && !stairDepartureActiveRef.current && gameMode(current) === "General") {
         const held = [...heldMovements.current.values()]; const target = clickedDestination.current;
+        if (target && mouseTravelBudget.current <= 0) {
+          const center = cellCenter(current.player);
+          if (runtime.preferences.movementMode === "gridless" && (current.player.pixel?.x !== center.x || current.player.pixel?.y !== center.y)) dispatch({ type: "move-pixels", to: center, hazardElapsedMs: now });
+          clickedDestination.current = null; turnPresentation.stopPlayerPixelTravel();
+          frame = requestAnimationFrame(animateMovement); return;
+        }
         if (runtime.preferences.movementMode === "gridless" && (held.length || target)) {
           let dx = 0; let dy = 0; let destination: Position | null = null;
           const pixel = current.player.pixel ?? cellCenter(current.player);
@@ -497,8 +533,12 @@ export function Game() {
             const path = route.path;
             const center = cellCenter(current.player);
             const next = path?.[1];
+            if (next && isMouseHazard(current.floor, next) && (next.x !== confirmedMouseHazard.current?.x || next.y !== confirmedMouseHazard.current?.y)) {
+              warnedMouseHazard.current = next; clickedDestination.current = null; dispatch({ type: "center-player" }); turnPresentation.stopPlayerPixelTravel();
+              frame = requestAnimationFrame(animateMovement); return;
+            }
             if (next) destination = next.x !== current.player.x && pixel.y !== center.y || next.y !== current.player.y && pixel.x !== center.x ? center : cellCenter(next);
-            else if (target.x === current.player.x && target.y === current.player.y) destination = center;
+            else if (target.x === current.player.x && target.y === current.player.y || pixel.x !== center.x || pixel.y !== center.y) destination = center;
             else {
               const bump = getMouseMovementFromSelectedCell({ ...target, pressed: true }, current, path);
               clickedDestination.current = null;
@@ -510,6 +550,7 @@ export function Game() {
           const to = integrator.advance(pixel, { x: dx, y: dy }, elapsed, heldShift.current.size || target?.sprint ? 256 : 128, destination);
           if (length && (to.x !== pixel.x || to.y !== pixel.y)) {
             const result = dispatch({ type: "move-pixels", to, hazardElapsedMs: now });
+            if (target && result && "state" in result && (result.state.player.x !== current.player.x || result.state.player.y !== current.player.y)) mouseTravelBudget.current--;
             if (result?.accepted && "state" in result) turnPresentation.notePlayerPixelTravel(current.player, result.state.player);
             const blocked = !result?.accepted || ("state" in result && result.state.player.pixel?.x === pixel.x && result.state.player.pixel?.y === pixel.y);
             if (blocked) turnPresentation.stopPlayerPixelTravel();
@@ -524,7 +565,11 @@ export function Game() {
           } else if (!length) { turnPresentation.stopPlayerPixelTravel(); if (target) clickedDestination.current = null; }
         } else if (target && now >= nextGridStep) {
           const movement = getMouseMovementFromSelectedCell({ ...target, pressed: true }, current);
-          if (movement) { const result = dispatch({ type: "move", direction: movement.direction }); if (!result?.accepted) clickedDestination.current = null; }
+          if (movement) {
+            const [dx, dy] = directions[movement.direction as Direction]; const next = { x: current.player.x + dx, y: current.player.y + dy };
+            if (isMouseHazard(current.floor, next) && (next.x !== confirmedMouseHazard.current?.x || next.y !== confirmedMouseHazard.current?.y)) { warnedMouseHazard.current = next; clickedDestination.current = null; }
+            else { const result = dispatch({ type: "move", direction: movement.direction }); if (result?.accepted) mouseTravelBudget.current--; else clickedDestination.current = null; }
+          }
           else clickedDestination.current = null;
           nextGridStep = now + (target.sprint ? 125 : 250);
         } else if (!target && !held.length) { integrator.reset(); turnPresentation.stopPlayerPixelTravel(); }
@@ -588,7 +633,7 @@ export function Game() {
     const down = (event: KeyboardEvent) => {
       if (!worldAlive || settings || progressionOpen || editable(event.target)) return;
       const movement = getMovementKey(event);
-      if (movement) { event.preventDefault(); if (event.repeat) return; clickedDestination.current = null; if (!heldMovements.current.has(movement.code)) { heldMovements.current.set(movement.code, movement); syncMovement(); } return; }
+      if (movement) { event.preventDefault(); if (event.repeat) return; clickedDestination.current = null; warnedMouseHazard.current = null; confirmedMouseHazard.current = null; if (!heldMovements.current.has(movement.code)) { heldMovements.current.set(movement.code, movement); syncMovement(); } return; }
       if (event.code === "ShiftLeft" || event.code === "ShiftRight") { event.preventDefault(); const oldSprint = heldShift.current.size > 0; heldShift.current.add(event.code); if (!oldSprint) syncMovement(true, true); return; }
       if (!event.repeat && event.code === "KeyT") { event.preventDefault(); setDungeonTheme((theme) => theme === 1 ? 2 : theme === 2 ? 3 : 1); return; }
       if (!event.repeat && /^Digit[1-3]$/.test(event.code || "")) { event.preventDefault(); dispatch({ type: "ability", index: Number(event.code.slice(-1)) - 1 }); }
@@ -641,6 +686,7 @@ export function Game() {
         catch (error) { setSaveError("Saving is unavailable in this browser session."); session.publish("campaign.save.failed", { message: error instanceof Error ? error.message : String(error) }); }
       },
     });
+    campaignRef.current = null;
     session.subscribe((result) => {
       if (!result.accepted && !result.system && !result.events.some((event) => event.type === "quick-slot.use.rejected")) return;
       const levelEvents = result.events.filter((event) => event.type === "xp.level.changed");
@@ -771,9 +817,9 @@ export function Game() {
     <TitleBar campaign={campaign} visibleCounters={pendingUiCredits[0]?.previous.counters} preferences={preferences} setPreference={setPreference} onFullscreen={toggleFullscreen} onSettings={openGameSettings} fullscreenActual={fullscreenActual} />
     {urlOptions.mapFix && <MapFixControls campaign={campaign} slot={slot} onImport={importRepairMap} error={mapFixError} />}
     {canOverride && mapTest && <MapTestControls campaign={campaign} />}
-    <section className="game-screen__middle" data-primary-open={primaryInfoOpen} data-secondary-open={secondaryInfoOpen}><WorldViewRegion primaryOpen={primaryInfoOpen} secondaryOpen={secondaryInfoOpen}><BabylonWorld campaign={campaign} theme={dungeonTheme} zoom={preferences.zoom} camera={preferences.camera} cameraAnimationToken={cameraAnimationToken} stairDepartureStartedAt={stairDepartureStartedAt} mouseInteraction mouseScreenEdgeTarget={mouseScreenEdgeMove.current?.target ?? null} mouseDirection={mouseDirection} showPivotPoints={showPivotPoints} floatingFeedback={floatingFeedback} resourceChangeEffects={resourceChangeEffects} particleEffects={particleEffects} itemThrows={itemThrows} uiAnimations={uiAnimations} selectedCell={selectedGridSpot} selectedCellReachable={selectedCellReachable} mousePath={selectedMousePath} campfireMenu={campfireMenu} campfireRestConfirming={campfireRestConfirming} campfireRestTransition={campfireRestTransition} turnPresentation={turnPresentation} onCampfireRestClosed={completeCampfireRest} onCampfireRestRequested={requestCampfireRest} onSelectedCellChange={setSelectedGridSpot} onMouseScreenEdgeAdvance={advanceMouseScreenEdge} onWorldAliveChange={setWorldAlive} onStairDepartureComplete={completeStairDeparture} onStairDescentStep={playStairDescentStep} onWallAdjacentBarrelOffscreen={(setId) => Boolean(dispatch({ type: "return-barrel", setId })?.accepted)} onUiAnimationRest={restUiAnimation} onUiAnimationComplete={completeUiAnimation} onFpsChange={canOverride ? setFps : undefined} onZoom={stepZoom} /><EquipmentComparison campaign={campaign} drag={dragPresentation} /></WorldViewRegion><InformationPanels campaign={activeUiCampaign} theme={dungeonTheme} dispatch={dispatch} drag={dragPresentation} preview={preview} gains={gains} cooldowns={abilityCooldowns} shineTokens={shineTokens} primaryOpen={primaryInfoOpen} secondaryOpen={secondaryInfoOpen} turnPresentation={turnPresentation} onTogglePrimary={() => setPrimaryInfoOpen((value) => !value)} onToggleSecondary={() => setSecondaryInfoOpen((value) => !value)} onOpenProgression={() => { setGameSettingsCenter(measureGameSettingsCenter()); setProgressionOpen(true); }} /></section>
+    <section className="game-screen__middle" data-primary-open={primaryInfoOpen} data-secondary-open={secondaryInfoOpen}><WorldViewRegion primaryOpen={primaryInfoOpen} secondaryOpen={secondaryInfoOpen}><BabylonWorld campaign={campaign} theme={dungeonTheme} zoom={preferences.zoom} camera={preferences.camera} cameraAnimationToken={cameraAnimationToken} stairDepartureStartedAt={stairDepartureStartedAt} mouseInteraction mouseScreenEdgeTarget={mouseScreenEdgeMove.current?.target ?? null} mouseDirection={mouseDirection} showPivotPoints={showPivotPoints} floatingFeedback={floatingFeedback} resourceChangeEffects={resourceChangeEffects} particleEffects={particleEffects} itemThrows={itemThrows} uiAnimations={uiAnimations} selectedCell={selectedGridSpot} selectedCellReachable={selectedCellReachable} mousePath={selectedMousePath} campfireMenu={campfireMenu} campfireRestConfirming={campfireRestConfirming} campfireRestTransition={campfireRestTransition} turnPresentation={turnPresentation} onCampfireRestReplenish={completeCampfireRest} onCampfireRestRequested={requestCampfireRest} onSelectedCellChange={setSelectedGridSpot} onMouseScreenEdgeAdvance={advanceMouseScreenEdge} onWorldAliveChange={(alive) => { setWorldAlive(alive); if (alive) setInitialWorldRevealComplete(true); }} onStairDepartureComplete={completeStairDeparture} onStairDescentStep={playStairDescentStep} onWallAdjacentBarrelOffscreen={(setId) => Boolean(dispatch({ type: "return-barrel", setId })?.accepted)} onUiAnimationRest={restUiAnimation} onUiAnimationComplete={completeUiAnimation} onFpsChange={canOverride ? setFps : undefined} onZoom={stepZoom} /><EquipmentComparison campaign={campaign} drag={dragPresentation} /></WorldViewRegion><InformationPanels campaign={activeUiCampaign} theme={dungeonTheme} dispatch={dispatch} drag={dragPresentation} preview={preview} gains={gains} cooldowns={abilityCooldowns} shineTokens={shineTokens} primaryOpen={primaryInfoOpen} secondaryOpen={secondaryInfoOpen} statusReplenishProgress={statusReplenishProgress} turnPresentation={turnPresentation} onTogglePrimary={() => setPrimaryInfoOpen((value) => !value)} onToggleSecondary={() => setSecondaryInfoOpen((value) => !value)} onOpenProgression={() => { setGameSettingsCenter(measureGameSettingsCenter()); setProgressionOpen(true); }} /></section>
 <StatusControls campaign={campaign} canOverride={canOverride} orientation={orientation} setDeveloperAspect={setDeveloperAspect} onTogglePanels={togglePanels} fps={fps} drag={dragPresentation} urlArgs={preferences.urlArgs} setUrlArgs={(urlArgs) => setPreference({ urlArgs })} mapTest={mapTest} setMapTest={setMapTest} mobilePanel={mobilePanel} setMobilePanel={setMobilePanel} onWait={() => dispatch({ type: "wait" })} />
-<section className="mobile_bottom"><MobileControls campaign={campaign} dispatch={dispatch} hidden={mobilePanel !== "controls"} /><MobileInformationPanels campaign={activeUiCampaign} theme={dungeonTheme} dispatch={dispatch} drag={dragPresentation} preview={preview} gains={gains} cooldowns={abilityCooldowns} shineTokens={shineTokens} hidden={mobilePanel !== "info"} onOpenProgression={() => { setGameSettingsCenter(measureGameSettingsCenter()); setProgressionOpen(true); }} turnPresentation={turnPresentation} /></section>
+<section className="mobile_bottom"><MobileControls campaign={campaign} dispatch={dispatch} hidden={mobilePanel !== "controls"} /><MobileInformationPanels campaign={activeUiCampaign} theme={dungeonTheme} dispatch={dispatch} drag={dragPresentation} preview={preview} gains={gains} cooldowns={abilityCooldowns} shineTokens={shineTokens} hidden={mobilePanel !== "info"} statusReplenishProgress={statusReplenishProgress} onOpenProgression={() => { setGameSettingsCenter(measureGameSettingsCenter()); setProgressionOpen(true); }} turnPresentation={turnPresentation} /></section>
     <ItemDragPreview campaign={campaign} drag={dragPresentation} />
     {canOverride && orientation === "portrait" && <button tabIndex={-1} className="dev_aspect_return" onClick={() => setDeveloperAspect("landscape")}>Dev: Return to Landscape</button>}
     {saveError && <div className="save_error">{saveError}</div>}

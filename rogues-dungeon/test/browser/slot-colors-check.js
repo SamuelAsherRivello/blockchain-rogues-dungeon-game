@@ -50,7 +50,7 @@ async page => {
     for (const category of Object.keys(color)) {
       for (const row of await primary.locator(`[data-slot-category="${category}"]`).all()) {
         check(await strip(row) === color[category], "Wrong strip for " + category);
-        check(await row.evaluate(el => getComputedStyle(el, "::before").width) === "3px", "Wrong strip width");
+        check(await row.evaluate(el => getComputedStyle(el, "::before").width) === "2px", "Wrong strip width");
       }
     }
     check(await primary.locator('[data-drag-id="two"]').count() === 1, "Secondary row became draggable");
@@ -134,7 +134,7 @@ async page => {
   check(await strip(primary.locator('[data-slot-type="ability"]').first()) === color.ability, "Portrait lost palette");
   const overlap = await primary.locator('[data-slot-category]').evaluateAll(rows => rows.some(el => {
     const name = el.querySelector(".slot_item_text");
-    return name && name.getBoundingClientRect().left < el.getBoundingClientRect().left + 3;
+    return name && name.getBoundingClientRect().left < el.getBoundingClientRect().left + 2;
   }));
   check(!overlap, "Strip overlaps portrait text");
   await page.screenshot({ path: "output/slot-colors-portrait.png" });

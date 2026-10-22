@@ -10,6 +10,8 @@ Movement is the walking-person selector immediately after Camera. It is a normal
 
 General mouse travel does not require holding the button. Gridless left and right clicks both use center-to-center smooth pixel travel, with a turn-free initial recenter. Actual Gridless travel loops directional run art and returns to idle on stopping; discrete modes keep their existing art. Choosing Movement returns focus to gameplay like Zoom and Camera, so WASD and arrows work immediately. Keyboard input replaces a clicked destination. New clicks replace old destinations. Mode and floor changes, dialogs, and blur cancel queued input. Battle entry and exit require fresh input before travel resumes. Enemy and barrel animation are independent of the selected player mode.
 
+Mouse previews and each click's travel are limited to 30 cardinal grid steps, independent of character attributes, Zoom, or panel visibility. The preview continues through traps, with a red dot at each hazard. Click travel pauses at the safe cell center before the first trap. A fresh click from that stopping point confirms crossing that trap; a later trap requires another gesture. Closed doors remain blocked. Keyboard movement is unchanged.
+
 ## Pixel positions and tactical time
 
 The world uses 32-pixel tiles. A pixel position belongs to `floor(x / 32), floor(y / 32)`, including exact left/top boundary pixels. Cell centers are `32 * cell + 16`. Old or invalid precise positions normalize to the stored cell center. Both views and the camera use the same precise position.

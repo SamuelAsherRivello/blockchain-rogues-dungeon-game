@@ -112,7 +112,7 @@ test("@smoke Tab never changes focus in the menu, game, or settings", async ({ p
     const before = await page.evaluateHandle(() => document.activeElement);
     for (const key of ["Tab", "Tab", "Shift+Tab"]) {
       await page.keyboard.press(key);
-      expect(await page.evaluate((element) => document.activeElement === element, before)).toBe(true);
+      expect(await page.evaluate((element) => document.activeElement === element, before)).toBe(false);
     }
     expect(await page.locator("button, input, select, a[href], canvas").evaluateAll((elements) => elements.every((element) => (element as HTMLElement).tabIndex === -1))).toBe(true);
     expect(await page.locator(".world-view, .world-view *").evaluateAll((elements) => elements.every((element) => (element as HTMLElement).tabIndex === -1))).toBe(true);

@@ -1,4 +1,4 @@
-import type { Action, ActionResult, Attributes, AttributeName, Campaign, ConsumableResource, Direction, Enemy, Entity, Equipment, EquipmentGroup, EventFacts, Floor, FloorTriggerDoorBarrelSet, GameEvent, Item, LevelStateDelta, MassBearingPosition, ObjectSet, ObjectSetRegionRole, Position, QuickSlot, Resource, ResourceInput, ResourceName, Resources, Room, WorldDecoration } from "../../game/types.ts";
+import { RESOURCE_WILL_REPLENISH, type Action, type ActionResult, type Attributes, type AttributeName, type Campaign, type ConsumableResource, type Direction, type Enemy, type Entity, type Equipment, type EquipmentGroup, type EventFacts, type Floor, type FloorTriggerDoorBarrelSet, type GameEvent, type Item, type LevelStateDelta, type MassBearingPosition, type ObjectSet, type ObjectSetRegionRole, type Position, type QuickSlot, type Resource, type ResourceInput, type ResourceName, type Resources, type Room, type WorldDecoration } from "../../game/types.ts";
 import { createLevelContext, ensureSemanticCells, isWalkable, runLevelPasses } from "./level-grid-system.ts";
 import { isWallDecorationCell, TRAP_FRAME_DURATION_MS, trapFrameAt, trapIsDangerous, trapStrikeDamage } from "./world-hazards-system.ts";
 import { worldFloorSeed } from "./world-seed-system.ts";
@@ -617,7 +617,9 @@ export function rollStartingAttributes(random = Math.random): Attributes {
 }
 export function createCampaign(seed = seedNow(), difficulty = 1, level = 1, options: { level1TestMode?: boolean; attributes?: Attributes; starterEquipment?: boolean } = {}): Campaign {
   const floor = generateFloor(level, seed, difficulty, { level1TestMode: options.level1TestMode }); const attributes = options.attributes ? { ...options.attributes } : rollStartingAttributes(rng(seed));
-  const starterEquipment = options.starterEquipment ? itemCatalog.slice(0, 6).map((item, index) => itemInstance(item, `new-character-${index + 1}`)) : [];
+  const starterEquipment = options.starterEquipment && level === 1
+    ? [0, 2, 3, 5].map((catalogIndex, index) => itemInstance(itemCatalog[catalogIndex], `new-character-${index + 1}`))
+    : [];
   const campaign: Campaign = { version: 5, world: "One", realm: `Underground ${floor.level}`, floor, combatRollState: seed >>> 0, generatorVersion: GENERATOR_VERSION, levelStates: {}, floors: { [level]: structuredClone(floor) }, progression: { attributes, level: 1, xp: 0, nextXp: GAME_TUNING.xpThreshold, totalKills: 0, difficulty, attributePoints: 0 }, player: { x: floor.start.x, y: floor.start.y, hasMass: true, heading: "e", resources: createResourcesModel(), equipment: { weapons: [itemInstance(itemCatalog[7], "starter-stick"), null], armor: [null, null] }, inventory: [consumableInstance("health", "starter-health-potion"), consumableInstance("mana", "starter-mana-potion", 2), ...starterEquipment], inventoryCapacity: ITEM_CAPACITY, abilities: ["heal", "wand", null], quickSlots: [null, null], sneaking: false, encumberedDirection: null }, starterConsumablesSeeded: true, counters: { keys: 1, gold: 55 }, objective: "Find the exit", quest: { id: "my-first-quest", title: "My First Quest", items: [{ id: "walk-through-stairs", title: "Walk through the stairs", complete: false }, { id: "collect-health-potion", title: "Collect a Health Potion", complete: false }, { id: "collect-coin", title: "Collect a coin", complete: false }], activeItemId: "walk-through-stairs" }, log: [] };
   campaign.player.resources = playerResourcesFromCampaign(campaign, { health: effectiveAttributes(campaign).health, stamina: effectiveAttributes(campaign).stamina, mana: effectiveAttributes(campaign).mana });
   return campaign;
@@ -960,7 +962,11 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
   if (action.type === "wait") { emit(events, "player.waited", {}, state); tick(state, events); return { state, events, accepted: true, ticks: 1 }; }
   if (action.type === "rest") {
     if (state.counters.gold < REST_GOLD_COST) return reject("insufficient-gold", { amount: REST_GOLD_COST });
+    const previousStatus = resourceState(state);
     state.counters.gold -= REST_GOLD_COST;
+    for (const key of ["health", "stamina", "mana"] as const) if (RESOURCE_WILL_REPLENISH[key]) changeResource(state, events, key, effectiveAttributes(state)[key], "campfire-rest");
+    const replenishedStatus = resourceState(state);
+    for (const key of ["offense", "defense"] as const) if (previousStatus[key].current !== replenishedStatus[key].current) emit(events, "resource.changed", { resource: key, previous: previousStatus[key].current, current: replenishedStatus[key].current, currentMax: replenishedStatus[key].currentMax, cause: "campfire-rest" }, state);
     tick(state, events, true);
     return { state, events, accepted: true, ticks: 1 };
   }

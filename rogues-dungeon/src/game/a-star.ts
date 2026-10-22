@@ -9,7 +9,7 @@ const cellKey = ({ x, y }: Position) => `${x},${y}`;
 const isWalkableTerrain = (floor: Grid, x: number, y: number) => isWalkable(floor, x, y);
 const passableEntityKinds = new Set(["potion", "key", "gold", "item", "stairs", "discovery"]);
 type PathEntity = Position & { id?: string; kind?: string; hasMass?: boolean };
-type PathFloor = Grid & { entities?: PathEntity[]; objectSets?: { kind?: string; barrel: Position & { hasMass?: boolean }; trigger: Position; door: Position }[] };
+type PathFloor = Grid & { entities?: PathEntity[]; decorations?: (Position & { kind?: string })[]; objectSets?: { kind?: string; barrel: Position & { hasMass?: boolean }; trigger: Position; door: Position }[] };
 export interface CardinalPathOptions { maxNodes?: number; isBlocked?: (position: Position) => boolean; respectObjectSets?: boolean }
 
 const cardinalNeighbors = (position: Position) => [
@@ -117,11 +117,11 @@ export function findCardinalApproachPath(floor: PathFloor, from: Position, to: P
   pickupBlocked.delete(cellKey(to));
   const emptyRouteBlocked = new Set(hardBlocked); pickupBlocked.forEach((key) => emptyRouteBlocked.add(key));
   if (options.respectObjectSets) {
-    const closedDoors = closedObjectSetCells(normalizedFloor, from);
-    const routeThroughDoor = new Set(emptyRouteBlocked);
-    closedDoors.forEach((key) => routeThroughDoor.delete(key));
-    const route = pathWithBlockedCells(normalizedFloor, width, height, from, to, routeThroughDoor, options)
-      ?? pathWithBlockedCells(normalizedFloor, width, height, from, to, (() => { const blocked = new Set(hardBlocked); closedDoors.forEach((key) => blocked.delete(key)); return blocked; })(), options);
+    const approachBlockers = closedObjectSetCells(normalizedFloor, from);
+    const routePastBlockers = new Set(emptyRouteBlocked);
+    approachBlockers.forEach((key) => routePastBlockers.delete(key));
+    const route = pathWithBlockedCells(normalizedFloor, width, height, from, to, routePastBlockers, options)
+      ?? pathWithBlockedCells(normalizedFloor, width, height, from, to, (() => { const blocked = new Set(hardBlocked); approachBlockers.forEach((key) => blocked.delete(key)); return blocked; })(), options);
     const firstBlockedIndex = route?.findIndex((cell) => hardBlocked.has(cellKey(cell)) || options.isBlocked?.(cell)) ?? -1;
     if (route && firstBlockedIndex > 0) return Object.freeze(route.slice(0, firstBlockedIndex).map((cell) => Object.freeze({ ...cell })));
   }

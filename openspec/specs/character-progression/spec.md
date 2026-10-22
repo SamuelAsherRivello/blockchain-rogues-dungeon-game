@@ -26,7 +26,7 @@ Successful attacks, enemy defeats, discoveries, first opens of chests or crates,
 
 #### Scenario: Level up
 - **WHEN** earned experience crosses a level threshold below level 99
-- **THEN** level increases by one, excess experience remains toward the next threshold, and three Attribute Points become available
+- **THEN** level increases by one, excess experience remains toward the next threshold, three Attribute Points become available, and the player sees the new level and point count
 
 #### Scenario: Award a one-time world reward
 - **WHEN** the player opens a particular chest or crate, records a discovery, or first arrives at a Dungeon Level
@@ -42,7 +42,7 @@ Successful attacks, enemy defeats, discoveries, first opens of chests or crates,
 
 #### Scenario: Preview an allocation
 - **WHEN** the player adjusts a draft allocation or closes Progression without confirmation
-- **THEN** committed attributes and Attribute Points remain unchanged
+- **THEN** committed attributes and Attribute Points remain unchanged, and the dialog shows only aggregate pending gameplay benefits for attributes with draft points
 
 ### Requirement: Equip five gear slots
 The character SHALL have two Weapons positions and two Armor positions. Items SHALL enter Inventory before manual compatible equip. Sword and shield SHALL both be placeable in either Weapons position. Only enabled equipment SHALL modify attributes. The system SHALL not auto-equip or prompt to replace gear.
@@ -74,11 +74,30 @@ At zero Health, the player SHALL begin a newly generated Dungeon Level 1 with ru
 - **THEN** the run restarts at its initial depth with new dungeon layout and empty gear while persistent progression remains intact
 
 ### Requirement: Celebrate a level gain
-Crossing a level threshold SHALL present sparkles converging on the player and play the documented level-gain chime once. The celebration SHALL not stop the world or require an immediate allocation.
+Crossing a level threshold SHALL present sparkles converging on the player from surrounding directions, merge them on the player, and play the documented level-gain chime once after the merge. The celebration SHALL not stop the world or require an immediate allocation.
 
 #### Scenario: Gain a level during play
 - **WHEN** an XP award increases the character level
-- **THEN** sparkles arrive from surrounding directions and merge on the character while the level-gain chime plays once
+- **THEN** sparkles arrive from surrounding directions, merge on the character, and the level-gain chime plays once after the convergence
+
+### Requirement: Summarize pending attribute benefits
+Progression SHALL show the remaining allocation count in the form `Spend N of 3 attribute points.` above the attribute controls. The Progression window title SHALL be `Level Up — Character`. Below the attribute controls, Progression SHALL show an `Earned Results` heading and a borderless results field that is always three lines tall. The results field SHALL remain empty until points are drafted, SHALL show only attributes with pending points as body-text bullets, and SHALL combine all pending points for one attribute into one plain-language total-effect line. Health SHALL be expressed as the projected percentage increase in maximum Health. Strength and Stealth SHALL use an explicit placeholder such as `No gameplay effect yet.` while their effects remain unimplemented.
+
+#### Scenario: Show no pending benefits
+- **WHEN** Progression opens with no draft allocation
+- **THEN** the window title reads `Level Up — Character`, the allocation count reads `Spend 3 of 3 attribute points.`, the `Earned Results` heading is present, and the three-line results field is empty
+
+#### Scenario: Aggregate one attribute
+- **WHEN** the player assigns multiple pending points to one attribute
+- **THEN** the results field shows one bullet for that attribute containing the combined pending gameplay effect rather than one bullet per point
+
+#### Scenario: Show only affected attributes
+- **WHEN** the player assigns points to some but not all attributes
+- **THEN** the results field contains no bullets for attributes without pending points
+
+#### Scenario: Preview an unimplemented effect
+- **WHEN** the player assigns pending points to Strength or Stealth
+- **THEN** the corresponding result bullet explicitly states that the gameplay effect is not implemented yet
 
 ### Requirement: Prompt for unspent Attribute Points
 When Attribute Points are unspent, Attributes SHALL present a panel-local `LEVEL UP` callout with the available point count and an `Open Progression` action. The callout SHALL not pause the world or be dismissible. Opening Progression SHALL show a full-game dialog that may close without committing a draft; the callout SHALL remain until no Attribute Points remain.

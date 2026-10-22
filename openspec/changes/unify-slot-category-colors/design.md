@@ -30,7 +30,7 @@ Keep destination category separate from `data-slot-type="inventory"`; do not rew
 
 ### Persistent identity and transient validity
 
-Proposed default: a 3px strip within each row's existing outer bounds, with explicit left content padding. Use a pseudo-element or inset treatment that does not intercept input and does not reuse the shine animation's `::after`. Filled and empty destination rows use the same strip, leaving text cream and row fills dark. Empty Inventory rows have no fixed category; a legal return hover receives the dragged item's category outline.
+Proposed default: a 2px strip within each row's existing outer bounds, with explicit left content padding. Use a pseudo-element or inset treatment that does not intercept input and does not reuse the shine animation's `::after`. Filled and empty destination rows use the same strip, leaving text cream and row fills dark. Empty Inventory rows have no fixed category; a legal return hover receives the dragged item's category outline.
 
 Keep the strip independent of disabled label styles, so an empty Ability target or full-resource potion remains recognizable. An unavailable action is still gray and guarded. Source opacity and dashed departure styling can remain, but use its own category color instead of purple for every source. The valid hover adds a separate 2px outline using the accepted destination's category, or source category for Inventory returns. Persistent strip visibility must not imply validity. Use the existing validation result for Equipment, Quick, and Ability gestures; do not recalculate legality from colors or loosen occupied-target rules.
 
