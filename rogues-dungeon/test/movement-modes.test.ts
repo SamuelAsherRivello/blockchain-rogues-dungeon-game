@@ -148,7 +148,7 @@ test("cursor resolution respects detection and legal barrel pushes", () => {
   assert.equal(resolveWorldCursor(campaign, { x: 21, y: 20 }, false, new Set()), "fight");
   campaign.floor.entities = [];
   campaign.floor.objectSets = [{ id: "barrel", kind: "floor-trigger-door-barrel", barrel: { x: 21, y: 20 }, trigger: { x: 23, y: 20 }, door: { x: 25, y: 20 }, regionRole: "optional-reward" }];
-  assert.equal(resolveWorldCursor(campaign, { x: 21, y: 20 }, false, new Set()), "push");
+  assert.equal(resolveWorldCursor(campaign, { x: 21, y: 20 }, false, new Set()), "interact");
   setCell(campaign.floor, 22, 20, { walkable: false });
   assert.equal(resolveWorldCursor(campaign, { x: 21, y: 20 }, false, new Set()), "blocked");
 });

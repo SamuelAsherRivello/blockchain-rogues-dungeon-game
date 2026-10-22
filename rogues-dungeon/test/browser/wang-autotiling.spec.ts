@@ -45,7 +45,7 @@ for (const fixture of ["production-17", "production-914", "production-13579", "p
           return { data: context.getImageData(0, 0, image.width, image.height).data, width: image.width };
         };
         const actual = await read(`data:image/png;base64,${capture}`);
-        const source = await read("/blockchain-rogues-dungeon-game/assets/art/vendors/dungeons-and-pixels-v1.4/tilesets/tileset-dungeon.png");
+        const source = await read("/blockchain-rogues-dungeon-game/assets/art/game-view/tilesets/art/tileset-dungeon.png");
         return samples.map(([x, y, tile]) => {
           const left = Math.round(width / 2 + (x - player.x) * 32 - 16);
           const top = Math.round(height / 2 + (y - player.y) * 32 - 16);

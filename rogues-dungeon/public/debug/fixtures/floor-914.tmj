@@ -831,7 +831,7 @@
  "tilesets":[
         {
          "firstgid":1,
-         "source":"assets\/tiled-examples\/Tilesets\/tileset-dungeon.tsx"
+         "source":"assets\/art\/tilesets\/data\/tileset-dungeon.tsx"
         }],
  "tilewidth":32,
  "type":"map",

@@ -118,7 +118,7 @@ test('uses a command desk and removes template corner units', async () => {
   const [game, controlsArea, app, css, settingsWindow, mobileControls, titleBar, informationPanels] = await Promise.all(['src/game/game.tsx', 'src/ui/ControlsArea.tsx', 'src/ui/App.tsx', 'src/ui/style.css', 'src/game/windows/settings-window.tsx', 'src/game/controls/mobile-controls.tsx', 'src/game/panels/title-bar.tsx', 'src/game/panels/information-panels.tsx'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));
   assert.match(informationPanels, /PrimaryInfoPanel/); assert.match(informationPanels, /SecondaryInfoPanel/); assert.match(game, /Start Game/); assert.match(game, /Dev Settings/);
   assert.match(titleBar, /className="title-bar__left"/); assert.match(titleBar, /className="title-bar__right"/); assert.match(titleBar, /className="title-bar__identity"/); assert.match(titleBar, /className="title-bar__progress"/); assert.match(titleBar, /World: \{campaign\.world === "One" \? 1 : campaign\.world\}/);
-  assert.match(titleBar, /aria-label="Time">⏱️<\/span>/); assert.match(titleBar, /data-ui-counter-icon="gold" role="img" aria-label="Gold"><img className="title-bar__icon-image" src=\{`\$\{itemArtBase\}animated\/frames\/gold-coin\/00\.png`\} alt="" \/><\/span><span className="title-bar__counter-value">\{counters\.gold\}/); assert.match(titleBar, /data-ui-counter-icon="key" role="img" aria-label="Keys"><img className="title-bar__icon-image" src=\{`\$\{itemArtBase\}static\/golden-key\.png`\} alt="" \/><\/span><span className="title-bar__counter-value">\{String\(counters\.keys\)/);
+  assert.match(titleBar, /aria-label="Time">⏱️<\/span>/); assert.match(titleBar, /data-ui-counter-icon="gold" role="img" aria-label="Gold"><span className="title-bar__icon-image title-bar__icon-sprite title-bar__icon-sprite--gold" style=\{\{ backgroundImage: `url\(\$\{itemAtlasBase\}items-animated\.png\)` \}\} \/><\/span><span className="title-bar__counter-value">\{counters\.gold\}/); assert.match(titleBar, /data-ui-counter-icon="key" role="img" aria-label="Keys"><span className="title-bar__icon-image title-bar__icon-sprite title-bar__icon-sprite--key" style=\{\{ backgroundImage: `url\(\$\{itemAtlasBase\}items-static\.png\)` \}\} \/><\/span><span className="title-bar__counter-value">\{String\(counters\.keys\)/);
   assert.doesNotMatch(titleBar, /titlebar_icon_group/); assert.doesNotMatch(css, /titlebar_icon_group/);
   assert.match(titleBar, /className="title-bar__identity">Rogue's Dungeon<\/span>/);
   assert.doesNotMatch(titleBar, /Dungeon Roguelite/);
@@ -325,7 +325,7 @@ test('dims keyboard inputs while their ability or quick slot is being dragged', 
 
 test('renders the Stealth stat and progression dialog from game-rule state', async () => {
   const [game, attributePanel, progressionWindow] = await Promise.all(['../src/game/game.tsx', '../src/game/panels/attribute-panel.tsx', '../src/game/windows/progression-window.tsx'].map((path) => readFile(new URL(path, import.meta.url), 'utf8')));
-  assert.match(attributePanel, /progressionStatNames\.slice\(5\)/);
+  assert.match(attributePanel, /progressionStatNames/);
   assert.match(progressionWindow, /export function ProgressionWindow/);
   assert.match(game, /spend-attribute-points/);
   assert.match(progressionWindow, /attribute point/);

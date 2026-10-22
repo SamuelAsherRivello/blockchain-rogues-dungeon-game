@@ -6,5 +6,8 @@ export async function openSavedGame(page: Page, slot: 1 | 2 | 3 = 1) {
   if (await roll.isVisible()) {
     await roll.click();
     await page.getByRole("button", { name: "Confirm", exact: true }).click();
+    await page.getByRole('heading', { name: 'Create World', exact: true }).waitFor();
+    await roll.click();
+    await page.getByRole('button', { name: 'Confirm', exact: true }).click();
   }
 }

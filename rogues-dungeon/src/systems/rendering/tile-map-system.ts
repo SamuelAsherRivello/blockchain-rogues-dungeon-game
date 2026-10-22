@@ -12,7 +12,7 @@ import { DUNGEON_CANONICAL_RULES } from "./tileset-dungeon-wang.generated.ts";
 import { ruleForMask, wallQuartersForMask, type WallQuarter } from "./tileset-wang-rules.ts";
 
 export const TILED_TILE_SIZE = 32;
-export const DUNGEON_TILESET_SOURCE = "../../assets/art/vendors/dungeons-and-pixels-v1.4/tiled-examples/tilesets/tileset-dungeon.tsx";
+export const DUNGEON_TILESET_SOURCE = "../../assets/art/game-view/tilesets/data/tileset-dungeon.tsx";
 // The upper-left room's 4-by-3 interior is the shared walkable-floor family.
 // These IDs are deliberately independent of a visual theme: every theme uses
 // the same 12-by-9 atlas layout. The omitted variants contain bright green

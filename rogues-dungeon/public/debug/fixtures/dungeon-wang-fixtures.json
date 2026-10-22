@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "tileset": "../assets/art/vendors/dungeons-and-pixels-v1.4/tiled-examples/tilesets/tileset-dungeon.tsx",
+  "tileset": "../assets/art/game-view/tilesets/data/tileset-dungeon.tsx",
   "wangOrder": ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
   "layerContract": ["Grounds", "Walls", "Pickups", "Decorations"],
   "fixtures": [

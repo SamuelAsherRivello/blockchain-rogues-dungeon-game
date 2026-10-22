@@ -1,4 +1,4 @@
-/* Generated from public/assets/art/vendors/dungeons-and-pixels-v1.4/tiled-examples/tilesets/tileset-dungeon.tsx. */
+/* Generated from public/assets/art/game-view/tilesets/data/tileset-dungeon.tsx. */
 import { wangIdForMask, type DungeonWangFamily, type DungeonWangFamilyName, type DungeonWangRule } from "./tileset-wang-rules.ts";
 
 const family = (name: DungeonWangFamilyName, entries: Readonly<Record<number, number>>): DungeonWangFamily => {
@@ -33,7 +33,7 @@ export const DUNGEON_CANONICAL_RULES = Object.freeze({
   tileHeight: 32,
   tileCount: 108,
   columns: 12,
-  imageSource: "../../tilesets/tileset-dungeon.png",
+  imageSource: "../../tilesets/art/tileset-dungeon.png",
   imageWidth: 384,
   imageHeight: 288,
   families: DUNGEON_CANONICAL_FAMILIES,

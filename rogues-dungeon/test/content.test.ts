@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile, stat } from 'node:fs/promises';
 import test from 'node:test';
 import { contentConfig, getRenderingPolicy, pixelPerfectOptions } from '../src/content/babylon/config.ts';
 import { getInitializationMessage } from '../src/content/babylon/initialization.ts';
@@ -146,17 +146,33 @@ test('uses current camera state and reconfiguration inputs when framing the main
 });
 
 test('declares and retains the provided 32-pixel Tiled dungeon assets', async () => {
-  const tileset = await readFile(new URL('../public/assets/art/vendors/dungeons-and-pixels-v1.4/tiled-examples/tilesets/tileset-dungeon.tsx', import.meta.url), 'utf8');
+  const tileset = await readFile(new URL('../public/assets/art/game-view/tilesets/data/tileset-dungeon.tsx', import.meta.url), 'utf8');
   const world = await readFile(new URL('../src/systems/rendering/babylon-render-system.tsx', import.meta.url), 'utf8');
   assert.match(tileset, /tilewidth="32" tileheight="32"/);
   assert.match(tileset, /tileset-dungeon\.png/);
   assert.match(world, /cellWidthPx: 32, cellHeightPx: 32, columns: 12, rows: 9/);
   for (const path of [
-    '../public/assets/art/vendors/dungeons-and-pixels-v1.4/tilesets/tileset-dungeon.png',
-    '../public/assets/art/vendors/dungeons-and-pixels-v1.4/characters/hero-warrior/frames/idle/down/00.png',
-    '../public/assets/art/vendors/dungeons-and-pixels-v1.4/enemies/rat/frames/idle/00.png',
+    '../public/assets/art/game-view/tilesets/art/tileset-dungeon.png',
+    '../public/assets/art/game-view/characters/hero-warrior/frames/idle/down/00.png',
+    '../public/assets/art/game-view/enemies/rat/frames/idle/00.png',
   ]) {
     const bytes = await readFile(new URL(path, import.meta.url));
     assert.deepEqual([...bytes.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
+  }
+});
+
+test('resolves every moved Tiled definition and example-map reference', async () => {
+  const assetRoot = new URL('../public/assets/art/game-view/', import.meta.url);
+  for (const [directory, extension] of [['tilesets/data/', '.tsx'], ['maps/examples/', '.tmx'], ['maps/prefabs/', '.tmx']] as const) {
+    const directoryUrl = new URL(directory, assetRoot);
+    for (const name of await readdir(directoryUrl)) {
+      if (!name.endsWith(extension)) continue;
+      const fileUrl = new URL(name, directoryUrl);
+      const source = await readFile(fileUrl, 'utf8');
+      assert.doesNotMatch(source, /vendors|tiled-examples/);
+      for (const [, referencedPath] of source.matchAll(/source="([^"]+)"/g)) {
+        assert.equal((await stat(new URL(referencedPath, fileUrl))).isFile(), true, `${name} references missing ${referencedPath}`);
+      }
+    }
   }
 });

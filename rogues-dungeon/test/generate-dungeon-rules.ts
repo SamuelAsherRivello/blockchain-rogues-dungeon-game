@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { parseDungeonTilesetRules } from "../src/systems/rendering/tileset-wang-rules.ts";
 
 // Prints a deterministic typed module. Review it before replacing the artifact.
-const xml = readFileSync(new URL("../public/assets/art/vendors/dungeons-and-pixels-v1.4/tiled-examples/tilesets/tileset-dungeon.tsx", import.meta.url), "utf8");
+const xml = readFileSync(new URL("../public/assets/art/game-view/tilesets/data/tileset-dungeon.tsx", import.meta.url), "utf8");
 const parsed = parseDungeonTilesetRules(xml);
 const { families, ...geometry } = parsed;
 const entries = [...families].map(([name, family]) => [name, family.rules]);

@@ -7,8 +7,8 @@ test("campfire idle animation uses the three-frame sprite sheet at hero idle cad
   assert.equal(CAMPFIRE_IDLE_FRAME_DURATION_MS, 140);
   assert.equal(CAMPFIRE_IDLE_FRAME_COUNT, 3);
   assert.equal(CAMPFIRE_IDLE_FRAME_SIZE_PX, 30);
-  assert.equal(campfireIdleSpriteSheetPath(), "/assets/art/custom/campfire-idle-sheet.png");
-  await access(new URL("../public/assets/art/custom/campfire-idle-sheet.png", import.meta.url));
+  assert.equal(campfireIdleSpriteSheetPath(), "/assets/art/game-view/campfire/campfire-idle-sheet.png");
+  await access(new URL("../public/assets/art/game-view/campfire/campfire-idle-sheet.png", import.meta.url));
 });
 
 test("campfire rest menu confirms on a second bump and uses a protected rest-time turn", async () => {

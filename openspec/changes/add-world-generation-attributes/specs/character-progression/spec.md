@@ -2,11 +2,10 @@
 
 ## MODIFIED Requirements
 
-Planning blocker: reconcile the intended three world points per earned level
-with the lifetime world-attribute cap before applying this delta.
+World attributes start at 0-5 and can grow to 99; each three-point award allows repeated selections.
 
 ### Requirement: Award experience and stat choices
-Successful attacks, enemy defeats, discoveries, first opens of chests or crates, and a first arrival at a Dungeon Level SHALL award configured experience exactly once per qualifying event. Movement, waiting, and reused world objects SHALL not award experience. Each level threshold SHALL increase level by one through level 99, retain excess experience, and grant three unspent character Attribute Points with one pending world event. After all three character points for that earned award are spent, its deterministic world update SHALL apply once. Attribute Points SHALL persist until committed in Progression and SHALL not advance a tactical turn. Lifetime world-cap behavior remains blocked on the documented decision.
+Successful attacks, enemy defeats, discoveries, first opens of chests or crates, and a first arrival at a Dungeon Level SHALL award configured experience exactly once per qualifying event. Movement, waiting, and reused world objects SHALL not award experience. Each level threshold SHALL increase level by one through level 99, retain excess experience, and grant three unspent character Attribute Points with one pending world event. After all three character points for that earned award are spent, its deterministic world update SHALL apply once. Attribute Points SHALL persist until committed in Progression and SHALL not advance a tactical turn. World awards distribute three points with replacement among values below 99; complete saturation reports unused points.
 
 #### Scenario: Level up
 - **WHEN** earned experience crosses a level threshold below level 99
@@ -26,7 +25,7 @@ Successful attacks, enemy defeats, discoveries, first opens of chests or crates,
 
 #### Scenario: Apply automatic world points
 - **WHEN** confirmed character spending completes an earned level's three-point award
-- **THEN** three eligible world attributes increase deterministically and the player cannot choose those world changes
+- **THEN** three points are distributed deterministically among up to three world attributes below 99 and the player cannot choose those changes
 
 #### Scenario: Confirm only part of an award
 - **WHEN** the player spends one point from a three-point award

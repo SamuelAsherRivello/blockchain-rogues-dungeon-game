@@ -43,7 +43,7 @@ export function particleOpacity(effect: ParticleEffect, now = performance.now())
 }
 export function particleFrame(effect: ParticleEffect, now = performance.now()) { if (effect.kind === "damage" && particleProgress(effect, now) === 1) return 4; const duration = effect.kind === "damage" ? DAMAGE_PARTICLE_DURATION_MS : particleDurationMs(effect); return Math.min(SMOKE_POFF.frameCount - 1, Math.max(0, Math.floor((now - effect.startedAt) / (duration / SMOKE_POFF.frameCount)))); }
 export function particleExpired(effect: ParticleEffect, now = performance.now()) { return now - effect.startedAt >= particleDurationMs(effect); }
-export function particleFrameUrl(effect: ParticleEffect) { return `${import.meta.env.BASE_URL}assets/art/custom/particles/smoke-poff/smoke-poff-${particleFrame(effect) + 1}.png`; }
+export function particleFrameUrl(effect: ParticleEffect) { return `${import.meta.env.BASE_URL}assets/art/game-view/particles/smoke-poff/smoke-poff-${particleFrame(effect) + 1}.png`; }
 
 /** Return CSS-pixel bounds for a particle placed directly in the renderer. */
 export function particleBoundsAt(x: number, y: number, width: number, height: number): ParticleRenderBounds {

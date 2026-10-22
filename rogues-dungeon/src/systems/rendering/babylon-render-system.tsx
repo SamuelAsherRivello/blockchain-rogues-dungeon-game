@@ -43,47 +43,45 @@ export function isPositionOffscreen(position: Position, center: Position, halfWi
 }
 
 const texturePaths = {
-  tiles: `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/tilesets/tileset-dungeon.png`,
-  rat: `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/enemies/rat/frames/idle/00.png`,
-  skeleton: `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/enemies/skeleton-warrior/frames/idle/down/00.png`,
-  items: `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/tilesets/items-static.png`,
-  goldCoin: `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/items/animated/gold-coin.png`,
+  tiles: `${import.meta.env.BASE_URL}assets/art/game-view/tilesets/art/tileset-dungeon.png`,
+  rat: `${import.meta.env.BASE_URL}assets/art/game-view/enemies/rat/frames/idle/00.png`,
+  skeleton: `${import.meta.env.BASE_URL}assets/art/game-view/enemies/skeleton-warrior/frames/idle/down/00.png`,
+  items: `${import.meta.env.BASE_URL}assets/art/game-view/tilesets/art/items-static.png`,
+  itemsAnimated: `${import.meta.env.BASE_URL}assets/art/game-view/tilesets/art/items-animated.png`,
   campfire: campfireIdleSpriteSheetPath(import.meta.env.BASE_URL),
-  propsAnimated: `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/tilesets/props-animated.png`,
-  propsStatic: `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/tilesets/props-static.png`,
-  objectsOverlay: `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/tilesets/objects-overlay.png`,
+  propsAnimated: `${import.meta.env.BASE_URL}assets/art/game-view/tilesets/art/props-animated.png`,
+  propsStatic: `${import.meta.env.BASE_URL}assets/art/game-view/tilesets/art/props-static.png`,
+  objectsOverlay: `${import.meta.env.BASE_URL}assets/art/game-view/tilesets/art/objects-overlay.png`,
 };
 
 export type DungeonTheme = 1 | 2 | 3;
 
 function dungeonTileTexturePath(theme: DungeonTheme) {
-  if (theme === 2) return `${import.meta.env.BASE_URL}assets/art/custom/tilesets/tileset-dungeon-theme-2.png`;
-  if (theme === 3) return `${import.meta.env.BASE_URL}assets/art/custom/tilesets/tileset-dungeon-theme-3.png`;
+  if (theme === 2) return `${import.meta.env.BASE_URL}assets/art/game-view/tilesets/custom/tileset-dungeon-theme-2.png`;
+  if (theme === 3) return `${import.meta.env.BASE_URL}assets/art/game-view/tilesets/custom/tileset-dungeon-theme-3.png`;
   return texturePaths.tiles;
 }
 
-const goldCoinFramePaths = Array.from({ length: 4 }, (_, index) => `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/items/animated/frames/gold-coin/${String(index).padStart(2, "0")}.png`);
-const torchFramePaths = Array.from({ length: 3 }, (_, index) => `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/props/animated/frames/torch/${String(index).padStart(2, "0")}.png`);
-const trapFramePaths = Array.from({ length: 7 }, (_, index) => `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/props/animated/frames/trap1/${String(index).padStart(2, "0")}.png`);
-const smokePuffFramePaths = Array.from({ length: 9 }, (_, index) => `${import.meta.env.BASE_URL}assets/art/custom/particles/smoke-poff/smoke-poff-${index + 1}.png`);
+const torchFramePaths = Array.from({ length: 3 }, (_, index) => `${import.meta.env.BASE_URL}assets/art/game-view/props/animated/frames/torch/${String(index).padStart(2, "0")}.png`);
+const smokePuffFramePaths = Array.from({ length: 9 }, (_, index) => `${import.meta.env.BASE_URL}assets/art/game-view/particles/smoke-poff/smoke-poff-${index + 1}.png`);
 export const CAMPFIRE_REST_PHASE_DURATION_MS = 1500;
 export const CAMPFIRE_REST_SHIMMER_COUNT = 2;
-const heroShadowPath = `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/characters/hero-warrior/shadow.png`;
+const heroShadowPath = `${import.meta.env.BASE_URL}assets/art/game-view/characters/hero-warrior/shadow.png`;
 const chestFramePaths = [
-  `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/props/static/bronze-chest-closed.png`,
-  `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/props/static/bronze-chest-open.png`,
+  `${import.meta.env.BASE_URL}assets/art/game-view/props/static/bronze-chest-closed.png`,
+  `${import.meta.env.BASE_URL}assets/art/game-view/props/static/bronze-chest-open.png`,
 ];
 const doorFramePaths = [
-  `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/props/static/front-door-closed.png`,
-  `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/props/static/front-door-open.png`,
+  `${import.meta.env.BASE_URL}assets/art/game-view/props/static/front-door-closed.png`,
+  `${import.meta.env.BASE_URL}assets/art/game-view/props/static/front-door-open.png`,
 ];
 const barrelFramePaths = [
-  `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/props/static/barrel.png`,
-  `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/props/static/barrel-shadow.png`,
+  `${import.meta.env.BASE_URL}assets/art/game-view/props/static/barrel.png`,
+  `${import.meta.env.BASE_URL}assets/art/game-view/props/static/barrel-shadow.png`,
 ];
 const enemyShadowPaths = {
-  rat: `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/enemies/rat/shadow.png`,
-  skeleton: `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/enemies/skeleton-warrior/shadow.png`,
+  rat: `${import.meta.env.BASE_URL}assets/art/game-view/enemies/rat/shadow.png`,
+  skeleton: `${import.meta.env.BASE_URL}assets/art/game-view/enemies/skeleton-warrior/shadow.png`,
 } as const;
 
 const clear = { r: 0.06, g: 0.05, b: 0.09, a: 1 };
@@ -385,7 +383,7 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
       launchedFlightsRef.current.add(flight.id);
       const transfer = document.createElement("span"); transfer.className = "world-view__ui-animation"; transfer.setAttribute("aria-hidden", "true");
       const goldCoin = flight.kind === "gold";
-      const image = document.createElement("img"); image.className = `world-view__ui-animation-sprite${goldCoin ? " world-view__ui-animation-sprite--gold" : ""}`; image.src = goldCoin ? texturePaths.goldCoin : texturePaths.items; image.alt = ""; if (!goldCoin) image.style.transform = `translate(${-100 * (flight.frame % 3) / 3}%, ${-100 * Math.floor(flight.frame / 3) / 3}%)`; transfer.append(image);
+      const image = document.createElement("img"); image.className = `world-view__ui-animation-sprite${goldCoin ? " world-view__ui-animation-sprite--gold" : ""}`; image.src = goldCoin ? texturePaths.itemsAnimated : texturePaths.items; image.alt = ""; if (!goldCoin) image.style.transform = `translate(${-100 * (flight.frame % 3) / 3}%, ${-100 * Math.floor(flight.frame / 3) / 3}%)`; transfer.append(image);
       const mainSize = flight.mainSizePx * pixelScale;
       Object.assign(transfer.style, { left: `${rect.left + origin.left}px`, top: `${rect.top + origin.top}px`, width: `${mainSize}px`, height: `${mainSize}px`, transform: "translate(-50%, -50%)" });
       destinationLayer.append(transfer);
@@ -577,7 +575,7 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
         const heroAtlasPaths = [...heroFramePaths, heroShadowPath];
         const heroAtlas = minimap ? null : createSpriteAtlasFromFrames(engine, await Promise.all(heroAtlasPaths.map(loadSpriteAtlasFrame)), { paddingPx: 1, sampling: "nearest" });
         if (heroAtlas) atlases.push(heroAtlas);
-        const goldCoinAtlas = createSpriteAtlasFromFrames(engine, await Promise.all(goldCoinFramePaths.map(loadSpriteAtlasFrame)), { paddingPx: 1, sampling: "nearest" });
+        const goldCoinAtlas = createGridSpriteAtlas(textures.itemsAnimated, { cellWidthPx: 32, cellHeightPx: 32, columns: 4, rows: 2, pivot: [0.5, 0.5] });
         atlases.push(goldCoinAtlas);
         const chestAtlas = createSpriteAtlasFromFrames(engine, await Promise.all(chestFramePaths.map(loadSpriteAtlasFrame)), { paddingPx: 1, sampling: "nearest" });
         atlases.push(chestAtlas);
@@ -586,9 +584,8 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
         const barrelAtlas = createSpriteAtlasFromFrames(engine, await Promise.all(barrelFramePaths.map(loadSpriteAtlasFrame)), { paddingPx: 1, sampling: "nearest" });
         atlases.push(barrelAtlas);
         const torchAtlas = createSpriteAtlasFromFrames(engine, await Promise.all(torchFramePaths.map(loadSpriteAtlasFrame)), { paddingPx: 1, sampling: "nearest" });
-        const trapAtlas = createSpriteAtlasFromFrames(engine, await Promise.all(trapFramePaths.map(loadSpriteAtlasFrame)), { paddingPx: 1, sampling: "nearest" });
         const campfireAtlas = createGridSpriteAtlas(textures.campfire, { cellWidthPx: CAMPFIRE_IDLE_FRAME_SIZE_PX, cellHeightPx: CAMPFIRE_IDLE_FRAME_SIZE_PX, columns: CAMPFIRE_IDLE_FRAME_COUNT, rows: 1, pivot: [0.5, 0.5] });
-        atlases.push(torchAtlas, trapAtlas);
+        atlases.push(torchAtlas);
         const particleAtlas = minimap ? null : createSpriteAtlasFromFrames(engine, await Promise.all(smokePuffFramePaths.map(loadSpriteAtlasFrame)), { paddingPx: 1, sampling: "nearest" });
         if (particleAtlas) atlases.push(particleAtlas);
         const heroFrameIndexes = new Map(heroAtlasPaths.map((path, index) => [path, index]));
@@ -645,7 +642,7 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
         const triggerLayers = Array.from({ length: 4 }, () => createSprite2DLayer(propsAnimatedAtlas, { pivot: [0.5, 1] }));
         const goldCoinLayers = Array.from({ length: 40 }, () => ({ shadow: createSprite2DLayer(pickupShadowAtlas, { pivot: [0.5, 0.5] }), main: createSprite2DLayer(goldCoinAtlas, { pivot: [0.5, 0.5] }) }));
         const torchLayers = Array.from({ length: 40 }, () => createSprite2DLayer(torchAtlas, { pivot: [0.5, 0.5] }));
-        const trapLayers = Array.from({ length: 20 }, () => createSprite2DLayer(trapAtlas, { pivot: [0.5, 0.5] }));
+        const trapLayers = Array.from({ length: 20 }, () => createSprite2DLayer(propsAnimatedAtlas, { pivot: [0.5, 0.5] }));
         const campfireLayers = Array.from({ length: 20 }, () => createSprite2DLayer(campfireAtlas, { pivot: [0.5, 0.5] }));
         const stairLayers = Array.from({ length: 4 }, () => createSprite2DLayer(tileAtlas, { pivot: [0.5, 0.5] }));
         const particleLayers = particleAtlas ? Array.from({ length: 64 }, () => createSprite2DLayer(particleAtlas, { pivot: [0.5, 0.5] })) : [];
@@ -823,7 +820,7 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
             triggerLayers[i].order = FLOOR_DECAL_RENDER_ORDER;
             updateSprite2D(sprite, { frame, positionPx: [trigger.worldX, trigger.worldY + 16], sizePx: [32, 32] });
           });
-          const goldCoinFrame = Math.floor(performance.now() / 120) % goldCoinFramePaths.length;
+          const goldCoinFrame = Math.floor(performance.now() / 120) % 4;
           goldCoins.forEach((pickup, i) => { const entity = goldObjects[i]; goldCoinLayers[i].shadow.visible = Boolean(entity); goldCoinLayers[i].main.visible = Boolean(entity); if (!entity) { hideCharacterSprite(pickup); return; } updateCharacterSprite(pickup, [entity.worldX, entity.worldY - 10], 0, { frame: goldCoinFrame }, 0, 0); updateSprite2D(pickup.shadow.handle, { positionPx: [entity.worldX, entity.worldY], sizePx: [16, 16], color: [1, 1, 1, 0.5] }); addPickupDepth(entity.id, groundContactY(entity), pickup); });
           chestCoins.forEach((sprite, i) => { const throwItem = activeItemThrows[i]; const position = throwItem ? itemThrowPosition(throwItem, performance.now()) : null; chestCoinLayers[i].visible = Boolean(position && dynamicVisible(position)); if (!position || !dynamicVisible(position)) return; updateSprite2D(sprite, { frame: goldCoinFrame, positionPx: [position.x * 32 + 16, position.y * 32 + 16] }); addLayerDepth(throwItem.id, groundContactY(position), WORLD_TIE_BREAK.effect, chestCoinLayers[i]); });
           const torchFrame = Math.floor(performance.now() / 200) % torchFramePaths.length;

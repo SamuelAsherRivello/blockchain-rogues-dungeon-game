@@ -14,9 +14,9 @@ export function resolveWorldCursor(campaign: Campaign, target: SelectedCell | nu
     const dx = target.x - from.x; const dy = target.y - from.y;
     if (!canApproach) return "blocked";
     const x = target.x + dx; const y = target.y + dy;
-    return isWalkable(campaign.floor, x, y) && !isObjectSetBlocked(campaign.floor, campaign.player, x, y) && !campaign.floor.entities.some((entry) => entry.x === x && entry.y === y) ? "push" : "blocked";
+    return isWalkable(campaign.floor, x, y) && !isObjectSetBlocked(campaign.floor, campaign.player, x, y) && !campaign.floor.entities.some((entry) => entry.x === x && entry.y === y) ? "interact" : "blocked";
   }
   if (entity?.kind === "crate" && !entity.opened) return canApproach ? "fight" : "blocked";
   if (entity && ["item", "potion", "key", "gold", "chest", "campfire", "stairs"].includes(entity.kind)) return "interact";
-  return reachable ? target.sprint ? "run" : "walk" : "blocked";
+  return reachable ? "walk" : "blocked";
 }

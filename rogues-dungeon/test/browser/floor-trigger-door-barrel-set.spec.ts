@@ -26,7 +26,7 @@ test("@smoke pushes a barrel onto its floor trigger in a muted Edge session", as
   await page.waitForTimeout(1000);
   await page.locator(".world-view canvas").click();
   await page.keyboard.press("ArrowRight");
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("rogues-dungeon.slot.1")!).floor.objectSets[0].barrel)).toEqual({ x: 49, y: 50 });
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("rogues-dungeon.slot.1")!).floor.objectSets[0].barrel)).toEqual({ x: 49, y: 50, hasMass: true });
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("rogues-dungeon.slot.1")!).player)).toMatchObject({ x: 48, y: 50 });
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("rogues-dungeon.slot.1")!).floor.entities.find((entity: { id: string }) => entity.id === "depth-rat"))).toMatchObject({ x: 49, y: 51 });
   await page.screenshot({ path: "output/playwright/render-depth-barrel.png" });

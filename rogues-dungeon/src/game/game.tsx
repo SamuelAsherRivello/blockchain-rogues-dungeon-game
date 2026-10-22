@@ -52,6 +52,10 @@ import { SettingsWindow } from "./windows/settings-window.tsx";
 import { HowToPlayWindow } from "./windows/how-to-play-window.tsx";
 import { ProgressionWindow } from "./windows/progression-window.tsx";
 import { CreateCharacterWindow } from "./windows/create-character-window.tsx";
+import { CreateWorldWindow, type WorldIdentity } from './windows/create-world-window.tsx';
+import { WorldProgressionWindow } from './windows/world-progression-window.tsx';
+import type { WorldAttributes } from './types.ts';
+import { rollWorldAttributes } from '../systems/procedural/world-attributes.ts';
 import { MobileControls } from "./controls/mobile-controls.tsx";
 import { ItemDragPreview } from "./controls/item-drag-preview.tsx";
 import { TitleBar } from "./panels/title-bar.tsx";
@@ -141,10 +145,10 @@ async function loadDungeonTilesetAssets() {
   const base = import.meta.env.BASE_URL;
   const assetUrl = (path: string) => new URL(`${base}assets/${path}`, window.location.origin).href;
   const [tileset, image] = await Promise.all([
-    fetch(assetUrl("art/vendors/dungeons-and-pixels-v1.4/tiled-examples/tilesets/tileset-dungeon.tsx")).then((response) => response.ok ? response.text() : Promise.reject(new Error("Dungeon tileset could not be loaded."))),
-    fetch(assetUrl("art/vendors/dungeons-and-pixels-v1.4/tilesets/tileset-dungeon.png")).then((response) => response.ok ? response.arrayBuffer() : Promise.reject(new Error("Dungeon tileset image could not be loaded."))).then((bytes) => new Uint8Array(bytes)),
+    fetch(assetUrl("art/game-view/tilesets/data/tileset-dungeon.tsx")).then((response) => response.ok ? response.text() : Promise.reject(new Error("Dungeon tileset could not be loaded."))),
+    fetch(assetUrl("art/game-view/tilesets/art/tileset-dungeon.png")).then((response) => response.ok ? response.arrayBuffer() : Promise.reject(new Error("Dungeon tileset image could not be loaded."))).then((bytes) => new Uint8Array(bytes)),
   ]);
-  const portableTileset = tileset.replace('source="../../tilesets/tileset-dungeon.png"', 'source="tileset-dungeon.png"');
+  const portableTileset = tileset.replace('source="../art/tileset-dungeon.png"', 'source="tileset-dungeon.png"');
   if (portableTileset === tileset) throw new Error("Dungeon tileset image path could not be made portable.");
   return [["tileset-dungeon.tsx", portableTileset], ["tileset-dungeon.png", image as Uint8Array<ArrayBuffer>]] as Parameters<typeof createStoredZip>[0];
 }
@@ -267,6 +271,9 @@ export function Game() {
   const [summaries, setSummaries] = useState<ReturnType<typeof readSlotSummary>>(() => { try { return readSlotSummary(localStorage); } catch { return ["1", "2", "3"].map((slot) => ({ slot, occupied: false, level: null, xpLevel: null, savedAt: undefined })); } });
   const [summaryNow, setSummaryNow] = useState(() => Date.now());
   const [slot, setSlot] = useState<string | null>(null); const [campaign, setCampaign] = useState<Campaign | null>(null); const [worldAlive, setWorldAlive] = useState(false); const [stairDepartureStartedAt, setStairDepartureStartedAt] = useState<number | null>(null); const [settings, setSettings] = useState(false); const [howToPlay, setHowToPlay] = useState(false); const [gameSettingsCenter, setGameSettingsCenter] = useState<DialogCenter | null>(null); const [progressionOpen, setProgressionOpen] = useState(false); const [creationSlot, setCreationSlot] = useState<string | null>(null); const [creationAttributes, setCreationAttributes] = useState<Attributes | null>(null); const [menuExiting, setMenuExiting] = useState(false); const [saveError, setSaveError] = useState(""); const [preview, setPreview] = useState<Attributes | null>(null); const [dragPresentation, setDragPresentation] = useState<DragPresentation | null>(null); const [gains, setGains] = useState<Gains>({}); const [floatingFeedback, setFloatingFeedback] = useState<Feedback[]>([]); const [resourceChangeEffects, setResourceChangeEffects] = useState<ResourceChangeEffect[]>([]); const [particleEffects, setParticleEffects] = useState<ParticleEffect[]>([]); const [itemThrows, setItemThrows] = useState<ItemThrow[]>([]); const [abilityCooldowns, setAbilityCooldowns] = useState<Partial<Record<AbilityId, number>>>({}); const [cameraAnimationToken, setCameraAnimationToken] = useState(0); const [fps, setFps] = useState<number | null>(null);
+  const [worldCreation, setWorldCreation] = useState<{ identity: WorldIdentity; character: Attributes; attributes: WorldAttributes | null; preview: Campaign | null } | null>(null);
+  const worldGrowthResult = campaign?.worldGrowth?.find(event => event.applied && !event.acknowledged);
+  const progressionDialogOpen = progressionOpen || Boolean(worldGrowthResult);
   const [primaryInfoOpen, setPrimaryInfoOpen] = useState(true); const [secondaryInfoOpen, setSecondaryInfoOpen] = useState(true); const [uiAnimations, setUiAnimations] = useState<GameViewToUiAnimation[]>([]); const [pendingUiCredits, setPendingUiCredits] = useState<{ id: string; previous: Campaign; shineKeys: string[] }[]>([]); const [shineTokens, setShineTokens] = useState<Record<string, number>>({});
   const [selectedGridSpot, setSelectedGridSpot] = useState<SelectedCell | null>(null); const [campfireMenu, setCampfireMenu] = useState<Position | null>(null); const [campfireRestConfirming, setCampfireRestConfirming] = useState(false); const [campfireRestTransition, setCampfireRestTransition] = useState(false); const [statusReplenishProgress, setStatusReplenishProgress] = useState<number | null>(null); const [mobilePanel, setMobilePanel] = useState("controls"); const [mapTest, setMapTest] = useState(false);
   const [dungeonTheme, setDungeonTheme] = useState<DungeonTheme>(1);
@@ -376,8 +383,8 @@ export function Game() {
   const warnedMouseHazard = useRef<Position | null>(null);
   const mouseTravelBudget = useRef(MAX_MOUSE_TRAVEL_STEPS);
   const confirmedMouseHazard = useRef<Position | null>(null);
-  const movementRuntime = useRef({ preferences, settings, progressionOpen, worldAlive });
-  movementRuntime.current = { preferences, settings, progressionOpen, worldAlive };
+  const movementRuntime = useRef({ preferences, settings, progressionOpen: progressionDialogOpen, worldAlive });
+  movementRuntime.current = { preferences, settings, progressionOpen: progressionDialogOpen, worldAlive };
   const effectiveMovementMode = campaign && gameMode(campaign) === "Battle" && preferences.movementMode === "gridless" ? "grid-tween" : preferences.movementMode;
   turnPresentation.setPlayerMode(effectiveMovementMode);
   const requestCampfireRest = useCallback(() => { if ((sessionRef.current?.getState().counters.gold ?? 0) < REST_GOLD_COST) return; setCampfireMenu(null); setStatusReplenishProgress(0); setCampfireRestTransition(true); }, []);
@@ -481,7 +488,7 @@ export function Game() {
   useEffect(() => {
     const freshPress = selectedGridSpot?.pressed && !previousSelectedGridSpot.current?.pressed;
     previousSelectedGridSpot.current = selectedGridSpot;
-    if (!freshPress || !campaign || settings || progressionOpen) return;
+    if (!freshPress || !campaign || settings || progressionDialogOpen) return;
     const plan = planMouseTravel(selectedGridSpot, campaign, warnedMouseHazard.current);
     warnedMouseHazard.current = plan.warnedHazard; confirmedMouseHazard.current = plan.confirmedHazard;
     mouseTravelBudget.current = MAX_MOUSE_TRAVEL_STEPS;
@@ -495,7 +502,7 @@ export function Game() {
       if (movementRuntime.current.preferences.movementMode === "gridless") dispatch({ type: "center-player" });
       clickedDestination.current = { ...plan.destination };
     }
-  }, [campaign, selectedGridSpot, dispatch, settings, progressionOpen]);
+  }, [campaign, selectedGridSpot, dispatch, settings, progressionDialogOpen]);
   useEffect(() => {
     clickedDestination.current = null; heldMovements.current.clear(); heldShift.current.clear(); activeMovement.current = null; mouseMovement.current = null; mouseScreenEdgeMove.current = null;
     warnedMouseHazard.current = null; confirmedMouseHazard.current = null;
@@ -505,7 +512,7 @@ export function Game() {
       const center = cellCenter(current.player);
       if (current.player.pixel?.x !== center.x || current.player.pixel?.y !== center.y) dispatch({ type: "center-player" });
     }
-  }, [preferences.movementMode, campaign ? gameMode(campaign) : null, campaign?.floor.seed, campaign?.floor.level, settings, progressionOpen]);
+  }, [preferences.movementMode, campaign ? gameMode(campaign) : null, campaign?.floor.seed, campaign?.floor.level, settings, progressionDialogOpen]);
   useEffect(() => {
     let frame = 0; let last = performance.now(); let nextGridStep = 0;
     const integrator = new PixelMovementIntegrator();
@@ -631,7 +638,7 @@ export function Game() {
     const editable = (target: EventTarget | null) => target instanceof HTMLElement && (target.isContentEditable || target.closest("input, textarea, select, [contenteditable='true']"));
     const clearHeldInput = () => { clickedDestination.current = null; heldMovements.current.clear(); heldShift.current.clear(); syncMovement(); };
     const down = (event: KeyboardEvent) => {
-      if (!worldAlive || settings || progressionOpen || editable(event.target)) return;
+      if (!worldAlive || settings || progressionDialogOpen || editable(event.target)) return;
       const movement = getMovementKey(event);
       if (movement) { event.preventDefault(); if (event.repeat) return; clickedDestination.current = null; warnedMouseHazard.current = null; confirmedMouseHazard.current = null; if (!heldMovements.current.has(movement.code)) { heldMovements.current.set(movement.code, movement); syncMovement(); } return; }
       if (event.code === "ShiftLeft" || event.code === "ShiftRight") { event.preventDefault(); const oldSprint = heldShift.current.size > 0; heldShift.current.add(event.code); if (!oldSprint) syncMovement(true, true); return; }
@@ -648,8 +655,8 @@ export function Game() {
     window.addEventListener("keydown", down); window.addEventListener("keyup", up); window.addEventListener("blur", clearHeldInput);
     if (settings) clearHeldInput();
     return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); window.removeEventListener("blur", clearHeldInput); };
-  }, [dispatch, progressionOpen, settings, syncMovement, worldAlive]);
-  const begin = (id: string, repairedFloor: Floor | null = null, attributes?: Attributes, starterEquipment = false) => {
+  }, [dispatch, progressionDialogOpen, settings, syncMovement, worldAlive]);
+  const begin = (id: string, repairedFloor: Floor | null = null, attributes?: Attributes, starterEquipment = false, previewedWorld?: Campaign) => {
     const unsavedUrlRun = urlOptions.hasCompleteRunIdentity;
     const targetSlot = unsavedUrlRun ? urlOptions.slot! : id;
     let existing: Campaign | null = null;
@@ -660,7 +667,7 @@ export function Game() {
     setFloatingFeedback([]); setResourceChangeEffects([]); setParticleEffects([]); setItemThrows([]); setSelectedGridSpot(null);
     if (preferences.fullscreenDesired && !document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {});
     const worldSeed = unsavedUrlRun ? urlOptions.seed! : randomSeed ?? readWorldSeed(localStorage);
-    const freshTestCampaign = createRunCampaign(worldSeed, Number(targetSlot), urlOptions.run, urlOptions.level, urlOptions.level, { level1TestMode: urlOptions.level1TestMode, attributes, starterEquipment });
+    const freshTestCampaign = previewedWorld ?? createRunCampaign(worldSeed, Number(targetSlot), urlOptions.run, urlOptions.level, urlOptions.level, { level1TestMode: urlOptions.level1TestMode, attributes, starterEquipment });
     const initial = unsavedUrlRun || urlOptions.level1TestMode ? freshTestCampaign : existing ?? freshTestCampaign;
     if (!existing || unsavedUrlRun || urlOptions.level1TestMode) initial.world = urlOptions.world === 1 ? "One" : String(urlOptions.world);
     const scenario = urlOptions.mapFix ? getManualTileScenario(urlOptions.scenario) : null;
@@ -800,7 +807,7 @@ export function Game() {
   }, []);
   const openGameSettings = useCallback(() => { setGameSettingsCenter(measureGameSettingsCenter()); setSettings(true); }, [measureGameSettingsCenter]);
   useEffect(() => {
-    if (!campaign || (!settings && !progressionOpen)) return undefined;
+    if (!campaign || (!settings && !progressionDialogOpen)) return undefined;
     const sync = () => setGameSettingsCenter(measureGameSettingsCenter());
     const view = document.querySelector(".world-view-region");
     const observer = view ? new ResizeObserver(sync) : null;
@@ -809,9 +816,20 @@ export function Game() {
     window.addEventListener("resize", sync); document.addEventListener("fullscreenchange", sync); window.addEventListener("keydown", keydown);
     sync();
     return () => { observer?.disconnect(); window.removeEventListener("resize", sync); document.removeEventListener("fullscreenchange", sync); window.removeEventListener("keydown", keydown); };
-  }, [campaign, measureGameSettingsCenter, progressionOpen, settings]);
+  }, [campaign, measureGameSettingsCenter, progressionDialogOpen, settings]);
   const uiCampaign = useMemo(() => pendingUiCredits[0]?.previous ?? campaign, [campaign, pendingUiCredits]);
-    if (!campaign) return <><MenuScreen onReady={setMenuAssetsReady}>{menuAssetsReady && <MainMenuWindow exiting={menuExiting} onExitComplete={completeMenuExit} footer={<><Tooltip content="Open game settings."><button tabIndex={-1} className="main-menu-window__settings" type="button" onClick={(event) => { settingsBoundsRef.current = dialogBounds(event.currentTarget.closest(".main-menu-window")!); setSettings(true); }}>Settings</button></Tooltip><Tooltip content="Toggle Fullscreen"><button tabIndex={-1} className="main-menu-window__fullscreen" type="button" aria-label="Toggle Fullscreen" aria-pressed={fullscreenActual} onClick={toggleFullscreen}><span className="title-bar__icon title-bar__icon--fullscreen" aria-hidden="true">⛶</span></button></Tooltip></>}><h1 className="visually-hidden">Rogue's Dungeon</h1><h2 id="main-menu-window__heading">Start Game</h2><p className="body_text main-menu-window__intro">Choose a save slot.<br />Progress saves automatically.</p><div className="main-menu-window__saved-game-list" aria-labelledby="main-menu-window__heading">{summaries.map((entry) => <Tooltip key={entry.slot} content={entry.invalid ? `Saved Game ${entry.slot} is unavailable.` : entry.occupied ? `Continue Saved Game ${entry.slot}.` : `Start a new game in Saved Game ${entry.slot}.`}><button tabIndex={-1} disabled={entry.invalid} onClick={(event) => beginFromMenu(entry.slot, event.currentTarget)}><b>Saved Game {entry.slot}</b><span>{entry.invalid ? "Unavailable" : entry.occupied ? "Level " + String(entry.level).padStart(2, "0") + " · XP " + String(entry.xpLevel).padStart(2, "0") + " · " + formatSavedAgo(entry.savedAt, summaryNow) : newGameLabel}</span></button></Tooltip>)}</div>{saveError && <p role="alert">{saveError}</p>}</MainMenuWindow>}</MenuScreen>{creationSlot && <CreateCharacterWindow attributes={creationAttributes} bounds={creationBoundsRef.current} onRandomize={() => audio.playCue("diceRoll")} onRoll={() => setCreationAttributes(rollStartingAttributes())} onClose={() => { setCreationSlot(null); setCreationAttributes(null); }} onConfirm={() => { if (!creationAttributes) return; const id = creationSlot; setCreationSlot(null); setMenuExiting(true); pendingMenuStartRef.current = () => begin(id, null, creationAttributes, true); }} />}{settings && <SettingsWindow origin="menu" bounds={settingsBoundsRef.current} onClose={() => setSettings(false)} onOpenHowToPlay={(bounds) => { helpBoundsRef.current = bounds; setHowToPlay(true); }} helpOpen={howToPlay} onSaveAndQuit={() => setSettings(false)} onClearLocalStorage={clearLocalStorage} onFullscreen={toggleFullscreen} fullscreenActual={fullscreenActual} preferences={preferences} setPreference={setPreference} mutedByUrl={audio.hardMuted} />}{howToPlay && <HowToPlayWindow origin="menu" bounds={helpBoundsRef.current} onClose={() => setHowToPlay(false)} />}</>;
+    if (worldCreation && !campaign) return <><MenuScreen onReady={setMenuAssetsReady}>{null}</MenuScreen><CreateWorldWindow attributes={worldCreation.attributes} preview={worldCreation.preview} identity={worldCreation.identity} bounds={creationBoundsRef.current} onRandomize={() => audio.playCue("diceRoll")} onRoll={() => {
+      const attributes = rollWorldAttributes();
+      const { identity, character } = worldCreation;
+      const preview = createRunCampaign(identity.seed, identity.slot, identity.run, 1, identity.level, { worldAttributes: attributes, attributes: character, starterEquipment: true });
+      setWorldCreation({ ...worldCreation, attributes, preview });
+    }} onClose={() => { setWorldCreation(null); setCreationAttributes(null); }} onConfirm={() => {
+      if (!worldCreation.preview) return;
+      const preview = worldCreation.preview; setWorldCreation(null); setCreationAttributes(null); setMenuExiting(true);
+      pendingMenuStartRef.current = () => begin(String(worldCreation.identity.slot), null, worldCreation.character, true, preview);
+      window.setTimeout(completeMenuExit, 100);
+    }} /></>;
+    if (!campaign) return <><MenuScreen onReady={setMenuAssetsReady}>{menuAssetsReady && <MainMenuWindow exiting={menuExiting} onExitComplete={completeMenuExit} footer={<><Tooltip content="Open game settings."><button tabIndex={-1} className="main-menu-window__settings" type="button" onClick={(event) => { settingsBoundsRef.current = dialogBounds(event.currentTarget.closest(".main-menu-window")!); setSettings(true); }}>Settings</button></Tooltip><Tooltip content="Toggle Fullscreen"><button tabIndex={-1} className="main-menu-window__fullscreen" type="button" aria-label="Toggle Fullscreen" aria-pressed={fullscreenActual} onClick={toggleFullscreen}><span className="title-bar__icon title-bar__icon--fullscreen" aria-hidden="true">⛶</span></button></Tooltip></>}><h1 className="visually-hidden">Rogue's Dungeon</h1><h2 id="main-menu-window__heading">Start Game</h2><p className="body_text main-menu-window__intro">Choose a save slot.<br />Progress saves automatically.</p><div className="main-menu-window__saved-game-list" aria-labelledby="main-menu-window__heading">{summaries.map((entry) => <Tooltip key={entry.slot} content={entry.invalid ? `Saved Game ${entry.slot} is unavailable.` : entry.occupied ? `Continue Saved Game ${entry.slot}.` : `Start a new game in Saved Game ${entry.slot}.`}><button tabIndex={-1} disabled={entry.invalid} onClick={(event) => beginFromMenu(entry.slot, event.currentTarget)}><b>Saved Game {entry.slot}</b><span>{entry.invalid ? "Unavailable" : entry.occupied ? "Level " + String(entry.level).padStart(2, "0") + " · XP " + String(entry.xpLevel).padStart(2, "0") + " · " + formatSavedAgo(entry.savedAt, summaryNow) : newGameLabel}</span></button></Tooltip>)}</div>{saveError && <p role="alert">{saveError}</p>}</MainMenuWindow>}</MenuScreen>{creationSlot && <CreateCharacterWindow attributes={creationAttributes} bounds={creationBoundsRef.current} onRandomize={() => audio.playCue("diceRoll")} onRoll={() => setCreationAttributes(rollStartingAttributes())} onClose={() => { setCreationSlot(null); setCreationAttributes(null); }} onConfirm={() => { if (!creationAttributes) return; const id = creationSlot; setCreationSlot(null); setWorldCreation({ identity: { world: 1, level: 1, run: 1, slot: Number(id), seed: randomSeed ?? readWorldSeed(localStorage) }, character: { ...creationAttributes }, attributes: null, preview: null }); }} />}{settings && <SettingsWindow origin="menu" bounds={settingsBoundsRef.current} onClose={() => setSettings(false)} onOpenHowToPlay={(bounds) => { helpBoundsRef.current = bounds; setHowToPlay(true); }} helpOpen={howToPlay} onSaveAndQuit={() => setSettings(false)} onClearLocalStorage={clearLocalStorage} onFullscreen={toggleFullscreen} fullscreenActual={fullscreenActual} preferences={preferences} setPreference={setPreference} mutedByUrl={audio.hardMuted} />}{howToPlay && <HowToPlayWindow origin="menu" bounds={helpBoundsRef.current} onClose={() => setHowToPlay(false)} />}</>;
   const activeUiCampaign = uiCampaign ?? campaign;
   return <GameScreen orientation={orientation} onPointerDown={handlePointerDown} onClickCapture={(event) => { if (suppressSlotClickRef.current && event.target instanceof Element && event.target.closest(".slot_item")) { event.preventDefault(); event.stopPropagation(); suppressSlotClickRef.current = false; } }}>
     <TitleBar campaign={campaign} visibleCounters={pendingUiCredits[0]?.previous.counters} preferences={preferences} setPreference={setPreference} onFullscreen={toggleFullscreen} onSettings={openGameSettings} fullscreenActual={fullscreenActual} />
@@ -824,6 +842,7 @@ export function Game() {
     {canOverride && orientation === "portrait" && <button tabIndex={-1} className="dev_aspect_return" onClick={() => setDeveloperAspect("landscape")}>Dev: Return to Landscape</button>}
     {saveError && <div className="save_error">{saveError}</div>}
     {progressionOpen && <ProgressionWindow campaign={campaign} center={gameSettingsCenter} onClose={() => setProgressionOpen(false)} onConfirm={(allocation) => { const result = dispatch({ type: "spend-attribute-points", allocation }); if (result?.accepted) { shineSlot("attributes"); setProgressionOpen(false); } }} />}
+    {worldGrowthResult && <WorldProgressionWindow event={worldGrowthResult} center={gameSettingsCenter} onContinue={() => dispatch({ type: 'acknowledge-world-growth', id: worldGrowthResult.id })} />}
     {settings && <SettingsWindow origin="game" center={gameSettingsCenter} onClose={() => setSettings(false)} onOpenHowToPlay={(bounds) => { helpBoundsRef.current = bounds; setHowToPlay(true); }} helpOpen={howToPlay} onSaveAndQuit={saveAndQuit} onClearLocalStorage={clearLocalStorage} onFullscreen={toggleFullscreen} fullscreenActual={fullscreenActual} preferences={preferences} setPreference={setPreference} mutedByUrl={audio.hardMuted} />}
     {howToPlay && <HowToPlayWindow origin="game" bounds={helpBoundsRef.current} onClose={() => setHowToPlay(false)} />}
   </GameScreen>;

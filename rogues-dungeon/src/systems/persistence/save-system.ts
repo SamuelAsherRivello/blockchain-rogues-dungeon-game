@@ -12,6 +12,7 @@ import { compactCampaignForSave, createCampaign, createResourcesModel, createRun
 import { gameZoomPresets } from "../../content/world/zoom.ts";
 import { createSemanticCells, ensureSemanticCells, semanticCellsFromMap } from "../procedural/level-grid-system.ts";
 import { normalizeQuest } from "../quests/quest-progression-system.ts";
+import { initializeWorldCampaign } from '../procedural/world-procedural-system.ts';
 
 const PREFIX = "rogues-dungeon.slot.";
 const BACKUP_PREFIX = "rogues-dungeon.slot.v1-backup.";
@@ -104,6 +105,7 @@ function rebuildBalanceProfile(campaign: Campaign, legacyAttributes: LegacyAttri
 export function migrateCampaign(value: unknown): Campaign {
   if (isValidCampaign(value)) {
     const campaign = structuredClone(value);
+    initializeWorldCampaign(campaign);
     if (!Array.isArray(campaign.floor.cells) || campaign.floor.cells.length === 0) return restoreCompactCampaign(campaign);
     if (campaign.floor.cells.length !== FLOOR_HEIGHT || (campaign.floor.cells[0]?.length ?? 0) !== FLOOR_WIDTH) expandUndersizedFloor(campaign);
     campaign.player.abilities = normalizeAbilityBindings(campaign);
@@ -171,6 +173,7 @@ export function readSlot(storage: StorageAccess, slot: string | number) {
     writeSlot(storage, slot, campaign);
     return campaign;
   }
+  if (!candidate(original)?.worldSchemaVersion) storage.setItem(BACKUP_PREFIX + slot, raw);
   const campaign = migrateCampaign(original);
   if (campaign?.floor?.generatorVersion === GENERATOR_VERSION) ensureNearbyStairs(campaign.floor);
   return campaign;

@@ -5,8 +5,8 @@ import { createEnemyIdleAnimationDefinitions, createEnemyIdleAnimationEntities }
 test("enemy idle definitions enumerate the source frames at their native dimensions", () => {
   const definitions = createEnemyIdleAnimationDefinitions("/game/");
   assert.deepEqual(definitions.map(({ name, source }) => [name, source.frames.length, source.frames[0]]), [
-    ["rat", 5, { path: "/game/assets/art/vendors/dungeons-and-pixels-v1.4/enemies/rat/frames/idle/00.png", widthPx: 32, heightPx: 32 }],
-    ["skeleton", 4, { path: "/game/assets/art/vendors/dungeons-and-pixels-v1.4/enemies/skeleton-warrior/frames/idle/down/00.png", widthPx: 32, heightPx: 48 }],
+    ["rat", 5, { path: "/game/assets/art/game-view/enemies/rat/frames/idle/00.png", widthPx: 32, heightPx: 32 }],
+    ["skeleton", 4, { path: "/game/assets/art/game-view/enemies/skeleton-warrior/frames/idle/down/00.png", widthPx: 32, heightPx: 48 }],
   ]);
 });
 

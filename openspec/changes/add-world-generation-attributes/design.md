@@ -46,9 +46,8 @@ Define one ordered world-attribute contract with the ten names, initial 0-5
 bounds, 30-point creation budget, label tooltips, and generation effects. The
 procedural rules layer owns the contract and pure calculations; React windows
 consume it for display. This avoids drifting labels, help text, and generation
-behavior between Create World and later progression. The lifetime cap is a
-blocking decision described at the end of this document; do not infer it from
-the initial-roll range.
+behavior between Create World and later progression. Initial rolls cap at 5,
+while lifetime values cap at 99. Three-point awards allow repeated selections.
 
 Alternative considered: define labels in the Create World component and rules
 separately in the generator. Rejected because the player-facing explanation
@@ -144,10 +143,10 @@ dying cannot change the outcome. Resolve queued events in earned-level order
 using an independent purpose-tagged seed and the preceding event's result.
 Each event has a stable ID and a persisted applied marker.
 
-The selector distributes a three-point award across distinct eligible
-attributes. Cap eligibility and exhausted-budget behavior remain blocked on
-the lifetime-range decision. Do not implement the old instruction to spend
-fewer points as if that already resolved the conflict.
+The selector distributes three points with replacement among attributes below
+99, filtering after each point. Thus one attribute can receive +3, or two or
+three attributes can change. At complete saturation report unused points without
+exceeding 99. Weighting discourages repetition but never prohibits it.
 
 The selector uses level and difficulty weights to avoid a repetitive or
 max-benefit-only progression. Recent growth history prevents the same small
@@ -249,11 +248,11 @@ diff. Preserve unrelated changes in shared files.
    level, and an independent baseline threat curve. Measure route encounters,
    recovery spacing, supplies per reachable area, and payout distributions at
    early, middle, and late depths. The lifetime cap still requires a user
-   decision; a 0-5 cap cannot support the promised ongoing three-point growth.
+   choice is confirmed as initial 0-5 and lifetime 0-99 with replacement.
 
 ## Migration Plan
 
-1. Resolve the lifetime-growth conflict, then verify provisional cleanup.
+1. Verify provisional cleanup and implement the confirmed 0-5 initial/0-99 lifetime contract.
 2. Introduce a versioned save envelope and generation profiles. Back up old
    records before migration. Regenerate old compact saves with the supported
    legacy generator, capture their original profile, and then apply their
@@ -275,16 +274,10 @@ Rollback restores the backed-up save envelope with its matching generator.
 Hiding a dialog alone does not make new attribute-aware deltas readable by old
 code. Do not promise a save-compatible downgrade without that migration path.
 
-## Blocking decision: lifetime world-attribute range
+## Confirmed benefit curve
 
-The proposal promises three distinct one-point upgrades per earned level, but
-the current draft caps all ten values at 5 after a 30-point start. Total spare
-capacity is only 20 points, and distinct-attribute eligibility can fail sooner.
-The spec's three-increase rule and this document's former fewer-than-three
-fallback cannot both describe ongoing three-point progression.
-
-Recommendation pending approval: retain 0-5 for initial rolls, use a larger
-lifetime range such as 0-99, and apply bounded benefit curves with diminishing
-returns. Alternative: retain the lifetime 0-5 cap and explicitly stop world
-growth when eligible capacity runs out. Do not apply this change until that
-choice is reflected consistently in the proposal, specs, and tasks.
+Use an effective rank r = v for v <= 14 and r = 14 + 6 * (1 - exp(-(v-14)/24))
+above 14. Parameter mappings remain bounded and monotonic. This preserves the
+full contrast between starting ranks 1 and 5 and useful early increases through
+14, then approaches effective rank 20 smoothly. Discrete geometry changes can
+have thresholds; continuous counts use deterministic fractional rounding.

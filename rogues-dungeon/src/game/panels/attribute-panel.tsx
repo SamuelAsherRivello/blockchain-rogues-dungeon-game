@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { AttributeName, Attributes } from "../types.ts";
-import { attributeLabels, progressionStatNames } from "../../systems/procedural/world-procedural-system.ts";
+import { attributeLabels as attributeLabelsDefault, progressionStatNames } from "../../systems/procedural/world-procedural-system.ts";
 import { Tooltip } from "../../ui/Tooltip.tsx";
 import { GameCard, type PanelPopup } from "../cards/game-card.tsx";
 
-const columns = [progressionStatNames.slice(0, 5), progressionStatNames.slice(5)] as const;
 export const attributeHelp: Record<AttributeName, string> = {
   health: "Expands maximum Health; zero ends the run.",
   stamina: "Boosts offense and boosts defense.",
@@ -29,14 +28,17 @@ export function DeltaValue({ value, tone = "" }: { value: number; tone?: "" | "g
   return <span className="delta_value"><b key={pulseVersion} className={["delta_value_number", tone && `delta_value_${tone}`, pulseVersion > 0 && "delta_value_pulse"].filter(Boolean).join(" ")}>{value}</b></span>;
 }
 
-export type AttributeAdjustments = {
-  canDecrease(name: AttributeName): boolean;
-  canIncrease(name: AttributeName): boolean;
-  onDecrease(name: AttributeName): void;
-  onIncrease(name: AttributeName): void;
+export type AttributeAdjustments<N extends string = AttributeName> = {
+  canDecrease(name: N): boolean;
+  canIncrease(name: N): boolean;
+  onDecrease(name: N): void;
+  onIncrease(name: N): void;
 };
 
-export function AttributePanel({ attributes, preview = null, help = {}, theme = "dark", adjustments }: { attributes: Attributes; preview?: Attributes | null; help?: Partial<Record<AttributeName, string>>; theme?: "light" | "dark"; adjustments?: AttributeAdjustments }) {
+export function AttributePanel<N extends string = AttributeName>({ attributes, preview = null, help = {}, theme = "dark", adjustments, names, labels }: { attributes: Record<N, number>; preview?: Record<N, number> | null; help?: Partial<Record<N, string>>; theme?: "light" | "dark"; adjustments?: AttributeAdjustments<N>; names?: readonly N[]; labels?: Record<N, string> }) {
+  const ordered = names ?? progressionStatNames as unknown as readonly N[];
+  const columns = [ordered.slice(0, Math.ceil(ordered.length / 2)), ordered.slice(Math.ceil(ordered.length / 2))];
+  const attributeLabels = labels ?? attributeLabelsDefault as unknown as Record<N, string>;
   return <div className={`attribute_grid attribute-panel attribute-panel--${theme}`}>{columns.map((column, index) => <div key={index}>{column.map((name) => {
     const value = preview?.[name] ?? attributes[name];
     const tone = value === attributes[name] ? "" : value > attributes[name] ? "green" : "red";

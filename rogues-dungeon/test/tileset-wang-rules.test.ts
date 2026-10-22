@@ -9,7 +9,7 @@ import { buildDungeonWangTerrain, buildDungeonWangWalls, serializeFloorToTiled, 
 import { createCampaign, createRunCampaign, generateFloor } from "../src/systems/procedural/world-procedural-system.ts";
 import { buildManualTileScenario } from "../src/systems/procedural/manual-tile-scenarios.ts";
 
-const tsxPath = new URL("../public/assets/art/vendors/dungeons-and-pixels-v1.4/tiled-examples/tilesets/tileset-dungeon.tsx", import.meta.url);
+const tsxPath = new URL("../public/assets/art/game-view/tilesets/data/tileset-dungeon.tsx", import.meta.url);
 
 test("parses the authoritative TSX and resolves its declared atlas", async () => {
   const xml = await readFile(tsxPath, "utf8");

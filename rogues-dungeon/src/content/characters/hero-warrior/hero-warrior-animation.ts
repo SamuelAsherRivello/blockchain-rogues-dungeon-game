@@ -20,7 +20,7 @@ type Direction = typeof directions[number];
 
 function framePath(baseUrl: string, animation: string, direction: Direction | null, index: number) {
   const folder = direction ? `${animation.toLowerCase()}/${direction.toLowerCase()}` : animation.toLowerCase();
-  return `${baseUrl}assets/art/vendors/dungeons-and-pixels-v1.4/characters/hero-warrior/frames/${folder}/${String(index).padStart(2, "0")}.png`;
+  return `${baseUrl}assets/art/game-view/characters/hero-warrior/frames/${folder}/${String(index).padStart(2, "0")}.png`;
 }
 
 function frameList(baseUrl: string, animation: string, direction: Direction | null, count: number, widthPx: number, heightPx: number) {

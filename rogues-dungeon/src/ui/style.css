@@ -114,6 +114,9 @@ button:focus-visible { outline:2px solid #f6de92; outline-offset:2px; }
 .title-bar__counter-value { font-variant-numeric:tabular-nums; }
 .title-bar__icon { display:grid; place-items:center; flex:0 0 1.25rem; width:1.25rem; height:1.25rem; margin:0; padding:0; box-sizing:border-box; font-size:1em; line-height:1; }
 .title-bar__icon-image { display:block; width:100%; height:100%; object-fit:contain; image-rendering:pixelated; }
+.title-bar__icon-sprite { background-repeat:no-repeat; background-size:var(--sprite-columns) var(--sprite-rows); background-position:var(--sprite-position); }
+.title-bar__icon-sprite--gold { --sprite-columns:400%; --sprite-rows:200%; --sprite-position:0% 0%; }
+.title-bar__icon-sprite--key { --sprite-columns:300%; --sprite-rows:300%; --sprite-position:100% 50%; }
 .title-bar__icon--time { transform:translateY(-.03rem) scale(.88); }
 .title-bar__icon--gold { transform:translateY(.01rem) scale(1.2); }
 .title-bar__icon--keys { transform:translateY(-.03rem) scale(.72); }
@@ -203,11 +206,9 @@ button:focus-visible { outline:2px solid #f6de92; outline-offset:2px; }
 .title-bar__icon--movement { width:1em; height:1em; flex-shrink:0; }
 .movement-mode-help { display:block; max-width:30ch; white-space:normal; line-height:1.35; }
 .world-view[data-cursor="walk"] { cursor:url("/blockchain-rogues-dungeon-game/assets/cursors/walk.svg") 12 12, pointer; }
-.world-view[data-cursor="run"] { cursor:url("/blockchain-rogues-dungeon-game/assets/cursors/run.svg") 12 12, pointer; }
-.world-view[data-cursor="fight"] { cursor:url("/blockchain-rogues-dungeon-game/assets/cursors/fight.svg") 12 12, crosshair; }
-.world-view[data-cursor="interact"] { cursor:url("/blockchain-rogues-dungeon-game/assets/cursors/interact.svg") 12 12, pointer; }
-.world-view[data-cursor="push"] { cursor:url("/blockchain-rogues-dungeon-game/assets/cursors/push.svg") 12 12, move; }
-.world-view[data-cursor="blocked"] { cursor:url("/blockchain-rogues-dungeon-game/assets/cursors/blocked.svg") 12 12, not-allowed; }
+.world-view[data-cursor="fight"] { cursor:default; }
+.world-view[data-cursor="interact"] { cursor:pointer; }
+.world-view[data-cursor="blocked"] { cursor:not-allowed; }
 .world-view__canvas,.minimap-view__canvas { width:100%; height:100%; display:block; image-rendering:pixelated; }
 .world-view__resource-change-effect { position:absolute; z-index:1; inset:1rem; display:block; box-sizing:border-box; border:8px solid currentColor; box-shadow:0 0 10px currentColor,inset 0 0 8px currentColor; pointer-events:none; transform:scale(1.12); opacity:.78; animation:world-view-resource-change 650ms ease-out forwards,world-view-resource-fade 1000ms linear forwards; }
 .world-view__resource-change-effect--health-loss { color:#ff625f; }.world-view__resource-change-effect--health-gain { color:#67e879; }.world-view__resource-change-effect--mana { color:#b88cff; }
@@ -671,4 +672,11 @@ button:focus-visible { outline:2px solid #f6de92; outline-offset:2px; }
 @font-face { font-family:"Libron"; src:url("/blockchain-rogues-dungeon-game/assets/fonts/libron/Libron-Italic.woff2") format("woff2"); font-style:italic; font-weight:400; font-display:swap; }
 @font-face { font-family:"Libron"; src:url("/blockchain-rogues-dungeon-game/assets/fonts/libron/Libron-BoldItalic.woff2") format("woff2"); font-style:italic; font-weight:700; font-display:swap; }
 #browser_surface,#browser_surface * { font-family:"Libron",serif !important; }
+.create-world-window .create-character-window__content { grid-template-rows:auto auto minmax(0,1fr) auto; gap:.4rem; }
+.create-world-window__preview { min-height:0; height:100%; position:relative; background:#17141b; overflow:hidden; }
+.create-world-window__preview .world-view { width:100%; height:100%; }
+.create-world-window__hint { margin:0; text-align:center; }
+.create-world-window .attribute_item { min-width:0; }
+.create-world-window .delta_value { flex-shrink:0; }
+.world-progression-window .progression-window__results { min-height:3lh; height:auto; }
 

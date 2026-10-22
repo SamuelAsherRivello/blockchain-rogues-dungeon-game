@@ -2,6 +2,7 @@ import type { ActionResult, Campaign, Enemy, Entity, Item, Direction } from '../
 import type { TileLayer } from '../src/systems/rendering/tile-map-system.ts';
 import assert from 'node:assert/strict';
 import './movement-modes.test.ts';
+import './world-attributes.test.ts';
 import test from 'node:test';
 import { applyAction, combatReadiness, createCampaign, createGameSession, createResourcesModel, createRunCampaign, effectiveAttributes, ensureNearbyStairs, entrancePosition, FLOOR_CENTER, FLOOR_HEIGHT, FLOOR_WIDTH, GAME_TUNING, generateFloor, headingFromMovement, isNonBlockingChestPlacementCell, isNonBlockingObjectPlacementCell, isObjectSetBlocked, isObjectSetDoorOpen, isStairPlacementCell, previewEquipment, resourceState, rollStartingAttributes, STAIRS_MAX_DISTANCE_FROM_START, upgradeCampaignResources } from '../src/systems/procedural/world-procedural-system.ts';
 import { worldFloorSeed } from '../src/systems/procedural/world-seed-system.ts';
@@ -1409,7 +1410,7 @@ test('a barrel push holds and releases its linked door while closed doors block 
   assert.equal(rejectedPush.accepted, false); assert.equal(rejectedPush.ticks, 0); assert.equal(rejectedPush.events[0].facts.reason, 'blocked-barrel');
   campaign.player.x = 47;
   const pushed = applyAction(campaign, { type: 'move', direction: 'e' });
-  assert.equal(pushed.accepted, true); assert.deepEqual(present(pushed.state.floor.objectSets)[0].barrel, { x: 49, y: 50 });
+  assert.equal(pushed.accepted, true); assert.deepEqual(present(pushed.state.floor.objectSets)[0].barrel, { x: 49, y: 50, hasMass: true });
   assert.equal(isObjectSetDoorOpen(present(pushed.state.floor.objectSets)[0], pushed.state.player), true);
   const backedUp = applyAction(pushed.state, { type: 'move', direction: 'w' });
   const approached = applyAction(backedUp.state, { type: 'move', direction: 'e' });
@@ -1469,6 +1470,17 @@ test('object sets survive save-shaped campaign normalization and render identica
   returned.floor = structuredClone(returned.floors['1']);
   assert.deepEqual(upgradeCampaignResources(returned).floor.objectSets, restored.floor.objectSets);
   assert.equal(isObjectSetDoorOpen(present(returned.floor.objectSets)[0], returned.player), true);
+});
+
+test('a moved barrel keeps mass for renderer trigger activation', () => {
+  const campaign = createCampaign(77); campaign.floor.entities = [];
+  campaign.floor.objectSets = [{ id: 'fixture', kind: 'floor-trigger-door-barrel', barrel: { x: 48, y: 50, hasMass: true }, trigger: { x: 49, y: 50 }, door: { x: 54, y: 50 }, regionRole: 'optional-reward' }];
+  campaign.player.x = 47; campaign.player.y = 50;
+  const pushed = applyAction(campaign, { type: 'move', direction: 'e' });
+  const set = present(pushed.state.floor.objectSets)[0];
+  const rendered = WorldRender.Render({ map: pushed.state.floor.map, entities: pushed.state.floor.entities, objectSets: pushed.state.floor.objectSets, player: pushed.state.player });
+  assert.equal(set.barrel.hasMass, true);
+  assert.equal(rendered.puzzleObjects.find((object) => object.kind === 'trigger')?.active, true);
 });
 
 test('WorldRender shares exact terrain and entity coordinates while camera policies remain presentation-only', () => {

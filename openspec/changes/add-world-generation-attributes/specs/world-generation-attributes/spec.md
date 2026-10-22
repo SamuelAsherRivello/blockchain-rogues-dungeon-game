@@ -5,10 +5,9 @@
 Defines player-facing world attributes and deterministic world progression so
 players can shape a new run while every generated floor remains reproducible.
 
-Planning blocker: initial sheets remain 0-5 with 30 points. The lifetime cap
-and the behavior when fewer than three attributes remain eligible require a
-user decision before application. The generic cap scenario below does not
-choose the lifetime limit or approve stopping ongoing growth.
+Initial sheets use 0-5 with 30 points; lifetime values cap at 99. Growth draws
+with replacement. Effects strongly distinguish ranks 1-5 and preserve useful
+early growth through 14 before stronger diminishing returns.
 
 ## ADDED Requirements
 
@@ -97,7 +96,7 @@ Each completed three-point character award SHALL trigger its earned level's auto
 
 #### Scenario: Apply automatic world growth
 - **WHEN** the player completes spending the three character points for one earned level
-- **THEN** three eligible world attributes increase automatically and the changes are shown as green results
+- **THEN** three points are allocated automatically among up to three attributes below 99 and all changed values are green
 
 #### Scenario: Spend points in partial confirmations
 - **WHEN** the player spends one character point three times for the same earned award
@@ -108,8 +107,12 @@ Each completed three-point character award SHALL trigger its earned level's auto
 - **THEN** their world updates apply once each in earned-level order and their result screens follow in that order
 
 #### Scenario: Avoid capped attributes
-- **WHEN** an automatically selected world attribute is at the approved lifetime limit
-- **THEN** the game selects another eligible attribute without exceeding that limit, with exhausted-budget behavior pending the documented decision
+- **WHEN** an automatically selected world attribute reaches 99
+- **THEN** further points select another eligible attribute, or are reported unused if all attributes are capped
+
+#### Scenario: Repeated growth on one attribute
+- **WHEN** three consecutive awards select one starting rank-5 attribute for all nine points
+- **THEN** that attribute reaches 14 and retains meaningful generation benefits
 
 ### Requirement: Apply world growth to future floors
 Automatic world-attribute growth SHALL affect only floors first generated after the update. Active and previously visited floors SHALL retain their original generation profiles, including world attributes, effective difficulty, enemy traits, and generated reward descriptors, through saves, reloads, and return travel.

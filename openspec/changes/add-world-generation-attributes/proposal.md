@@ -50,12 +50,12 @@ seeded so the same complete generation profile always produces the same result.
   enemy population and aggression, pickup frequency and supply quantity, and
   hazard frequency.
 - After each character level-up and the player's normal character allocation,
-  automatically increase three distinct eligible world attributes by one point
-  each. Present the world changes in the existing progression layout with the
+  automatically distribute three points among eligible world attributes, allowing
+  repeated selections of the same attribute. Present the changes in the shared progression layout with the
   changed values highlighted green; the player cannot choose these values.
   Record one pending world update per earned character level. Partial point
   spending, repeated confirmations, and reloads must never duplicate an update.
-  Lifetime caps and exhausted-budget behavior need the decision below.
+  Initial rolls use 0-5; lifetime values cap at 99. Unspent excess at full saturation is reported, never applied above 99.
 - Choose automatic world growth from level, campaign difficulty, recent world
   growth, and the level's deterministic seed so the result is impactful and
   naturally paced rather than always selecting the strongest benefit.
@@ -83,17 +83,15 @@ seeded so the same complete generation profile always produces the same result.
 3. Positive growth could remove challenge, multiply rewards, or stop too early.
    Separate baseline threat from bounded benefits, assign reward ownership,
    and test scarcity, encounter pressure, and resource supply together.
-   Resolve the lifetime growth range before implementing progression.
+   Keep 1-5 strongly differentiated and early growth through 14 impactful, with diminishing benefits at higher values.
 
-## Decision required before application
+## Confirmed growth range
 
-The current 0-5 cap permits only 20 additional points after a 30-point start.
-Six full three-point upgrades consume 18 points; the seventh cannot improve
-three attributes, and earlier sheets can leave fewer than three eligible
-attributes. This conflicts with ongoing three-attribute growth through
-character level 99. Keep the existing cap wording provisional until the player
-chooses a lifetime growth range and saturation behavior. This is a blocking
-product decision, not an approved change to the cap.
+Initial rolls use 0-5 with 30 points total. Lifetime attributes can reach 99.
+Three world points are distributed per completed character award with replacement;
+one attribute can receive all three and reach 14 after starting at 5 and receiving
+all nine points over three level-ups. Values 1 and 5 must visibly differ in generated
+worlds. Early gains remain useful; higher values approach bounded benefits smoothly.
 
 ## Capabilities
 

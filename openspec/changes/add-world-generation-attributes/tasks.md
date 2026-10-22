@@ -1,14 +1,13 @@
 # Tasks
 
-Application is blocked on the lifetime attribute-range decision in proposal.md
-and design.md. Initial rolls remain 0-5 with 30 points. Reconcile the lifetime
-cap and saturation behavior before implementing growth; artifact existence is
-not proof that this decision has been resolved.
+Confirmed: initial rolls use 0-5 and 30 points; lifetime values cap at 99.
+Three-point growth allows repeated selections. Preserve strong differences
+between ranks 1 and 5 and meaningful early growth through rank 14.
 
 ## 1. Remove provisional world-creation code and establish the contract
 
-- [ ] 1.1 Verify the provisional Create World runtime path is absent, as found during review; remove surviving prototype pieces only if present, preserve unrelated work, and verify existing character creation still works.
-- [ ] 1.2 Add the shared world-attribute names, labels, tooltip copy, bounds, neutral defaults, 30-point validation, and generation-identity model; verify focused unit tests cover alphabetical order, 0-5 bounds, exact 30-point rolls, and invalid-value normalization.
+- [x] 1.1 Verify the provisional Create World runtime path is absent, as found during review; remove surviving prototype pieces only if present, preserve unrelated work, and verify existing character creation still works.
+- [x] 1.2 Add the shared world-attribute names, labels, tooltip copy, bounds, neutral defaults, 30-point validation, and generation-identity model; verify focused unit tests cover alphabetical order, 0-5 bounds, exact 30-point rolls, and invalid-value normalization.
 - [ ] 1.3 Add immutable per-floor generation profiles and a versioned save envelope, including exact attributes, seed, effective difficulty, generator/tuning versions, and compact deltas; verify save/load and return travel after attribute growth preserve terrain, IDs, consumed pickups, enemy traits, and opened objects.
 - [ ] 1.4 Back up and migrate supported compact saves through legacy generator dispatch, initializing future world growth without replaying historical awards; verify old fixtures reconstruct unchanged, unsupported versions preserve original bytes, and document the save/version and rollback contracts with this group.
 
@@ -31,7 +30,7 @@ not proof that this decision has been resolved.
 
 ## 4. Add automatic world progression
 
-- [ ] 4.1 After resolving the lifetime cap, add one persisted growth event per earned character level, freeze its earning-floor seed/profile and difficulty, and derive choices from a separate tagged stream. Verify equal complete inputs reproduce choices through deferred allocation, reload, and death, and ordered events distinguish character level from dungeon level.
+- [ ] 4.1 Add one persisted growth event per earned character level, freeze its earning-floor seed/profile and difficulty, and derive three capped 0-99 points with replacement from a separate tagged stream. Verify repeated choices, +9 growth through three awards, saturation, stable replay, and character/dungeon-level distinction.
 - [ ] 4.2 Track partial character spending against earned-level awards and atomically commit each completed award's world growth exactly once; verify 1+1+1 spending, six points at once, reopen/reload, interrupted results, invalid drafts, and unchanged tactical time. Verify cancellation before confirmation spends neither character nor world points.
 - [ ] 4.3 Show a following `Level Up — World` result in the shared Character progression layout, with green changed numbers, aggregate results, and Continue; verify no adjustment arrows, ordered multiple results, and acknowledgment cannot reapply growth. Document this sequence with the progression tests.
 - [ ] 4.4 Apply committed growth only to first-time floor generation, preserve profiles and reward descriptors of active/visited floors, and retain committed growth and pending events through death while resetting run-specific floor profiles. Verify descent, backtracking, delayed container opening, death, and reload.

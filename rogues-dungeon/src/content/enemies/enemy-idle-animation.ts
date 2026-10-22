@@ -10,7 +10,7 @@ const enemySpriteMetrics = {
 
 function enemyIdleFramePath(baseUrl: string, enemy: EnemyIdleAnimationName, index: number) {
   const folder = enemy === "skeleton" ? "skeleton-warrior/frames/idle/down" : "rat/frames/idle";
-  return `${baseUrl}assets/art/vendors/dungeons-and-pixels-v1.4/enemies/${folder}/${String(index).padStart(2, "0")}.png`;
+  return `${baseUrl}assets/art/game-view/enemies/${folder}/${String(index).padStart(2, "0")}.png`;
 }
 
 export function createEnemyIdleAnimationDefinitions(baseUrl = "/") {

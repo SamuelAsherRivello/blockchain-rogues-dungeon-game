@@ -11,6 +11,10 @@ export type AttributeName = Exclude<ResourceName, "xp"> | "perception" | "streng
 export type MovementMode = "grid-snap" | "grid-tween" | "gridless";
 export type GameMode = "General" | "Battle";
 export type Attributes = Record<AttributeName, number>;
+export type WorldAttributeName = 'clarity' | 'comfort' | 'discovery' | 'fortune' | 'guidance' | 'mercy' | 'openness' | 'peace' | 'plenty' | 'safety';
+export type WorldAttributes = Record<WorldAttributeName, number>;
+export interface FloorGenerationProfile { seed: number; difficulty: number; attributes?: WorldAttributes; generatorVersion: string; tuningVersion?: string; level1TestMode?: boolean }
+export interface WorldGrowthEvent { id: string; seed: number; level: number; difficulty: number; spent: number; applied?: boolean; before?: WorldAttributes; after?: WorldAttributes; unused?: number; acknowledged?: boolean }
 export interface Resource { current: number; currentMax: number; level?: number }
 export type Resources = Record<ResourceName, Resource>;
 export type ResourceInput = Partial<Record<ResourceName, Partial<Resource> | number>>;
@@ -31,12 +35,12 @@ export interface Enemy extends MassBearingPosition {
   attackKind?: "melee" | "ranged"; attackRange?: number;
 }
 export type Entity = Enemy
-  | (Position & { id: string; kind: "potion"; resource: "health" | "mana"; name?: string })
+  | (Position & { id: string; kind: "potion"; resource: "health" | "mana"; name?: string; quantity?: number })
   | (Position & { id: string; kind: "key" | "gold"; amount?: number; name?: string })
   | (Position & { id: string; kind: "stairs"; direction?: "forward" | "back"; name?: string })
   | (Position & { id: string; kind: "discovery"; name?: string })
-  | (Position & { id: string; kind: "chest"; opened?: boolean })
-  | (Position & { id: string; kind: "crate"; health: number; opened?: boolean; openFrame?: 1 | 5 })
+  | (Position & { id: string; kind: "chest"; opened?: boolean; rewardAmount?: number; rewardQuality?: number; rewardItem?: Item })
+  | (Position & { id: string; kind: "crate"; health: number; opened?: boolean; openFrame?: 1 | 5; rewardAmount?: number; rewardQuality?: number; rewardItem?: Item })
   | (Position & { id: string; kind: "campfire"; name?: string })
   | (Position & { id: string; kind: "item"; item: Item });
 export type ObjectSetRegionRole = "optional-reward" | "exit";
@@ -51,10 +55,13 @@ export interface Floor {
   seed: number; width: number; height: number; cells: TerrainCell[][]; map?: number[][];
   start: Position; entities: Entity[]; time: number; level: number; depth?: number; generatorVersion?: string;
   scenario?: string; progressionXpAwarded?: boolean;
+  generationProfile?: FloorGenerationProfile;
+  worldDiagnostics?: { repairs: number; shortfall: number; routeLength: number; rewardBudget: number };
   generation?: { seed: number; generator: string | null; passes?: { id: string; diagnostics: number }[] };
   tiledGrounds?: number[]; tiledWalls?: number[];
   decorations?: WorldDecoration[];
   objectSets?: ObjectSet[];
+  prefabPlacements?: { prefabId: string; origin: Position }[];
   projectiles?: RangedProjectile[];
 }
 export interface RangedProjectile { id: string; sourceId: string; from: Position; to: Position; direction: Direction; createdAt: number }
@@ -75,6 +82,11 @@ export interface Campaign {
   worldSeed?: number; slot?: number; run?: number; generatorVersion?: string;
   /** Compact state for visited generated levels, keyed by level. */
   levelStates?: Record<string, LevelStateDelta>;
+  floorProfiles?: Record<string, FloorGenerationProfile>;
+  worldAttributes?: WorldAttributes;
+  worldGrowth?: WorldGrowthEvent[];
+  worldSchemaVersion?: 1;
+  worldLegacyPoints?: number;
   /** Legacy snapshot compatibility. New campaigns never write this field. */
   floors?: Record<string, Floor>;
   progression: { attributes: Attributes; level: number; xp: number; nextXp: number; totalKills: number; difficulty: number; attributePoints: number };
@@ -96,6 +108,7 @@ export type Action =
   | { type: "rest" }
   | { type: "toggle-sneak" }
   | { type: "spend-attribute-points"; allocation: Partial<Record<AttributeName, number>> }
+  | { type: 'acknowledge-world-growth'; id: string }
   | { type: "ability"; index: number }
   | { type: "resolve-ability"; abilityId: AbilityId; targetId?: string }
   | { type: "assign-ability"; from: number; to: number }
