@@ -304,9 +304,10 @@ test('renders transient item drag feedback without intercepting drops', async ()
 });
 test('anchors item comparison to the inventory panel with a fixed ten-pixel gap', async () => {
   const game = await readFile(new URL('../src/game/game.tsx', import.meta.url), 'utf8');
-  assert.match(game, /\[data-slot-type="inventory"\]/);
-  assert.match(game, /closest<HTMLElement>\("\.game-card"\)/);
-  assert.match(game, /right: window\.innerWidth - inventoryPanel\.left \+ 10/);
+  const panels = await readFile(new URL('../src/game/panels/information-panels.tsx', import.meta.url), 'utf8');
+  assert.match(panels, /className="info-panel__inventory-card"/);
+  assert.match(game, /querySelector<HTMLElement>\("\.info-panel__inventory-card"\)/);
+  assert.match(game, /right: window\.innerWidth - inventoryPanelRect\.left \+ 10/);
   assert.match(game, /transform: "translateY\(-50%\)"/);
   assert.doesNotMatch(game, /rect\.left - 36/);
 });
