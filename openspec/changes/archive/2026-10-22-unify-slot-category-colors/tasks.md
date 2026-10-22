@@ -1,5 +1,7 @@
 # Tasks
 
+Finalization exception, 2026-10-22: The user explicitly authorized syncing, archiving, committing, and pushing this change despite the broader browser-suite failures recorded below. Those failures remain unresolved; finalization does not claim a passing full suite. Unrelated working-tree changes are excluded from the finalization commit.
+
 ## 1. Shared palette and slot presentation
 
 - [x] 1.1 Add immutable `SLOT_COLORS` in `rogues-dungeon/src/ui/slot-colors.ts`, publish palette variables from the common game-screen ancestor, and replace duplicated category literals in slots, drag previews, and status-bar key accents; verify typecheck passes and all category consumers resolve to the shared values.

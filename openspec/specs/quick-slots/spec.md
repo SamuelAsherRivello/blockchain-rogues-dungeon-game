@@ -7,15 +7,15 @@ Quick Slots provide two fast, keyboard-accessible positions for consumable items
 ## Requirements
 
 ### Requirement: Render two neutral Quick Slots
-The game SHALL render a Quick Slots panel beneath Abilities with exactly two full-width rows. Each row SHALL show its position as `01` or `02`, use neutral slot styling rather than the purple ability accent, and show either a centered empty `+` marker or the quick-slotted item name with its positive quantity as `Name XN`.
+The game SHALL render a Quick Slots panel beneath Abilities with exactly two full-width rows. Each row SHALL retain its existing positional label and show either a centered empty `+` marker or the quick-slotted item name with its positive quantity. Filled and empty rows SHALL use the green Quick category strip instead of neutral-only styling or the purple Ability accent. Unavailable activation content SHALL retain its disabled treatment independently of the strip.
 
 #### Scenario: Show empty Quick Slots
 - **WHEN** a new campaign has no quick-slotted items
-- **THEN** the panel shows rows `01` and `02`, each with a `+` marker and no `X0` text
+- **THEN** both rows show a green left strip, their existing positional labels, and a centered `+` marker without zero-quantity text
 
 #### Scenario: Show a populated stack
-- **WHEN** Mana Potion quantity 2 occupies Quick Slot 02
-- **THEN** row 02 reads `Mana Potion X2` and uses neutral slot colors
+- **WHEN** Mana Potion quantity 2 occupies the second Quick Slot
+- **THEN** that row shows Mana Potion and quantity 2 with a green category strip
 
 ### Requirement: Accept only quick-slottable consumables
 Quick Slots SHALL accept Health Potion and Mana Potion items, and SHALL reject weapons, armor, abilities, and any other non-consumable item without changing state or time.
