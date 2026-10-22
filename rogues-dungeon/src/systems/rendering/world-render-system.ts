@@ -1,4 +1,5 @@
 import type { Direction, Entity, FloorTriggerDoorBarrelSet, MassBearingPosition, Position, TerrainCell, WorldDecoration } from "../../game/types.ts";
+import { enemyCharacterForName } from "../../content/enemies/enemy-idle-animation.ts";
 type RenderGrid = number[][] | TerrainCell[][];
 interface WangEntry extends Position { mask: number; worldX: number; worldY: number; frame: number | null; floorFrame?: number | null; quarters?: import("./tileset-wang-rules.ts").WallQuarter[] }
 interface WangModel { tileSize: number; terrain: WangEntry[]; walls: WangEntry[]; diagnostics: Omit<WangEntry, "frame">[]; wallDiagnostics: Omit<WangEntry, "frame">[] }
@@ -75,10 +76,15 @@ export const WorldRender = Object.freeze({
   Render({ map = null, cells = null, entities = [], decorations = [], objectSets = [], player, start = player, tileSize = 32, view = "game", detail = "full", groundTiles = null, wallTiles = null }: WorldOptions) {
     const grid = (cells ?? map)!;
     const { terrain, walls, diagnostics, wallDiagnostics } = compileStaticWorldPresentation(grid, tileSize, groundTiles, wallTiles);
-    const actors = entities.filter((entry) => entry.kind === "enemy").map((entry) => ({ id: entry.id, kind: entry.name === "Skeleton" || entry.name === "Skeleton Archer" ? "skeleton" : "rat", heading: entry.heading ?? "e", x: entry.x, y: entry.y, worldX: entry.x * tileSize + tileSize / 2, worldY: entry.y * tileSize + tileSize / 2 }));
-    const objects = entities.filter((entry) => ["item", "potion", "key", "gold", "chest", "crate", "campfire", "stairs", "discovery"].includes(entry.kind)).map((entry) => ({ id: entry.id, kind: entry.kind, direction: entry.kind === "stairs" ? entry.direction : undefined, resource: entry.kind === "potion" ? entry.resource : null, opened: entry.kind === "chest" || entry.kind === "crate" ? Boolean(entry.opened) : false, openFrame: entry.kind === "crate" ? entry.openFrame : undefined, x: entry.x, y: entry.y, worldX: entry.x * tileSize + tileSize / 2, worldY: entry.y * tileSize + tileSize / 2 }));
+    const actors = entities.filter((entry) => entry.kind === "enemy").map((entry) => ({ id: entry.id, kind: enemyCharacterForName(entry.name), character: enemyCharacterForName(entry.name), heading: entry.heading ?? "e", x: entry.x, y: entry.y, worldX: entry.x * tileSize + tileSize / 2, worldY: entry.y * tileSize + tileSize / 2 }));
+    const objects = entities.filter((entry) => ["item", "potion", "key", "gold", "chest", "crate", "campfire", "stairs", "discovery"].includes(entry.kind)).map((entry) => ({ id: entry.id, kind: entry.kind, item: entry.kind === "item" ? entry.item : undefined, direction: entry.kind === "stairs" ? entry.direction : undefined, resource: entry.kind === "potion" ? entry.resource : null, opened: entry.kind === "chest" || entry.kind === "crate" ? Boolean(entry.opened) : false, openFrame: entry.kind === "crate" ? entry.openFrame : undefined, x: entry.x, y: entry.y, worldX: entry.x * tileSize + tileSize / 2, worldY: entry.y * tileSize + tileSize / 2 }));
     const puzzleObjects = objectSets.flatMap((set) => {
-      const active = [player, set.barrel, ...entities].some((object) => "hasMass" in object && object.hasMass === true && set.trigger.x === object.x && set.trigger.y === object.y);
+      const active = [player, set.barrel, ...entities].some((object) => {
+        const hasMass = object === set.barrel
+          ? (object as MassBearingPosition).hasMass !== false
+          : "hasMass" in object && object.hasMass === true;
+        return hasMass && set.trigger.x === object.x && set.trigger.y === object.y;
+      });
       return [
         { id: `${set.id}-trigger`, kind: "trigger" as const, active, x: set.trigger.x, y: set.trigger.y, worldX: set.trigger.x * tileSize + tileSize / 2, worldY: set.trigger.y * tileSize + tileSize / 2 },
         { id: `${set.id}-barrel`, kind: "barrel" as const, active: false, x: set.barrel.x, y: set.barrel.y, worldX: set.barrel.x * tileSize + tileSize / 2, worldY: set.barrel.y * tileSize + tileSize / 2 },

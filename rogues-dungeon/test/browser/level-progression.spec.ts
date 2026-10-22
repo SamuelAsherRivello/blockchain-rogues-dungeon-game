@@ -9,6 +9,10 @@ async function openRolledCampaign(page: import("@playwright/test").Page) {
   await expect(dialog).toBeVisible();
   await dialog.getByRole("button", { name: "Roll" }).click();
   await dialog.getByRole("button", { name: "Confirm" }).click();
+  const world = page.getByRole('dialog', { name: 'Create World', exact: true });
+  await expect(world).toBeVisible();
+  await world.getByRole('button', { name: 'Roll', exact: true }).click();
+  await world.getByRole('button', { name: 'Confirm', exact: true }).click();
   await expect(page.locator(".game-screen")).toBeVisible();
 }
 

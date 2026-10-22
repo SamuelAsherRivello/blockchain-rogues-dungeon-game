@@ -8,7 +8,7 @@ const topics = [
   ["Exploration", "Search each dungeon floor for stairs, containers, hazards, and useful routes. Step onto stairs to descend. Lower levels bring stronger enemies, better loot, and new hazards, so clear safe paths before you move deeper."],
   ["Quests", "The Quest panel tracks your current objective and updates from actions you complete in the dungeon. Follow its active step for an introduction to stairs, potions, and coins, then keep exploring to advance your run."],
   ["Items", "Pick up weapons, armor, potions, keys, and gold. Equip gear in its matching slot to improve your character. If a slot is occupied, choose whether to replace the equipped item or leave the new item behind."],
-  ["Leveling Up", "Attacks, defeats, discoveries, containers, and new dungeon levels grant experience. Each new level grants Attribute Points. Open Progression from Attributes when you are ready to spend them; your level and attributes persist after a run ends."],
+  ["Leveling Up", "Attacks, defeats, discoveries, containers, and new dungeon levels grant experience. Each new level grants attribute points. Open Progression from Attributes when you are ready to spend them; your level and attributes persist after a run ends."],
   ["Saving Your Game", "The game autosaves after turns in the selected save slot. Settings controls audio and returning to the main menu. Use the title-bar controls for fullscreen, camera mode, and world zoom whenever you need them."],
   ["Tips", "Mouse Mode\n\nYou may use the mouse or keyboard interchangeably. If you want to use only the mouse, Camera Mode is recommended for the smoothest experience."],
 ] as const;

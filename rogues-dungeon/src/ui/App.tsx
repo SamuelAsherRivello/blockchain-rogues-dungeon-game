@@ -4,12 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { BrowserSurface } from "./BrowserSurface.tsx";
 import { classifyPlatform, layoutForPlatform } from "./layout.ts";
 import { LayoutContext } from "./layout-context.ts";
-
-const PIVOT_POINTS_STORAGE_KEY = "rogues-dungeon.dev.show-pivot-points";
+import { DEV_SETTINGS_STORAGE_KEYS, readDevAspect, readDevBoolean, writeDevAspect, writeDevBoolean } from "./dev-settings.ts";
 const SEQUENTIALLY_FOCUSABLE_SELECTOR = "a[href], area[href], button, input, select, textarea, iframe, object, embed, [contenteditable]:not([contenteditable=\"false\"]), [tabindex]";
 
 function readShowPivotPoints() {
-  try { return localStorage.getItem(PIVOT_POINTS_STORAGE_KEY) === "true"; } catch { return false; }
+  return readDevBoolean(DEV_SETTINGS_STORAGE_KEYS.pivots);
 }
 
 export function App({ content = null, gutters = {} }: { content?: ReactNode; gutters?: Partial<Record<string, ReactNode>> }) {
@@ -51,13 +50,14 @@ export function App({ content = null, gutters = {} }: { content?: ReactNode; gut
   }, []);
   const platform = classifyPlatform({ userAgentDataMobile: navigator.userAgentData?.mobile, userAgent: navigator.userAgent });
   const canOverride = platform === "pc" && import.meta.env.DEV;
-  const [developerAspect, setDeveloperAspect] = useState<Orientation | null>(null);
+  const [developerAspect, setDeveloperAspectState] = useState<Orientation | null>(readDevAspect);
   const [showPivotPoints, setShowPivotPoints] = useState(readShowPivotPoints);
   const setPersistentShowPivotPoints = (value: boolean | ((current: boolean) => boolean)) => setShowPivotPoints((current) => {
     const next = typeof value === "function" ? value(current) : value;
-    try { localStorage.setItem(PIVOT_POINTS_STORAGE_KEY, String(next)); } catch { /* session fallback */ }
+    writeDevBoolean(DEV_SETTINGS_STORAGE_KEYS.pivots, next);
     return next;
   });
+  const setDeveloperAspect = (value: Orientation) => { writeDevAspect(value); setDeveloperAspectState(value); };
   const layout = layoutForPlatform(platform, canOverride ? developerAspect : null);
   const context = useMemo(() => ({ platform, orientation: layout.orientation, canOverride, showPivotPoints: canOverride && showPivotPoints, setShowPivotPoints: setPersistentShowPivotPoints, setDeveloperAspect }), [platform, layout.orientation, canOverride, showPivotPoints]);
   return <LayoutContext.Provider value={context}><BrowserSurface layout={layout} gutters={gutters}>{content}</BrowserSurface></LayoutContext.Provider>;

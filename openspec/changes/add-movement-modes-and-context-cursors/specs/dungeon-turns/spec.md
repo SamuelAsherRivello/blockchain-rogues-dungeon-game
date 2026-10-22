@@ -60,6 +60,17 @@ Discrete Grid-snap, Grid-tween, and Battle movement SHALL retain one turn per ac
 - **WHEN** a Gridless player makes a legal discrete step in Battle
 - **THEN** only the ordinary discrete action charge applies and no extra center-line travel charge is added
 
-## Baseline authority
+### Requirement: Keep mouse courtesy stops free of extra turns
+The 30-step mouse limit, route preview, pre-trap courtesy pause, and second-click confirmation alone SHALL NOT advance tactical time or run an enemy phase. Accepted travel before or through a confirmed trap SHALL retain the selected movement mode's ordinary step or center-line accounting and trap damage rules. Stopping SHALL not charge untraveled route steps.
+
+#### Scenario: Pause before a trap
+- **WHEN** a mouse route reaches the safe cell center before an unconfirmed trap
+- **THEN** only the accepted travel to that center is charged and waiting for another click adds no turn
+
+#### Scenario: Confirm a trap crossing
+- **WHEN** a fresh click permits entry into the adjacent warned trap
+- **THEN** only accepted movement and its normal trap effects advance gameplay, with no extra confirmation turn
+
+## Baseline authority and approved extension
 
 The current complete/approach route and adjacent interaction behavior is the user-selected baseline. Exact target reachability alone does not determine whether movement is requested.

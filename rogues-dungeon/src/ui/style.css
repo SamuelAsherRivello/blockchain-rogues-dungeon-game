@@ -151,6 +151,10 @@ button:focus-visible { outline:2px solid #f6de92; outline-offset:2px; }
 .panel-popup p { font-size:.78rem; line-height:1.25; }
 .panel-popup button { min-width:8.75rem; border:1px solid #d6c486; background:#302a42; color:#f7efd4; padding:.28rem .65rem; font:inherit; font-size:.75rem; cursor:pointer; }
 .panel-popup button:hover,.panel-popup button:focus-visible { background:#4c426b; outline:2px solid #f6de92; outline-offset:2px; }
+.panel-popup--collapse { z-index:4; }
+.game-card--centered { position:absolute; z-index:30; left:50%; top:50%; width:min(78%,22rem,calc(100% - 1rem)); height:min(70%,28rem); min-height:12rem; max-height:82%; overflow:hidden; transform:translate(-50%,-50%); box-shadow:0 .35rem 1rem #000c; pointer-events:auto; }
+.game-card--centered > div { height:100%; min-height:0; overflow:auto; }
+.game-card--centered .game-card__title-trigger { cursor:pointer; }
 .game-card__title-trigger { border:0; padding:0; background:transparent; color:inherit; font:inherit; text-transform:inherit; cursor:help; }
 .info-panel--secondary .game-card { flex:0 0 auto; }.info-panel--secondary .game-card:first-child { flex:0 0 16.5%; }.info-panel--secondary .info-panel__log-card { flex:1; min-height:0; }
 .info-panel--secondary .game-card:nth-child(3) { padding-top:.4rem; padding-bottom:.25rem; }
@@ -205,7 +209,7 @@ button:focus-visible { outline:2px solid #f6de92; outline-offset:2px; }
 .world-view[data-game-mode="Battle"]::after { content:""; position:absolute; inset:0; border:2px solid #dc3d40; box-sizing:border-box; z-index:20; pointer-events:none; }
 .title-bar__icon--movement { width:1em; height:1em; flex-shrink:0; }
 .movement-mode-help { display:block; max-width:30ch; white-space:normal; line-height:1.35; }
-.world-view[data-cursor="walk"] { cursor:url("/blockchain-rogues-dungeon-game/assets/cursors/walk.svg") 12 12, pointer; }
+.world-view[data-cursor="walk"] { cursor:url("/blockchain-rogues-dungeon-game/assets/cursors/walk.svg?v=2") 12 12, pointer; }
 .world-view[data-cursor="fight"] { cursor:default; }
 .world-view[data-cursor="interact"] { cursor:pointer; }
 .world-view[data-cursor="blocked"] { cursor:not-allowed; }
@@ -253,7 +257,7 @@ button:focus-visible { outline:2px solid #f6de92; outline-offset:2px; }
 .view_list,.slot_group { display:grid; gap:.18rem; }.quick_slots_list { display:grid; gap:.18rem; padding-right:10px; }.view_list { padding-right:10px; }.slot_group { margin-bottom:.35rem; }.slot_group h3 { margin:.1rem 0; font-size:.63rem; color:#a99f89; font-weight:normal; }
 .info-panel--primary .view_list,.info-panel--primary .quick_slots_list,.info-panel--primary .slot_scroll { width:calc(100% - var(--slot-right-inset)); padding-right:0; box-sizing:border-box; }
 .slot_item_hotkey { display:flex; align-items:center; flex:0 0 auto; color:var(--slot-disabled-color); font:inherit; }.quick_slot { background:#25272a; border-color:#596068; color:#e8dec4; }.quick_slot .slot_item_hotkey { color:var(--quick-slot-color); }
- .slot_item { position:relative; display:flex; align-items:center; flex-wrap:wrap; width:100%; min-height:1.35rem; gap:.32rem; padding:.18rem .25rem; box-sizing:border-box; border:1px solid #514632; background:#211d24; color:#e8dec4; text-align:left; font:inherit; font-size:.62rem; line-height:1.15; }.slot_item_number,.slot_item_text,.slot_item_icon,.slot_item_cost,.slot_item .drag_handle { display:flex; align-items:center; min-height:1em; }.slot_item_text { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.slot_item_icon,.slot_item_cost { flex:0 0 auto; font-style:normal; color:#c6b994; }.slot_item_details { flex:0 0 100%; color:#a99f89; font-size:.5rem; line-height:1.15; }.slot_item_number,.slot_item_icon { color:var(--slot-accent-color,#c6b994); }.slot_item[data-slot-type="ability"]:not([data-slot-empty="true"]) .slot_item_number { color:var(--ability-color); }.slot_item .drag_handle { margin-left:auto; color:#a99f89; }.slot_item[data-drag-kind]{cursor:grab;touch-action:none;user-select:none}.slot_item[data-drag-kind]:active{cursor:grabbing}.slot_item.disabled,.slot_item.unavailable{color:var(--slot-disabled-color)}.slot_item.disabled .slot_item_icon,.slot_item.disabled .slot_item_number,.slot_item.unavailable .slot_item_hotkey,.slot_item.unavailable .slot_item_number,.slot_item.unavailable .slot_item_icon,.slot_item.unavailable .slot_item_cost,.slot_item.unavailable .drag_handle{color:var(--slot-disabled-color)}.slot_item[data-slot-type="quickslot"][data-slot-empty="true"] .slot_item_hotkey,.slot_item[data-slot-empty="true"] .empty_slot { color:var(--slot-disabled-color); }.slot_item .empty_slot{position:absolute;left:50%;transform:translateX(-50%);display:grid;place-items:center;min-height:.85rem;font-size:.9rem;line-height:1}.equipment_comparison { display:grid; gap:.18rem; margin-top:.35rem; padding:.3rem; border:1px solid #65583e; background:#17141b; color:#e8dec4; font-size:.55rem; }.equipment_comparison strong { color:#fff4bb; }.equipment_comparison p { margin:0; }.equipment_comparison dl { display:grid; grid-template-columns:repeat(3,1fr); gap:.2rem; margin:0; }.equipment_comparison dt { color:#a99f89; }.equipment_comparison dd { margin:0; color:#c6e8b1; }.drag_handle{touch-action:none;user-select:none}.drag_departure{opacity:.48;border-style:dashed;border-color:var(--slot-category-color)}.drag_landing{outline:2px solid var(--slot-category-color);outline-offset:-2px;background:color-mix(in srgb,var(--slot-category-color) 12%,#211d24)}.item-drag-preview{position:fixed;z-index:100;width:min(11rem,calc(100vw - 2rem));transform:translate(.7rem,.7rem);pointer-events:none;box-shadow:0 .2rem .6rem #000a}
+ .slot_item { position:relative; display:flex; align-items:center; flex-wrap:wrap; width:100%; min-height:1.35rem; gap:.32rem; padding:.18rem .25rem; box-sizing:border-box; border:1px solid #514632; background:#211d24; color:#e8dec4; text-align:left; font:inherit; font-size:.62rem; line-height:1.15; }.slot_item_number,.slot_item_text,.slot_item_icon,.slot_item_cost,.slot_item .drag_handle { display:flex; align-items:center; min-height:1em; }.slot_item_text { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.slot_item_icon,.slot_item_cost { flex:0 0 auto; font-style:normal; color:#c6b994; }.slot_item_details { flex:0 0 100%; color:#a99f89; font-size:.5rem; line-height:1.15; }.slot_item_number,.slot_item_icon { color:var(--slot-accent-color,#c6b994); }.slot_item[data-slot-type="ability"]:not([data-slot-empty="true"]) .slot_item_number { color:var(--ability-color); }.slot_item .drag_handle { margin-left:auto; color:#a99f89; }.slot_item[data-drag-kind]{cursor:grab;touch-action:none;user-select:none}.slot_item[data-drag-kind]:active{cursor:grabbing}.slot_item.disabled,.slot_item.unavailable{color:var(--slot-disabled-color)}.slot_item.disabled .slot_item_icon,.slot_item.disabled .slot_item_number,.slot_item.unavailable .slot_item_hotkey,.slot_item.unavailable .slot_item_number,.slot_item.unavailable .slot_item_icon,.slot_item.unavailable .slot_item_cost,.slot_item.unavailable .drag_handle{color:var(--slot-disabled-color)}.slot_item[data-slot-type="quickslot"][data-slot-empty="true"] .slot_item_hotkey,.slot_item[data-slot-empty="true"] .empty_slot { color:var(--slot-disabled-color); }.slot_item .empty_slot{position:absolute;left:50%;transform:translateX(-50%);display:grid;place-items:center;min-height:.85rem;font-size:.9rem;line-height:1}.equipment_comparison { display:grid; gap:.18rem; margin-top:.35rem; padding:.3rem; border:1px solid #65583e; background:#17141b; color:#e8dec4; font-size:.55rem; }.equipment_comparison strong { color:#fff4bb; }.equipment_comparison p { margin:0; }.equipment_comparison dl { display:grid; grid-template-columns:repeat(3,1fr); gap:.2rem; margin:0; }.equipment_comparison dt { color:#a99f89; }.equipment_comparison dd { margin:0; color:#c6e8b1; }.drag_handle{touch-action:none;user-select:none}.drag_departure{opacity:.48;border-style:dashed;border-color:var(--slot-category-color)}.drag_landing{outline:2px solid var(--slot-category-color);outline-offset:-2px;background:color-mix(in srgb,var(--slot-category-color) 12%,#211d24)}.inventory_drop_item.drag_landing{outline-color:#d85c5c;border-color:#d85c5c;background:color-mix(in srgb,#d85c5c 12%,#211d24)}.item-drag-preview{position:fixed;z-index:100;width:min(11rem,calc(100vw - 2rem));transform:translate(.7rem,.7rem);pointer-events:none;box-shadow:0 .2rem .6rem #000a}
 .slot_item { flex-wrap:nowrap; }
 .slot_item[data-slot-category="ability"] { --slot-category-color:var(--ability-color); }
 .slot_item[data-slot-category="quick"] { --slot-category-color:var(--quick-slot-color); }
@@ -426,8 +430,9 @@ button:focus-visible { outline:2px solid #f6de92; outline-offset:2px; }
 .settings-window { width:clamp(15rem,29%,24rem); height:calc(63% + 50px); max-width:none; max-height:none; }
 .dialog_backdrop:has(.settings-window--game),.dialog_backdrop:has(.progression-window) { background:rgb(0 0 0 / 50%); }
 .settings-window--menu { color:#2e2117; background:linear-gradient(135deg,rgb(255 254 245 / 97%),rgb(226 214 180 / 96%)); border:3px solid #f9f5e7; outline:1px solid #4f321b; outline-offset:-8px; box-shadow:.55rem .65rem 1.5rem rgb(0 0 0 / 65%); }
+.settings-window--menu .dialog_header h2 { color:#442816; font-family:Georgia,serif; font-size:clamp(1rem,1.5vw,1.45rem); letter-spacing:.06em; text-align:center; text-transform:uppercase; text-shadow:0 1px #fff8; }
 .dialog_backdrop--bounded .dialog { position:absolute; }
-.dialog--bounded { box-sizing:border-box; max-width:none; max-height:none; }
+.dialog--bounded { box-sizing:border-box; min-width:0; min-height:0; max-width:none; max-height:none; overflow:hidden; }
 .dialog--centered { position:absolute; translate:-50% -50%; }
 .settings-window--menu .dialog_header { border-color:#604124; }
 .settings-window .dialog_body { overflow:visible; }
@@ -470,8 +475,9 @@ button:focus-visible { outline:2px solid #f6de92; outline-offset:2px; }
 
 .progression-window { width:min(25rem,86vw); }
 .create-character-window { width:clamp(15rem,29%,24rem); height:calc(66% + 50px); max-width:none; max-height:none; color:#2e2117; background:linear-gradient(135deg,rgb(255 254 245 / 97%),rgb(226 214 180 / 96%)); border:3px solid #f9f5e7; outline:1px solid #4f321b; outline-offset:-8px; box-shadow:.55rem .65rem 1.5rem rgb(0 0 0 / 65%); }
-.create-character-window .dialog_header { border-color:#604124; }
+.create-character-window .dialog_header { flex-basis:42px; padding-inline:13px; border-color:#604124; }
 .create-character-window .dialog_body { display:grid; flex:1 1 auto; grid-template-rows:minmax(0,1fr) auto; align-content:stretch; gap:.55rem; min-height:0; overflow:hidden; }
+.create-character-window .dialog_body { padding:19px; }
 .create-character-window__content { display:grid; grid-template-rows:auto minmax(0,1fr); align-content:stretch; gap:.55rem; min-width:0; min-height:0; }
 .create-character-window__details-list { display:flex; flex-direction:column; justify-content:space-evenly; min-width:0; min-height:0; margin-inline:10px; }
 .create-character-window__attributes { padding:12px 5px 5px; background:#17141b; box-shadow:0 .2rem .5rem rgb(0 0 0 / 45%); }
@@ -495,6 +501,16 @@ button:focus-visible { outline:2px solid #f6de92; outline-offset:2px; }
 .create-character-window__actions button:disabled { border-color:#9b8a70; background:#ddd2b6; color:#7a6955; box-shadow:inset 0 0 0 1px rgb(255 255 255 / 45%); cursor:not-allowed; opacity:1; }
 .progression-window__attributes { margin:0 0 .7rem; }.progression-window .body_text { margin:0 0 .7rem; text-align:center; }.progression-window__results-heading { margin-bottom:.25rem !important; }.progression-window__results { min-height:3.9rem; margin:0 0 .7rem; padding:.1rem 0 .1rem 1.8rem; }.progression-window__results:empty { visibility:visible; }.progression-window__results .body_text { margin:0; text-align:left; line-height:1.3; }.progression-window__actions { display:flex; gap:.5rem; }.progression-window__actions button { flex:1; border:1px solid #65583e; background:#211d24; color:#e8dec4; padding:.45rem .75rem; font:inherit; cursor:pointer; }.progression-window__actions button:disabled { border-color:#5c574d; background:#343238; color:#85817a; cursor:not-allowed; }
 @media (max-width:600px) { .create-character-window { width:84%; height:calc(69% + 50px); }.create-character-window__content { gap:.55rem; }.create-character-window__details { gap:.7rem; } }
+
+/* In a short fitted viewport, keep the creation flow to one readable screen.
+   The world preview is optional, so remove it rather than letting it push the
+   confirmation controls below the fold. */
+@container (max-height: 800px) {
+  #viewport[data-orientation="landscape"] .dialog_backdrop--bounded:has(.settings-window--game) { place-items:center; padding:.5rem; box-sizing:border-box; overflow:hidden; }
+  #viewport[data-orientation="landscape"] .dialog_backdrop--bounded:has(.settings-window--game) .dialog { position:relative; left:auto !important; top:auto !important; right:auto !important; bottom:auto !important; max-width:calc(var(--project-viewport-width) - 1rem) !important; max-height:calc(var(--project-viewport-height) - 1rem) !important; }
+  #viewport[data-orientation="landscape"] .create-world-window .create-character-window__content { grid-template-rows:auto auto auto; align-content:start; }
+  #viewport[data-orientation="landscape"] .create-world-window__preview-panel { display:none; }
+}
 
 /* Compact PC landscape tiers. These are container-relative so the fitted 16:9
    shell, rather than the outer browser gutters, controls the presentation. */
@@ -521,6 +537,21 @@ button:focus-visible { outline:2px solid #f6de92; outline-offset:2px; }
   #viewport[data-orientation="landscape"] .settings-window--game { width:42% !important; height:min(32rem,84%) !important; }
   #viewport[data-orientation="landscape"] .main-menu-window__fullscreen { max-width:2.25rem; padding:.45rem; }
   #viewport[data-orientation="landscape"] .main-menu-window__version { right:1rem; font-size:.5rem; }
+
+  /* Creation dialogs use the same compact typography tiers as the start
+     menu. Their bounds are copied from the menu for the opening transition,
+     so the contents must scale with the fitted viewport as well. */
+  #viewport[data-orientation="landscape"] .create-character-window .dialog_body { padding:.7rem; }
+  #viewport[data-orientation="landscape"] .create-character-window .body_text { font-size:.62rem; line-height:1.25; }
+  #viewport[data-orientation="landscape"] .create-character-window .attribute_item { font-size:.56rem; line-height:1.3; }
+  #viewport[data-orientation="landscape"] .create-character-window .game-card h2 { font-size:.6rem; }
+  #viewport[data-orientation="landscape"] .create-character-window__actions button { padding:.4rem .5rem; font-size:.68rem; }
+  #viewport[data-orientation="landscape"] .create-character-window__details-list { gap:.25rem; }
+  #viewport[data-orientation="landscape"] .create-character-window__hero,
+  #viewport[data-orientation="landscape"] .create-character-window__illustration,
+  #viewport[data-orientation="landscape"] .create-character-window__attribute-points { width:1.45rem; height:1.45rem; }
+  #viewport[data-orientation="landscape"] .create-character-window__attribute-points > span { font-size:1.2rem; }
+  #viewport[data-orientation="landscape"] .create-character-window__attribute-points > b { font-size:.62rem; }
 
   #viewport[data-orientation="landscape"] .game-screen { grid-template-rows:5% 90% 5%; }
   #viewport[data-orientation="landscape"] .title-bar { grid-template-columns:minmax(0,48%) minmax(0,52%); font-size:clamp(.5rem,1.4cqw,.75rem); }
@@ -554,6 +585,20 @@ button:focus-visible { outline:2px solid #f6de92; outline-offset:2px; }
   #viewport[data-orientation="landscape"] .main-menu-window__saved-game-list button { padding:.35rem; font-size:.58rem; }
   #viewport[data-orientation="landscape"] .main-menu-window__footer button { padding:.35rem; }
   #viewport[data-orientation="landscape"] .main-menu-window__version { right:.75rem; }
+
+  /* Match the smallest start-menu tier so creation remains readable when the
+     fitted game viewport becomes extremely narrow. */
+  #viewport[data-orientation="landscape"] .create-character-window .dialog_body { padding:.55rem; }
+  #viewport[data-orientation="landscape"] .create-character-window .body_text { font-size:.55rem; line-height:1.18; }
+  #viewport[data-orientation="landscape"] .create-character-window .attribute_item { font-size:.5rem; line-height:1.2; }
+  #viewport[data-orientation="landscape"] .create-character-window .game-card h2 { font-size:.55rem; }
+  #viewport[data-orientation="landscape"] .create-character-window__actions button { padding:.35rem .4rem; font-size:.58rem; }
+  #viewport[data-orientation="landscape"] .create-character-window__details-list { gap:.15rem; }
+  #viewport[data-orientation="landscape"] .create-character-window__hero,
+  #viewport[data-orientation="landscape"] .create-character-window__illustration,
+  #viewport[data-orientation="landscape"] .create-character-window__attribute-points { width:1.2rem; height:1.2rem; }
+  #viewport[data-orientation="landscape"] .create-character-window__attribute-points > span { font-size:1rem; }
+  #viewport[data-orientation="landscape"] .create-character-window__attribute-points > b { font-size:.52rem; }
   #viewport[data-orientation="landscape"] .title-bar__counters { display:none; }
   #viewport[data-orientation="landscape"] .title-bar { grid-template-columns:minmax(0,42%) minmax(0,58%); }
   #viewport[data-orientation="landscape"] .title-bar .title-bar__select-utility { width:5.8em; flex-basis:5.8em; }
@@ -565,14 +610,15 @@ button:focus-visible { outline:2px solid #f6de92; outline-offset:2px; }
 
   /* Bounded menu dialogs recenter and take their own safe-area budget once
      the copied menu rectangle is no longer large enough. */
-  #viewport[data-orientation="landscape"] .dialog_backdrop--bounded { place-items:center; padding:.5rem; box-sizing:border-box; overflow:hidden; }
-  #viewport[data-orientation="landscape"] .dialog_backdrop--bounded .dialog { position:relative; left:auto !important; top:auto !important; right:auto !important; bottom:auto !important; max-width:calc(var(--project-viewport-width) - 1rem) !important; max-height:calc(var(--project-viewport-height) - 1rem) !important; }
+  #viewport[data-orientation="landscape"] .dialog_backdrop--bounded:has(.settings-window--game),
+  #viewport[data-orientation="landscape"] .dialog_backdrop--bounded:has(.how-to-play-window) { place-items:center; padding:.5rem; box-sizing:border-box; overflow:hidden; }
+  #viewport[data-orientation="landscape"] .dialog_backdrop--bounded:has(.settings-window--game) .dialog,
+  #viewport[data-orientation="landscape"] .dialog_backdrop--bounded:has(.how-to-play-window) .dialog { position:relative; left:auto !important; top:auto !important; right:auto !important; bottom:auto !important; max-width:calc(var(--project-viewport-width) - 1rem) !important; max-height:calc(var(--project-viewport-height) - 1rem) !important; }
   #viewport[data-orientation="landscape"] .dialog_header { flex-basis:2.75rem; padding-inline:.75rem; }
   #viewport[data-orientation="landscape"] .dialog_header h2 { font-size:1rem; }
   #viewport[data-orientation="landscape"] .dialog_close { font-size:1.15rem; }
   #viewport[data-orientation="landscape"] .dialog_body { padding:.75rem; overflow:auto; }
   #viewport[data-orientation="landscape"] .dialog_footer { flex-basis:2.75rem; padding-inline:.75rem; }
-  #viewport[data-orientation="landscape"] .settings-window,
   #viewport[data-orientation="landscape"] .create-character-window { width:46%; height:min(32rem,84%); min-width:0; }
   #viewport[data-orientation="landscape"] .settings-window--game { position:absolute; width:46% !important; height:min(32rem,84%) !important; }
   #viewport[data-orientation="landscape"] .settings-window__audio { padding:.45rem; }
@@ -584,6 +630,25 @@ button:focus-visible { outline:2px solid #f6de92; outline-offset:2px; }
   #viewport[data-orientation="landscape"] .create-character-window__attributes { padding:8px 4px 4px; }
   #viewport[data-orientation="landscape"] .image-text-row { gap:.45rem; }
   #viewport[data-orientation="landscape"] .create-character-window__actions { gap:.35rem; }
+}
+
+/* The same compact settings treatment is used from the game title bar and the
+   main menu. A short viewport gets a centered, bounded dialog with an owned
+   scroll area instead of clipping the final controls. */
+@container (max-height: 800px) {
+  #viewport[data-orientation="landscape"] .settings-window--game { width:46% !important; height:min(32rem,84%) !important; min-width:0; }
+  #viewport[data-orientation="landscape"] .dialog_backdrop--bounded:has(.settings-window--game) { place-items:center; padding:.5rem; box-sizing:border-box; overflow:hidden; }
+  #viewport[data-orientation="landscape"] .dialog_backdrop--bounded:has(.settings-window--game) .dialog { position:relative; left:auto !important; top:auto !important; right:auto !important; bottom:auto !important; max-width:calc(var(--project-viewport-width) - 1rem) !important; max-height:calc(var(--project-viewport-height) - 1rem) !important; }
+  #viewport[data-orientation="landscape"] .settings-window .dialog_header { flex-basis:2.75rem; padding-inline:.75rem; }
+  #viewport[data-orientation="landscape"] .settings-window .dialog_header h2 { font-size:1rem; }
+  #viewport[data-orientation="landscape"] .settings-window .dialog_close { font-size:1.15rem; }
+  #viewport[data-orientation="landscape"] .settings-window .dialog_body { padding:.55rem; overflow:auto; }
+  #viewport[data-orientation="landscape"] .settings-window__audio { gap:.35rem; padding:.4rem; }
+  #viewport[data-orientation="landscape"] .settings-window__slider { gap:.15rem; font-size:.72rem; }
+  #viewport[data-orientation="landscape"] .settings-window__mute { font-size:.72rem; }
+  #viewport[data-orientation="landscape"] .settings-window__actions { gap:.25rem; font-size:.62rem; }
+  #viewport[data-orientation="landscape"] .settings-window__actions button,
+  #viewport[data-orientation="landscape"] .settings-window__actions a { padding:.4rem; }
 }
 
 .dialog_header h2 {
@@ -672,11 +737,23 @@ button:focus-visible { outline:2px solid #f6de92; outline-offset:2px; }
 @font-face { font-family:"Libron"; src:url("/blockchain-rogues-dungeon-game/assets/fonts/libron/Libron-Italic.woff2") format("woff2"); font-style:italic; font-weight:400; font-display:swap; }
 @font-face { font-family:"Libron"; src:url("/blockchain-rogues-dungeon-game/assets/fonts/libron/Libron-BoldItalic.woff2") format("woff2"); font-style:italic; font-weight:700; font-display:swap; }
 #browser_surface,#browser_surface * { font-family:"Libron",serif !important; }
-.create-world-window .create-character-window__content { grid-template-rows:auto auto minmax(0,1fr) auto; gap:.4rem; }
-.create-world-window__preview { min-height:0; height:100%; position:relative; background:#17141b; overflow:hidden; }
+.create-world-window .create-character-window__content { grid-template-rows:auto auto minmax(3.5rem,1fr) auto; gap:.4rem; }
+.create-world-window__preview-panel { display:flex; min-height:0; }
+.create-world-window__preview-card { display:flex; flex:1; flex-direction:column; min-height:0; }
+.create-world-window__preview-card > div { display:flex; flex:1; flex-direction:column; min-height:0; }
+.create-world-window__preview { flex:1; min-height:0; position:relative; background:#17141b; overflow:hidden; }
 .create-world-window__preview .world-view { width:100%; height:100%; }
 .create-world-window__hint { margin:0; text-align:center; }
 .create-world-window .attribute_item { min-width:0; }
 .create-world-window .delta_value { flex-shrink:0; }
 .world-progression-window .progression-window__results { min-height:3lh; height:auto; }
+@container (max-width:960px) {
+  .create-world-window .dialog_body { padding:.5rem .75rem; gap:.3rem; }
+  .create-world-window .create-character-window__attributes { padding:.4rem .25rem .2rem; }
+  .create-world-window .create-character-window__content { grid-template-rows:auto auto minmax(3.5rem,1fr) auto; gap:.25rem; }
+  .create-world-window .game-card { padding:.45rem .25rem .2rem; }
+  .create-world-window .create-world-window__hint { font-size:.6rem; line-height:1.2; }
+  .create-world-window .create-character-window__actions { gap:.25rem; }
+  .create-world-window .create-character-window__actions button { padding:.25rem .5rem; }
+}
 

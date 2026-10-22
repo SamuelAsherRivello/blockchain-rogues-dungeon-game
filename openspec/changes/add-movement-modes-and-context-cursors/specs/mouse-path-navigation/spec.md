@@ -3,7 +3,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Route a held mouse destination through cardinal cells
-In General, one click SHALL follow the complete cardinal route or the available reachable approach route through successive legal actions without requiring a held button. Gridless mouse travel SHALL snap to the occupied center before departing, move smoothly in whole pixels between route centers with looping run art and no hop/tween, and finish at the destination cell center. In Battle, one click SHALL request only the next legal cardinal step or adjacent interaction. Automatic travel SHALL stop on entering Battle, rejection, a world transition, or exhausting its route; it SHALL not teleport across intermediate cells.
+In General, one click SHALL follow the cardinal route or reachable approach through successive legal actions without requiring a held button, subject to the 30-step limit and trap courtesy stops. Gridless mouse travel SHALL snap to the occupied center before departing, move smoothly in whole pixels between route centers with looping run art and no hop/tween, and finish at the permitted endpoint's cell center. In Battle, one click SHALL request only the next legal cardinal step or adjacent interaction, subject to trap confirmation. Automatic travel SHALL stop on entering Battle, rejection, a world transition, a courtesy stop, its step limit, or exhausting its route; it SHALL not teleport across intermediate cells.
 
 #### Scenario: Route around a wall
 - **WHEN** a destination is reachable only by turning around impassable terrain
@@ -59,7 +59,7 @@ The reticle SHALL prioritize enemy red and interactive green classifications ove
 ## ADDED Requirements
 
 ### Requirement: Display the existing mouse route as cell-center dots
-The main view SHALL display centered dots for complete or approach route cells after the player's origin, except a selected green-classified interactive endpoint SHALL omit its dot. Intermediate green-classified interactive cells SHALL use green dots; other dots SHALL use pale white. Previewing SHALL not move the player or advance time. The preview SHALL remain mouse-only and use the movement route output.
+The main view SHALL display centered dots for complete or approach route cells after the player's origin, up to 30 steps, except a selected green-classified interactive endpoint SHALL omit its dot. Trap cells SHALL use red dots, including a trap selected as the endpoint. Intermediate green-classified interactive cells SHALL use green dots; other dots SHALL use pale white. Previewing SHALL not move the player or advance time. The preview SHALL remain mouse-only. A preview through a trap SHALL not authorize uninterrupted movement across it.
 
 #### Scenario: Hover an adjacent cardinal cell
 - **WHEN** the mouse targets a reachable ordinary ground cardinal neighbor
@@ -71,7 +71,7 @@ The main view SHALL display centered dots for complete or approach route cells a
 
 #### Scenario: Hover a distant reachable cell
 - **WHEN** a route exists around obstacles to an ordinary ground destination
-- **THEN** dots follow that route through the endpoint, excluding the origin
+- **THEN** dots follow that route toward the endpoint, excluding the origin and stopping after at most 30 route steps
 
 #### Scenario: Selected green interactive endpoint
 - **WHEN** the selected endpoint has the renderer's green interactive classification
@@ -86,7 +86,7 @@ The main view SHALL display centered dots for complete or approach route cells a
 - **THEN** dots preview that approach after the origin, without implying that the reticle cell can be entered
 
 ### Requirement: Preserve the current reticle classification palette
-The reticle SHALL use pale white #f5f1e6 for ordinary reachable ground, green #6dd873 for barrels and item/potion/key/gold/chest/campfire/stairs targets, red #dc3d40 for enemies, and nearly black #090909 for other invalid targets or the player's cell. Enemy and green target classifications SHALL take priority over false exact reachability. These colors SHALL not themselves promise a successful interaction.
+The reticle SHALL use pale white #f5f1e6 for ordinary reachable ground, green #6dd873 for barrels and item/potion/key/gold/chest/campfire/stairs targets, red #dc3d40 for enemies and trap hazards, and nearly black #090909 for other invalid targets or the player's cell. Enemy, hazard, and green target classifications SHALL take priority over false exact reachability. These colors SHALL not themselves promise a successful interaction or bypass trap confirmation.
 
 #### Scenario: Classify a campfire or barrel
 - **WHEN** the mouse selects a campfire or barrel
@@ -111,6 +111,39 @@ Pointer motion within the same target cell SHALL reuse navigation results while 
 - **WHEN** the camera, Zoom, or world-view dimensions change
 - **THEN** dots remain centered on the same route cells
 
-## Baseline authority
+### Requirement: Limit mouse routes to thirty steps
+Mouse previews and each click's travel SHALL be limited to 30 cardinal grid steps, excluding the origin. The limit SHALL count route steps rather than straight-line distance, remain fixed independently of attributes, Zoom, camera, viewport size, or panel visibility, and not reset during automatic route recomputation. Keyboard travel SHALL remain unchanged. Battle SHALL retain its stricter one-step input rule.
 
-The user selected current path and reticle implementation as authoritative. These deltas reconcile older no-approach and endpoint rules to the current code. General/Battle one-click behavior remains new planned work; existing held-input behavior is not claimed to implement it already.
+#### Scenario: Select a destination forty steps away
+- **WHEN** an otherwise reachable target requires 40 route steps
+- **THEN** the preview covers only the first 30 steps and reports false exact reachability for that click
+- **AND** travel stops after at most 30 steps without resuming automatically
+
+#### Scenario: Toggle information panels
+- **WHEN** C changes panel visibility or the player changes Zoom or camera mode
+- **THEN** the fixed 30-step route limit remains unchanged
+
+### Requirement: Warn about traps without removing the preview beyond them
+Trap cells SHALL remain traversable in the planned preview in every trap animation phase. Each previewed trap cell SHALL have a red dot using #dc3d40, while the route beyond it remains visible within the 30-step cap. Mouse movement SHALL stop at the safe cell center immediately before the first unconfirmed trap and cancel automatic continuation. A fresh second click from that stopping point toward the adjacent trap or beyond it SHALL permit crossing that trap only. Holding the original button SHALL not count as confirmation. Later traps SHALL each require another courtesy pause and fresh gesture. Keyboard movement SHALL remain able to enter traps deliberately and clear stale mouse confirmation. Closed doors SHALL remain blocked.
+
+#### Scenario: Click beyond a trap
+- **WHEN** a legal preview includes a trap before the selected destination
+- **THEN** the trap dot is red and dots continue beyond it within the cap
+- **AND** actual travel stops centered on the preceding safe cell without entering the trap
+
+#### Scenario: Confirm crossing a warned trap
+- **WHEN** a fresh second click targets the adjacent warned trap or a destination beyond it
+- **THEN** travel may cross that trap under ordinary movement and damage rules
+- **AND** another trap on the route causes a new courtesy stop
+
+#### Scenario: First click while adjacent
+- **WHEN** the first click requests entering an adjacent unconfirmed trap
+- **THEN** the player remains in the safe cell and a second click is required to enter
+
+#### Scenario: Select a trap itself
+- **WHEN** the mouse targets a reachable trap cell
+- **THEN** its endpoint dot and reticle are red and the same stop-and-confirm rule applies
+
+## Baseline authority and approved extension
+
+The user selected current path and reticle implementation as authoritative, then approved the 30-step mouse limit and red-dot trap courtesy behavior as extensions. Other approach, endpoint, palette, and alignment rules remain unchanged. These extensions are already implemented and verified; this update records them without changing gameplay code.

@@ -265,11 +265,15 @@ test('matches inventory row spacing to the abilities list', async () => {
 test('fills unused inventory capacity with empty plus slots', async () => {
   const game = await readFile(new URL('../src/game/game.tsx', import.meta.url), 'utf8');
   assert.match(game, /const usedSlots = stacks\.reduce\(\(total, \{ item \}\) => total \+ \(item\.slotSpan \?\? 1\), 0\)/);
-  assert.match(game, /const emptySlots = Math\.max\(0, campaign\.player\.inventoryCapacity - usedSlots\)/);
+  assert.match(game, /const emptySlots = Math\.max\(0, effectiveInventoryCapacity\(campaign\) - usedSlots\)/);
   assert.match(game, /Array\.from\(\{ length: emptySlots \}/);
   assert.match(game, /data-drop-inventory-slot/);
   assert.match(game, /drag\?\.destination\?\.kind === "inventory" && \(\(drag\.source\.item as Item\)\.slotSpan === 2/);
   assert.doesNotMatch(game, /data-drop-inventory>/);
+  assert.match(game, /text="Drop Item"/);
+  assert.match(game, /data-drop-item/);
+  assert.match(game, /inventory_drop_item/);
+  assert.match(game, /effectiveInventoryCapacity\(campaign\)/);
 });
 test('uses permanent in-game scrollbars for the log and inventory', async () => {
   const css = await readFile(new URL('../src/ui/style.css', import.meta.url), 'utf8');

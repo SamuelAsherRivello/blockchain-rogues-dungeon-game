@@ -13,23 +13,26 @@ export type GameMode = "General" | "Battle";
 export type Attributes = Record<AttributeName, number>;
 export type WorldAttributeName = 'clarity' | 'comfort' | 'discovery' | 'fortune' | 'guidance' | 'mercy' | 'openness' | 'peace' | 'plenty' | 'safety';
 export type WorldAttributes = Record<WorldAttributeName, number>;
-export interface FloorGenerationProfile { seed: number; difficulty: number; attributes?: WorldAttributes; generatorVersion: string; tuningVersion?: string; level1TestMode?: boolean }
-export interface WorldGrowthEvent { id: string; seed: number; level: number; difficulty: number; spent: number; applied?: boolean; before?: WorldAttributes; after?: WorldAttributes; unused?: number; acknowledged?: boolean }
+export interface FloorGenerationProfile { seed: number; difficulty: number; attributes?: WorldAttributes; generatorVersion: string; tuningVersion?: string; level1TestMode?: boolean; level1ObjectTestMode?: boolean; level1EnemyTestMode?: boolean }
+export interface WorldGrowthEvent { id: string; seed: number; level: number; difficulty: number; spent: number; rulesVersion?: string; earningProfile?: FloorGenerationProfile; identity?: { worldSeed: number; slot: number; run: number; dungeonLevel: number }; recent?: WorldAttributeName[]; applied?: boolean; before?: WorldAttributes; after?: WorldAttributes; unused?: number; acknowledged?: boolean }
 export interface Resource { current: number; currentMax: number; level?: number }
 export type Resources = Record<ResourceName, Resource>;
 export type ResourceInput = Partial<Record<ResourceName, Partial<Resource> | number>>;
 export type EquipmentGroup = "weapons" | "armor";
 export type ConsumableResource = "health" | "mana";
-export interface Item { id: string; name: string; group: EquipmentGroup; modifiers: Partial<Attributes>; slotSpan?: 1 | 2; hitChance?: number; critChance?: number; perks?: readonly string[]; category?: "equipment" | "consumable"; consumableResource?: ConsumableResource; isStackable?: boolean; quantity?: number }
+export type AbilityId = "heal" | "wand";
+export type ItemCategory = "equipment" | "consumable" | "ability" | "capacity";
+export interface Item { id: string; name: string; group: EquipmentGroup; modifiers: Partial<Attributes>; slotSpan?: 1 | 2; hitChance?: number; critChance?: number; perks?: readonly string[]; category?: ItemCategory; abilityId?: AbilityId; capacityBonus?: number; consumableResource?: ConsumableResource; isStackable?: boolean; quantity?: number }
 export interface QuickSlot { item: Item; quantity: number }
 export type Equipment = Record<EquipmentGroup, (Item | null)[]>;
-export type AbilityId = "heal" | "wand";
 export interface TerrainCell { walkable: boolean; role: string; protected?: boolean }
 export type EnemyAiState = "idle" | "pursue" | "attack" | "blocked";
 export interface EnemyAi { state: EnemyAiState; targetId: "player" | null }
 export interface Enemy extends MassBearingPosition {
   id: string; kind: "enemy"; name: string; hp: number; maxHp: number; damage: number; xp: number;
   resources: Resources; awareness: number; actionCooldown: number; nextActionAt: number; heading?: CharacterHeading;
+  /** Slime lineage depth. Map-born enemies start at generation 1. */
+  generation?: number;
   ai: EnemyAi;
   /** Melee attacks require cardinal adjacency. Ranged attacks may target diagonals within their range. */
   attackKind?: "melee" | "ranged"; attackRange?: number;
@@ -64,7 +67,7 @@ export interface Floor {
   prefabPlacements?: { prefabId: string; origin: Position }[];
   projectiles?: RangedProjectile[];
 }
-export interface RangedProjectile { id: string; sourceId: string; from: Position; to: Position; direction: Direction; createdAt: number }
+export interface RangedProjectile { id: string; sourceId: string; from: Position; to: Position; direction: Direction; createdAt: number; kind?: "arrow" | "magic" | "web" }
 /** The persisted difference between a deterministic base floor and its current runtime state. */
 export interface LevelStateDelta {
   time: number;
@@ -112,13 +115,17 @@ export type Action =
   | { type: "ability"; index: number }
   | { type: "resolve-ability"; abilityId: AbilityId; targetId?: string }
   | { type: "assign-ability"; from: number; to: number }
+  | { type: "store-ability"; index: number }
+  | { type: "assign-ability-from-inventory"; itemId: string; index: number }
   | { type: "equip"; group: EquipmentGroup; index: number; itemId: string }
   | { type: "unequip"; group: EquipmentGroup; index: number }
   | { type: "reorder-equipment"; group: EquipmentGroup; index: number; other: number }
   | { type: "assign-quick-slot"; itemId: string; index: number }
   | { type: "move-quick-slot"; from: number; to: number }
   | { type: "return-quick-slot"; index: number }
-  | { type: "use-quick-slot"; index: number };
+  | { type: "use-quick-slot"; index: number }
+  | { type: "drop-item"; source: DropSourceReference };
+export type DropSourceReference = { kind: "inventory"; itemId: string } | { kind: "slot"; group: EquipmentGroup; index: number } | { kind: "quick-slot"; index: number } | { kind: "ability"; index: number };
 export interface EventFacts {
   reason?: string; previous?: number; current?: number; previousMax?: number; currentMax?: number;
   resource?: ResourceName; position?: Position; targetPosition?: Position; damage?: number;
@@ -126,18 +133,19 @@ export interface EventFacts {
   amount?: number; cause?: string; level?: number; threshold?: number; points?: number;
   stat?: AttributeName; active?: boolean; from?: Position | number; to?: Position | number;
   realm?: string; itemId?: string; name?: string; item?: string; lootTier?: number; xp?: number;
-  action?: string; source?: string | { group: EquipmentGroup; index: number } | { quickSlot: number };
-  destination?: string | { group: EquipmentGroup; index: number } | { quickSlot: number }; group?: EquipmentGroup; index?: number; other?: number;
+  action?: string; source?: string | DropSourceReference | { group: EquipmentGroup; index: number } | { quickSlot: number };
+  destination?: string | Position | { group: EquipmentGroup; index: number } | { quickSlot: number }; group?: EquipmentGroup; index?: number; other?: number;
   id?: string; title?: string; manaCost?: number; targetType?: string; transactionId?: string; actionType?: string; ticks?: number; abilityId?: AbilityId;
   error?: string; message?: string; quantity?: number; quickSlot?: number;
   displacedItemIds?: string[]; displacedItems?: { id: string; name: string }[]; occupiedSlots?: number[]; slotSpan?: 1 | 2;
   hitChance?: number; critChance?: number; roll?: number; attackDirection?: Direction; mitigation?: number; projectileId?: string; outcome?: string;
+  childIds?: string[]; generation?: number;
 }
 export interface GameEvent { type: string; facts: EventFacts; source?: string; gameTime: number; sequence: number; eventId?: string; transactionId?: string | null; outcome?: string }
 export interface ActionResult { state: Campaign; events: GameEvent[]; accepted: boolean; ticks: number; transactionId?: string; system?: boolean }
 export interface LogEntry { id?: string; text: string }
 export interface SelectedCell extends Position { pixel?: Position; pressed?: boolean; sprint?: boolean; left?: number; top?: number; size?: number; kind?: string }
 export interface Feedback extends Position { id?: string; kind: string; text: string; color: string; duration: number }
-export type DragSource = { kind: "inventory"; item: Item } | { kind: "slot"; item: Item; group: EquipmentGroup; index: number } | { kind: "quick-slot"; item: Item; index: number };
-export type DropDestination = { kind: "inventory"; index?: number } | { kind: "slot"; group: EquipmentGroup; index: number } | { kind: "quick-slot"; index: number };
+export type DragSource = { kind: "inventory"; item: Item } | { kind: "slot"; item: Item; group: EquipmentGroup; index: number } | { kind: "quick-slot"; item: Item; index: number } | { kind: "ability"; item: Item; index: number };
+export type DropDestination = { kind: "inventory"; index?: number } | { kind: "slot"; group: EquipmentGroup; index: number } | { kind: "quick-slot"; index: number } | { kind: "drop-item" };
 export interface Rect extends Position { width: number; height: number }

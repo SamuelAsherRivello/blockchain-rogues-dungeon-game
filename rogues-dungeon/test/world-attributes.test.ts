@@ -133,3 +133,35 @@ test('early/middle/late depth report measures threat, recovery, supplies and rew
   assert.ok(report.find(r => r.depth === 1 && r.rank === 5)!.encounters < report.find(r => r.depth === 1 && r.rank === 1)!.encounters);
   console.log('World tuning report', JSON.stringify(report));
 });
+
+test('earning XP records a stable world event once, including multi-level gains', () => {
+  const campaign = createRunCampaign(42, 1, 1, 1, 1, { worldAttributes: { ...DEFAULT_WORLD_ATTRIBUTES } });
+  const source = campaign.floor.entities.find(e => e.kind === 'enemy');
+  assert.ok(source && source.kind === 'enemy');
+  source.x = campaign.player.x + 1; source.y = campaign.player.y;
+  source.hp = 1; source.resources.health.current = 1; source.resources.xp.current = 210;
+  campaign.floor.entities = [source]; campaign.floor.decorations = []; campaign.floor.objectSets = [];
+  campaign.progression.xp = 95;
+  const result = applyAction(campaign, { type: 'move', direction: 'e' });
+  assert.equal(result.state.worldGrowth!.length, 3);
+  assert.deepEqual(result.state.worldGrowth!.map(e => e.level), [2, 3, 4]);
+  assert.ok(result.state.worldGrowth!.every(e => e.seed === campaign.floor.seed && e.difficulty === 1 && !e.applied));
+  assert.ok(result.state.worldGrowth!.every(e => e.rulesVersion === 'world-attributes-1' && e.identity?.dungeonLevel === 1));
+  assert.deepEqual(result.state.worldGrowth![0].earningProfile, campaign.floor.generationProfile);
+});
+
+test('a generated container pays the same world reward after later world growth', () => {
+  const campaign = createRunCampaign(42, 1, 1, 1, 1, { worldAttributes: { ...DEFAULT_WORLD_ATTRIBUTES, fortune: 5 } });
+  const generated = campaign.floor.entities.find(e => e.kind === 'chest');
+  assert.ok(generated && generated.kind === 'chest');
+  const chest = { ...generated, x: campaign.player.x + 1, y: campaign.player.y };
+  campaign.floor.entities = [chest]; campaign.floor.decorations = []; campaign.floor.objectSets = [];
+  const expected = applyAction(campaign, { type: 'move', direction: 'e' }).state.floor.entities;
+  campaign.worldAttributes!.fortune = 99;
+  const actual = applyAction(campaign, { type: 'move', direction: 'e' }).state.floor.entities;
+  assert.deepEqual(actual, expected);
+  assert.equal(expected.reduce((sum, entity) => sum + (entity.kind === 'gold' ? entity.amount ?? 1 : 0), 0), chest.rewardAmount);
+  chest.rewardAmount = 0;
+  const exhausted = applyAction(campaign, { type: 'move', direction: 'e' }).state.floor.entities;
+  assert.equal(exhausted.filter(entity => entity.kind === 'gold').length, 0);
+});

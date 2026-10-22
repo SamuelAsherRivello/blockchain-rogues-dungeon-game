@@ -17,6 +17,13 @@ export function previewInventoryDrop(campaign: Campaign, drag: DragSource | null
 
 export function resolveInventoryDrop(drag: DragSource | null, destination: DropDestination | null, targetItem: Item | null = null): Action | null {
   if (!drag || !destination) return null;
+  if (destination.kind === "inventory" && drag.kind === "ability") return { type: "store-ability", index: drag.index };
+  if (destination.kind === "drop-item") {
+    if (drag.kind === "inventory") return { type: "drop-item", source: { kind: "inventory", itemId: drag.item.id } };
+    if (drag.kind === "slot") return { type: "drop-item", source: { kind: "slot", group: drag.group, index: drag.index } };
+    if (drag.kind === "quick-slot") return { type: "drop-item", source: { kind: "quick-slot", index: drag.index } };
+    return { type: "drop-item", source: { kind: "ability", index: drag.index } };
+  }
   if (isQuickSlottableItem(drag.item) && destination.kind === "slot") return null;
   if (destination.kind === "quick-slot") {
     if (drag.kind === "quick-slot") {
@@ -40,6 +47,8 @@ export function resolveInventoryDrop(drag: DragSource | null, destination: DropD
 export function describeInventoryDrop(campaign: Campaign, drag: DragSource, destination: DropDestination, targetItem: Item | null = null) {
   const action = resolveInventoryDrop(drag, destination, targetItem);
   if (!action) return null;
+  if (destination.kind === "drop-item") return { action, destination, preview: null };
+  if (destination.kind === "inventory" && drag.kind === "ability") return { action, destination, preview: null };
   if (destination.kind === "inventory" && (drag.kind === "slot" || drag.kind === "quick-slot")) {
     const quantity = drag.kind === "quick-slot" ? campaign.player.quickSlots?.[drag.index]?.quantity ?? 0 : 1;
     if (campaign.player.inventory.length + quantity > campaign.player.inventoryCapacity) return null;

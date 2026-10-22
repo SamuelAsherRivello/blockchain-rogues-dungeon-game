@@ -68,7 +68,9 @@ Rollback requires the backed-up save and matching generator, not just hiding UI.
 ## Progression
 
 Each earned character level records one pending world event with a frozen
-earning-floor seed, difficulty and stable level ID. Partial character spending
+earning-floor profile, seed, difficulty, run identity, growth-rule version and
+stable level ID. Applied events retain their preceding selection context.
+Partial character spending
 is tracked against each three-point award. Completing that award distributes
 three world points with replacement, weighted against recent repetition and by
 difficulty. Multiple points can land on one trait. Candidates at 99 are excluded

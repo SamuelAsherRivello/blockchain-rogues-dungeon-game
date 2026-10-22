@@ -29,7 +29,7 @@ test("responsive CSS uses the fitted landscape container and staged budgets", ()
   assert.match(css, /@container \(max-width: 640px\)/);
   assert.match(css, /#viewport\[data-orientation="landscape"\]/);
   assert.match(css, /\.dialog_backdrop--bounded[^}]*overflow:hidden/);
-  assert.match(css, /\.dialog_backdrop--bounded \.dialog[^}]*max-width:calc\(var\(--project-viewport-width\) - 1rem\) !important/);
+  assert.match(css, /\.dialog_backdrop--bounded:has\(\.settings-window--game\)[^}]*\.dialog[^}]*max-width:calc\(var\(--project-viewport-width\) - 1rem\) !important/);
   assert.match(css, /\.settings-window--game[^}]*width:46% !important/);
   assert.match(css, /\.main-menu-window__footer[^}]*margin-top:\.3rem/);
   assert.match(css, /\.information-panels[^}]*inset:0 0 0 66%/);

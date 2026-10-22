@@ -59,11 +59,12 @@ The main view, minimap, and camera SHALL use the same precise player position in
 - **THEN** whole world-pixel position, occupied cell, and counted crossings remain unchanged by Zoom itself
 
 ### Requirement: Complete a clicked destination in General
-In General, one click on a reachable destination SHALL travel the entire legal route using the selected movement mode without requiring a held mouse button. All mouse movement modes SHALL finish at the destination cell center. Gridless mouse travel SHALL first snap to the occupied cell center without adding time, then follow the route smoothly in whole pixels with the directional run animation and no hopping or positional tween, and stop at the destination center. Keyboard Gridless travel SHALL continue to allow free whole-pixel stops. Entering Battle SHALL interrupt automatic continuation.
+In General, one click on a reachable destination SHALL travel the legal route using the selected movement mode without requiring a held mouse button, subject to a fixed 30-cardinal-step limit and a courtesy stop before each unconfirmed trap. All mouse movement modes SHALL finish at the permitted endpoint's cell center. Gridless mouse travel SHALL first snap to the occupied cell center without adding time, then follow the route smoothly in whole pixels with the directional run animation and no hopping or positional tween. A fresh second click from a pre-trap stop SHALL permit crossing that adjacent trap, without bypassing another trap or the per-click limit. Keyboard Gridless travel SHALL continue to allow free whole-pixel stops, unaffected by the mouse limit or courtesy rule. Entering Battle SHALL interrupt automatic continuation.
 
 #### Scenario: Click a distant destination in each movement mode
 - **WHEN** the player clicks and releases on a reachable distant destination in General
-- **THEN** Grid-snap advances accepted cells instantly, Grid-tween animates accepted steps, and Gridless snaps to the starting center, walks smoothly along the legal route, and finishes at the destination center or stops on interruption
+- **THEN** Grid-snap advances accepted cells instantly, Grid-tween animates accepted steps, and Gridless snaps to the starting center and walks smoothly along the legal route
+- **AND** travel finishes centered at the destination, the 30-step endpoint, or the safe pre-trap cell, unless otherwise interrupted
 
 #### Scenario: Resume keyboard movement after selection
 - **WHEN** the player chooses any movement mode and presses WASD or an arrow key

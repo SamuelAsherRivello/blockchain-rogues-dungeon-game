@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { AttributeName, Attributes } from "../types.ts";
 import { attributeLabels as attributeLabelsDefault, progressionStatNames } from "../../systems/procedural/world-procedural-system.ts";
 import { Tooltip } from "../../ui/Tooltip.tsx";
-import { GameCard, type PanelPopup } from "../cards/game-card.tsx";
+import { GameCard, type GameCardFocus, type PanelPopup } from "../cards/game-card.tsx";
 
 export const attributeHelp: Record<AttributeName, string> = {
   health: "Expands maximum Health; zero ends the run.",
@@ -52,6 +52,6 @@ export function AttributePanel<N extends string = AttributeName>({ attributes, p
   })}</div>)}</div>;
 }
 
-export function AttributesCard({ attributes, preview = null, contentHidden = false, panelPopup, adjustments, shineToken }: { attributes: Attributes; preview?: Attributes | null; contentHidden?: boolean; panelPopup?: PanelPopup; adjustments?: AttributeAdjustments; shineToken?: number }) {
-  return <GameCard title="Attributes" contentHidden={contentHidden} panelPopup={panelPopup} shineToken={shineToken}><AttributePanel attributes={attributes} preview={preview} help={attributeHelp} adjustments={adjustments} /></GameCard>;
+export function AttributesCard({ attributes, preview = null, contentHidden = false, panelPopup, adjustments, shineToken, titleTooltip, focused, onTitleClick, onCollapse }: { attributes: Attributes; preview?: Attributes | null; contentHidden?: boolean; panelPopup?: PanelPopup; adjustments?: AttributeAdjustments; shineToken?: number; titleTooltip?: ReactNode } & GameCardFocus) {
+  return <GameCard title="Attributes" titleTooltip={titleTooltip} contentHidden={contentHidden} panelPopup={panelPopup} shineToken={shineToken} focused={focused} onTitleClick={onTitleClick} onCollapse={onCollapse}><AttributePanel attributes={attributes} preview={preview} help={attributeHelp} adjustments={adjustments} /></GameCard>;
 }

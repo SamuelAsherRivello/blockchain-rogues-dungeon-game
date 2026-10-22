@@ -1,5 +1,5 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { cloneElement, isValidElement, useId, useLayoutEffect, useRef, useState } from "react";
+import { cloneElement, isValidElement, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { findTooltipPosition, type TooltipPlacement } from "./tooltip-position.ts";
 
@@ -11,6 +11,12 @@ export function Tooltip({ content, children, placement = "side" }: { content: Re
   const [position, setPosition] = useState({ left: 0, top: 0 });
   const id = useId();
   const visible = hovered || focused;
+
+  useEffect(() => {
+    const dismiss = () => { setHovered(false); setFocused(false); };
+    window.addEventListener("tooltip-dismiss", dismiss);
+    return () => window.removeEventListener("tooltip-dismiss", dismiss);
+  }, []);
 
   useLayoutEffect(() => {
     if (!visible) return undefined;
@@ -52,4 +58,8 @@ export function Tooltip({ content, children, placement = "side" }: { content: Re
   });
   const uiLayer = document.getElementById("ui_layer");
   return <>{trigger}{visible && uiLayer && createPortal(<div ref={tooltipRef} id={id} className="ui_tooltip" role="tooltip" style={{ left: position.left, top: position.top }}>{content}</div>, uiLayer)}</>;
+}
+
+export function dismissTooltips() {
+  window.dispatchEvent(new Event("tooltip-dismiss"));
 }

@@ -247,8 +247,8 @@ diff. Preserve unrelated changes in shared files.
    bounded benefit curves, explicit reward ownership, one award per earned
    level, and an independent baseline threat curve. Measure route encounters,
    recovery spacing, supplies per reachable area, and payout distributions at
-   early, middle, and late depths. The lifetime cap still requires a user
-   choice is confirmed as initial 0-5 and lifetime 0-99 with replacement.
+   early, middle, and late depths. Initial rolls use 0-5, lifetime values cap
+   at 99, and growth permits repeated selections within each award.
 
 ## Migration Plan
 

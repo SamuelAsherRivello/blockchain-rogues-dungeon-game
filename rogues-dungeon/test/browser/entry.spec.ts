@@ -45,19 +45,22 @@ test("@smoke clears local storage from the main menu", async ({ page }) => {
   await expect.poll(() => page.evaluate(() => ({ slot: localStorage.getItem("rogues-dungeon.slot.1"), preferences: localStorage.getItem("rogues-dungeon.preferences.v1") }))).toEqual({ slot: null, preferences: null });
 });
 
-test("@smoke anchors settings to its menu panel or live game view", async ({ page }) => {
+test("@smoke keeps settings on the menu frame or centered over the live game view", async ({ page }) => {
   await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
-  await page.getByRole("button", { name: "Settings", exact: true }).click();
   const menuPlacement = await page.evaluate(() => {
     const panel = document.querySelector(".main-menu-window")!.getBoundingClientRect();
-    const dialog = document.querySelector(".settings-window")!.getBoundingClientRect();
-    return { panel, dialog, background: getComputedStyle(document.querySelector(".settings-window")!).backgroundColor };
+    return { panel };
   });
-  expect(Math.abs(menuPlacement.dialog.x - menuPlacement.panel.x)).toBeLessThan(1);
-  expect(Math.abs(menuPlacement.dialog.y - menuPlacement.panel.y)).toBeLessThan(1);
-  expect(Math.abs(menuPlacement.dialog.width - menuPlacement.panel.width)).toBeLessThan(1);
-  expect(menuPlacement.dialog.bottom).toBeGreaterThan(menuPlacement.panel.bottom);
-  expect(menuPlacement.background).not.toBe("rgb(16, 14, 23)");
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const menuDialog = await page.evaluate(() => {
+    const dialog = document.querySelector(".settings-window")!.getBoundingClientRect();
+    return { x: dialog.x, y: dialog.y, width: dialog.width, height: dialog.height, background: getComputedStyle(document.querySelector(".settings-window")!).backgroundColor };
+  });
+  expect(Math.abs(menuDialog.x - menuPlacement.panel.x)).toBeLessThan(1);
+  expect(Math.abs(menuDialog.y - menuPlacement.panel.y)).toBeLessThan(1);
+  expect(Math.abs(menuDialog.width - menuPlacement.panel.width)).toBeLessThan(1);
+  expect(Math.abs(menuDialog.height - menuPlacement.panel.height)).toBeLessThan(1);
+  expect(menuDialog.background).not.toBe("rgb(16, 14, 23)");
   await page.getByRole("button", { name: "Close dialog" }).click();
   await openSavedGame(page);
   await expect(page.locator(".game-screen")).toBeVisible();
@@ -69,8 +72,8 @@ test("@smoke anchors settings to its menu panel or live game view", async ({ pag
     const dialog = document.querySelector(".settings-window")!.getBoundingClientRect();
     return { view, dialog };
   });
-  expect(Math.abs(gamePlacement.dialog.width - menuPlacement.dialog.width)).toBeLessThan(1);
-  expect(Math.abs(gamePlacement.dialog.height - menuPlacement.dialog.height)).toBeLessThan(1);
+  expect(Math.abs(gamePlacement.dialog.width - menuDialog.width)).toBeLessThan(1);
+  expect(Math.abs(gamePlacement.dialog.height - menuDialog.height)).toBeLessThan(1);
   expect(Math.abs((gamePlacement.dialog.x + gamePlacement.dialog.width / 2) - (gamePlacement.view.x + gamePlacement.view.width / 2))).toBeLessThan(1);
   expect(Math.abs((gamePlacement.dialog.y + gamePlacement.dialog.height / 2) - (gamePlacement.view.y + gamePlacement.view.height / 2))).toBeLessThan(1);
   await page.getByRole("button", { name: "Close dialog" }).click();

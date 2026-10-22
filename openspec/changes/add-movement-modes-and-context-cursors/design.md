@@ -34,14 +34,24 @@ Game mode and movement mode are independent. The game-mode state machine has Gen
 
 | Mode/state | Keyboard | World mouse |
 | --- | --- | --- |
-| General / Grid-snap | Accepted direction moves instantly to the next cell center; held-repeat cadence remains available | One click follows the full cardinal route, snapping each accepted step; each step still resolves its own tactical turn |
-| General / Grid-tween | Preserve 250 ms player interpolation and retargeting | One click follows the full cardinal route with tweening per step |
-| General / Gridless | Continuous two-axis whole-pixel travel while held; release stops at the current whole pixel | Snap to occupied center, walk smoothly along the cardinal path with looping run art and no hop/tween, and finish at destination center; release does not cancel it |
+| General / Grid-snap | Accepted direction moves instantly to the next cell center; held-repeat cadence remains available | Snap each accepted step, up to 30 steps or the first unconfirmed trap; each step resolves its own tactical turn |
+| General / Grid-tween | Preserve 250 ms player interpolation and retargeting | Tween each accepted step, up to 30 steps or the first unconfirmed trap |
+| General / Gridless | Continuous two-axis whole-pixel travel while held; release stops at the current whole pixel | Snap to occupied center, walk smoothly with looping run art and no hop/tween, then finish centered at the destination, 30-step limit, or pre-trap stop; release does not cancel travel |
 | Battle / any selection | One non-repeated directional keypress requests one grid step | One click requests at most one next cardinal route step; no automatic continuation |
 
 Gridless diagonal input normalizes speed. Use elapsed-time accumulation and integer pixel stepping, not one pixel per display frame. Do not reuse the grid repeat timer for continuous motion. Mouse dots remain a mouse feature in every state and never become a keyboard-path display. The Movement selector uses the same selection-time focus return as Zoom and Camera so WASD/arrows immediately control the game. Accepted Gridless pixel displacement keeps directional run art looping; the input loop explicitly stops locomotion on arrival, release, blockage, or cancellation, without a short timeout that could flicker on slow frames. The initial mouse recenter is turn-free; route traversal retains center-line accounting.
 
 The selected mode remains separate from effective behavior. Entering Battle cancels held repeats and queued destinations; returning to General requires fresh input before movement resumes. Battle retains Grid-snap versus Grid-tween visuals and uses Grid-tween when overriding Gridless. Confirmed transition rule: an off-center Gridless player tweens to the occupied cell center without changing cells, advancing tactical time, charging an extra turn, or running an alignment enemy phase. Use the existing 250 ms player tween as the duration default. Mode changes outside Battle likewise cancel pending input and settle within the same cell as a draft default. Updated playtest decision: preserve the cardinal A* route but center Gridless mouse travel at both departure and arrival; only keyboard travel retains arbitrary whole-pixel stops. A new click replaces an existing General destination, keyboard movement cancels it, and modal/blur/floor transitions cancel travel.
+
+### Mouse travel limit and trap courtesy
+
+Use a fixed limit of 30 cardinal route steps per mouse gesture. Exclude the origin from this count, so a capped preview contains at most 30 dots and its route contains at most 31 cells. Count route steps rather than straight-line distance. A farther target previews the first 30 steps; exact reachability is false for that click and travel stops at the capped endpoint. Track the gesture's remaining budget so route recomputation cannot extend travel beyond 30 steps. Zoom, camera, C-controlled panel visibility, viewport size, and attributes do not change the limit. Keyboard travel retains its existing behavior. Battle still limits each click to one step.
+
+Trap decorations are hazards, not hard navigation obstacles. The preview may pass through them and continues beyond them within the 30-step cap. Draw every previewed trap cell red, including a trap selected as the endpoint. Other dots retain their existing white/green rules. A trap reticle uses the existing red palette, without implying an enemy or revealing an undetected enemy.
+
+Separate the preview route from the current click's permitted travel. The first click stops at the safe cell center immediately before the first unconfirmed trap, even when the trap is retracted. Cancel automatic continuation there rather than advancing on a held button. A fresh second click from that stopping point toward the same trap or beyond it confirms that adjacent trap only. Another trap along the resumed route requires its own pause and fresh gesture. A first click while already adjacent warns without entering; the second permits entry. Keyboard movement clears stale mouse confirmation and can still deliberately enter traps. Mode/floor changes and modal cancellation retain their existing input-reset behavior.
+
+The courtesy pause, preview, and confirmation alone add no tactical time or enemy phase. Accepted movement still uses the selected mode's existing time rule, and a confirmed trap crossing retains normal trap damage. Gridless approaches finish at the safe center without hopping. Closed doors remain hard blockers; a second click cannot authorize crossing one.
 
 ### Battle proximity
 
@@ -100,12 +110,14 @@ Routing first tries the complete cardinal A* path, preferring routes through emp
 | --- | --- |
 | Selected player cell | Invalid reticle, nearly black |
 | Enemy target | Red reticle, even if exact destination is not traversable |
+| Trap target | Red hazard reticle; crossing still requires the courtesy confirmation |
 | Barrel or item/potion/key/gold/chest/campfire/stairs target | Green reticle, even when exact reachability is false |
 | Other target with exact reachability false | Nearly black reticle; an approach path can still exist |
 | Other walkable reachable target | Pale white reticle |
 | Route origin | No dot |
 | Selected green-classified interactive endpoint | No endpoint dot; the green reticle identifies the target |
 | Intermediate green-classified interactive cell | Green dot |
+| Previewed trap cell, including a selected trap endpoint | Red dot; preview continues beyond it within the cap |
 | Other previewed route cell | Pale white dot; no separate red enemy-dot variant |
 
 Classification is the renderer's current list, not a promise that every green object is currently usable. Crates and discoveries do not belong to that green list. Preserve the shared palette: valid #f5f1e6, interactive #6dd873, enemy #dc3d40, invalid #090909. Dots are circular with glow, four CSS pixels at native tile size, scaled by tileCssSize/32, and ignore pointer input. The corner-bracket reticle occupies the selected tile. Held selection remains fixed in world coordinates and reprojects with the camera; hover selection follows mouse-to-cell projection. Game-view overlays refresh on projection and viewport changes, without a new A* search merely for pointer pixels within one cell. The minimap remains passive.
@@ -124,6 +136,6 @@ The future Perception work is an explicit additional presentation gate for undet
 
 Add backward-compatible preference and precise-position normalization, then integrate player motion and turn accounting, the dropdown, Battle override, and cursor resolution. Existing saves without pixel coordinates start at their stored cell centers. On rollback, retain readable grid coordinates and ignore optional precise fields. Preserve unrelated working-tree changes.
 
-## Review outcome
+## Initial planning review outcome
 
-Both three-question reviews are complete. The first confirmed General full-destination click travel, Battle based on enemy awareness through walls, and separate Perception-based line-of-sight detection. The second confirmed turn-free tweening to the occupied cell center on Battle entry, complete hiding of undetected enemies, and hiding again whenever range or line of sight is lost. Detection returns when both conditions return, without persistent reveal or last-known markers. Earlier confirmed center-line timing and General/Battle names are retained. The former route/reticle conflict is resolved by the user's code-authoritative instruction. Explicit tuning and implementation defaults above remain defaults, not unanswered review questions. No implementation is claimed complete.
+Both three-question reviews confirmed General click travel, Battle awareness through walls, separate Perception-based line-of-sight detection, turn-free Battle-entry centering, and complete enemy hiding whenever detection is lost. These decisions are retained. The user's later approved playtest decisions add the fixed 30-step mouse budget and red-dot trap preview with stop-and-confirm crossing. The code already implements these additions; this planning-only reconciliation updates their contracts and records existing verification. Initial review text is not a claim that implementation remains outstanding, and this update does not claim a new full-browser-suite pass.

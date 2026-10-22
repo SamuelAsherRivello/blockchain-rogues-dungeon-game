@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.11" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="10" height="10" tilewidth="32" tileheight="32" infinite="0" nextlayerid="4" nextobjectid="1">
+ <properties>
+  <property name="entrances" value="3,6"/>
+  <property name="footprint" value="7x7"/>
+  <property name="prefab-id" value="hero-house"/>
+ </properties>
+ <tileset firstgid="1" source="../../tilesets/data/tileset-dungeon.tsx"/>
+ <tileset firstgid="109" source="../../tilesets/data/props-animated.tsx"/>
+ <tileset firstgid="144" source="../../tilesets/examples/objects-overlay.tsx"/>
+ <tileset firstgid="164" source="../../tilesets/data/items-animated.tsx"/>
+ <tileset firstgid="172" source="../../tilesets/data/items-static.tsx"/>
+ <tileset firstgid="181" source="../../tilesets/data/props-static.tsx"/>
+ <layer id="1" name="Ground" width="10" height="10">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,
+0,28,15,16,17,14,15,16,17,0,
+0,26,27,28,29,26,27,28,29,0,
+0,38,39,40,14,15,16,17,41,0,
+0,15,15,16,26,27,28,29,15,0,
+0,27,15,16,17,39,40,41,27,0,
+0,39,27,28,29,16,17,40,39,0,
+0,38,39,40,41,28,29,28,29,0,
+0,38,39,38,39,40,41,40,41,0,
+0,0,0,0,39,40,0,0,0,0
+</data>
+ </layer>
+ <layer id="1" name="Walls" width="10" height="10" locked="1">
+  <data encoding="csv">
+1,2,3,4,4,4,4,4,4,6,
+13,0,0,0,0,0,0,0,0,18,
+13,0,0,0,0,0,0,0,0,18,
+13,0,0,0,0,0,0,0,0,18,
+13,0,0,0,0,0,0,0,0,18,
+13,0,0,0,0,0,0,0,0,18,
+13,0,0,0,0,0,0,0,0,18,
+13,0,0,0,0,0,0,0,0,18,
+13,0,0,0,0,0,0,0,0,42,
+49,50,51,9,0,0,7,52,53,54
+</data>
+ </layer>
+ <layer id="2" name="Decoration 1" width="10" height="10">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,
+0,0,73,66,66,66,66,75,0,0,
+0,0,61,74,89,89,74,63,0,0,
+0,0,61,63,78,78,61,63,0,0,
+0,0,61,63,78,78,61,63,0,0,
+0,0,61,74,66,66,74,63,0,0,
+0,0,77,89,74,74,89,76,0,0,
+0,0,0,0,61,63,0,0,0,0,
+0,0,0,0,61,63,0,0,0,0
+</data>
+ </layer>
+ <layer id="3" name="Decoration 2" width="10" height="10">
+  <data encoding="csv">
+0,137,0,0,181,185,0,0,137,0,
+0,0,147,150,0,0,150,146,0,0,
+0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,162,163,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,
+0,153,0,0,0,0,0,0,153,0,
+0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+</map>

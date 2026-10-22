@@ -10,6 +10,7 @@ async page => {
   await page.getByRole('button', { name: 'Roll', exact: true }).click();
   await page.waitForFunction(() => !document.querySelector('.create-world-window .create-character-window__actions button:last-child')?.disabled);
   await page.locator('canvas').first().waitFor();
+  await page.locator('[data-renderer-ready="true"]').waitFor();
   const worldBounds = await page.locator('.create-world-window').boundingBox();
   if (Math.abs(characterBounds.width - worldBounds.width) > 1 || Math.abs(characterBounds.x - worldBounds.x) > 1) throw new Error('Creation dialogs differ in placement');
   const sheet = await page.locator('.create-world-window .game-card').first().locator('.delta_value_number').allTextContents();

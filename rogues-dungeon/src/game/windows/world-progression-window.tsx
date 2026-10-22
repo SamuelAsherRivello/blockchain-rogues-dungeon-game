@@ -8,7 +8,7 @@ export function WorldProgressionWindow({ event, center, onContinue }: { event: W
   if (!event.before || !event.after) return null;
   const changed = worldAttributeNames.filter(n => event.after![n] !== event.before![n]);
   return <Dialog title="Level Up — World" onClose={onContinue} center={center} className="progression-window world-progression-window">
-    <p className="progression-window__points body_text">Your world grows with character level {event.level}.</p>
+    <p className="progression-window__points body_text">Your world has transformed as well.</p>
     <div className="progression-window__attributes"><GameCard title="World Attributes"><AttributePanel attributes={event.before} preview={event.after} names={worldAttributeNames} labels={worldAttributeLabels} help={worldAttributeHelp} /></GameCard></div>
     <p className="progression-window__results-heading body_text">Earned Results</p>
     <ul className="progression-window__results" aria-label="Earned world results">{changed.map(name => <li className="body_text" key={name}>{worldAttributeLabels[name]} +{event.after![name] - event.before![name]}. {worldAttributeHelp[name]}</li>)}{Boolean(event.unused) && <li className="body_text">All world attributes are at 99. {event.unused} points unused.</li>}</ul>

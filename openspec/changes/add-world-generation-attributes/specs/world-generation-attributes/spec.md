@@ -92,7 +92,7 @@ The same supported floor generation profile, including identity, exact world att
 - **THEN** the topology and encounter rolls remain unchanged
 
 ### Requirement: Automatically grow the world at character level-up
-Each completed three-point character award SHALL trigger its earned level's automatic world update exactly once. The following World result SHALL reuse Character progression components, highlight changed values in green, and expose Continue without attribute controls. The intended award is one point to each of three distinct attributes, subject to the unresolved lifetime-range decision.
+Each completed three-point character award SHALL trigger its earned level's automatic world update exactly once. The following World result SHALL reuse Character progression components, highlight changed values in green, and expose Continue without attribute controls. Each award distributes three points with replacement among values below 99, allowing one attribute to receive all three. At complete saturation unused points are reported.
 
 #### Scenario: Apply automatic world growth
 - **WHEN** the player completes spending the three character points for one earned level
@@ -134,7 +134,7 @@ Each earned character level SHALL record a stable pending growth event with its 
 
 #### Scenario: Reload before applying growth
 - **WHEN** the game resolves the same recorded growth event after different save or allocation timing
-- **THEN** the same three world attributes are selected
+- **THEN** the same three-point allocation is selected
 
 ### Requirement: Preserve required routes under attribute combinations
 All attribute-driven floors SHALL retain reachable stairs, safe arrival cells, legal object placement, and required puzzle routes under the game's movement rules. Generation SHALL terminate through bounded deterministic repair or a validated fallback rather than activate an invalid floor or retry indefinitely.

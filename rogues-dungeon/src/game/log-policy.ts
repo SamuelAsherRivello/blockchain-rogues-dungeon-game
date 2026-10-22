@@ -1,6 +1,8 @@
 import type { EventFacts, GameEvent, LogEntry } from "./types.ts";
 const LOG_RULES: Readonly<Partial<Record<string, (facts: EventFacts) => string>>> = Object.freeze({
   "item.collected": (facts) => `You collect ${facts.name}.`,
+  "item.dropped": (facts) => `You drop ${facts.name}.`,
+  "item.drop.rejected": (facts) => `You cannot drop ${facts.name ?? "that item"}.`,
   "potion.consumed": (facts) => `You restore ${facts.resource === "health" ? "Health" : "Mana"}.`,
   "quick-slot.use.rejected": (facts) => `${facts.item ?? "Potion"} cannot be used while ${facts.resource === "health" ? "Health" : "Mana"} is full.`,
   "equipment.changed": (facts) => facts.item ? facts.action === "swapped" ? `You swap ${facts.item} for ${facts.displacedItems?.map((item) => item.name).join(" and ") ?? "equipped gear"}.` : `You ${facts.action === "enabled" ? "equip" : facts.action === "returned to inventory" ? "return" : "rearrange"} ${facts.item}.` : "You change your equipment.",
