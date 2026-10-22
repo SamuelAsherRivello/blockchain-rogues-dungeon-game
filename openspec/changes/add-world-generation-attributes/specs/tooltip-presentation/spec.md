@@ -14,5 +14,9 @@ The application SHALL render a short, wide text tooltip for a React UI element w
 - **THEN** the tooltip is repositioned within the viewport without clipping its text
 
 #### Scenario: Inspect a world attribute tooltip
-- **WHEN** the player hovers or focuses one of the ten world attributes during Create World
+- **WHEN** the player hovers or focuses one of the ten world attributes during Create World or World progression
 - **THEN** the tooltip states the positive gameplay effect that higher values provide
+
+#### Scenario: Inspect generation identity help
+- **WHEN** the player hovers or focuses the Generation Identity help trigger
+- **THEN** the tooltip explains that the five displayed identity values also require saved attributes, difficulty, and generation rules to reproduce a custom floor

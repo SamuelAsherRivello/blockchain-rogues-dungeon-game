@@ -271,6 +271,8 @@ test('places level-one test-mode stairs and starter entities beside the start on
     assert.ok(floor.entities.some((entity) => entity.id === 'health-potion' && entity.kind === 'potion' && entity.resource === 'health'));
     assert.ok(floor.entities.some((entity) => entity.id === 'mana-potion' && entity.kind === 'potion' && entity.resource === 'mana'));
     assert.ok(floor.entities.some((entity) => entity.id === 'starter-key' && entity.kind === 'key'));
+    const testItem = floor.entities.find((entity) => entity.id === 'test-item');
+    assert.deepEqual(testItem && { kind: testItem.kind, name: testItem.kind === 'item' ? testItem.item.name : undefined }, { kind: 'item', name: 'Sword' });
     const chest = floor.entities.find((entity) => entity.id === 'test-chest');
     assert.deepEqual(chest && { kind: chest.kind, opened: chest.kind === 'chest' ? chest.opened : undefined }, { kind: 'chest', opened: false });
     assert.equal(floor.entities.filter((entity) => entity.kind === 'chest').length, 1);
@@ -280,6 +282,15 @@ test('places level-one test-mode stairs and starter entities beside the start on
     assert.ok(floor.entities.filter((entity) => entity.kind === 'crate').length >= 1);
     assert.ok(crate && Math.max(Math.abs(crate.x - floor.start.x), Math.abs(crate.y - floor.start.y)) === 1);
     assert.ok(floor.entities.some((entity) => entity.id === 'starter-gold' && entity.kind === 'gold'));
+    const campfire = floor.entities.find((entity) => entity.id === 'test-campfire');
+    assert.ok(campfire && Math.hypot(campfire.x - floor.start.x, campfire.y - floor.start.y) <= 30);
+    const trap = floor.decorations?.find((decoration) => decoration.id === 'floor-trap-1');
+    assert.ok(trap && Math.hypot(trap.x - floor.start.x, trap.y - floor.start.y) <= 30);
+    assert.ok(puzzle && Math.hypot(puzzle.door.x - floor.start.x, puzzle.door.y - floor.start.y) <= 30);
+    assert.ok(puzzle && Math.hypot(puzzle.barrel.x - floor.start.x, puzzle.barrel.y - floor.start.y) <= 30);
+    for (const entity of floor.entities.filter((entry) => ['health-potion', 'mana-potion', 'starter-key', 'starter-gold', 'test-item', 'test-chest', 'test-crate', 'test-campfire'].includes(entry.id))) {
+      assert.ok(Math.hypot(entity.x - floor.start.x, entity.y - floor.start.y) <= 30, `${entity.id} must be near the test start`);
+    }
     const testEnemies = floor.entities.filter((entity): entity is Enemy => entity.kind === 'enemy' && entity.id.startsWith('test-'));
     assert.deepEqual(testEnemies.map((entity) => entity.name).sort(), seed === 77 ? ['Rat', 'Skeleton'] : ['Rat', 'Skeleton', 'Skeleton Archer']);
     const archer = testEnemies.find((entity) => entity.id === 'test-archer');

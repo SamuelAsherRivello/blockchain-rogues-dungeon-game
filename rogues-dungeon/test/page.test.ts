@@ -233,6 +233,7 @@ test('uses SlotItem for vertically aligned abilities and equipment', async () =>
   assert.match(informationPanels, /GameCard title="Equipment"/);
   assert.match(game, /<EquipmentItem key=\{index\}/);
   assert.match(css, /\.slot_item \{[^}]*align-items:center/);
+   assert.match(css, /\.slot_item \{[^}]*line-height:1\.15/);
   assert.match(css, /\.slot_item_number,\.slot_item_icon \{ color:var\(--slot-accent-color,#c6b994\)/);
   assert.doesNotMatch(css, /\.slot_item--ability \{/);
 });

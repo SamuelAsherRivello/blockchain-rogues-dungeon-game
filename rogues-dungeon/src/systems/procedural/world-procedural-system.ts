@@ -548,6 +548,8 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
       testEnemy("test-rat", "Rat", [{ x: -1, y: 0 }, { x: -1, y: -1 }]);
       testEnemy("test-skeleton", "Skeleton", [{ x: 0, y: -1 }, { x: 1, y: -1 }, { x: 1, y: -2 }, { x: 2, y: -1 }, { x: -1, y: -2 }]);
       testEnemy("test-archer", "Skeleton Archer", [{ x: 4, y: 0 }, { x: 3, y: 0 }]);
+      const testItem = nearStart([{ x: 3, y: 0 }, { x: 0, y: 3 }, { x: -3, y: 0 }, { x: 0, y: -3 }, { x: 3, y: 3 }, { x: -3, y: 3 }, { x: 3, y: -3 }, { x: -3, y: -3 }]);
+      if (testItem) add({ id: "test-item", kind: "item", item: itemInstance(itemCatalog[1], "test-item"), ...testItem });
     }
     // Pickup counts are area-scaled from the visible 1x landscape screen and
     // use seeded stochastic rounding. Object cells and pickup cells share the
@@ -571,7 +573,7 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
   } }]);
   const torchCells = shuffledWallDecorationCells(map, random);
   const trapCells = shuffledWalkableCells(context.cells, random).filter((cell) => !context.occupiedCells.some((occupied) => occupied.x === cell.x && occupied.y === cell.y));
-  const entranceTrap = level1TestMode ? [{ x: 1, y: 1 }, { x: -1, y: 1 }, { x: 1, y: -1 }, { x: -2, y: 1 }].map(({ x, y }) => ({ x: start.x + x, y: start.y + y })).find((cell) => isWalkable(context, cell.x, cell.y) && !context.occupiedCells.some((occupied) => occupied.x === cell.x && occupied.y === cell.y)) : null;
+  const entranceTrap = level1TestMode ? [{ x: 1, y: 1 }, { x: -1, y: 1 }, { x: 1, y: -1 }, { x: -2, y: 1 }, { x: 2, y: 1 }, { x: 1, y: 2 }, { x: -1, y: 2 }, { x: 2, y: -1 }, { x: -2, y: -1 }].map(({ x, y }) => ({ x: start.x + x, y: start.y + y })).find((cell) => isWalkable(context, cell.x, cell.y) && !context.occupiedCells.some((occupied) => occupied.x === cell.x && occupied.y === cell.y)) : null;
   const torchCount = Math.max(3, Math.floor(context.cells.flat().filter((cell) => cell.walkable).length / 180));
   const trapCount = Math.max(2, Math.floor(context.cells.flat().filter((cell) => cell.walkable).length / 280));
   const placedTrapCells = entranceTrap ? [entranceTrap, ...trapCells.filter((cell) => cell.x !== entranceTrap.x || cell.y !== entranceTrap.y)].slice(0, trapCount + 1) : trapCells.slice(0, trapCount);

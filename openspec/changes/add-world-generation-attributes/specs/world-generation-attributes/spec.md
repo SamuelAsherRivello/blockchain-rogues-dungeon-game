@@ -5,6 +5,11 @@
 Defines player-facing world attributes and deterministic world progression so
 players can shape a new run while every generated floor remains reproducible.
 
+Planning blocker: initial sheets remain 0-5 with 30 points. The lifetime cap
+and the behavior when fewer than three attributes remain eligible require a
+user decision before application. The generic cap scenario below does not
+choose the lifetime limit or approve stopping ongoing growth.
+
 ## ADDED Requirements
 
 ### Requirement: Create a world after character creation
@@ -29,12 +34,34 @@ Create World SHALL show Clarity, Comfort, Discovery, Fortune, Guidance, Mercy, O
 - **WHEN** the player confirms a rolled world sheet
 - **THEN** the campaign stores the committed world attributes and begins with them
 
+#### Scenario: Keep a roll's identity stable
+- **WHEN** the player rerolls world attributes in an open Create World window
+- **THEN** the selected Slot, World, Level, Run, and Seed remain fixed while the sheet and preview change
+
+#### Scenario: Start the previewed floor
+- **WHEN** the player confirms the latest completed world roll
+- **THEN** the first active floor matches its preview's geometry, generated objects, enemy traits, and reward descriptors
+
 ### Requirement: Explain world attribute effects
-Each world attribute SHALL have a concise tooltip using these player-facing effects: Clarity simplifies layouts with fewer branches and dead ends; Comfort adds campfires and recovery points; Discovery adds optional rewards, hidden discoveries, and alternate routes; Fortune improves reward chances, payout amounts, and reward quality; Guidance places the exit closer to the entrance; Mercy weakens enemies and reduces elite threats; Openness improves route accessibility with wider corridors and fewer blocked approaches; Peace reduces enemy numbers and makes enemies less aggressive; Plenty increases pickup frequency and the quantity of common supplies; Safety reduces traps and environmental hazards.
+Each world attribute SHALL have a concise tooltip matching its implemented generation effect. Names SHALL retain the approved positive meaning: increasing an attribute SHALL NOT reverse its benefit through hidden compensating increases to other threats. Bounded benefits and placement constraints SHALL be documented.
 
 #### Scenario: Inspect a world attribute
 - **WHEN** the player hovers or focuses a world attribute
 - **THEN** its tooltip explains the corresponding generation effect
+
+#### Scenario: Use the approved tooltip copy
+- **WHEN** the ten world labels are displayed
+- **THEN** their tooltips use the following copy
+  - Clarity: Simplifies layouts with fewer branches and dead ends.
+  - Comfort: Adds campfires and recovery points.
+  - Discovery: Adds optional rewards, hidden discoveries, and alternate routes.
+  - Fortune: Improves reward chances, payout amounts, and reward quality.
+  - Guidance: Places the exit closer to the entrance.
+  - Mercy: Weakens enemies and reduces elite threats.
+  - Openness: Improves route accessibility with wider corridors and fewer blocked approaches.
+  - Peace: Reduces enemy numbers and makes enemies less aggressive.
+  - Plenty: Increases pickup frequency and the quantity of common supplies.
+  - Safety: Reduces traps and environmental hazards.
 
 ### Requirement: Show generation identity during world creation
 Create World SHALL show a read-only Generation Identity panel beneath World Attributes using the shared attribute-panel organization. It SHALL show World, Level, and Run on the left and Slot and Seed on the right.
@@ -42,6 +69,10 @@ Create World SHALL show a read-only Generation Identity panel beneath World Attr
 #### Scenario: Inspect a new run identity
 - **WHEN** Create World is open for Saved Game 2
 - **THEN** the panel shows World 1, Level 1, Run 1, Slot 2, and the active persistent world seed
+
+#### Scenario: Understand replay inputs
+- **WHEN** the player inspects Generation Identity help
+- **THEN** it explains that a custom floor also depends on its saved world attributes, difficulty, and generation rules, so the five URL values alone do not export that custom world
 
 ### Requirement: Apply world attributes to floor generation
 Generated floors SHALL use committed world attributes to shape layout clarity, recovery placement, discoveries, reward chances and payouts, exit placement, enemy strength and elite frequency, route accessibility, enemy population and aggression, pickup frequency and supply quantity, and hazard frequency.
@@ -51,33 +82,75 @@ Generated floors SHALL use committed world attributes to shape layout clarity, r
 - **THEN** the generated layout, entities, rewards, pickups, recovery points, exit, and hazards reflect those values
 
 ### Requirement: Preserve deterministic world generation
-The same World, Level, Slot, Run, Seed, generator version, and committed world attributes SHALL produce the same generated floor and enemy traits across reloads and repeated runs.
+The same supported floor generation profile, including identity, exact world attributes, effective difficulty, and generator/tuning versions, SHALL reproduce the same floor and generated enemy traits. Cosmetic randomness and unrelated reward or pickup rolls SHALL NOT alter topology or encounter rolls.
 
 #### Scenario: Repeat a generated floor
-- **WHEN** the game regenerates a floor with the same identity and world attributes
+- **WHEN** the game regenerates a floor with the same complete supported generation profile
 - **THEN** terrain, route structure, placements, rewards, pickups, hazards, and generated enemy behavior traits match
 
+#### Scenario: Change pickup randomness independently
+- **WHEN** an additional pickup roll is evaluated without changing geometry or encounter candidates
+- **THEN** the topology and encounter rolls remain unchanged
+
 ### Requirement: Automatically grow the world at character level-up
-After a character level-up and the player's character allocation, the game SHALL increase three distinct eligible world attributes by one point each, highlight the changed values in green in the existing progression presentation, and prevent player selection of those world changes.
+Each completed three-point character award SHALL trigger its earned level's automatic world update exactly once. The following World result SHALL reuse Character progression components, highlight changed values in green, and expose Continue without attribute controls. The intended award is one point to each of three distinct attributes, subject to the unresolved lifetime-range decision.
 
 #### Scenario: Apply automatic world growth
-- **WHEN** the player confirms character progression after gaining a level
+- **WHEN** the player completes spending the three character points for one earned level
 - **THEN** three eligible world attributes increase automatically and the changes are shown as green results
 
+#### Scenario: Spend points in partial confirmations
+- **WHEN** the player spends one character point three times for the same earned award
+- **THEN** the game grants one world update after the third point, with the same choices as a single three-point confirmation
+
+#### Scenario: Complete accumulated awards
+- **WHEN** one confirmation completes two earned three-point character awards
+- **THEN** their world updates apply once each in earned-level order and their result screens follow in that order
+
 #### Scenario: Avoid capped attributes
-- **WHEN** an automatically selected world attribute is already at 5
-- **THEN** the game selects another eligible attribute without exceeding the 0-5 range
+- **WHEN** an automatically selected world attribute is at the approved lifetime limit
+- **THEN** the game selects another eligible attribute without exceeding that limit, with exhausted-budget behavior pending the documented decision
 
 ### Requirement: Apply world growth to future floors
-Automatic world-attribute growth SHALL affect the next generated floor and later floors without regenerating or changing the currently active floor.
+Automatic world-attribute growth SHALL affect only floors first generated after the update. Active and previously visited floors SHALL retain their original generation profiles, including world attributes, effective difficulty, enemy traits, and generated reward descriptors, through saves, reloads, and return travel.
 
 #### Scenario: Level up on an active floor
 - **WHEN** the player levels up while exploring a floor
-- **THEN** the active floor remains unchanged and the updated world attributes apply when the next floor is generated
+- **THEN** the active floor remains unchanged and the updated attributes apply when a previously unvisited floor is generated
+
+#### Scenario: Revisit an older floor
+- **WHEN** the player upgrades the world, reloads, and returns to a previously visited floor
+- **THEN** its original terrain and generated base entities match its first-visit profile and saved changes remain applied
+
+#### Scenario: Open an old container after growth
+- **WHEN** world attributes grow before the player opens a previously generated container
+- **THEN** its world-derived reward descriptor still comes from its original floor profile
 
 ### Requirement: Seed automatic world growth
-Automatic world-attribute choices SHALL derive from stable campaign identity, player level, generator version, campaign difficulty, and recent world growth rather than mutable call-order randomness.
+Each earned character level SHALL record a stable pending growth event with its earning-floor seed/profile, identity, character level, difficulty, growth-rule version, and preceding growth context. Identical complete event inputs SHALL reproduce identical choices regardless of allocation timing, reload, or presentation acknowledgment.
 
 #### Scenario: Reload before applying growth
-- **WHEN** the same campaign reaches the same character level after different save timing or XP-award order
+- **WHEN** the game resolves the same recorded growth event after different save or allocation timing
 - **THEN** the same three world attributes are selected
+
+### Requirement: Preserve required routes under attribute combinations
+All attribute-driven floors SHALL retain reachable stairs, safe arrival cells, legal object placement, and required puzzle routes under the game's movement rules. Generation SHALL terminate through bounded deterministic repair or a validated fallback rather than activate an invalid floor or retry indefinitely.
+
+#### Scenario: Combine layout extremes
+- **WHEN** high Discovery and Openness combine with low Clarity or Guidance
+- **THEN** optional routes and widened corridors preserve the required exit route and reserved puzzle relationships
+
+#### Scenario: Placement capacity is exhausted
+- **WHEN** requested objects cannot all fit legally
+- **THEN** generation places only valid objects, preserves required content, and reports the shortfall in diagnostics
+
+### Requirement: Bound benefits while retaining baseline difficulty
+World effects SHALL use bounded benefit curves. Baseline difficulty SHALL depend on dungeon depth and the floor's frozen difficulty profile. Fortune, Plenty, and Discovery SHALL have distinct reward responsibilities and combined supply limits. World upgrades SHALL NOT introduce repeatable XP awards or secretly cancel their benefits by raising other threats.
+
+#### Scenario: Combine reward attributes
+- **WHEN** Fortune, Plenty, and Discovery are all high
+- **THEN** reward quality/value, common pickup supply, and optional opportunities follow their documented limits rather than multiply without bounds
+
+#### Scenario: Improve Peace
+- **WHEN** Peace increases with other tuning inputs fixed
+- **THEN** its rules reduce or retain population and engagement pressure without raising enemy damage to compensate

@@ -60,8 +60,11 @@ export function buildDungeonWangWalls({ map, cells, tileSize = 32 }: { map?: num
     // Diagonal neighbors do not change a straight boundary's artwork.
     const straight = [1, 4, 16, 64].includes(cardinal) ? cardinal : mask;
     const rule = ruleForMask(DUNGEON_CANONICAL_RULES, "Generated wall boundary", mask) ?? ruleForMask(DUNGEON_CANONICAL_RULES, "Generated wall boundary", straight);
-    const quarters = rule ? undefined : wallQuartersForMask(DUNGEON_CANONICAL_RULES, mask) ?? undefined;
-    const frame = rule?.tileId ?? quarters?.[0].tileId ?? null;
+    // Adjacent floor-facing sides form an inward corner. Its void-facing art
+    // differs from an outer room corner even if the silhouette looks similar.
+    const inwardFrame = DUNGEON_CANONICAL_RULES.inwardCornerRules[cardinal as keyof typeof DUNGEON_CANONICAL_RULES.inwardCornerRules];
+    const quarters = inwardFrame !== undefined || rule ? undefined : wallQuartersForMask(DUNGEON_CANONICAL_RULES, mask) ?? undefined;
+    const frame = inwardFrame ?? rule?.tileId ?? quarters?.[0].tileId ?? null;
     const entry = { x, y, mask, worldX: x * tileSize + tileSize / 2, worldY: y * tileSize + tileSize / 2, frame, ...(quarters ? { quarters } : {}) };
     if (frame === null) diagnostics.push(entry);
     walls.push(entry);

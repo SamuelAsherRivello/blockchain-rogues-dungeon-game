@@ -21,6 +21,7 @@ export const DUNGEON_CANONICAL_FAMILIES: ReadonlyMap<string, DungeonWangFamily> 
 ]);
 
 export const DUNGEON_CANONICAL_RULES = Object.freeze({
+  inwardCornerRules: { 5: 8, 20: 32, 65: 6, 80: 30 },
   floorTiles: [13, 25, 26, 28, 37, 38, 39],
   wallQuarterProfiles: {
     nw: [19, 49, 17, 6, 53, 49, 17, 6],

@@ -16,7 +16,7 @@ The shared palette in `src/ui/slot-colors.ts` supplies these colors to the slot 
 | Quick | Green `#79c878` | Potion Inventory strips, filled and empty Quick strips, previews, valid drop outlines, available Q/E shortcuts |
 | Equipment | Blue `#67b7e8` | Gear Inventory strips, filled and empty Weapons/Armor strips, previews, valid drop outlines |
 
-Each occupied Inventory row has a 2px vertical strip at its left edge. Both rows of gear that occupies two positions share the same color. Potion colors identify Quick compatibility regardless of whether the potion restores Health or Mana. Empty Inventory positions stay neutral; a valid return drag outlines only its destination with the dragged item's category color.
+Each occupied Inventory row has a 1px vertical strip at its left edge. Both rows of gear that occupies two positions share the same color. Potion colors identify Quick compatibility regardless of whether the potion restores Health or Mana. Empty Inventory positions stay neutral; a valid return drag outlines only its destination with the dragged item's category color.
 
 A strip identifies a category, not a currently legal drop or available activation. Weapons and Armor share blue but still require compatible groups. A valid hovered destination gains a separate outline; incompatible targets do not. Unavailable abilities and potions retain their category strips while their action content remains gray. Canceling a drag removes transient feedback and leaves resting strips visible.
 

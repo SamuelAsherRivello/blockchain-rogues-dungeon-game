@@ -43,7 +43,7 @@ Install Chromium with `npx playwright install chromium`. The configured `chromiu
 ```powershell
 $env:PLAYWRIGHT_EXTERNAL_SERVER='1'
 $env:PLAYWRIGHT_PORT='6080'
-$env:PLAYWRIGHT_HEADED='1'
+$env:PLAYWRIGHT_HEADED='0'
 npx playwright test wang-autotiling --project=chromium --project=edge
 ```
 
@@ -51,7 +51,9 @@ This reuses the ownership-verified project preview instead of starting a second 
 
 ## Tile-reference correction
 
-Feedback for world seed `3266798470`, slot/run/level 1: marked case 1 uses blocked-cell mask 248 and now selects whole local tile 48, matching reference 2. Marked case 3 uses masks 60 and 62 and now selects whole local tile 53, matching reference 4. These assignments live in the TSX `dungeon:blocked-cell-rules` property and its validated derivative. Regression checks cover cells (40,47), (54,53), (40,54), (45,57), (38,47) and (46,47), plus the unchanged reference cells (46,54) and (58,52).
+The earlier substitution of outward reference tiles 48/53 at inward joins was incorrect: their transparent areas left black cutouts. The TSX `dungeon:inward-corner-rules` now takes precedence over exact blocked-cell rules for adjacent cardinal floor contacts: N+E selects tile 8, E+S tile 32, N+W tile 6, and S+W tile 30. Diagonal contacts do not change this inward-corner classification. These shared rules apply to every generated level, without seed-specific runtime exceptions.
+
+Regression checks cover all four orientations and all 16 diagonal variations each. For seed `3266798470`, headless Chromium and Edge verified the six reported joins (40,47), (54,53), (40,54), (45,57), (38,47), and (46,47), plus unchanged outward references (46,54) and (58,52). Each location has a closeup screenshot and a rendered-pixel comparison against its production atlas tile. The source-rule suite passes 11 tests; project typechecking passes.
 
 The requested game-to-tile reference is now explicit in the runtime wall table:
 the marked corner case resolves to local tile `5` (Wang mask `112`), and the
