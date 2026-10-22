@@ -144,11 +144,15 @@ Portrait SHALL use shell rows of 4% titlebar, 46% game view, 4% statusbar, and 4
 - **THEN** both information panels are available without tabs or a change to game state, time, camera, or Zoom
 
 ### Requirement: Arrange titlebar controls and counters
-The titlebar SHALL order title, centered World/Dungeon Level space, Time/Keys/Gold, Zoom, Camera, Fullscreen, and Settings. Zoom, Camera, and Settings SHALL have icons without text labels, retaining accessible names and dropdown values. Dividers SHALL NOT appear between Time/Keys/Gold or Camera/Fullscreen/Settings.
+The titlebar SHALL order title, centered World/Dungeon Level space, Time/Keys/Gold, Zoom, Camera, Movement, Fullscreen, and Settings. Zoom, Camera, Movement, and Settings SHALL have icons without text labels, retaining accessible names and dropdown values. Movement SHALL use a simple monochrome walking-person silhouette matching the utility icons, outside Dev Settings. Dividers SHALL NOT appear between Time/Keys/Gold or Camera/Movement/Fullscreen/Settings.
 
 #### Scenario: Read the titlebar
 - **WHEN** the game is running
 - **THEN** World/Dungeon Level is centered between title and Time, Settings is at the far right, and the counters have no separating divider lines
+
+#### Scenario: Select movement
+- **WHEN** the player opens Movement immediately to the right of Camera
+- **THEN** Grid-snap, Grid-tween, and Gridless are available with an accessible Movement mode label and explanatory tooltip
 
 ### Requirement: Render bordered cards and plain Quest
 Each panel card SHALL have a border with its title interrupting the top edge, left aligned by default. The secondary panel SHALL order Minimap, Quest, Log; the primary panel SHALL order Status, Attributes, Abilities, Slots, Inventory. Quest SHALL show plain active objective text without numbered slots, icons, artwork, or scrolling.

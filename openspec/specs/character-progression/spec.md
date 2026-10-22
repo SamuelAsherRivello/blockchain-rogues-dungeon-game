@@ -7,11 +7,11 @@ Defines how a character grows across repeated dungeon runs and equips found gear
 ## Requirements
 
 ### Requirement: Track six persistent character stats
-The character SHALL retain ten persistent attributes: Health, Stamina, Offense, Defense, Mana, Vitality, Strength, Luck, Recovery, and Stealth. Each attribute SHALL be an integer from 1 through 99. Health, Stamina, Offense, Defense, and Mana SHALL define their matching Status capacity; the other attributes retain their defined deterministic effects. Defense SHALL derive chiefly from equipped armor and shields while retaining its attribute contribution.
+The character SHALL retain ten persistent attributes: Health, Stamina, Offense, Defense, Mana, Perception, Strength, Luck, Recovery, and Stealth. Perception SHALL be an integer from 0 through 99; other attributes SHALL remain integers from 1 through 99. Health, Stamina, Offense, Defense, and Mana SHALL define their matching Status capacity; the other attributes retain their defined deterministic effects. Perception SHALL determine line-of-sight enemy detection independently of Battle. Defense SHALL derive chiefly from equipped armor and shields while retaining its attribute contribution.
 
 #### Scenario: Apply stat effects
 - **WHEN** a character attribute is used during play
-- **THEN** its deterministic effect applies without changing the player's one-cell, one-turn movement rule
+- **THEN** its deterministic effect applies under the selected movement mode's tactical time rule without adding time solely for detection
 
 #### Scenario: Display Attributes
 - **WHEN** the player equips or removes armor or a shield
@@ -20,6 +20,14 @@ The character SHALL retain ten persistent attributes: Health, Stamina, Offense, 
 #### Scenario: Reach an attribute cap
 - **WHEN** the player attempts to increase an attribute already at 99
 - **THEN** that attribute remains 99 and the Attribute Point is not spent
+
+#### Scenario: Replace unused Vitality
+- **WHEN** Attributes or Progression is displayed
+- **THEN** Perception replaces Vitality and exactly ten attributes remain
+
+#### Scenario: Perception zero is valid
+- **WHEN** a character has Perception 0
+- **THEN** normalization preserves 0 and the documented close-range detection rule applies
 
 ### Requirement: Award experience and stat choices
 Successful attacks, enemy defeats, discoveries, first opens of chests or crates, and a first arrival at a Dungeon Level SHALL award configured experience exactly once per qualifying event. Movement, waiting, and reused world objects SHALL not award experience. Each level threshold SHALL increase level by one through level 99, retain excess experience, and grant three unspent Attribute Points. Attribute Points SHALL persist until committed in Progression and SHALL not advance a tactical turn.
@@ -124,3 +132,18 @@ An empty Saved Game SHALL require a character roll before a campaign begins. Eac
 #### Scenario: Confirm a character sheet
 - **WHEN** the player confirms a rolled sheet
 - **THEN** the campaign begins at Level 1 with that sheet and no Attribute Points
+
+### Requirement: Preserve progression when replacing Vitality
+Replacing Vitality with Perception SHALL preserve other attributes, level, XP, unspent Attribute Points, and saved run state. Migration SHALL accept legacy Vitality data without resetting the character. The character roll SHALL retain its existing ten-attribute 30-point budget and 1-through-5 roll bounds, with Perception replacing Vitality in the roll.
+
+#### Scenario: Migrate a legacy character
+- **WHEN** a saved character contains Vitality and lacks Perception
+- **THEN** migration preserves character progress and supplies a valid Perception value using the documented migration policy
+
+#### Scenario: Prefer explicit Perception
+- **WHEN** a saved character contains valid Perception as well as legacy Vitality
+- **THEN** the explicit Perception value is retained
+
+#### Scenario: Roll the updated attributes
+- **WHEN** the player rolls a new character
+- **THEN** exactly ten attributes including Perception total 30 points, each within the existing initial roll bounds

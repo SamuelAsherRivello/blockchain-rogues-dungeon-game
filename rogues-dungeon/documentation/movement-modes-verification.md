@@ -2,6 +2,18 @@
 
 Change: `add-movement-modes-and-context-cursors`.
 
+## Finalization exception approved on 2026-10-22
+
+The user approved completing the scoped spec sync, archive, commit, and push with the observed verification failures recorded. This approval does not turn failed or incomplete checks into passes. Unopened crates use the existing interaction cursor; the proposal and cursor contract now match that resolver.
+
+Finalization validation passed all 34 main specs and strict validation of this change. The archived-task check passed this change with 22/22 tasks; its bulk result was 33 passing archives and two older failing archives, `2026-10-17-add-floor-trigger-door-barrel-set` with 7/10 tasks and `2026-10-17-formalize-world-render-depth` with 8/9. Those unrelated archives were left unchanged.
+
+The pre-finalization `npm test` run completed with 267 passing and 9 failing tests out of 276. Failures covered URL options, level-one starter placement, Skeleton/Rat balance, Difficulty scaling, Skeleton Archer identity, pivot-overlay source assertions, random-seed source assertions, How To Play CSS assertions, and the level-one trap fixture. The log is `output/movement-finalize-unit.log`.
+
+`npm run typecheck` reported TS2339 at `rogues-dungeon/test/game.test.ts:1954` and `:1959`, where `.item` was accessed on an `Entity` union without a retained narrowing. The log is `output/movement-finalize-typecheck.log`. These are observations from the earlier checkout during concurrent work, not a claim about the later finalization commit.
+
+The sandboxed Edge attempt failed during browser-profile creation. The subsequent full Edge attempt reused the ownership-verified port-6080 preview with `PLAYWRIGHT_EXTERNAL_SERVER=1`, so no second Vite server was started. Before cancellation, five tests passed and three failed: campfire rest, closed test chest, and the new-save quest test. The 49-test suite was interrupted after the failures were established and is incomplete, not passing. Its log is `output/movement-finalize-edge.log` and artifacts are under `output/movement-finalize-edge/`. No unrelated gameplay or tests were changed to resolve these failures. Earlier successful focused checks below remain historical evidence.
+
 ## Mouse travel courtesy update
 
 The latest checks pass 245 unit tests and type checking. Mouse preview and travel are capped at 30 cardinal steps per gesture, independent of attributes and layout. Trap cells remain in the preview with red dots; movement stops before the first unconfirmed trap, and a fresh adjacent click confirms crossing only that trap. Keyboard input clears any old mouse confirmation. Closed-door behavior is unchanged.
