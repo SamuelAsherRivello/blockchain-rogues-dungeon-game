@@ -1,14 +1,19 @@
 import { expect, test } from "@playwright/test";
+import { selectSavedGame } from "./start-saved-game.ts";
 
 const slotKey = "rogues-dungeon.slot.1";
 
 async function openRolledCampaign(page: import("@playwright/test").Page) {
   await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
-  await page.getByRole("button", { name: /Saved Game 1/ }).click();
+  await selectSavedGame(page);
   const dialog = page.getByRole("dialog", { name: "Create Character" });
   await expect(dialog).toBeVisible();
   await dialog.getByRole("button", { name: "Roll" }).click();
   await dialog.getByRole("button", { name: "Confirm" }).click();
+  const world = page.getByRole('dialog', { name: 'Create World', exact: true });
+  await expect(world).toBeVisible();
+  await world.getByRole('button', { name: 'Roll', exact: true }).click();
+  await world.getByRole('button', { name: 'Confirm', exact: true }).click();
   await expect(page.locator(".game-screen")).toBeVisible();
 }
 
@@ -17,7 +22,7 @@ test("creates only confirmed characters and resumes the saved campaign", async (
   page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(message.text()); });
   page.on("pageerror", (error) => consoleErrors.push(error.message));
   await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
-  await page.getByRole("button", { name: /Saved Game 1/ }).click();
+  await selectSavedGame(page);
   const dialog = page.getByRole("dialog", { name: "Create Character" });
   await expect(dialog).toHaveClass(/create-character-window--menu/);
   await expect(dialog.locator(".create-character-window__attributes .attribute_item b")).toHaveText(Array.from({ length: 10 }, () => "0"));
@@ -56,6 +61,7 @@ test("keeps Attribute Point drafts local and retains the Attributes callout unti
   await expect(progression.getByText("Earned Results")).toBeVisible();
   await progression.getByRole("button", { name: "Increase Health" }).click();
   await expect(progression.getByText("Spend 2 of 3 attribute points.")).toBeVisible();
+  await page.mouse.move(0, 0);
   await progression.getByRole("button", { name: "Increase Health" }).hover();
   await expect(page.getByRole("tooltip")).toHaveText(/Increase Health to \d+\.$/);
   await expect(progression.locator(".progression-window__results li")).toHaveCount(1);

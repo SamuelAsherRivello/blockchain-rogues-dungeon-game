@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <map version="1.11" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="10" height="10" tilewidth="32" tileheight="32" infinite="0" nextlayerid="6" nextobjectid="11">
+ <properties>
+  <property name="entrances" value="4,9"/>
+  <property name="footprint" value="10x10"/>
+  <property name="prefab-id" value="player-home"/>
+  <property name="prefab-kind" value="teleport"/>
+ </properties>
+ <tileset firstgid="1" source="../../tilesets/data/tileset-dungeon.tsx"/>
+ <tileset firstgid="109" source="../../tilesets/data/props-animated.tsx"/>
+ <tileset firstgid="144" source="../../tilesets/examples/objects-overlay.tsx"/>
+ <tileset firstgid="164" source="../../tilesets/data/items-animated.tsx"/>
+ <tileset firstgid="172" source="../../tilesets/data/items-static.tsx"/>
+ <tileset firstgid="181" source="../../tilesets/data/props-static.tsx"/>
+ <layer id="1" name="Grounds" width="10" height="10">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,
+0,28,15,16,17,14,15,16,17,0,
+0,26,27,28,29,26,27,28,29,0,
+0,38,39,40,14,15,16,17,41,0,
+0,15,15,16,26,27,28,29,15,0,
+0,27,15,16,17,39,40,41,27,0,
+0,39,27,28,29,16,17,40,39,0,
+0,38,39,40,41,28,29,28,29,0,
+0,38,39,38,39,40,41,40,41,0,
+0,0,0,0,39,40,0,0,0,0
+</data>
+ </layer>
+ <layer id="2" name="Walls" width="10" height="10" locked="1">
+  <data encoding="csv">
+1,2,3,4,4,4,4,4,4,6,
+13,0,0,0,0,0,0,0,0,18,
+13,0,0,0,0,0,0,0,0,18,
+13,0,0,0,0,0,0,0,0,18,
+13,0,0,0,0,0,0,0,0,18,
+13,0,0,0,0,0,0,0,0,18,
+13,0,0,0,0,0,0,0,0,18,
+13,0,0,0,0,0,0,0,0,18,
+13,0,0,0,0,0,0,0,0,42,
+49,50,51,9,0,0,7,52,53,54
+</data>
+ </layer>
+ <layer id="3" name="Decoration 1" width="10" height="10">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,
+0,0,73,66,66,66,66,75,0,0,
+0,0,61,74,89,89,74,63,0,0,
+0,0,61,63,78,78,61,63,0,0,
+0,0,61,63,78,78,61,63,0,0,
+0,0,61,74,66,66,74,63,0,0,
+0,0,77,89,74,74,89,76,0,0,
+0,0,0,0,61,63,0,0,0,0,
+0,0,0,0,61,63,0,0,0,0
+</data>
+ </layer>
+ <layer id="4" name="Decoration 2" width="10" height="10">
+  <data encoding="csv">
+0,137,0,0,181,185,0,0,137,0,
+0,0,147,150,0,0,150,146,0,0,
+0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,162,163,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,
+0,153,0,0,0,0,0,0,153,0,
+0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <objectgroup id="5" name="Objects">
+  <object id="1" name="Dungeon Return 1" type="teleport-arrow" x="128" y="288" width="32" height="32">
+   <properties>
+    <property name="destination" value="dungeon"/>
+    <property name="direction" value="s"/>
+    <property name="grid" value="4,9"/>
+   </properties>
+  </object>
+  <object id="2" name="Dungeon Return 2" type="teleport-arrow" x="160" y="288" width="32" height="32">
+   <properties>
+    <property name="destination" value="dungeon"/>
+    <property name="direction" value="s"/>
+    <property name="grid" value="5,9"/>
+   </properties>
+  </object>
+  <object id="3" name="lockbox-left" type="lockbox" x="32" y="288" width="32" height="32" gid="153">
+   <properties>
+    <property name="walkable" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="4" name="lockbox-right" type="lockbox" x="256" y="288" width="32" height="32" gid="153">
+   <properties>
+    <property name="walkable" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="5" name="bookshelf-1" type="bookshelf" x="64" y="64" width="32" height="48" gid="147">
+   <properties>
+    <property name="walkable" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="6" name="closet-left" type="closet" x="96" y="64" width="32" height="48" gid="150">
+   <properties>
+    <property name="walkable" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="7" name="closet-right" type="closet" x="192" y="64" width="32" height="48" gid="150">
+   <properties>
+    <property name="walkable" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="8" name="bookshelf-4" type="bookshelf" x="224" y="64" width="32" height="48" gid="146">
+   <properties>
+    <property name="walkable" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="9" name="table-1" type="table" x="128" y="160" width="32" height="32" gid="162">
+   <properties>
+    <property name="walkable" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="10" name="table-2" type="table" x="160" y="160" width="32" height="32" gid="163">
+   <properties>
+    <property name="walkable" type="bool" value="false"/>
+   </properties>
+  </object>
+ </objectgroup>
+</map>

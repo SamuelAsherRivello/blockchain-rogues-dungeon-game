@@ -84,41 +84,83 @@ The HUD SHALL retain compact readable text, visible spacing, and distinct labels
 - **WHEN** browser zoom reduces available CSS width
 - **THEN** text and controls reflow within their regions while preserving the scrollbar policy and access to gameplay
 
+### Requirement: Use a prioritized compact landscape presentation
+The PC landscape shell SHALL preserve its generous presentation first, then adapt container dimensions and spacing, then adapt typography and controls, and only then use an alternate compact arrangement for non-critical information.
+
+#### Scenario: Render the generous landscape shell
+- **WHEN** the fitted PC landscape shell has enough width for the current HUD composition
+- **THEN** the existing ideal-size visual hierarchy, card proportions, typography, titlebar, statusbar, and panel arrangement remain unchanged
+
+#### Scenario: Render a reduced-width landscape shell
+- **WHEN** the PC browser width is reduced below the generous layout budget
+- **THEN** containers, gaps, and non-critical text reflow before the world view or primary gameplay controls are removed or structurally rearranged
+
+#### Scenario: Reach the compact landscape threshold
+- **WHEN** the fitted PC shell cannot keep all secondary information readable after container and typography adaptation
+- **THEN** secondary information uses the approved compact arrangement while the world view, titlebar actions, Settings access, and gameplay controls remain reachable
+
+### Requirement: Keep compact landscape HUD content readable and non-overlapping
+At the smallest supported PC landscape size, titlebar, statusbar, cards, quest content, saved-game labels, tooltips, and dialog controls SHALL remain readable, reachable, and within the shell without page-level scrolling. The existing internal scrollbar policy for Log, Slots, and Inventory SHALL remain intact.
+
+#### Scenario: Read compact gameplay HUD
+- **WHEN** gameplay is shown at the smallest supported PC landscape size
+- **THEN** titlebar utilities, statusbar content, card headings, values, and quest text do not collide, clip, or overlap the world view
+
+#### Scenario: Open compact main-menu content
+- **WHEN** a player views the main menu, Settings, or Create Character at the smallest supported PC landscape size
+- **THEN** saved slots, actions, explanatory text, and close controls remain usable, with overflow handled inside the relevant content region
+
+#### Scenario: Preserve scrolling policy
+- **WHEN** compact landscape adaptation is active
+- **THEN** only Log, Slots, Inventory, and explicitly bounded dialog bodies scroll, while the page and primary shell do not acquire an independent scrollbar
+
 ### Requirement: Support landscape and portrait game aspects
-The game SHALL support fitted 16:9 landscape and 9:16 portrait shells. It SHALL automatically select landscape on PC and portrait on mobile, independent of window shape. A PC-only developer override SHALL switch the complete shell between both aspects without changing gameplay state and SHALL not be available as a player preference.
+The game SHALL support a fitted landscape shell whose aspect flexes continuously from 16:10 through 16:9 and a fitted portrait shell whose aspect flexes continuously from 9:16 through 10:16. It SHALL automatically select landscape on PC and portrait on mobile, independent of window shape. A PC-only developer override SHALL switch the complete shell between both aspects without changing gameplay state and SHALL not be available as a player preference.
 
 #### Scenario: Render on mobile
 - **WHEN** the game opens on a mobile platform
-- **THEN** it uses the portrait 9:16 layout automatically
+- **THEN** it uses a portrait shell fitted within the 9:16 through 10:16 range automatically
 
 #### Scenario: Render on PC
 - **WHEN** the game opens on a PC
-- **THEN** it uses the landscape 16:9 layout automatically, including in a tall desktop window
+- **THEN** it uses a landscape shell fitted within the 16:10 through 16:9 range automatically, including in a tall desktop window
+
+#### Scenario: Use an intermediate fitted ratio
+- **WHEN** the available surface ratio falls between the selected orientation's two endpoints
+- **THEN** the fitted shell uses that intermediate ratio without changing campaign, time, camera, or Zoom
 
 #### Scenario: Preview either aspect on PC
 - **WHEN** a developer changes the Aspect setting on PC
-- **THEN** the entire shell switches between landscape and portrait while campaign, time, camera, and Zoom stay unchanged
+- **THEN** the entire shell switches between its landscape and portrait ranges while campaign, time, camera, and Zoom stay unchanged
 
 ### Requirement: Size Command Desk landscape regions
-The titlebar (1) and statusbar (2) SHALL each occupy 4% of shell height. Their contents SHALL be vertically centered. The middle SHALL contain the game view (3), secondary panel (4), and primary panel (5), with panels 4 and 5 each using 22% of shell width. Region 3 SHALL fill remaining space after region boundaries and internal spacing.
+The titlebar (1) and statusbar (2) SHALL each occupy 4% of shell height. Their contents SHALL be vertically centered. The middle SHALL contain the game view (3), secondary panel (4), and primary panel (5). At any supported landscape ratio, panels 4 and 5 SHALL each retain the CSS-pixel width they have in the 16:9 shell at the same shell height, and region 3 SHALL fill the remaining width after region boundaries and internal spacing.
 
 #### Scenario: Resize landscape shell
-- **WHEN** the fitted shell changes dimensions
-- **THEN** regions retain those percentages and the game view fills the residual space without rescaling its tiles
+- **WHEN** the fitted shell changes dimensions or uses any ratio from 16:10 through 16:9
+- **THEN** the titlebar and statusbar retain their height percentages, each information column retains its height-relative CSS-pixel width, and the game view absorbs the remaining horizontal change without rescaling its tiles
 
 ### Requirement: Keep the portrait lower area available without tabs
-Portrait SHALL use shell rows of 4% titlebar, 46% game view, 4% statusbar, and 46% bottom content. Titlebar and statusbar contents SHALL be vertically centered. The statusbar SHALL contain Control and Info buttons; the bottom SHALL show either the mobile controls or information panels according to that selection, with Control selected initially.
+Portrait SHALL use shell rows of 4% titlebar, 46% game view, 4% statusbar, and 46% bottom content at every supported portrait ratio. Titlebar and statusbar contents SHALL be vertically centered. The statusbar SHALL contain Control and Info buttons; the bottom SHALL show either the mobile controls or information panels according to that selection, with Control selected initially.
+
+#### Scenario: Use a wider supported portrait shell
+- **WHEN** a portrait shell uses any ratio from 9:16 through 10:16
+- **THEN** the Title, Game, Status, Bottom-content order remains intact and the game view spans the current fitted shell width
 
 #### Scenario: Scroll to mobile information
 - **WHEN** the player scrolls the portrait lower area below the visible controls
 - **THEN** both information panels are available without tabs or a change to game state, time, camera, or Zoom
 
 ### Requirement: Arrange titlebar controls and counters
-The titlebar SHALL order title, centered World/Dungeon Level space, Time/Keys/Gold, Zoom, Camera, Fullscreen, and Settings. Zoom, Camera, and Settings SHALL have icons without text labels, retaining accessible names and dropdown values. Dividers SHALL NOT appear between Time/Keys/Gold or Camera/Fullscreen/Settings.
+The titlebar SHALL order title, centered World/Dungeon Level space, Time/Keys/Gold, Zoom, Camera, Movement, Fullscreen, and Settings. Zoom, Camera, Movement, and Settings SHALL have icons without text labels, retaining accessible names and dropdown values. Movement SHALL use a simple monochrome walking-person silhouette matching the utility icons, outside Dev Settings. Dividers SHALL NOT appear between Time/Keys/Gold or Camera/Movement/Fullscreen/Settings.
 
 #### Scenario: Read the titlebar
 - **WHEN** the game is running
 - **THEN** World/Dungeon Level is centered between title and Time, Settings is at the far right, and the counters have no separating divider lines
+
+#### Scenario: Select movement
+- **WHEN** the player opens Movement immediately to the right of Camera
+- **THEN** Grid-snap, Grid-tween, and Gridless are available with an accessible Movement mode label and explanatory tooltip
 
 ### Requirement: Render bordered cards and plain Quest
 Each panel card SHALL have a border with its title interrupting the top edge, left aligned by default. The secondary panel SHALL order Minimap, Quest, Log; the primary panel SHALL order Status, Attributes, Abilities, Slots, Inventory. Quest SHALL show plain active objective text without numbered slots, icons, artwork, or scrolling.
@@ -139,7 +181,19 @@ Landscape statusbar SHALL show `WASD: Move, C: Sneak, 1234: Abilities` at the le
 - **THEN** the entire shell changes aspect without changing campaign state, time, Zoom, or Camera
 
 ### Requirement: Provide Settings and Main Menu flow
-Settings SHALL open centered in the shell with a Settings title and vertical actions. It SHALL include Save & Return to Main Menu, plain GitHub source link, and non-clickable root version text, currently v0.0.5. Opening or closing it SHALL not itself tick time or add an independent pause clock.
+Settings SHALL open centered in the shell with a Settings title and vertical actions. It SHALL include a How To Play action, Save & Return to Main Menu, plain GitHub source link, and non-clickable root version text, currently v0.0.5. Selecting How To Play SHALL open a `How To Play` modal above Settings, with seven topic buttons across its top. Opening or closing either dialog SHALL not itself tick time or add an independent pause clock.
+
+#### Scenario: Open the reference from Settings
+- **WHEN** the player selects How To Play from Settings on the main menu or during a game
+- **THEN** a `How To Play` dialog opens above Settings and shows the Basics topic initially
+
+#### Scenario: Navigate the reference topics
+- **WHEN** the player selects Basics, Combat, Exploration, Items and gear, Abilities and stamina, Progression, or Saving and controls
+- **THEN** the dialog marks that topic selected and shows only its corresponding 10 to 100 words of game-specific guidance
+
+#### Scenario: Return to Settings from the reference
+- **WHEN** the player closes the How To Play dialog with its close action, backdrop, or Escape key
+- **THEN** Settings remains open beneath it and the game state and turn count are unchanged
 
 #### Scenario: Return from Settings
 - **WHEN** Save & Return to Main Menu is chosen
@@ -156,6 +210,65 @@ Game text selected by the Log system SHALL appear only in the scrollable Log, no
 - **WHEN** the player picks up an item and later completes a dungeon
 - **THEN** the Log system projects their domain events into retained text in order, and no standalone status message is displayed
 
+### Requirement: Share menu density across dialog windows
+The Start Game window SHALL define the generous and compact typography and spacing modes used by menu Settings, Create Character, Create World, and in-game Settings. Settings labels SHALL use the same size as Saved Game text at each mode and SHALL remain normal weight.
+
+#### Scenario: Render generous menu dialogs
+- **WHEN** the fitted landscape shell has enough space for the generous Start Game presentation
+- **THEN** menu Settings, Create Character, Create World, and in-game Settings use the corresponding generous text and spacing sizes
+
+#### Scenario: Render compact menu dialogs
+- **WHEN** the fitted landscape shell crosses the compact presentation threshold
+- **THEN** all four dialog types use the corresponding compact text and spacing sizes while keeping their controls readable and reachable
+
+### Requirement: Keep dialog content usable through density changes
+Menu Settings, Create Character, Create World, and in-game Settings SHALL preserve their complete primary actions and readable content when switching between generous and compact modes.
+
+#### Scenario: Resize while a dialog is open
+- **WHEN** the fitted shell changes between generous and compact density while one of these dialogs is open
+- **THEN** the dialog updates its typography and spacing without clipping its title, controls, or primary action
+
 #### Scenario: Legacy message path is removed
 - **WHEN** game state previously associated with text such as Iron Sword left behind is processed
 - **THEN** it does not render directly in the HUD, and relevant event text appears only if the Log policy selects that event
+
+### Requirement: Keep Battle overlays screen-relative and readable
+Battle presentation overlays SHALL be anchored to the main game-view viewport rather than world coordinates, SHALL remain stable during camera movement, and SHALL scale or constrain responsively so they do not block the central action area at supported viewport sizes or world Zoom levels.
+
+#### Scenario: Move the camera during Battle
+- **WHEN** the player or camera moves while Battle is active
+- **THEN** the persistent crossed-swords icon remains attached to the upper-left viewport edge
+
+#### Scenario: Use high world Zoom
+- **WHEN** the player uses the highest supported world Zoom during Battle
+- **THEN** the entry presentation and persistent icon remain readable without being positioned over the viewport center
+
+#### Scenario: Use a compact viewport
+- **WHEN** Battle is active in a compact supported viewport
+- **THEN** the banner and icon remain within the game view without clipping or intercepting world input outside their own UI area
+
+### Requirement: Render the current quest and item states
+The Quest card SHALL render the current quest title and its ordered items. It SHALL mark the active item with an arrow, render complete items crossed out, and render a completed quest’s crossed-out items without an active arrow.
+
+#### Scenario: Display an in-progress quest
+- **WHEN** My First Quest has an active unfinished item
+- **THEN** the card shows its title, all three items, and an arrow only beside the active item
+
+#### Scenario: Display a completed quest
+- **WHEN** all My First Quest items are complete
+- **THEN** the card shows its title and all three crossed-out items with no active arrow
+
+### Requirement: Present mode selection and death recap through shared dialogs
+Select Mode SHALL use the same fitted bounds and menu density as Create Character. Death recap SHALL use the in-game Settings dialog's centered game-view placement, palette, and footer-button density while leaving the fatal world visibly frozen beneath it after the player death animation finishes and holds. Its visual hierarchy SHALL separate the death title, two-line factual recap summary, paired Minimap and Log cards, and stacked full-width bottom recovery actions without copying an external game's theme. Both dialogs SHALL keep primary controls reachable in generous and compact layouts.
+
+#### Scenario: Select a mode in a compact layout
+- **WHEN** an empty Saved Game opens Select Mode at the compact threshold
+- **THEN** its three choices, traits panel, close control, and Confirm Mode action remain readable and reachable inside the dialog
+
+#### Scenario: Show a centered death recap
+- **WHEN** the player dies while the in-game view is active
+- **THEN** the recap is centered over that view and gameplay controls cannot advance the world until a recap action is selected
+
+#### Scenario: Emphasize the selected recovery action
+- **WHEN** a death recap presents more than one action
+- **THEN** one action is visibly selected in the footer without obscuring the recap summary

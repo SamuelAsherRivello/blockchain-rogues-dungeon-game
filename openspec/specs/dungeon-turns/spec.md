@@ -18,7 +18,7 @@ Each run SHALL begin in a newly generated 100 by 100 tile dungeon floor with a t
 - **THEN** a new 100 by 100 procedural floor loads at the next depth with stronger or additional enemy types available
 
 ### Requirement: Advance one tactical turn per accepted grid action
-A legal player step, actionable bump interaction, or explicit wait action SHALL advance time by exactly one turn, and enemies SHALL act once during that turn. An accepted ability SHALL advance time and run its enemy phase exactly once when its presentation completes. A mouse-selected destination with no legal cardinal route SHALL be rejected without moving the player, advancing time, or causing an enemy action. A successful cardinal barrel push SHALL count as an actionable bump interaction.
+A legal discrete player step, actionable bump interaction, or explicit wait SHALL advance time by one turn and run the enemy phase. Gridless General travel SHALL use its column/row-center crossing rule instead. An accepted ability SHALL advance time and run its enemy phase once when presentation completes. A blocked exact mouse destination SHALL preserve any legal reachable-approach steps or adjacent interactions; no available step or interaction SHALL leave time unchanged. A successful cardinal barrel push SHALL count as an actionable bump interaction.
 
 #### Scenario: Walk into traversable space
 - **WHEN** the player makes one accepted grid move
@@ -45,8 +45,8 @@ A legal player step, actionable bump interaction, or explicit wait action SHALL 
 - **THEN** its effect resolves, displayed time increases by one, and enemies act once
 
 #### Scenario: Blocked terrain
-- **WHEN** the player attempts to move into an impassable cell with no actionable target
-- **THEN** the player stays in place and time does not advance
+- **WHEN** a requested next step enters impassable terrain with no actionable target
+- **THEN** the step is rejected and time does not advance
 
 #### Scenario: Commit equipment or ability assignment
 - **WHEN** a valid equipment drag or ability reorder is committed
@@ -57,9 +57,9 @@ A legal player step, actionable bump interaction, or explicit wait action SHALL 
 - **THEN** world Time and enemies remain unchanged through the ordinary action-driven time rule
 
 #### Scenario: Unreachable mouse destination
-- **WHEN** the player selects a mouse destination with no legal cardinal path
-- **THEN** the player stays in place and time does not advance
-- **AND** enemies do not act
+- **WHEN** a selected destination has no exact route
+- **THEN** any legal approach steps or adjacent interactions remain available under their normal time rules
+- **AND** if neither is available, position and time remain unchanged and enemies do not act
 
 ### Requirement: Prevent diagonal corner cutting
 Diagonal steps SHALL be accepted only when the destination and both orthogonally adjacent cells are traversable.
@@ -73,7 +73,31 @@ Diagonal steps SHALL be accepted only when the destination and both orthogonally
 - **THEN** the move is rejected without advancing time
 
 ### Requirement: Resolve tactical enemy actions
-Living enemies SHALL have an individual awareness radius and action cooldown. An enemy within its effective awareness range SHALL take at most one action, moving one cell or attacking, only when its cooldown permits after an accepted player turn.
+Living enemies SHALL persist an `idle`, `pursue`, `attack`, or `blocked` tactical state with individual awareness and cooldown data. After an accepted player turn, each due enemy SHALL select at most one deterministic action from a shared turn snapshot. An aware enemy SHALL use a cardinal route toward the player, attack when its configured attack rule is met (with melee attacks requiring cardinal adjacency), and return to idle immediately when awareness is lost. The resolver SHALL commit move intents in stable enemy-ID order and prevent two enemies from entering the same cell.
+
+#### Scenario: Eligible enemy routes around a blocker
+- **WHEN** an aware, due enemy has no direct cardinal step to the player but has a cardinal route around blocking terrain or entities
+- **THEN** it enters or remains in pursue state and moves one cell along that route
+
+#### Scenario: Enemy attacks from cardinal adjacency
+- **WHEN** an aware, due enemy is cardinally adjacent to the player
+- **THEN** it enters attack state and performs one attack without moving
+
+#### Scenario: Enemy retains its configured ranged attack rule
+- **WHEN** an aware, due ranged enemy can attack the player under its existing range rule
+- **THEN** it enters attack state and performs that attack without moving
+
+#### Scenario: Enemy loses awareness
+- **WHEN** an enemy in pursue, attack, or blocked state no longer has the player in effective awareness range
+- **THEN** it enters idle state and neither retains nor searches a remembered player position
+
+#### Scenario: Contested destination
+- **WHEN** two due enemies select the same walkable destination during one enemy phase
+- **THEN** stable enemy-ID order selects one move and the other enemy remains out of that destination
+
+#### Scenario: No route exists
+- **WHEN** an aware, due enemy has no legal cardinal route to the player
+- **THEN** it enters blocked state without crossing terrain, object, or entity blockers
 
 #### Scenario: Enemy waits for its cooldown
 - **WHEN** an aware enemy's action cooldown is not due after an accepted player turn
@@ -81,18 +105,22 @@ Living enemies SHALL have an individual awareness radius and action cooldown. An
 
 #### Scenario: Eligible enemy approaches
 - **WHEN** an enemy is aware and its action cooldown is due after an accepted player turn
-- **THEN** it moves one cell toward the player or performs one attack when adjacent
+- **THEN** it moves one cardinal cell toward the player or performs one attack when cardinally adjacent
 
 #### Scenario: Enemy approaches
 - **WHEN** an enemy can reach or attack the player during its action
 - **THEN** it moves or attacks once according to its behavior
 
 ### Requirement: Interact through adjacent tiles
-Bumping into an enemy, pickup, chest, stair, or barrel SHALL invoke that target's interaction; stepping onto ground loot, stairs, or a floor trigger SHALL also resolve that tile interaction. Collecting an item or potion as part of an accepted move SHALL add no turn beyond that move's one turn.
+Bumping into an enemy, pickup, chest, campfire, stair, or barrel SHALL invoke that target's interaction; stepping onto ground loot, stairs, or a floor trigger SHALL also resolve that tile interaction. Collecting an item or potion as part of an accepted move SHALL add no turn beyond that move's one turn. Bumping a campfire SHALL open its rest menu without advancing time; a confirmed rest SHALL resolve as one interaction turn.
 
 #### Scenario: Open a chest
 - **WHEN** the player bumps an unopened adjacent chest
 - **THEN** the chest opens and resolves its loot as one interaction turn
+
+#### Scenario: Rest at a campfire
+- **WHEN** the player confirms Rest after bumping an adjacent campfire
+- **THEN** the player stays in place and time advances by exactly one while the normal enemy phase resolves once
 
 #### Scenario: Push a barrel by bumping
 - **WHEN** the player bumps a barrel with a legal cardinal push destination
@@ -138,3 +166,48 @@ A committed ability-binding or equipment-slot assignment, removal, reorder, or s
 #### Scenario: Cancel a loadout change
 - **WHEN** the player cancels or attempts an invalid loadout operation
 - **THEN** the loadout and displayed time remain unchanged
+
+### Requirement: Apply mode-specific movement time accounting
+Discrete Grid-snap, Grid-tween, and Battle movement SHALL retain one turn per accepted grid step or actionable bump. Gridless travel in General SHALL instead advance time per crossed column-center and row-center line. Each resulting turn SHALL evaluate enemies under their existing cooldown rules. Visual interpolation and ordinary occupied-cell updates SHALL not independently add turns.
+
+#### Scenario: Compare diagonal movement states
+- **WHEN** a discrete legal diagonal grid step is accepted
+- **THEN** it costs one turn
+- **AND** Gridless travel crossing both center-line axes costs two turns instead
+
+#### Scenario: Battle overrides free travel
+- **WHEN** a Gridless player makes a legal discrete step in Battle
+- **THEN** only the ordinary discrete action charge applies and no extra center-line travel charge is added
+
+### Requirement: Keep mouse courtesy stops free of extra turns
+The 30-step mouse limit, route preview, pre-trap courtesy pause, and second-click confirmation alone SHALL NOT advance tactical time or run an enemy phase. Accepted travel before or through a confirmed trap SHALL retain the selected movement mode's ordinary step or center-line accounting and trap damage rules. Stopping SHALL not charge untraveled route steps.
+
+#### Scenario: Pause before a trap
+- **WHEN** a mouse route reaches the safe cell center before an unconfirmed trap
+- **THEN** only the accepted travel to that center is charged and waiting for another click adds no turn
+
+#### Scenario: Confirm a trap crossing
+- **WHEN** a fresh click permits entry into the adjacent warned trap
+- **THEN** only accepted movement and its normal trap effects advance gameplay, with no extra confirmation turn
+
+### Requirement: Resolve cardinal ranged enemy attacks
+The Skeleton Archer SHALL fire only across a clear cardinal line of sight up to five tiles. It SHALL act during the normal enemy phase, use its cooldown, and resolve its hit with the same incoming-direction defense rule as melee enemies.
+
+#### Scenario: Archer fires across a corridor
+- **WHEN** a Skeleton Archer has a clear cardinal line to the player within five tiles and its action is due
+- **THEN** it fires one ranged attack during the enemy phase
+
+#### Scenario: Archer cannot fire through a wall
+- **WHEN** a wall blocks the cardinal line between the Skeleton Archer and player
+- **THEN** the archer does not damage the player through that wall
+
+### Requirement: Preserve normal turn simulation during deterministic inspection
+Deterministic URL reconstruction and repaired-map inspection SHALL preserve the existing collision, pathfinding, accepted-action, enemy-phase, and dungeon-level rules.
+
+#### Scenario: Move on a deterministic generated floor
+- **WHEN** the player accepts a legal move after opening a seeded world URL
+- **THEN** the same one-turn movement and enemy-phase rules apply as in an ordinary campaign
+
+#### Scenario: Inspect a repaired floor
+- **WHEN** the player moves on a validated repaired map
+- **THEN** collision and pathfinding use the repaired walkability data while time and enemy actions follow the normal turn rules

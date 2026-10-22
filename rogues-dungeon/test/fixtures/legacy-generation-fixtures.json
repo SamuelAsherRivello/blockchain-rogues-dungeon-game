@@ -1,0 +1,931 @@
+{
+  "capturedAt": "2026-10-25T16:01:59.093Z",
+  "sourcePath": "rogues-dungeon/src/systems/procedural/world-procedural-system.ts",
+  "sourceHash": "afc33973203552d61cc54b4d3a76d2715499d2063895ebd8d088659ae6385396",
+  "hashContract": "sha256(JSON.stringify({width,height,cells,start,startRoom})); placements use {entities,objectSets,decorations,prefabPlacements}",
+  "direct": [
+    {
+      "name": "direct-legacy-1",
+      "level": 1,
+      "seed": 1,
+      "difficulty": 1,
+      "options": {},
+      "expected": {
+        "geometryHash": "81236f3ceb93e57b4bd9f3f8981792f5a0720600da012ef6550cd620a44f395a",
+        "placementHash": "cbe99e638ad48b221f09e7a3355de4c67e23d44f64a1bd26d726329071aaf75c",
+        "width": 100,
+        "height": 100,
+        "start": {
+          "x": 50,
+          "y": 50
+        },
+        "stairs": [
+          {
+            "id": "stairs-forward",
+            "kind": "stairs",
+            "direction": "forward",
+            "name": "Stairs up",
+            "x": 87,
+            "y": 18
+          }
+        ],
+        "walkableCells": 767
+      }
+    },
+    {
+      "name": "direct-legacy-2",
+      "level": 2,
+      "seed": 2,
+      "difficulty": 3,
+      "options": {},
+      "expected": {
+        "geometryHash": "dc939fd618f970bef1f8d65f81ce8e39ec0b5b012d91f81c9458af29f87ac9e0",
+        "placementHash": "e35c54cd24f4bcaccf5ed431e04a34586eb9d375faa31163ea03d2d86974c9da",
+        "width": 100,
+        "height": 100,
+        "start": {
+          "x": 50,
+          "y": 50
+        },
+        "stairs": [
+          {
+            "id": "stairs-back",
+            "kind": "stairs",
+            "direction": "back",
+            "name": "Stairs down",
+            "x": 48,
+            "y": 50
+          },
+          {
+            "id": "stairs-forward",
+            "kind": "stairs",
+            "direction": "forward",
+            "name": "Stairs up",
+            "x": 66,
+            "y": 12
+          }
+        ],
+        "walkableCells": 700
+      }
+    },
+    {
+      "name": "direct-world-1",
+      "level": 1,
+      "seed": 42,
+      "difficulty": 1,
+      "options": {
+        "worldAttributes": {
+          "clarity": 3,
+          "comfort": 3,
+          "discovery": 3,
+          "fortune": 3,
+          "guidance": 3,
+          "mercy": 3,
+          "openness": 3,
+          "peace": 3,
+          "plenty": 3,
+          "safety": 3
+        }
+      },
+      "expected": {
+        "geometryHash": "aab086511223881cadbf46e5d3086de177575895a61651049086b699780f588b",
+        "placementHash": "f8e954c653e41435e8ee5ae1d43e1fc5e346c40fd680f3d26c7f3a47cf2160d2",
+        "width": 70,
+        "height": 70,
+        "start": {
+          "x": 35,
+          "y": 35
+        },
+        "stairs": [
+          {
+            "id": "stairs-forward",
+            "kind": "stairs",
+            "direction": "forward",
+            "name": "Stairs up",
+            "x": 24,
+            "y": 7
+          }
+        ],
+        "walkableCells": 437
+      }
+    },
+    {
+      "name": "direct-world-2",
+      "level": 2,
+      "seed": 93,
+      "difficulty": 3,
+      "options": {
+        "worldAttributes": {
+          "clarity": 3,
+          "comfort": 3,
+          "discovery": 3,
+          "fortune": 3,
+          "guidance": 3,
+          "mercy": 3,
+          "openness": 3,
+          "peace": 3,
+          "plenty": 3,
+          "safety": 3
+        }
+      },
+      "expected": {
+        "geometryHash": "dd16554b57123ad352730e01b77d53630fd5f5d8710cf7fdcaf00cae1759522a",
+        "placementHash": "5a8948a7060e4775cd08feb159066a2722634a667dddd311bb1929138f6f959c",
+        "width": 100,
+        "height": 100,
+        "start": {
+          "x": 50,
+          "y": 50
+        },
+        "stairs": [
+          {
+            "id": "stairs-back",
+            "kind": "stairs",
+            "direction": "back",
+            "name": "Stairs down",
+            "x": 48,
+            "y": 50
+          },
+          {
+            "id": "stairs-forward",
+            "kind": "stairs",
+            "direction": "forward",
+            "name": "Stairs up",
+            "x": 59,
+            "y": 24
+          }
+        ],
+        "walkableCells": 1019
+      }
+    },
+    {
+      "name": "direct-world-200",
+      "level": 3,
+      "seed": 1234,
+      "difficulty": 5,
+      "options": {
+        "size": 200,
+        "worldAttributes": {
+          "clarity": 3,
+          "comfort": 3,
+          "discovery": 3,
+          "fortune": 3,
+          "guidance": 3,
+          "mercy": 3,
+          "openness": 3,
+          "peace": 3,
+          "plenty": 3,
+          "safety": 3
+        }
+      },
+      "expected": {
+        "geometryHash": "11e7ddab208be96904b0e99b39c01743f5512430a41a254d54afa21c7d0e9d2b",
+        "placementHash": "c14e2f7bb2af8c06be839147eea84056704bba76acb0f41397df2fa3f77b6b2c",
+        "width": 200,
+        "height": 200,
+        "start": {
+          "x": 100,
+          "y": 100
+        },
+        "stairs": [
+          {
+            "id": "stairs-back",
+            "kind": "stairs",
+            "direction": "back",
+            "name": "Stairs down",
+            "x": 98,
+            "y": 100
+          },
+          {
+            "id": "stairs-forward",
+            "kind": "stairs",
+            "direction": "forward",
+            "name": "Stairs up",
+            "x": 105,
+            "y": 66
+          }
+        ],
+        "walkableCells": 5906
+      }
+    },
+    {
+      "name": "direct-world-fixture",
+      "level": 1,
+      "seed": 2,
+      "difficulty": 1,
+      "options": {
+        "level1TestMode": true,
+        "worldAttributes": {
+          "clarity": 3,
+          "comfort": 3,
+          "discovery": 3,
+          "fortune": 3,
+          "guidance": 3,
+          "mercy": 3,
+          "openness": 3,
+          "peace": 3,
+          "plenty": 3,
+          "safety": 3
+        }
+      },
+      "expected": {
+        "geometryHash": "97b7c4680b0b1fd759f5ce62b4693f9c7b6b3145f2dd6885ac4ad4327b315246",
+        "placementHash": "778ead050b5bb086973ad4b08d026714184b710ca343f09c8e255edefbf5d662",
+        "width": 100,
+        "height": 100,
+        "start": {
+          "x": 50,
+          "y": 50
+        },
+        "stairs": [
+          {
+            "id": "stairs-forward",
+            "kind": "stairs",
+            "direction": "forward",
+            "name": "Stairs up",
+            "x": 52,
+            "y": 50
+          }
+        ],
+        "walkableCells": 1142
+      }
+    }
+  ],
+  "compact": [
+    {
+      "name": "compact-legacy",
+      "worldSeed": 2834,
+      "slot": 2,
+      "run": 1,
+      "level": 1,
+      "difficulty": 2,
+      "options": {},
+      "record": {
+        "version": 6,
+        "mode": "adventure",
+        "world": "One",
+        "realm": "Underground 1",
+        "floor": {
+          "seed": 234325823,
+          "width": 100,
+          "height": 100,
+          "cells": [],
+          "start": {
+            "x": 50,
+            "y": 50
+          },
+          "entities": [],
+          "time": 1,
+          "level": 1,
+          "generatorVersion": "rogues-dungeon-floor-v4",
+          "generationProfile": {
+            "seed": 234325823,
+            "difficulty": 2,
+            "generatorVersion": "rogues-dungeon-floor-v4"
+          }
+        },
+        "combatRollState": 234325823,
+        "generatorVersion": "rogues-dungeon-floor-v4",
+        "levelStates": {
+          "1": {
+            "time": 1,
+            "removedGeneratedIds": [],
+            "entityOverrides": {},
+            "spawnedEntities": [],
+            "objectSetOverrides": {}
+          }
+        },
+        "progression": {
+          "attributes": {
+            "health": 4,
+            "stamina": 3,
+            "offense": 2,
+            "defense": 1,
+            "mana": 3,
+            "perception": 3,
+            "strength": 4,
+            "luck": 5,
+            "recovery": 3,
+            "stealth": 2
+          },
+          "level": 1,
+          "xp": 0,
+          "nextXp": 100,
+          "totalKills": 0,
+          "difficulty": 2,
+          "attributePoints": 0
+        },
+        "player": {
+          "x": 50,
+          "y": 50,
+          "hasMass": true,
+          "heading": "e",
+          "resources": {
+            "health": {
+              "current": 40,
+              "currentMax": 40
+            },
+            "stamina": {
+              "current": 30,
+              "currentMax": 30
+            },
+            "offense": {
+              "current": 2,
+              "currentMax": 2
+            },
+            "defense": {
+              "current": 1,
+              "currentMax": 1
+            },
+            "mana": {
+              "current": 30,
+              "currentMax": 30
+            },
+            "xp": {
+              "current": 0,
+              "currentMax": 100,
+              "level": 1
+            }
+          },
+          "equipment": {
+            "weapons": [
+              null,
+              null
+            ],
+            "armor": [
+              null,
+              null
+            ]
+          },
+          "inventory": [],
+          "inventoryCapacity": 5,
+          "abilities": [
+            null,
+            null,
+            null
+          ],
+          "quickSlots": [
+            null,
+            null
+          ],
+          "sneaking": false,
+          "encumberedDirection": null
+        },
+        "counters": {
+          "keys": 0,
+          "gold": 0
+        },
+        "objective": "Find the exit",
+        "quest": {
+          "id": "my-first-quest",
+          "title": "My First Quest",
+          "items": [
+            {
+              "id": "walk-through-stairs",
+              "title": "Walk through the stairs",
+              "complete": false
+            },
+            {
+              "id": "collect-health-potion",
+              "title": "Collect a Health Potion",
+              "complete": false
+            },
+            {
+              "id": "collect-coin",
+              "title": "Collect a coin",
+              "complete": false
+            }
+          ],
+          "activeItemId": "walk-through-stairs"
+        },
+        "log": [],
+        "discovery": {
+          "[\"discovery-v2\",2834,\"One\",1,\"dungeon:1\",234325823,100,100]": "100x100:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfAAAAAAAAAAAAAAD4AwAAAAAAAAAAAADAfwAAAAAAAAAAAAAA/AcAAAAAAAAAAAAAwH8AAAAAAAAAAAAAAPwHAAAAAAAAAAAAAMB/AAAAAAAAAAAAAAD4AwAAAAAAAAAAAAAAHwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+        },
+        "worldSeed": 2834,
+        "slot": 2,
+        "run": 1,
+        "floorProfiles": {
+          "1": {
+            "seed": 234325823,
+            "difficulty": 2,
+            "generatorVersion": "rogues-dungeon-floor-v4"
+          }
+        }
+      },
+      "expected": {
+        "geometryHash": "e1999bf4c5992f37cfd345f80bc490a8c15e6ae271aa219e7c64abe1d82ea386",
+        "placementHash": "f2d74532ef0ea6e9fa1db38d8917bf31bfd431c0377ba17167757f9e55e62d6c",
+        "width": 100,
+        "height": 100,
+        "start": {
+          "x": 50,
+          "y": 50
+        },
+        "stairs": [
+          {
+            "id": "stairs-forward",
+            "kind": "stairs",
+            "direction": "forward",
+            "name": "Stairs up",
+            "x": 56,
+            "y": 50
+          }
+        ],
+        "walkableCells": 880
+      }
+    },
+    {
+      "name": "compact-world-1",
+      "worldSeed": 1,
+      "slot": 2,
+      "run": 1,
+      "level": 1,
+      "difficulty": 1,
+      "options": {
+        "worldAttributes": {
+          "clarity": 3,
+          "comfort": 3,
+          "discovery": 3,
+          "fortune": 3,
+          "guidance": 3,
+          "mercy": 3,
+          "openness": 3,
+          "peace": 3,
+          "plenty": 3,
+          "safety": 3
+        }
+      },
+      "record": {
+        "version": 6,
+        "mode": "adventure",
+        "world": "One",
+        "realm": "Underground 1",
+        "floor": {
+          "seed": 1638621706,
+          "width": 70,
+          "height": 70,
+          "cells": [],
+          "start": {
+            "x": 35,
+            "y": 35
+          },
+          "entities": [],
+          "time": 1,
+          "level": 1,
+          "generatorVersion": "world-attributes-1",
+          "generationProfile": {
+            "seed": 1638621706,
+            "difficulty": 1,
+            "attributes": {
+              "clarity": 3,
+              "comfort": 3,
+              "discovery": 3,
+              "fortune": 3,
+              "guidance": 3,
+              "mercy": 3,
+              "openness": 3,
+              "peace": 3,
+              "plenty": 3,
+              "safety": 3
+            },
+            "generatorVersion": "world-attributes-1",
+            "tuningVersion": "world-attributes-1:world-balance-1",
+            "level1TestMode": false,
+            "level1ObjectTestMode": false,
+            "level1EnemyTestMode": false
+          }
+        },
+        "combatRollState": 1638621706,
+        "generatorVersion": "world-attributes-1",
+        "levelStates": {
+          "1": {
+            "time": 1,
+            "removedGeneratedIds": [],
+            "entityOverrides": {},
+            "spawnedEntities": [],
+            "objectSetOverrides": {}
+          }
+        },
+        "progression": {
+          "attributes": {
+            "health": 4,
+            "stamina": 2,
+            "offense": 3,
+            "defense": 3,
+            "mana": 2,
+            "perception": 4,
+            "strength": 4,
+            "luck": 3,
+            "recovery": 3,
+            "stealth": 2
+          },
+          "level": 1,
+          "xp": 0,
+          "nextXp": 100,
+          "totalKills": 0,
+          "difficulty": 1,
+          "attributePoints": 0
+        },
+        "player": {
+          "x": 35,
+          "y": 35,
+          "hasMass": true,
+          "heading": "e",
+          "resources": {
+            "health": {
+              "current": 40,
+              "currentMax": 40
+            },
+            "stamina": {
+              "current": 20,
+              "currentMax": 20
+            },
+            "offense": {
+              "current": 3,
+              "currentMax": 3
+            },
+            "defense": {
+              "current": 3,
+              "currentMax": 3
+            },
+            "mana": {
+              "current": 20,
+              "currentMax": 20
+            },
+            "xp": {
+              "current": 0,
+              "currentMax": 100,
+              "level": 1
+            }
+          },
+          "equipment": {
+            "weapons": [
+              null,
+              null
+            ],
+            "armor": [
+              null,
+              null
+            ]
+          },
+          "inventory": [],
+          "inventoryCapacity": 5,
+          "abilities": [
+            null,
+            null,
+            null
+          ],
+          "quickSlots": [
+            null,
+            null
+          ],
+          "sneaking": false,
+          "encumberedDirection": null
+        },
+        "counters": {
+          "keys": 0,
+          "gold": 0
+        },
+        "objective": "Find the exit",
+        "quest": {
+          "id": "my-first-quest",
+          "title": "My First Quest",
+          "items": [
+            {
+              "id": "walk-through-stairs",
+              "title": "Walk through the stairs",
+              "complete": false
+            },
+            {
+              "id": "collect-health-potion",
+              "title": "Collect a Health Potion",
+              "complete": false
+            },
+            {
+              "id": "collect-coin",
+              "title": "Collect a coin",
+              "complete": false
+            }
+          ],
+          "activeItemId": "walk-through-stairs"
+        },
+        "log": [],
+        "worldAttributes": {
+          "clarity": 3,
+          "comfort": 3,
+          "discovery": 3,
+          "fortune": 3,
+          "guidance": 3,
+          "mercy": 3,
+          "openness": 3,
+          "peace": 3,
+          "plenty": 3,
+          "safety": 3
+        },
+        "worldGrowth": [],
+        "worldSchemaVersion": 1,
+        "discovery": {
+          "[\"discovery-v2\",1,\"One\",1,\"dungeon:1\",1638621706,70,70]": "70x70:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD4AAAAAAAAAAB/AAAAAAAAAOA/AAAAAAAAAPgPAAAAAAAAAP4DAAAAAAAAgP8AAAAAAAAA4D8AAAAAAAAA8AcAAAAAAAAA+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+        },
+        "worldSeed": 1,
+        "slot": 2,
+        "run": 1,
+        "floorProfiles": {
+          "1": {
+            "seed": 1638621706,
+            "difficulty": 1,
+            "attributes": {
+              "clarity": 3,
+              "comfort": 3,
+              "discovery": 3,
+              "fortune": 3,
+              "guidance": 3,
+              "mercy": 3,
+              "openness": 3,
+              "peace": 3,
+              "plenty": 3,
+              "safety": 3
+            },
+            "generatorVersion": "world-attributes-1",
+            "tuningVersion": "world-attributes-1:world-balance-1",
+            "level1TestMode": false,
+            "level1ObjectTestMode": false,
+            "level1EnemyTestMode": false
+          }
+        }
+      },
+      "expected": {
+        "geometryHash": "a753efc7c49cb3b97e7169fcdb019128bf3d1df54c42529c4ddfbff2bb65913c",
+        "placementHash": "e8679636c132209afae761a250c9a507d04303c5becebcd02b6376d5559f6736",
+        "width": 70,
+        "height": 70,
+        "start": {
+          "x": 35,
+          "y": 35
+        },
+        "stairs": [
+          {
+            "id": "stairs-forward",
+            "kind": "stairs",
+            "direction": "forward",
+            "name": "Stairs up",
+            "x": 9,
+            "y": 29
+          }
+        ],
+        "walkableCells": 334
+      }
+    },
+    {
+      "name": "compact-world-2",
+      "worldSeed": 2,
+      "slot": 2,
+      "run": 1,
+      "level": 2,
+      "difficulty": 3,
+      "options": {
+        "worldAttributes": {
+          "clarity": 3,
+          "comfort": 3,
+          "discovery": 3,
+          "fortune": 3,
+          "guidance": 3,
+          "mercy": 3,
+          "openness": 3,
+          "peace": 3,
+          "plenty": 3,
+          "safety": 3
+        }
+      },
+      "record": {
+        "version": 6,
+        "mode": "adventure",
+        "world": "One",
+        "realm": "Underground 2",
+        "floor": {
+          "seed": 2504975949,
+          "width": 100,
+          "height": 100,
+          "cells": [],
+          "start": {
+            "x": 50,
+            "y": 50
+          },
+          "entities": [],
+          "time": 1,
+          "level": 2,
+          "generatorVersion": "world-attributes-1",
+          "generationProfile": {
+            "seed": 2504975949,
+            "difficulty": 3,
+            "attributes": {
+              "clarity": 3,
+              "comfort": 3,
+              "discovery": 3,
+              "fortune": 3,
+              "guidance": 3,
+              "mercy": 3,
+              "openness": 3,
+              "peace": 3,
+              "plenty": 3,
+              "safety": 3
+            },
+            "generatorVersion": "world-attributes-1",
+            "tuningVersion": "world-attributes-1:world-balance-1",
+            "level1TestMode": false,
+            "level1ObjectTestMode": false,
+            "level1EnemyTestMode": false
+          }
+        },
+        "combatRollState": 2504975949,
+        "generatorVersion": "world-attributes-1",
+        "levelStates": {
+          "2": {
+            "time": 1,
+            "removedGeneratedIds": [],
+            "entityOverrides": {},
+            "spawnedEntities": [],
+            "objectSetOverrides": {}
+          }
+        },
+        "progression": {
+          "attributes": {
+            "health": 2,
+            "stamina": 4,
+            "offense": 3,
+            "defense": 3,
+            "mana": 4,
+            "perception": 4,
+            "strength": 2,
+            "luck": 3,
+            "recovery": 1,
+            "stealth": 4
+          },
+          "level": 1,
+          "xp": 0,
+          "nextXp": 100,
+          "totalKills": 0,
+          "difficulty": 3,
+          "attributePoints": 0
+        },
+        "player": {
+          "x": 50,
+          "y": 50,
+          "hasMass": true,
+          "heading": "e",
+          "resources": {
+            "health": {
+              "current": 20,
+              "currentMax": 20
+            },
+            "stamina": {
+              "current": 40,
+              "currentMax": 40
+            },
+            "offense": {
+              "current": 3,
+              "currentMax": 3
+            },
+            "defense": {
+              "current": 3,
+              "currentMax": 3
+            },
+            "mana": {
+              "current": 40,
+              "currentMax": 40
+            },
+            "xp": {
+              "current": 0,
+              "currentMax": 100,
+              "level": 1
+            }
+          },
+          "equipment": {
+            "weapons": [
+              null,
+              null
+            ],
+            "armor": [
+              null,
+              null
+            ]
+          },
+          "inventory": [],
+          "inventoryCapacity": 5,
+          "abilities": [
+            null,
+            null,
+            null
+          ],
+          "quickSlots": [
+            null,
+            null
+          ],
+          "sneaking": false,
+          "encumberedDirection": null
+        },
+        "counters": {
+          "keys": 0,
+          "gold": 0
+        },
+        "objective": "Find the exit",
+        "quest": {
+          "id": "my-first-quest",
+          "title": "My First Quest",
+          "items": [
+            {
+              "id": "walk-through-stairs",
+              "title": "Walk through the stairs",
+              "complete": false
+            },
+            {
+              "id": "collect-health-potion",
+              "title": "Collect a Health Potion",
+              "complete": false
+            },
+            {
+              "id": "collect-coin",
+              "title": "Collect a coin",
+              "complete": false
+            }
+          ],
+          "activeItemId": "walk-through-stairs"
+        },
+        "log": [],
+        "worldAttributes": {
+          "clarity": 3,
+          "comfort": 3,
+          "discovery": 3,
+          "fortune": 3,
+          "guidance": 3,
+          "mercy": 3,
+          "openness": 3,
+          "peace": 3,
+          "plenty": 3,
+          "safety": 3
+        },
+        "worldGrowth": [],
+        "worldSchemaVersion": 1,
+        "discovery": {
+          "[\"discovery-v2\",2,\"One\",1,\"dungeon:2\",2504975949,100,100]": "100x100:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfAAAAAAAAAAAAAAD4AwAAAAAAAAAAAADAfwAAAAAAAAAAAAAA/AcAAAAAAAAAAAAAwH8AAAAAAAAAAAAAAPwHAAAAAAAAAAAAAMB/AAAAAAAAAAAAAAD4AwAAAAAAAAAAAAAAHwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+        },
+        "worldSeed": 2,
+        "slot": 2,
+        "run": 1,
+        "floorProfiles": {
+          "2": {
+            "seed": 2504975949,
+            "difficulty": 3,
+            "attributes": {
+              "clarity": 3,
+              "comfort": 3,
+              "discovery": 3,
+              "fortune": 3,
+              "guidance": 3,
+              "mercy": 3,
+              "openness": 3,
+              "peace": 3,
+              "plenty": 3,
+              "safety": 3
+            },
+            "generatorVersion": "world-attributes-1",
+            "tuningVersion": "world-attributes-1:world-balance-1",
+            "level1TestMode": false,
+            "level1ObjectTestMode": false,
+            "level1EnemyTestMode": false
+          }
+        }
+      },
+      "expected": {
+        "geometryHash": "2c85dd904bd1f1f0582f5ee6761e66a658010423b858dc4803cf94cedd358ec8",
+        "placementHash": "bd385e4e989c4dc3993027376ea2be8840979ae4972081cc1df921e1f22e49f3",
+        "width": 100,
+        "height": 100,
+        "start": {
+          "x": 50,
+          "y": 50
+        },
+        "stairs": [
+          {
+            "id": "stairs-back",
+            "kind": "stairs",
+            "direction": "back",
+            "name": "Stairs down",
+            "x": 48,
+            "y": 50
+          },
+          {
+            "id": "stairs-forward",
+            "kind": "stairs",
+            "direction": "forward",
+            "name": "Stairs up",
+            "x": 31,
+            "y": 31
+          }
+        ],
+        "walkableCells": 1086
+      }
+    }
+  ]
+}

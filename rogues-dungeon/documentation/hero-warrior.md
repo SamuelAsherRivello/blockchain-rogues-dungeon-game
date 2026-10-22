@@ -1,6 +1,6 @@
 # Hero Warrior Animation Mapping
 
-Runtime assets are read from `public/assets/art/vendors/dungeons-and-pixels-v1.4/characters/hero-warrior/frames/` and are registered through the generic sprite-sheet animation system.
+Runtime assets are read from `public/assets/art/game-view/characters/hero-warrior/frames/` and are registered through the generic sprite-sheet animation system.
 
 | Animation | Directions | Frames | Dimensions | Loop behavior |
 |---|---|---:|---|---|

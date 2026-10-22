@@ -1,0 +1,165 @@
+{
+  "scenario": "100x100 partition, 12 unreachable nearby enemies, 10 X-equivalent wait turns after two warmups, Edge 156; per-enemy control retains final duplicate-query skip",
+  "samples": [
+    {
+      "mode": "per-enemy-control",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+      "seed": 17,
+      "dimensions": [
+        100,
+        100
+      ],
+      "enemies": 12,
+      "mean": 56.420000000298025,
+      "max": 72,
+      "metrics": {
+        "frames": 0,
+        "fps": 0,
+        "median": 0,
+        "p95": 0,
+        "counts": {
+          "static normalization boundaries": 10,
+          "ticks": 10,
+          "enemy visits": 120,
+          "navigation cells tested": 510080
+        },
+        "cpu": {
+          "clone/upgrade (inclusive)": {
+            "mean": 0.2600000001490116,
+            "max": 0.4000000022351742,
+            "count": 10
+          },
+          "navigation (inclusive)": {
+            "mean": 4.6441666667349635,
+            "max": 14.600000001490116,
+            "count": 120
+          },
+          "AI (inclusive)": {
+            "mean": 55.889999999850986,
+            "max": 71.40000000223517,
+            "count": 10
+          },
+          "tick (inclusive)": {
+            "mean": 55.89999999962747,
+            "max": 71.40000000223517,
+            "count": 10
+          },
+          "action (inclusive)": {
+            "mean": 56.329999999329445,
+            "max": 72,
+            "count": 10
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0,
+            "max": 0,
+            "count": 10
+          }
+        }
+      }
+    },
+    {
+      "mode": "batched",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+      "seed": 17,
+      "dimensions": [
+        100,
+        100
+      ],
+      "enemies": 12,
+      "mean": 1.5399999998509883,
+      "max": 2.5,
+      "metrics": {
+        "frames": 0,
+        "fps": 0,
+        "median": 0,
+        "p95": 0,
+        "counts": {
+          "static normalization boundaries": 10,
+          "ticks": 10,
+          "enemy visits": 120,
+          "enemy navigation batches": 10,
+          "enemy reachability cells": 49000,
+          "enemy route searches rejected": 120,
+          "enemy paths rejected": 120
+        },
+        "cpu": {
+          "clone/upgrade (inclusive)": {
+            "mean": 0.31999999955296515,
+            "max": 0.6000000014901161,
+            "count": 10
+          },
+          "navigation (inclusive)": {
+            "mean": 0.07249999993170302,
+            "max": 1.3999999985098839,
+            "count": 120
+          },
+          "AI (inclusive)": {
+            "mean": 0.9899999998509884,
+            "max": 1.5999999977648258,
+            "count": 10
+          },
+          "tick (inclusive)": {
+            "mean": 1.0099999997764826,
+            "max": 1.5999999977648258,
+            "count": 10
+          },
+          "action (inclusive)": {
+            "mean": 1.4799999989569188,
+            "max": 2.5,
+            "count": 10
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0,
+            "max": 0,
+            "count": 10
+          }
+        }
+      }
+    },
+    {
+      "mode": "paused",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+      "seed": 17,
+      "dimensions": [
+        100,
+        100
+      ],
+      "enemies": 12,
+      "mean": 1.5000000003725291,
+      "max": 6.100000001490116,
+      "metrics": {
+        "frames": 0,
+        "fps": 0,
+        "median": 0,
+        "p95": 0,
+        "counts": {
+          "static normalization boundaries": 10,
+          "ticks": 10,
+          "enemy turns suppressed": 10
+        },
+        "cpu": {
+          "clone/upgrade (inclusive)": {
+            "mean": 0.48000000081956384,
+            "max": 1.199999999254942,
+            "count": 10
+          },
+          "tick (inclusive)": {
+            "mean": 0.019999999552965164,
+            "max": 0.09999999776482582,
+            "count": 10
+          },
+          "action (inclusive)": {
+            "mean": 1.4100000001490116,
+            "max": 6,
+            "count": 10
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0,
+            "max": 0,
+            "count": 10
+          }
+        }
+      }
+    }
+  ]
+}

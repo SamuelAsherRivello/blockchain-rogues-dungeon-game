@@ -4,9 +4,9 @@ This inventory is the implementation baseline for `unify-dungeon-tileset-wang-ru
 
 ## Authoritative asset contract
 
-- TSX source: `rogues-dungeon/public/assets/art/vendors/dungeons-and-pixels-v1.4/tiled-examples/tilesets/tileset-dungeon.tsx`
-- Declared image: `../../tilesets/tileset-dungeon.png`
-- Resolved image: `rogues-dungeon/public/assets/art/vendors/dungeons-and-pixels-v1.4/tilesets/tileset-dungeon.png`
+- TSX source: `rogues-dungeon/public/assets/art/game-view/tilesets/data/tileset-dungeon.tsx`
+- Declared image: `../art/tileset-dungeon.png`
+- Resolved image: `rogues-dungeon/public/assets/art/game-view/tilesets/art/tileset-dungeon.png`
 - Atlas: 384 × 288 pixels, 12 columns × 9 rows, 32 × 32 tiles, 108 local IDs.
 - Wang order: `N, NE, E, SE, S, SW, W, NW`; bit weights are `1, 2, 4, 8, 16, 32, 64, 128`.
 

@@ -37,15 +37,22 @@ test("@layout landscape and PC portrait preview retain the full game UI", async 
   const landscape = await shell.evaluate((element) => {
     const rect = element.getBoundingClientRect();
     const world = element.querySelector(".world-view")!.getBoundingClientRect();
-    return { width: rect.width, height: rect.height, worldWidth: world.width, worldHeight: world.height, dpr: window.devicePixelRatio };
+    const panelsWidth = Array.from(element.querySelectorAll(".information-panels .info-panel--primary, .information-panels .info-panel--secondary")).reduce((sum, panel) => sum + panel.getBoundingClientRect().width, 0);
+    return { width: rect.width, height: rect.height, worldWidth: world.width, worldHeight: world.height, panelsWidth, dpr: window.devicePixelRatio };
   });
-  expect(landscape.worldWidth).toBeGreaterThan(landscape.worldHeight);
+  // Landscape applies to the fitted viewport, not its space remaining beside two columns.
+  expect(landscape.width).toBeGreaterThan(landscape.height);
+  expect(landscape.worldWidth).toBeGreaterThan(0);
+  expect(landscape.worldHeight).toBeGreaterThan(0);
+  expect(Math.abs(landscape.worldWidth + landscape.panelsWidth - landscape.width)).toBeLessThan(2);
+  await test.info().attach("landscape-viewport-and-column-geometry", { body: JSON.stringify(landscape), contentType: "application/json" });
   await capture(page, "landscape-100-dpr1-windowed");
 
-  await page.getByRole("button", { name: /Dev Settings.*Aspect/ }).click();
+  await page.getByRole("button", { name: "AR: L", exact: true }).click();
   await expect(viewport).toHaveAttribute("data-orientation", "portrait");
   await expect(page.getByRole("button", { name: "Control", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("button", { name: "Info", exact: true })).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByRole("button", { name: "AR: P", exact: true })).toBeVisible();
   await expect(page.locator(".mobile-controls")).toBeVisible();
   await expect(page.locator(".mobile-information-panels")).toBeHidden();
   const portrait = await shell.evaluate((element) => {
@@ -70,6 +77,8 @@ test("@layout landscape and PC portrait preview retain the full game UI", async 
   await page.getByRole("button", { name: "Control", exact: true }).click();
   await expect(page.locator(".mobile-controls")).toBeVisible();
   await expect(page.locator(".world-view-region canvas")).toBeVisible();
+  await page.getByRole("button", { name: "AR: P", exact: true }).click();
+  await expect(viewport).toHaveAttribute("data-orientation", "landscape");
 
   await page.keyboard.press("Control++");
   await page.waitForTimeout(150);
@@ -82,7 +91,7 @@ test("@layout landscape and PC portrait preview retain the full game UI", async 
   expect(consoleErrors).toEqual([]);
 });
 
-test("@layout mobile defaults to portrait and preserves the requested DPR", async ({ browser }) => {
+test("@layout mobile shows the supported WIP notice and preserves the requested DPR", async ({ browser }) => {
   for (const deviceScaleFactor of [1, 2]) {
     const context = await browser.newContext({
       viewport: { width: 390, height: 844 },
@@ -92,18 +101,13 @@ test("@layout mobile defaults to portrait and preserves the requested DPR", asyn
       userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148",
     });
     const page = await context.newPage();
-    await startGame(page);
-    await expect(page.locator("#viewport")).toHaveAttribute("data-orientation", "portrait");
-    await expect(page.locator(".mobile-controls")).toBeVisible();
-    await expect(page.locator(".mobile_status")).toBeVisible();
+    await page.goto(appPath);
+    await expect(page.getByText("Mobile browser version is WIP. Play on laptop browser instead.", { exact: true })).toBeVisible();
+    await expect(page.locator(".game-screen")).toHaveCount(0);
     await expect(page.locator(".dev_settings")).toHaveCount(0);
-    await expect(page.locator(".world-view-region canvas")).toBeVisible();
+    await expect(page.locator("canvas")).toHaveCount(0);
     expect(await page.evaluate(() => window.devicePixelRatio)).toBe(deviceScaleFactor);
     await capture(page, `mobile-portrait-controls-dpr${deviceScaleFactor}`);
-    await page.getByRole("button", { name: "Info", exact: true }).click();
-    await expect(page.locator(".mobile-information-panels")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "STATUS" })).toBeVisible();
-    await capture(page, `mobile-portrait-info-dpr${deviceScaleFactor}`);
     await context.close();
   }
 });

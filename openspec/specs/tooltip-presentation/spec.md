@@ -17,7 +17,7 @@ The player and every enemy SHALL own a separate instance of the same six-row res
 - **THEN** only that entity's resource instance changes and other entities retain their values
 
 ### Requirement: Render concise tooltips for React UI elements
-The application SHALL render a short, wide text tooltip for a React UI element when that element is hovered or receives keyboard focus, and SHALL keep the complete tooltip within the application viewport.
+The application SHALL render a short, wide text tooltip for a React UI element when that element is hovered or receives keyboard focus, SHALL keep the complete tooltip within the application viewport, and SHALL provide the ten world attributes with concise generation-effect explanations.
 
 #### Scenario: Hover or focus a UI element
 - **WHEN** a tooltip-enabled React UI element is hovered by a pointer or receives keyboard focus
@@ -26,6 +26,14 @@ The application SHALL render a short, wide text tooltip for a React UI element w
 #### Scenario: UI tooltip near a viewport edge
 - **WHEN** the default tooltip position would extend beyond an edge of the application viewport
 - **THEN** the tooltip is repositioned within the viewport without clipping its text
+
+#### Scenario: Inspect a world attribute tooltip
+- **WHEN** the player hovers or focuses one of the ten world attributes during Create World or World progression
+- **THEN** the tooltip states the positive gameplay effect that higher values provide
+
+#### Scenario: Inspect generation identity help
+- **WHEN** the player hovers or focuses the Generation Identity help trigger
+- **THEN** the tooltip explains that the five displayed identity values also require saved attributes, difficulty, and generation rules to reproduce a custom floor
 
 ### Requirement: Show an enemy world popup while its grid spot is hovered
 The game SHALL show a React-rendered enemy world popup while the mouse hovers an enemy grid spot, with persistent side-by-side PORTRAIT and RESOURCES sections.
@@ -63,3 +71,33 @@ Status tooltips SHALL retain their live-value prefix and concise explanation whe
 #### Scenario: Focus a Status row near an edge
 - **WHEN** a player focuses a Status row whose tooltip would extend beyond the viewport
 - **THEN** the live-value prefix and explanation remain visible within the viewport
+
+### Requirement: Describe attribute adjustment results
+Attribute adjustment arrow tooltips SHALL describe the resulting attribute value without displaying a raw point delta in parentheses.
+
+#### Scenario: Hover an increase arrow
+- **WHEN** the player hovers an enabled attribute increase arrow
+- **THEN** the tooltip reads the attribute name and resulting value, such as `Increase Perception to 5.`, without a `(+1)` suffix
+
+#### Scenario: Hover a decrease arrow
+- **WHEN** the player hovers an enabled attribute decrease arrow
+- **THEN** the tooltip reads the attribute name and resulting value, such as `Decrease Perception to 4.`, without a `(-1)` suffix
+
+#### Scenario: Preserve gameplay help text
+- **WHEN** the player hovers an attribute label
+- **THEN** the existing plain-language gameplay-effect tooltip remains available independently of the arrow result tooltip
+
+### Requirement: Place campfire world menus away from protected grid spots
+The Campfire rest menu SHALL be rendered as an in-world React popup and use the visible game-world frame, the campfire grid spot, and the player grid spot to find a complete placement that remains inside the frame without overlapping either protected spot.
+
+#### Scenario: Open a campfire menu where placement is available
+- **WHEN** the player bumps a campfire and at least one popup placement fits the game-world frame without covering the campfire or player grid spot
+- **THEN** the Campfire menu is shown at a valid position
+
+#### Scenario: Reframe a visible campfire menu
+- **WHEN** camera, zoom, or game-world frame geometry changes while the Campfire menu is visible
+- **THEN** its placement is recalculated from the updated grid geometry
+
+#### Scenario: No available placement for a campfire menu
+- **WHEN** no Campfire menu placement fits within the game-world frame while avoiding the campfire and player grid spots
+- **THEN** the Campfire menu is hidden

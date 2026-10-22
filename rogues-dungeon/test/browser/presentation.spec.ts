@@ -11,10 +11,12 @@ async function startCampaign(page: Page) {
 }
 
 test("PC aspect preview and portrait/mobile layouts keep controls and information reachable", async ({ page, browser }) => {
+  // Four browser contexts and two complete WebGPU campaign startups share this budget.
+  test.setTimeout(60_000);
   await page.setViewportSize({ width: 1280, height: 720 });
   await startCampaign(page);
   await expect(page.locator("#viewport")).toHaveAttribute("data-orientation", "landscape");
-  await expect(page.getByRole("button", { name: /Dev Settings/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "AR: L", exact: true })).toBeVisible();
   expect(await page.locator(".title-bar").evaluate((element) => element.getBoundingClientRect().height / element.parentElement!.getBoundingClientRect().height)).toBeCloseTo(0.04, 2);
   expect(await page.locator(".status-bar").evaluate((element) => element.getBoundingClientRect().height / element.parentElement!.getBoundingClientRect().height)).toBeCloseTo(0.04, 2);
   expect(await page.locator(".app_corner, .corner").count()).toBe(0);
@@ -22,15 +24,15 @@ test("PC aspect preview and portrait/mobile layouts keep controls and informatio
   await page.getByRole("button", { name: "Fullscreen" }).click();
   await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(true);
   await page.getByRole("button", { name: "Fullscreen" }).click();
-  await page.getByRole("button", { name: /Dev Settings/ }).click();
+  await page.getByRole("button", { name: "AR: L", exact: true }).click();
   await expect(page.locator("#viewport")).toHaveAttribute("data-orientation", "portrait");
   await expect(page.getByRole("button", { name: "Control" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.locator(".mobile-controls")).toBeVisible();
   await page.getByRole("button", { name: "Info" }).click();
   await expect(page.locator(".mobile-information-panels")).toBeVisible();
   await page.locator(".mobile_bottom").evaluate((element) => { element.scrollTop = element.scrollHeight; });
-  await expect(page.getByRole("heading", { name: /Inventory/ })).toBeVisible();
-  await expect.poll(() => page.locator(".mobile_bottom").evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true);
+  await expect(page.locator(".mobile-information-panels").getByRole("heading", { name: /inventory/i })).toBeVisible();
+  await expect(page.locator(".mobile-information-panels .inventory_scroll .scroll-area__viewport")).toHaveCSS("overflow-y", "scroll");
 
   for (const [width, height, deviceScaleFactor] of [[360, 640, 1], [390, 693, 2]]) {
     const context = await browser.newContext({
@@ -41,14 +43,10 @@ test("PC aspect preview and portrait/mobile layouts keep controls and informatio
       userAgent: mobileAgent,
     });
     const mobilePage = await context.newPage();
-    await startCampaign(mobilePage);
-    await expect(mobilePage.locator("#viewport")).toHaveAttribute("data-orientation", "portrait");
-    await expect(mobilePage.getByRole("button", { name: "Control" })).toHaveAttribute("aria-pressed", "true");
-    await expect(mobilePage.locator(".mobile-controls")).toBeVisible();
-    await mobilePage.getByRole("button", { name: "Info" }).click();
-    await mobilePage.locator(".mobile_bottom").evaluate((element) => { element.scrollTop = element.scrollHeight; });
-    await expect(mobilePage.getByRole("heading", { name: /Inventory/ })).toBeVisible();
-    expect(await mobilePage.locator(".mobile-information-panels .log_scroll, .mobile-information-panels .slot_scroll, .mobile-information-panels .inventory_scroll").evaluateAll((elements) => elements.map((element) => getComputedStyle(element).overflowY))).toEqual(["scroll", "scroll", "scroll"]);
+    await mobilePage.goto("/blockchain-rogues-dungeon-game/?mute=1");
+    await expect(mobilePage.getByText("Mobile browser version is WIP. Play on laptop browser instead.", { exact: true })).toBeVisible();
+    await expect(mobilePage.locator("canvas, .game-screen")).toHaveCount(0);
+    expect(await mobilePage.evaluate(() => devicePixelRatio)).toBe(deviceScaleFactor);
     await test.info().attach(`portrait-${width}x${height}-dpr-${deviceScaleFactor}`, {
       body: await mobilePage.screenshot(),
       contentType: "image/png",

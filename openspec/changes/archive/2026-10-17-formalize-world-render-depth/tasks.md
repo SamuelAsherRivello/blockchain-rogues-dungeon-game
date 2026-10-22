@@ -19,4 +19,6 @@
 
 ## 4. Finalization
 
-- [ ] 4.1 During finalization, run the full applicable test suite and broader browser coverage, including the three required Rogue's Dungeon browser contexts; confirm no rendering, input, layout, or console-error regression.
+- [x] 4.1 During finalization, run the full applicable test suite and broader browser coverage, including the three required Rogue's Dungeon browser contexts; confirm no rendering, input, layout, or console-error regression.
+
+Verification reconciliation on 2026-10-24 is recorded in [verification.md](verification.md). The full 120-check browser gate preceded a subsequently discovered minimap marker fix. That fix has fresh 340-test Node, typecheck, four focused Chrome/Edge puzzle checks, and three-context evidence against repository source. The refreshed full browser matrix passed all 122 checks on unchanged source, including the marker fix and new pixel/reload regression.

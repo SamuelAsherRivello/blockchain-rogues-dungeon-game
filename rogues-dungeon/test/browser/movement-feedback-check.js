@@ -47,7 +47,11 @@ async page => {
     await page.mouse.click(box.x + box.width / 2 + 195, box.y + box.height / 2 + 5, { button });
     await page.waitForFunction(() => document.querySelector(".world-view")?.getAttribute("data-player-animation") === "run/side");
     await page.waitForTimeout(200);
-    if (await world.getAttribute("data-player-animation") !== "run/side") throw Error(`${button} did not sustain run`);
+    // Capture position and animation in one frame; arrival can happen between browser calls.
+    const sample = await world.evaluate(el => ({ x: Number(el.dataset.playerPixelX), y: Number(el.dataset.playerPixelY), animation: el.dataset.playerAnimation }));
+    const observed = { x: sample.x, y: sample.y };
+    const arrived = observed.x === destination.x && observed.y === destination.y;
+    if (!arrived && sample.animation !== "run/side") throw Error(`${button} idled before arrival: ${JSON.stringify({ before, destination, observed, animation: sample.animation })}`);
     await page.waitForFunction(destination => {
       const el = document.querySelector(".world-view");
       return Number(el?.getAttribute("data-player-pixel-x")) === destination.x && Number(el?.getAttribute("data-player-pixel-y")) === destination.y;
@@ -58,7 +62,7 @@ async page => {
     if ((after.x - 16) % 32 || (after.y - 16) % 32) throw Error(`${button} did not finish at the grid center`);
     await page.waitForTimeout(200);
     if (JSON.stringify(after) !== JSON.stringify(await position())) throw Error(`${button} drifted after arrival`);
-    report.push({ button, animation: "run then idle" });
+    report.push({ button, animation: "run then idle", positionAtSample: observed, arrivedAtSample: arrived });
   }
   if (await page.locator(".game-screen").count() !== 1 || await page.locator("canvas").count() < 1) throw Error("Missing game/canvas");
   if (await page.getByText(/requires WebGPU|WebGPU.*unavailable/i).count()) throw Error("WebGPU unavailable");

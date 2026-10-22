@@ -6,10 +6,10 @@ import test from "node:test";
 import { DUNGEON_CANONICAL_RULES } from "../src/systems/rendering/tileset-dungeon-wang.generated.ts";
 import { parseDungeonTilesetRules, ruleForMask, wangIdForMask, wallQuartersForMask } from "../src/systems/rendering/tileset-wang-rules.ts";
 import { buildDungeonWangTerrain, buildDungeonWangWalls, serializeFloorToTiled, validateTiledRepairMap } from "../src/systems/rendering/tile-map-system.ts";
-import { createCampaign, createRunCampaign, generateFloor } from "../src/systems/procedural/world-procedural-system.ts";
+import { createCampaign, createRunCampaign, generateFloor, LEGACY_DUNGEON_TOPOLOGY_VERSION } from "../src/systems/procedural/world-procedural-system.ts";
 import { buildManualTileScenario } from "../src/systems/procedural/manual-tile-scenarios.ts";
 
-const tsxPath = new URL("../public/assets/art/vendors/dungeons-and-pixels-v1.4/tiled-examples/tilesets/tileset-dungeon.tsx", import.meta.url);
+const tsxPath = new URL("../public/assets/art/game-view/tilesets/data/tileset-dungeon.tsx", import.meta.url);
 
 test("parses the authoritative TSX and resolves its declared atlas", async () => {
   const xml = await readFile(tsxPath, "utf8");
@@ -25,6 +25,7 @@ test("keeps generated canonical rules exactly aligned with the TSX", async () =>
   const xml = await readFile(tsxPath, "utf8");
   const parsed = parseDungeonTilesetRules(xml);
   assert.deepEqual(parsed.floorTiles, DUNGEON_CANONICAL_RULES.floorTiles);
+  assert.deepEqual(parsed.inwardCornerRules, DUNGEON_CANONICAL_RULES.inwardCornerRules);
   assert.deepEqual(parsed.wallQuarterProfiles, DUNGEON_CANONICAL_RULES.wallQuarterProfiles);
   assert.equal(parsed.families.size, DUNGEON_CANONICAL_RULES.families.size);
   for (const [familyName, expectedFamily] of DUNGEON_CANONICAL_RULES.families) {
@@ -95,14 +96,27 @@ test("rectangular room has source-verified exterior corners and uninterrupted fa
   assert.deepEqual([at(3, 1), at(1, 3), at(5, 3), at(3, 5)], [1, 12, 17, 49]);
 });
 
-test("seed 3266798470 uses the reference lower corners at every reported junction", async () => {
+test("inward corners use TSX rules in every orientation regardless of diagonal contacts", () => {
+  const neighbors = [[0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1]];
+  for (let mask = 1; mask <= 255; mask++) {
+    const expected = DUNGEON_CANONICAL_RULES.inwardCornerRules[(mask & 85) as keyof typeof DUNGEON_CANONICAL_RULES.inwardCornerRules];
+    if (expected === undefined) continue;
+    const map = Array.from({ length: 5 }, () => Array<number>(5).fill(1));
+    neighbors.forEach(([dx, dy], bit) => { if (mask & (1 << bit)) map[2 + dy][2 + dx] = 0; });
+    const cell = buildDungeonWangWalls({ map }).walls.find(entry => entry.x === 2 && entry.y === 2);
+    assert.equal(cell?.frame, expected, `contact mask ${mask}`);
+    assert.equal(cell?.quarters, undefined);
+  }
+});
+
+test("legacy seed 3266798470 distinguishes inward joins from outward reference corners", async () => {
   const source = parseDungeonTilesetRules(await readFile(tsxPath, "utf8"));
-  assert.equal(ruleForMask(source, "Generated wall boundary", 248)?.tileId, 48);
-  for (const mask of [60, 62]) assert.equal(ruleForMask(source, "Generated wall boundary", mask)?.tileId, 53);
-  const campaign = createRunCampaign(3266798470, 1, 1, 1, 1);
+  assert.equal(source.inwardCornerRules[80], 30);
+  assert.equal(source.inwardCornerRules[20], 32);
+  const campaign = createRunCampaign(3266798470, 1, 1, 1, 1, { topologyVersion: LEGACY_DUNGEON_TOPOLOGY_VERSION });
   const { walls, wallDiagnostics } = buildDungeonWangWalls({ cells: campaign.floor.cells });
   assert.deepEqual(wallDiagnostics, []);
-  for (const [x, y, expected] of [[40, 47, 48], [54, 53, 48], [40, 54, 48], [45, 57, 48], [38, 47, 53], [46, 47, 53], [46, 54, 48], [58, 52, 53]]) {
+  for (const [x, y, expected] of [[40, 47, 30], [54, 53, 30], [40, 54, 30], [45, 57, 30], [38, 47, 32], [46, 47, 32], [46, 54, 48], [58, 52, 53]]) {
     const cell = walls.find(entry => entry.x === x && entry.y === y);
     assert.equal(cell?.frame, expected, `reference corner at ${x},${y}`);
     assert.equal(cell?.quarters, undefined, "reference corners use the whole production tile");

@@ -1,0 +1,753 @@
+{
+  "settings": {
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "dpr": 1,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+    "hardwareConcurrency": 32,
+    "adapter": "",
+    "zoom": "native",
+    "shader": 0,
+    "simulation": "live",
+    "enemyLogic": false,
+    "minimap": "live",
+    "worldSeed": 17,
+    "route": [
+      {
+        "key": "ArrowUp",
+        "presses": 2,
+        "secondPressAtMs": 250,
+        "periodMs": 1000
+      },
+      {
+        "key": "ArrowRight",
+        "presses": 2,
+        "secondPressAtMs": 250,
+        "periodMs": 1000
+      },
+      {
+        "key": "ArrowDown",
+        "presses": 2,
+        "secondPressAtMs": 250,
+        "periodMs": 1000
+      },
+      {
+        "key": "ArrowLeft",
+        "presses": 2,
+        "secondPressAtMs": 250,
+        "periodMs": 1000
+      },
+      {
+        "key": "ArrowUp",
+        "presses": 2,
+        "secondPressAtMs": 250,
+        "periodMs": 1000
+      },
+      {
+        "key": "ArrowRight",
+        "presses": 2,
+        "secondPressAtMs": 250,
+        "periodMs": 1000
+      },
+      {
+        "key": "ArrowDown",
+        "presses": 2,
+        "secondPressAtMs": 250,
+        "periodMs": 1000
+      },
+      {
+        "key": "ArrowLeft",
+        "presses": 2,
+        "secondPressAtMs": 250,
+        "periodMs": 1000
+      },
+      {
+        "key": "ArrowUp",
+        "presses": 2,
+        "secondPressAtMs": 250,
+        "periodMs": 1000
+      },
+      {
+        "key": "ArrowDown",
+        "presses": 2,
+        "secondPressAtMs": 250,
+        "periodMs": 1000
+      }
+    ]
+  },
+  "metricsUrl": "http://127.0.0.1:6080/blockchain-rogues-dungeon-game/src/systems/rendering/performance-system.ts",
+  "samples": [
+    {
+      "size": 100,
+      "mode": 0,
+      "warmupMs": 5000,
+      "actualRouteMs": 10023,
+      "initial": {
+        "x": "50",
+        "y": "50",
+        "coverage": 1,
+        "discoveredCells": 69,
+        "fingerprint": 769291376,
+        "sourceCount": 0,
+        "sceneSources": 7
+      },
+      "metrics": {
+        "frames": 967,
+        "fps": 96.5378164683332,
+        "median": 8.300000000001091,
+        "p95": 8.600000000000364,
+        "counts": {
+          "minimap preparations": 968,
+          "game preparations": 988,
+          "RT mode": 0,
+          "light source count": 0,
+          "queried entries": 31739,
+          "sprite patches": 10025,
+          "active layers": 69317,
+          "active layer sprite slots": 1505622,
+          "static normalization boundaries": 1,
+          "ticks": 20,
+          "enemy turns suppressed": 20,
+          "discovery decodes": 6,
+          "anchor tint patches": 753,
+          "model builds": 40,
+          "discovered cells": 109,
+          "discovery fingerprint": 2527485810,
+          "discovery coverage %": 1,
+          "scene light candidates": 7,
+          "static cells checked": 30918,
+          "minimap uploads": 1
+        },
+        "cpu": {
+          "minimap preparation": {
+            "mean": 0.058574379906674065,
+            "max": 1.300000011920929,
+            "count": 968
+          },
+          "game preparation": {
+            "mean": 1.315789473533389,
+            "max": 2.800000011920929,
+            "count": 988
+          },
+          "clone/upgrade (inclusive)": {
+            "mean": 0.4650000035762787,
+            "max": 0.7000000178813934,
+            "count": 20
+          },
+          "tick (inclusive)": {
+            "mean": 0.010000000894069671,
+            "max": 0.10000002384185791,
+            "count": 20
+          },
+          "action (inclusive)": {
+            "mean": 0.8400000020861625,
+            "max": 4.699999988079071,
+            "count": 20
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0.019999998807907104,
+            "max": 0.19999998807907104,
+            "count": 20
+          },
+          "React commit": {
+            "mean": 1.640368509432379,
+            "max": 16.600000023841858,
+            "count": 597
+          }
+        }
+      },
+      "options": {
+        "enabled": true,
+        "local": false,
+        "animated": true,
+        "dynamic": true,
+        "minimap": "live",
+        "simulation": "live",
+        "enemyLogic": false
+      },
+      "actualMode": "0",
+      "x": "50",
+      "y": "50"
+    },
+    {
+      "size": 100,
+      "mode": 1,
+      "warmupMs": 5000,
+      "actualRouteMs": 10052,
+      "initial": {
+        "x": "50",
+        "y": "50",
+        "coverage": 1,
+        "discoveredCells": 69,
+        "fingerprint": 769291376,
+        "sourceCount": 0,
+        "sceneSources": 7
+      },
+      "metrics": {
+        "frames": 940,
+        "fps": 93.45608558191326,
+        "median": 8.30000000000291,
+        "p95": 16.60000000000582,
+        "counts": {
+          "minimap preparations": 941,
+          "game preparations": 961,
+          "RT mode": 1,
+          "light source count": 0,
+          "queried entries": 30856,
+          "sprite patches": 9858,
+          "active layers": 65088,
+          "active layer sprite slots": 1460910,
+          "static normalization boundaries": 1,
+          "ticks": 20,
+          "enemy turns suppressed": 20,
+          "anchor tint patches": 730,
+          "model builds": 40,
+          "minimap uploads": 7,
+          "discovered cells": 109,
+          "discovery fingerprint": 2527485810,
+          "discovery coverage %": 1,
+          "scene light candidates": 7,
+          "fog cells updated": 40,
+          "field uploads": 6,
+          "field upload bytes": 240000,
+          "static cells checked": 30231
+        },
+        "cpu": {
+          "minimap preparation": {
+            "mean": 0.07693942554698867,
+            "max": 0.5999999940395355,
+            "count": 941
+          },
+          "game preparation": {
+            "mean": 1.447866805479256,
+            "max": 3.199999988079071,
+            "count": 961
+          },
+          "clone/upgrade (inclusive)": {
+            "mean": 0.46500000208616254,
+            "max": 0.5999999940395355,
+            "count": 20
+          },
+          "tick (inclusive)": {
+            "mean": 0.019999998807907104,
+            "max": 0.19999998807907104,
+            "count": 20
+          },
+          "action (inclusive)": {
+            "mean": 0.6349999964237213,
+            "max": 0.7999999821186066,
+            "count": 20
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0,
+            "max": 0,
+            "count": 20
+          },
+          "React commit": {
+            "mean": 1.6937062933103189,
+            "max": 18.200000017881393,
+            "count": 572
+          },
+          "fog preparation": {
+            "mean": 0.06666666766007741,
+            "max": 0.10000002384185791,
+            "count": 6
+          }
+        }
+      },
+      "options": {
+        "enabled": true,
+        "local": false,
+        "animated": true,
+        "dynamic": true,
+        "minimap": "live",
+        "simulation": "live",
+        "enemyLogic": false
+      },
+      "actualMode": "1",
+      "x": "50",
+      "y": "50"
+    },
+    {
+      "size": 100,
+      "mode": 2,
+      "warmupMs": 5000,
+      "actualRouteMs": 10033,
+      "initial": {
+        "x": "50",
+        "y": "50",
+        "coverage": 1,
+        "discoveredCells": 69,
+        "fingerprint": 769291376,
+        "sourceCount": 7,
+        "sceneSources": 7
+      },
+      "metrics": {
+        "frames": 993,
+        "fps": 98.88862332695986,
+        "median": 8.30000000000291,
+        "p95": 8.599999999998545,
+        "counts": {
+          "minimap preparations": 994,
+          "game preparations": 1014,
+          "RT mode": 2,
+          "light source count": 7,
+          "queried entries": 32628,
+          "sprite patches": 10628,
+          "active layers": 71985,
+          "active layer sprite slots": 1552360,
+          "static normalization boundaries": 1,
+          "ticks": 20,
+          "enemy turns suppressed": 20,
+          "anchor tint patches": 926,
+          "model builds": 40,
+          "discovered cells": 109,
+          "discovery fingerprint": 2527485810,
+          "discovery coverage %": 1,
+          "scene light candidates": 7,
+          "light source visits": 40,
+          "light receiver visits": 1940,
+          "light cells updated": 1091,
+          "field uploads": 20,
+          "field upload bytes": 800000,
+          "static cells checked": 30510,
+          "minimap uploads": 1
+        },
+        "cpu": {
+          "minimap preparation": {
+            "mean": 0.04557344044598056,
+            "max": 1.199999988079071,
+            "count": 994
+          },
+          "game preparation": {
+            "mean": 1.3056213018691987,
+            "max": 4.300000011920929,
+            "count": 1014
+          },
+          "clone/upgrade (inclusive)": {
+            "mean": 0.4300000011920929,
+            "max": 0.5999999940395355,
+            "count": 20
+          },
+          "tick (inclusive)": {
+            "mean": 0.004999999701976776,
+            "max": 0.09999999403953552,
+            "count": 20
+          },
+          "action (inclusive)": {
+            "mean": 0.5800000041723251,
+            "max": 0.8999999761581421,
+            "count": 20
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0,
+            "max": 0,
+            "count": 20
+          },
+          "React commit": {
+            "mean": 1.4367720468369578,
+            "max": 17.69999998807907,
+            "count": 601
+          },
+          "lighting preparation": {
+            "mean": 0.17500000298023224,
+            "max": 0.4000000059604645,
+            "count": 20
+          }
+        }
+      },
+      "options": {
+        "enabled": true,
+        "local": false,
+        "animated": true,
+        "dynamic": true,
+        "minimap": "live",
+        "simulation": "live",
+        "enemyLogic": false
+      },
+      "actualMode": "2",
+      "x": "50",
+      "y": "50"
+    },
+    {
+      "size": 100,
+      "mode": 3,
+      "warmupMs": 5000,
+      "actualRouteMs": 10015,
+      "initial": {
+        "x": "50",
+        "y": "50",
+        "coverage": 1,
+        "discoveredCells": 69,
+        "fingerprint": 769291376,
+        "sourceCount": 7,
+        "sceneSources": 7
+      },
+      "metrics": {
+        "frames": 1162,
+        "fps": 116.00395331889098,
+        "median": 8.30000000000291,
+        "p95": 8.5,
+        "counts": {
+          "minimap preparations": 1163,
+          "game preparations": 1183,
+          "RT mode": 3,
+          "light source count": 7,
+          "queried entries": 38044,
+          "sprite patches": 12250,
+          "active layers": 81104,
+          "active layer sprite slots": 1807426,
+          "static normalization boundaries": 1,
+          "ticks": 20,
+          "enemy turns suppressed": 20,
+          "anchor tint patches": 1041,
+          "model builds": 40,
+          "minimap uploads": 7,
+          "discovered cells": 109,
+          "discovery fingerprint": 2527485810,
+          "discovery coverage %": 1,
+          "scene light candidates": 7,
+          "light source visits": 40,
+          "light receiver visits": 1940,
+          "light cells updated": 1091,
+          "fog cells updated": 40,
+          "field uploads": 20,
+          "field upload bytes": 800000,
+          "static cells checked": 31605
+        },
+        "cpu": {
+          "minimap preparation": {
+            "mean": 0.04565778144043474,
+            "max": 0.5,
+            "count": 1163
+          },
+          "game preparation": {
+            "mean": 0.7497886729663645,
+            "max": 2.300000011920929,
+            "count": 1183
+          },
+          "clone/upgrade (inclusive)": {
+            "mean": 0.26999999582767487,
+            "max": 0.4000000059604645,
+            "count": 20
+          },
+          "tick (inclusive)": {
+            "mean": 0.005000001192092896,
+            "max": 0.10000002384185791,
+            "count": 20
+          },
+          "action (inclusive)": {
+            "mean": 0.35499999672174454,
+            "max": 0.5,
+            "count": 20
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0,
+            "max": 0,
+            "count": 20
+          },
+          "React commit": {
+            "mean": 0.6070044712675666,
+            "max": 7.5999999940395355,
+            "count": 671
+          },
+          "lighting preparation": {
+            "mean": 0.07999999970197677,
+            "max": 0.20000001788139343,
+            "count": 20
+          },
+          "fog preparation": {
+            "mean": 0.033333336313565574,
+            "max": 0.10000002384185791,
+            "count": 6
+          }
+        }
+      },
+      "options": {
+        "enabled": true,
+        "local": false,
+        "animated": true,
+        "dynamic": true,
+        "minimap": "live",
+        "simulation": "live",
+        "enemyLogic": false
+      },
+      "actualMode": "3",
+      "x": "50",
+      "y": "50"
+    },
+    {
+      "size": 200,
+      "mode": 0,
+      "warmupMs": 5000,
+      "actualRouteMs": 10019,
+      "initial": {
+        "x": "100",
+        "y": "100",
+        "coverage": 0,
+        "discoveredCells": 69,
+        "fingerprint": 3208726137,
+        "sourceCount": 0,
+        "sceneSources": 38
+      },
+      "metrics": {
+        "frames": 875,
+        "fps": 87.35499071541237,
+        "median": 8.39999999999418,
+        "p95": 16.80000000000291,
+        "counts": {
+          "minimap preparations": 876,
+          "game preparations": 896,
+          "RT mode": 0,
+          "light source count": 0,
+          "queried entries": 37569,
+          "sprite patches": 8990,
+          "active layers": 94540,
+          "active layer sprite slots": 1856880,
+          "static normalization boundaries": 1,
+          "ticks": 20,
+          "enemy turns suppressed": 20,
+          "discovery decodes": 6,
+          "anchor tint patches": 688,
+          "model builds": 40,
+          "discovered cells": 109,
+          "discovery fingerprint": 22518023,
+          "discovery coverage %": 0,
+          "scene light candidates": 38,
+          "static cells checked": 61247,
+          "minimap uploads": 1
+        },
+        "cpu": {
+          "minimap preparation": {
+            "mean": 0.04680365296803653,
+            "max": 3.0999999940395355,
+            "count": 876
+          },
+          "game preparation": {
+            "mean": 1.095982142291697,
+            "max": 2.7999999821186066,
+            "count": 896
+          },
+          "clone/upgrade (inclusive)": {
+            "mean": 0.49000000208616257,
+            "max": 0.800000011920929,
+            "count": 20
+          },
+          "tick (inclusive)": {
+            "mean": 0.004999999701976776,
+            "max": 0.09999999403953552,
+            "count": 20
+          },
+          "action (inclusive)": {
+            "mean": 0.6600000023841858,
+            "max": 1.100000023841858,
+            "count": 20
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0,
+            "max": 0,
+            "count": 20
+          },
+          "React commit": {
+            "mean": 0.8768089057563188,
+            "max": 11.399999976158142,
+            "count": 539
+          }
+        }
+      },
+      "options": {
+        "enabled": true,
+        "local": false,
+        "animated": true,
+        "dynamic": true,
+        "minimap": "live",
+        "simulation": "live",
+        "enemyLogic": false
+      },
+      "actualMode": "0",
+      "x": "100",
+      "y": "100"
+    },
+    {
+      "size": 200,
+      "mode": 3,
+      "warmupMs": 5000,
+      "actualRouteMs": 10033,
+      "initial": {
+        "x": "100",
+        "y": "100",
+        "coverage": 0,
+        "discoveredCells": 69,
+        "fingerprint": 3208726137,
+        "sourceCount": 38,
+        "sceneSources": 38
+      },
+      "metrics": {
+        "frames": 835,
+        "fps": 83.29260142245813,
+        "median": 8.39999999999418,
+        "p95": 25.10000000000582,
+        "counts": {
+          "minimap preparations": 836,
+          "game preparations": 856,
+          "RT mode": 3,
+          "light source count": 38,
+          "queried entries": 35886,
+          "sprite patches": 8930,
+          "active layers": 90347,
+          "active layer sprite slots": 1774927,
+          "static normalization boundaries": 1,
+          "ticks": 20,
+          "enemy turns suppressed": 20,
+          "anchor tint patches": 803,
+          "model builds": 40,
+          "minimap uploads": 7,
+          "discovered cells": 109,
+          "discovery fingerprint": 22518023,
+          "discovery coverage %": 0,
+          "scene light candidates": 38,
+          "light source visits": 40,
+          "light receiver visits": 1940,
+          "light cells updated": 1055,
+          "fog cells updated": 40,
+          "field uploads": 20,
+          "field upload bytes": 3200000,
+          "static cells checked": 60016
+        },
+        "cpu": {
+          "minimap preparation": {
+            "mean": 0.08576555029627239,
+            "max": 1.2000000178813934,
+            "count": 836
+          },
+          "game preparation": {
+            "mean": 1.6760514019944956,
+            "max": 5.300000011920929,
+            "count": 856
+          },
+          "clone/upgrade (inclusive)": {
+            "mean": 0.7499999985098839,
+            "max": 1.100000023841858,
+            "count": 20
+          },
+          "tick (inclusive)": {
+            "mean": 0.004999999701976776,
+            "max": 0.09999999403953552,
+            "count": 20
+          },
+          "action (inclusive)": {
+            "mean": 0.9399999991059304,
+            "max": 1.300000011920929,
+            "count": 20
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0,
+            "max": 0,
+            "count": 20
+          },
+          "React commit": {
+            "mean": 1.7451737441381432,
+            "max": 18.30000001192093,
+            "count": 518
+          },
+          "lighting preparation": {
+            "mean": 0.1800000011920929,
+            "max": 0.30000001192092896,
+            "count": 20
+          },
+          "fog preparation": {
+            "mean": 0.03333333134651184,
+            "max": 0.09999999403953552,
+            "count": 6
+          }
+        }
+      },
+      "options": {
+        "enabled": true,
+        "local": false,
+        "animated": true,
+        "dynamic": true,
+        "minimap": "live",
+        "simulation": "live",
+        "enemyLogic": false
+      },
+      "actualMode": "3",
+      "x": "100",
+      "y": "100"
+    }
+  ],
+  "normalSaveBytesUnchanged": true,
+  "lookupBenchmark": {
+    "size": 200,
+    "worldSeed": 17,
+    "terrain": 5562,
+    "walls": 6963,
+    "discovered": {
+      "count": 69,
+      "fingerprint": 3208726137
+    },
+    "warmupPaints": 2,
+    "sampledPaints": 10,
+    "results": [
+      {
+        "method": "per-cell identity/encoding lookup",
+        "timings": [
+          56.5,
+          76.2000000178814,
+          57.69999998807907,
+          73.40000000596046,
+          71.40000000596046,
+          75.69999998807907,
+          73.5,
+          63.599999994039536,
+          81.40000000596046,
+          82.40000000596046
+        ],
+        "mean": 71.1800000011921,
+        "max": 82.40000000596046,
+        "pixelHash": 1171299123
+      },
+      {
+        "method": "resolved immutable reader",
+        "timings": [
+          0.4000000059604645,
+          0.5,
+          0.5,
+          0.4000000059604645,
+          0.4000000059604645,
+          0.3999999761581421,
+          0.4000000059604645,
+          0.5,
+          0.4000000059604645,
+          0.5
+        ],
+        "mean": 0.44000000059604644,
+        "max": 0.5,
+        "pixelHash": 1171299123
+      }
+    ]
+  },
+  "captureLog": "output/fog-lighting-profile-final-source-result.log",
+  "sourceState": "Shared main checkout, final registered 22-sprite start-room ring and save/tactical guards, before coordinated diagnostic and generation integration.",
+  "sourceHashes": {
+    "rogues-dungeon/src/content/world/start-wall-autotile.ts": "fec1709f3c22077acc2fd35191c912d5c8fe9405f7843adb4b8d3b15d2ae7fff",
+    "rogues-dungeon/src/game/game.tsx": "f5d30fe683420c640e63af138d992210e10d58e610bb1c65f88c217bf2e970ec",
+    "rogues-dungeon/src/game/views/battle-overlay.tsx": "1d27e420484518cd2da578dcacbb40bce9609a3e1dcd3a1e003c414454e56f03",
+    "rogues-dungeon/src/game/mouse-selection.ts": "8fee7358a7a4ac614d89a45cdc36a0d38442a5a754951b99f159d806633d53de",
+    "rogues-dungeon/src/game/world-cursor.ts": "3515f5a49bf02ca1cfade9b7dadb7ee32639e42a72f874fae5530926adaae9f7",
+    "rogues-dungeon/src/systems/persistence/save-system.ts": "c3ccdf9cf0e9d5fd384818fe8f09c312b834d4a5321aa773164fb4663506cffb",
+    "rogues-dungeon/src/systems/procedural/map-discovery-system.ts": "a5ed276092a995cead0e1a6c27c0e7409eac1fd3bbdceb72d94997909865b230",
+    "rogues-dungeon/src/systems/procedural/world-procedural-system.ts": "afc33973203552d61cc54b4d3a76d2715499d2063895ebd8d088659ae6385396",
+    "rogues-dungeon/src/systems/rendering/babylon-render-system.tsx": "57819df832a3bfc43768ff43a629401170f20ded0e02039bab982058d502dfb2",
+    "rogues-dungeon/src/systems/rendering/grid-lighting-system.ts": "a04ec30950e0ab033ca7d8340abfd3b553b09e6cbfb79c5caa271e97993685d8",
+    "rogues-dungeon/src/systems/rendering/world-presentation-field.ts": "d1715f89aed81c6530bffa7449f846d87cec1e953b9a23367269f337b51001cb",
+    "rogues-dungeon/src/systems/rendering/campaign-lighting-system.ts": "705310c33e123b384340d77af1c95c7369e69610f23749600118c3fdc60bec81",
+    "rogues-dungeon/src/systems/rendering/render-test-system.ts": "ca59cac1f776b90806f3b633c8f972d5effd457537205f7eb407da6ebed2755f",
+    "rogues-dungeon/src/systems/rendering/character-sprite-system.ts": "7e2ef7be740ec8bbd07f28d69fb64014f2f6fe9ad218511b90c95cf44d2b5331",
+    "rogues-dungeon/src/systems/rendering/minimap-presentation.ts": "2f79357174d82d785fd695ed0e532f1f1b26ec95cc1a94b2b8f0a2ef557849f4",
+    "rogues-dungeon/src/systems/rendering/performance-system.ts": "1a6712f6d4e714ec2adb7fe2500528027b5e5fa4f9f3b00cd0dde09a1844a846",
+    "rogues-dungeon/src/systems/rendering/world-visibility-system.ts": "4f527f42103daea213617f5f66c6ad7f68201ca878d859e19375dc9825ddf276"
+  }
+}

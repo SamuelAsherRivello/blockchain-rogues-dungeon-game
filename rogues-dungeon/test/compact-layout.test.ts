@@ -13,13 +13,17 @@ const tiers = [
   { name: "minimum", width: 640, height: 360 },
 ] as const;
 
-test("compact PC tiers preserve the fitted 16:9 viewport geometry", () => {
+test("compact PC tiers preserve a fitted landscape ratio within the supported range", () => {
   for (const tier of tiers) {
     const fitted = fitViewport(tier.width, tier.height, { orientation: "landscape", ...aspectRatioPresets.landscape });
     assert.equal(fitted.width / fitted.height, 16 / 9, tier.name);
     assert.equal(fitted.width, tier.width, tier.name);
     assert.equal(fitted.height, tier.height, tier.name);
   }
+  const intermediate = fitViewport(840, 500, { orientation: "landscape", ...aspectRatioPresets.landscape });
+  assert.equal(intermediate.width / intermediate.height, 840 / 500);
+  const minimum = fitViewport(800, 500, { orientation: "landscape", ...aspectRatioPresets.landscape });
+  assert.equal(minimum.width / minimum.height, 16 / 10);
 });
 
 test("responsive CSS uses the fitted landscape container and staged budgets", () => {
@@ -29,11 +33,22 @@ test("responsive CSS uses the fitted landscape container and staged budgets", ()
   assert.match(css, /@container \(max-width: 640px\)/);
   assert.match(css, /#viewport\[data-orientation="landscape"\]/);
   assert.match(css, /\.dialog_backdrop--bounded[^}]*overflow:hidden/);
-  assert.match(css, /\.dialog_backdrop--bounded \.dialog[^}]*max-width:calc\(var\(--project-viewport-width\) - 1rem\) !important/);
+  assert.match(css, /\.dialog_backdrop--bounded:has\(\.settings-window--game\)[^}]*\.dialog[^}]*max-width:calc\(var\(--project-viewport-width\) - 1rem\) !important/);
   assert.match(css, /\.settings-window--game[^}]*width:46% !important/);
   assert.match(css, /\.main-menu-window__footer[^}]*margin-top:\.3rem/);
-  assert.match(css, /\.information-panels[^}]*inset:0 0 0 66%/);
+  assert.match(css, /--landscape-panel-column-width:39\.111111cqh/);
+  assert.match(css, /--landscape-panels-width:78\.222222cqh/);
+  assert.match(css, /#viewport\[data-orientation="landscape"\] \.information-panels[^}]*width:var\(--landscape-panels-width\)/);
   assert.doesNotMatch(css, /#viewport\[data-orientation="portrait"\][^}]*@container/);
+});
+
+test("portrait keeps its game rows and full-width world view through its aspect range", () => {
+  for (const [width, height, ratio] of [[900, 1600, 9 / 16], [600, 1000, 3 / 5], [800, 1000, 10 / 16]] as const) {
+    const fitted = fitViewport(width, height, { orientation: "portrait", ...aspectRatioPresets.portrait });
+    assert.equal(fitted.width / fitted.height, ratio);
+  }
+  assert.match(css, /\.game-screen\[data-orientation="portrait"\] \{ grid-template-rows:4% 46% 4% 46%; \}/);
+  assert.match(css, /\.game-screen\[data-orientation="portrait"\] \.world-view-region \{ height:100%; \}/);
 });
 
 test("compact layout keeps page scrolling disabled and existing scroll areas owned", () => {

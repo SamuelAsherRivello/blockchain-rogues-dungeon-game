@@ -14,6 +14,7 @@ async page => {
       campaign.floor.objectSets = []; campaign.floor.decorations = []; campaign.floor.entities = [];
       campaign.floor.start = { x: 20, y: 20 }; campaign.player.x = 50; campaign.player.y = 50; campaign.player.pixel = { x: 1616, y: 1616 };
       campaign.progression.attributes.perception = battle ? 0 : 5;
+      campaign.player.equipment.weapons[0] = { id: "fixture-stick", name: "Wooden Stick", group: "weapons", modifiers: { offense: 1 } };
       if (battle) { Object.assign(enemy, { x: 55, y: 50, awareness: 6, nextActionAt: 9999 }); campaign.floor.entities = [enemy]; }
       localStorage.setItem("rogues-dungeon.slot.1", JSON.stringify(campaign));
       localStorage.setItem("rogues-dungeon.preferences.v1", JSON.stringify({ movementMode: mode, zoom: 1, camera: "center" }));
@@ -104,7 +105,7 @@ async page => {
   if ((await saved()).player.x !== modal) throw Error("Settings retained a clicked destination");
   await reset("gridless", true);
   await page.screenshot({ path: ".impeccable/review/desktop.png", fullPage: true });
-  await page.getByRole("button", { name: "Aspect: Landscape" }).click();
+  await page.getByRole("button", { name: "AR: L" }).click();
   await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(600);
   await page.screenshot({ path: ".impeccable/review/mobile.png", fullPage: true });
   if (errors.length) throw Error(JSON.stringify(errors));

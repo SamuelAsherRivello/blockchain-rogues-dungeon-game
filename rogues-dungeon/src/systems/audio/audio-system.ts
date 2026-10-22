@@ -1,10 +1,11 @@
-import type { GameEvent, Preferences } from "../../game/types.ts";
+import type { GameEvent, GameMode, Preferences } from "../../game/types.ts";
 export interface AudioHandle {
   preload?: string;
   currentTime?: number;
   volume: number;
   loop: boolean;
   play(): Promise<void> | void;
+  pause?(): void;
   load?(): void;
   addEventListener?(type: "canplay" | "error", listener: () => void, options?: { once?: boolean }): void;
   removeEventListener?(type: "canplay" | "error", listener: () => void): void;
@@ -90,10 +91,17 @@ function warmAudio(audio: AudioHandle) {
   });
 }
 
-export function createAudioManager({ search = "", createAudio = (src) => new Audio(src), random = Math.random }: { search?: string; createAudio?: (src: string) => AudioHandle; random?: () => number } = {}) {
-  const hardMuted = muteFromSearch(search);
+export function createAudioManager({ search = "", createAudio = (src) => new Audio(src), random = Math.random,
+  now = () => performance.now(), requestFrame = (callback) => requestAnimationFrame(callback), cancelFrame = (id) => cancelAnimationFrame(id),
+}: { search?: string; createAudio?: (src: string) => AudioHandle; random?: () => number; now?: () => number;
+  requestFrame?: (callback: FrameRequestCallback) => number; cancelFrame?: (id: number) => void } = {}) {
+  let hardMuted = muteFromSearch(search);
   let preferences = { sfxVolume: 80, musicVolume: 1, muteAll: false };
-  let musicAudio: AudioHandle | null = null;
+  let musicStarted = false;
+  let musicMode: GameMode = "General";
+  let gains = [1, 0];
+  let fade: { startedAt: number; from: number[]; to: number[] } | null = null;
+  let fadeFrame: number | null = null;
   const prewarmedMusic: AudioHandle[] = [];
   const prewarmedSfx = new Map<keyof typeof AUDIO_ASSETS.sfx, AudioHandle[]>();
   const nextSfxHandle = new Map<keyof typeof AUDIO_ASSETS.sfx, number>();
@@ -101,19 +109,73 @@ export function createAudioManager({ search = "", createAudio = (src) => new Aud
   let warmup: Promise<void> | null = null;
 
   const busMuted = (bus: "sfx" | "music") => hardMuted || preferences.muteAll || preferences[`${bus}Volume`] === 0;
+  const stopMusicPlayback = () => {
+    if (fadeFrame !== null) cancelFrame(fadeFrame);
+    fadeFrame = null;
+    if (fade) gains = [...fade.to];
+    fade = null;
+    prewarmedMusic.forEach((audio) => audio.pause?.());
+  };
+  const stopSfxPlayback = () => prewarmedSfx.forEach((handles) => handles.forEach((audio) => audio.pause?.()));
+  const stopAllPlayback = () => { stopMusicPlayback(); stopSfxPlayback(); };
   const setPreferences = (value: Partial<Pick<Preferences, "sfxVolume" | "musicVolume" | "muteAll">> = {}) => {
     preferences = {
       sfxVolume: readVolume(value.sfxVolume, 80),
       musicVolume: readVolume(value.musicVolume, 1),
       muteAll: value.muteAll === true,
     };
-    if (musicAudio) musicAudio.volume = busMuted("music") ? 0 : preferences.musicVolume / 100;
+    if (hardMuted || preferences.muteAll) stopAllPlayback();
+    else {
+      if (preferences.musicVolume === 0) stopMusicPlayback();
+      if (preferences.sfxVolume === 0) stopSfxPlayback();
+    }
+    applyMusicVolumes();
+  };
+
+  const applyMusicVolumes = () => {
+    const volume = busMuted("music") ? 0 : preferences.musicVolume / 100;
+    prewarmedMusic.slice(0, 2).forEach((audio, index) => { audio.volume = gains[index] * volume; });
+  };
+
+  const sampleFade = () => {
+    if (!fade) return;
+    const progress = Math.min(1, Math.max(0, (now() - fade.startedAt) / 500));
+    gains = fade.from.map((from, index) => from + (fade!.to[index] - from) * progress);
+    applyMusicVolumes();
+    if (progress === 1) {
+      fade = null;
+      prewarmedMusic.slice(0, 2).forEach((audio, index) => { if (gains[index] === 0) audio.pause?.(); });
+    }
+  };
+
+  const updateFade = () => {
+    fadeFrame = null; sampleFade();
+    if (fade) fadeFrame = requestFrame(updateFade);
+  };
+
+  const setGameMode = (mode: GameMode) => {
+    if (mode === musicMode) return;
+    sampleFade();
+    musicMode = mode;
+    const target = mode === "Battle" ? [0, 1] : [1, 0];
+    if (!musicStarted) { gains = target; return; }
+    if (busMuted("music")) {
+      gains = target;
+      stopMusicPlayback();
+      applyMusicVolumes();
+      return;
+    }
+    if (fadeFrame !== null) cancelFrame(fadeFrame);
+    fade = { startedAt: now(), from: [...gains], to: target };
+    applyMusicVolumes();
+    if (!busMuted("music")) prewarmedMusic.slice(0, 2).forEach((audio) => ignoreRejectedPlay(audio.play()));
+    fadeFrame = requestFrame(updateFade);
   };
 
   const prewarm = () => {
     if (warmup) return warmup;
-    if (hardMuted) return Promise.resolve();
-    prewarmedMusic.push(...AUDIO_ASSETS.music.map((src) => createAudio(src)));
+    if (hardMuted || preferences.muteAll) return Promise.resolve();
+    prewarmedMusic.push(...AUDIO_ASSETS.music.map((src) => { const audio = createAudio(src); audio.volume = 0; return audio; }));
     for (const [cue, src] of Object.entries(AUDIO_ASSETS.sfx) as [keyof typeof AUDIO_ASSETS.sfx, string][]) {
       // A pair keeps repeated impacts responsive without requiring a cold element.
       prewarmedSfx.set(cue, [createAudio(src), createAudio(src)]);
@@ -153,6 +215,7 @@ export function createAudioManager({ search = "", createAudio = (src) => new Aud
         cue = event.facts?.abilityId === "heal" ? "magicHeal" : event.facts?.abilityId === "wand" ? "magicWand" : "magicAncient";
       }
       if (event.type === "combat.hit" && !event.facts?.source) cue = "weaponHit";
+      if (event.type === "combat.hit" && typeof event.facts?.roll === "number") playCue("diceRoll");
       if (event.type === "resource.changed" && event.facts?.cause === "enemy-attack") cue = "enemyHit";
       if (cue) playCue(cue);
     }
@@ -160,29 +223,44 @@ export function createAudioManager({ search = "", createAudio = (src) => new Aud
 
   const startMusic = () => {
     if (busMuted("music")) return false;
-    // Create and begin the selected track during the input event. Its pending
-    // play request will resolve once it has buffered instead of being rejected by
-    // autoplay policy after asynchronous preloading completes.
     prewarm();
-    if (musicAudio) return true;
-    const tracks = AUDIO_ASSETS.music;
-    const index = Math.min(tracks.length - 1, Math.max(0, Math.floor(random() * tracks.length)));
-    musicAudio = prewarmedMusic[index];
-    if (!musicAudio) return false;
-    musicAudio.loop = true;
-    musicAudio.volume = preferences.musicVolume / 100;
-    ignoreRejectedPlay(musicAudio.play());
+    applyMusicVolumes();
+    const firstStart = !musicStarted;
+    musicStarted = true;
+    // Unlock both retained elements in the gesture; later transitions retain time.
+    prewarmedMusic.slice(0, 2).forEach((audio, index) => {
+      audio.loop = true;
+      if (firstStart || gains[index] > 0 || fade) {
+        const result = audio.play();
+        ignoreRejectedPlay(result);
+        if (result && firstStart) void result.then(() => { if (!fade && gains[index] === 0) audio.pause?.(); }).catch(() => {});
+      }
+    });
     return true;
+  };
+
+  const dispose = () => {
+    if (fadeFrame !== null) cancelFrame(fadeFrame);
+    fadeFrame = null; fade = null; musicStarted = false;
+    prewarmedMusic.forEach((audio) => audio.pause?.());
   };
 
   const playDropResult = (accepted: boolean) => playCue(accepted ? "accepted" : "rejected");
 
   return Object.freeze({
-    hardMuted,
+    get hardMuted() { return hardMuted; },
+    setMutedByUrl(value: boolean) {
+      hardMuted = value;
+      if (!warmup) warmupComplete = value;
+      if (hardMuted || preferences.muteAll) stopAllPlayback();
+      applyMusicVolumes();
+    },
     prewarm,
     isPrewarmed: () => warmupComplete,
     setPreferences,
     startMusic,
+    setGameMode,
+    dispose,
     playCue,
     playDropResult,
     playEvents,

@@ -26,12 +26,12 @@ export function MenuScreen({ children, onReady }: { children: ReactNode; onReady
     event.currentTarget.setPointerCapture(event.pointerId);
   }} onPointerMove={moveLayers} onPointerUp={resetLayers} onPointerCancel={resetLayers} onPointerLeave={resetLayers} style={layerStyle}>
     <div className="menu-screen__art" aria-hidden="true">
-      <img ref={(image) => { imageRefs.current.rear = image; }} className="menu-screen__layer menu-screen__layer--rear" src={`${import.meta.env.BASE_URL}assets/art/menu/dungeon-hallway-rear.png`} alt="" onLoad={() => markImageReady("rear")} onError={() => markImageReady("rear")} />
-      <img ref={(image) => { imageRefs.current.frame = image; }} className="menu-screen__layer menu-screen__layer--frame" src={`${import.meta.env.BASE_URL}assets/art/menu/dungeon-environment-frame.png`} alt="" onLoad={() => markImageReady("frame")} onError={() => markImageReady("frame")} />
-      <img ref={(image) => { imageRefs.current.hero = image; }} className="menu-screen__layer menu-screen__layer--hero" src={`${import.meta.env.BASE_URL}assets/art/menu/dungeon-hero.png`} alt="" onLoad={() => markImageReady("hero")} onError={() => markImageReady("hero")} />
-      <img ref={(image) => { imageRefs.current.rocks = image; }} className="menu-screen__layer menu-screen__layer--rocks" src={`${import.meta.env.BASE_URL}assets/art/menu/dungeon-foreground-rocks.png`} alt="" onLoad={() => markImageReady("rocks")} onError={() => markImageReady("rocks")} />
+      <img ref={(image) => { imageRefs.current.rear = image; }} className="menu-screen__layer menu-screen__layer--rear" src={`${import.meta.env.BASE_URL}assets/art/ui/menu/dungeon-hallway-rear.png`} alt="" onLoad={() => markImageReady("rear")} onError={() => markImageReady("rear")} />
+      <img ref={(image) => { imageRefs.current.frame = image; }} className="menu-screen__layer menu-screen__layer--frame" src={`${import.meta.env.BASE_URL}assets/art/ui/menu/dungeon-environment-frame.png`} alt="" onLoad={() => markImageReady("frame")} onError={() => markImageReady("frame")} />
+      <img ref={(image) => { imageRefs.current.hero = image; }} className="menu-screen__layer menu-screen__layer--hero" src={`${import.meta.env.BASE_URL}assets/art/ui/menu/dungeon-hero.png`} alt="" onLoad={() => markImageReady("hero")} onError={() => markImageReady("hero")} />
+      <img ref={(image) => { imageRefs.current.rocks = image; }} className="menu-screen__layer menu-screen__layer--rocks" src={`${import.meta.env.BASE_URL}assets/art/ui/menu/dungeon-foreground-rocks.png`} alt="" onLoad={() => markImageReady("rocks")} onError={() => markImageReady("rocks")} />
     </div>
-    <img ref={(image) => { imageRefs.current.logo = image; }} className="menu-screen__logo" src={`${import.meta.env.BASE_URL}assets/art/menu/rogues-dungeon-logo.png`} alt="Rogue's Dungeon" onLoad={() => markImageReady("logo")} onError={() => markImageReady("logo")} />
+    <img ref={(image) => { imageRefs.current.logo = image; }} className="menu-screen__logo" src={`${import.meta.env.BASE_URL}assets/art/ui/menu/rogues-dungeon-logo.png`} alt="Rogue's Dungeon" onLoad={() => markImageReady("logo")} onError={() => markImageReady("logo")} />
     {ready ? children : <p className="menu-screen__loading" role="status">Loading Rogue's Dungeon...</p>}
   </main>;
 }

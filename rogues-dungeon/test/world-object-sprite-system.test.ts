@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { CHEST_MAIN_ART_ANCHOR_OFFSET_PX, DOOR_CLOSED_MAIN_ART_ANCHOR_OFFSET_PX, DOOR_OPEN_MAIN_ART_ANCHOR_OFFSET_PX, DUNGEON_STAIR_UP_FRAME, doorMainArtAnchorOffset, itemSpriteFrame, OBJECTS_OVERLAY_BARREL_FRAME, OBJECTS_OVERLAY_DOOR_CLOSED_FRAME, OBJECTS_OVERLAY_DOOR_OPEN_FRAME, pickupMainArtPresentation, puzzleObjectSpriteFrame } from "../src/systems/rendering/world-object-sprite-system.ts";
+import { CHEST_MAIN_ART_ANCHOR_OFFSET_PX, DOOR_CLOSED_MAIN_ART_ANCHOR_OFFSET_PX, DOOR_OPEN_MAIN_ART_ANCHOR_OFFSET_PX, DUNGEON_STAIR_UP_FRAME, doorMainArtAnchorOffset, droppableItemSpriteFrame, itemSpriteFrame, OBJECTS_OVERLAY_BARREL_FRAME, OBJECTS_OVERLAY_DOOR_CLOSED_FRAME, OBJECTS_OVERLAY_DOOR_OPEN_FRAME, pickupMainArtPresentation, puzzleObjectSpriteFrame } from "../src/systems/rendering/world-object-sprite-system.ts";
 
 test("maps the exit stair to the verified dungeon tileset stair frame", () => {
   assert.equal(DUNGEON_STAIR_UP_FRAME, 42);
@@ -10,6 +10,11 @@ test("keeps non-chest objects on the item sprite sheet", () => {
   assert.equal(itemSpriteFrame("key"), 5);
   assert.equal(itemSpriteFrame("potion", "health"), 6);
   assert.equal(itemSpriteFrame("potion", "mana"), 7);
+});
+
+test("maps every approved world item to its dedicated atlas frame", () => {
+  ["Extra Carrying Capacity +5", "Heal", "Wand", "Dagger (Magic)", "Sword", "Two-Handed Sword", "Leg Armor (Magic)", "Chest Armor", "Suit of Armor", "Oak Shield 03", "Wooden Stick", "Wooden Vest"].forEach((name, frame) => assert.equal(droppableItemSpriteFrame(name), frame));
+  assert.equal(droppableItemSpriteFrame("Health Potion"), null);
 });
 
 test("opts only restorative potions into main-art oscillation", () => {

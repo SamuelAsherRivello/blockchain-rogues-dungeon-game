@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { compileStaticWorldPresentation, getVisibleWorldCellBounds, isWorldCellVisible, isWorldChunkVisible } from "../src/systems/rendering/world-render-system.ts";
+import { WorldRender, compileStaticWorldPresentation, getVisibleWorldCellBounds, isWorldCellVisible, isWorldChunkVisible } from "../src/systems/rendering/world-render-system.ts";
 
 test("compiled static presentation is reused for unchanged floor layers", () => {
   const cells = [[{ walkable: true, terrain: "floor" }]] as never;
@@ -28,4 +28,14 @@ test("static chunks activate only when they intersect the camera cull area", () 
   assert.equal(isWorldChunkVisible(secondChunk, near), false);
   assert.equal(isWorldChunkVisible(firstChunk, far), false);
   assert.equal(isWorldChunkVisible(secondChunk, far), true);
+});
+
+test("discovery does not remove static dungeon geometry", () => {
+  const cells = [
+    [{ walkable: true, terrain: "floor" }, { walkable: true, terrain: "floor" }],
+    [{ walkable: true, terrain: "floor" }, { walkable: true, terrain: "floor" }],
+  ] as never;
+  const model = WorldRender.Render({ cells, player: { x: 0, y: 0, hasMass: true }, isDiscovered: () => false });
+
+  assert.equal(model.grounds.length, 4);
 });

@@ -60,11 +60,17 @@ test("wires UI tooltips to pointer and keyboard focus with accessible descriptio
   assert.match(tooltip, /onPointerLeave:/);
   assert.match(tooltip, /onFocus:/);
   assert.match(tooltip, /onBlur:/);
+  assert.match(tooltip, /onClick: \(event\) => \{ dismissTooltips\(\); originalClick\?\.\(event\); \}/);
   assert.match(tooltip, /role="tooltip"/);
   assert.match(tooltip, /aria-describedby/);
   assert.match(tooltip, /createPortal\(/);
   assert.match(tooltip, /import \{ createPortal \} from "react-dom"/);
   assert.match(tooltip, /new ResizeObserver\(update\)/);
+  assert.match(tooltip, /new MutationObserver\(dismissIfAnchorIsHidden\)/);
+  assert.match(tooltip, /element\.getAttribute\("aria-hidden"\) === "true"/);
+  assert.match(tooltip, /!anchor\.isConnected/);
+  assert.match(tooltip, /activateTooltip\(id\)/);
+  assert.match(tooltip, /tooltip-activate/);
   assert.match(game, /<Tooltip key=\{name\} content=\{`\$\{prefix\} \$\{resourceHelp\[name\]\}`\}/);
   assert.match(game, /className="resource_tooltip_trigger"/);
   assert.match(gameCard, /className="game-card__title-trigger"/);
@@ -114,12 +120,15 @@ test("renders and measures the in-world tooltip after its React node mounts", as
   assert.match(world, /<section ref=\{tooltipRef\} className="world-view__enemy-tooltip"/);
   assert.match(world, /if \(!host \|\| !panel\) return;/);
   assert.match(world, /if \(tooltipRef\.current\) observer\.observe\(tooltipRef\.current\)/);
+  assert.match(world, /activateTooltip\(tooltipOwner\)/);
+  assert.match(world, /tooltip-dismiss/);
   assert.match(world, /<h2>Enemy: \{tooltipEnemy\.name\}<\/h2>/);
   assert.match(world, /<h2>RESOURCES<\/h2>/);
   assert.match(world, /world-view__enemy-tooltip-portrait-box--\$\{tooltipEnemy\.name\.toLowerCase\(\)\}/);
-  assert.match(css, /\.world-view__enemy-tooltip-section--portrait \{[^}]*grid-template-rows:\.5rem minmax\(0,1fr\);[^}]*gap:0/);
-  assert.match(css, /\.world-view__enemy-tooltip-portrait-box img \{[^}]*width:100%;[^}]*height:100%;[^}]*object-fit:contain/);
-  assert.match(css, /\.world-view__enemy-tooltip-portrait-box--rat img \{ transform:translateY\(-9\.375%\); \}/);
+  assert.match(css, /\.world-view__enemy-tooltip-section--portrait \{[^}]*grid-template-rows:auto minmax\(0,1fr\);[^}]*gap:\.15rem/);
+  assert.match(css, /\.world-view__enemy-tooltip-portrait-box \{[^}]*place-items:center;[^}]*overflow:hidden;[^}]*border:1px solid transparent/);
+  assert.match(css, /\.world-view__enemy-tooltip-portrait-box img \{[^}]*min-width:0;[^}]*min-height:0;[^}]*width:100%;[^}]*height:100%;[^}]*max-width:100%;[^}]*max-height:100%;[^}]*object-fit:contain;[^}]*object-position:center center;[^}]*image-rendering:pixelated;[^}]*transform:none/);
+  assert.doesNotMatch(css, /\.world-view__enemy-tooltip-portrait-box--rat img/);
 });
 
 test("animates the enemy information panel in and out through the shared UI motion system", async () => {

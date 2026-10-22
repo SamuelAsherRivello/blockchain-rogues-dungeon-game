@@ -1,0 +1,360 @@
+{
+  "results": [
+    {
+      "zoom": 0.25,
+      "label": "Temporary performance session · seed 2225201261 · 100×100 · 15 objects",
+      "distance": 1274,
+      "metrics": {
+        "frames": 907,
+        "fps": 92.63136393810959,
+        "median": 8.399999999997817,
+        "p95": 24.900000000001455,
+        "counts": {
+          "minimap preparations": 908,
+          "game preparations": 908,
+          "queried entries": 24516,
+          "sprite patches": 23045,
+          "active layers": 274972,
+          "active layer sprite slots": 2698140,
+          "static normalization boundaries": 1,
+          "static cells checked": 139819,
+          "discovery decodes": 38,
+          "model builds": 150,
+          "minimap uploads": 2,
+          "ticks": 37,
+          "enemy visits": 111
+        },
+        "cpu": {
+          "minimap preparation": {
+            "mean": 0.03722466959408792,
+            "max": 0.599999999627471,
+            "count": 908
+          },
+          "game preparation": {
+            "mean": 0.6529735682761945,
+            "max": 2.199999999254942,
+            "count": 908
+          },
+          "action (inclusive)": {
+            "mean": 0.06808266362943072,
+            "max": 2.400000000372529,
+            "count": 871
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0.0006888633728643236,
+            "max": 0.09999999962747097,
+            "count": 871
+          },
+          "React commit": {
+            "mean": 1.195845190667816,
+            "max": 13.700000001117587,
+            "count": 1757
+          },
+          "clone/upgrade (inclusive)": {
+            "mean": 0.21327433621395478,
+            "max": 0.8999999985098839,
+            "count": 113
+          },
+          "AI (inclusive)": {
+            "mean": 0.04864864861844359,
+            "max": 0.30000000074505806,
+            "count": 37
+          },
+          "tick (inclusive)": {
+            "mean": 0.056756756746688404,
+            "max": 0.30000000074505806,
+            "count": 37
+          }
+        }
+      }
+    },
+    {
+      "zoom": 0.5,
+      "label": "Temporary performance session · seed 2225201261 · 100×100 · 15 objects",
+      "distance": 1268,
+      "metrics": {
+        "frames": 994,
+        "fps": 103.81201044386422,
+        "median": 8.30000000000291,
+        "p95": 16.700000000004366,
+        "counts": {
+          "minimap preparations": 995,
+          "game preparations": 995,
+          "queried entries": 17910,
+          "sprite patches": 13539,
+          "active layers": 190794,
+          "active layer sprite slots": 2380789,
+          "static normalization boundaries": 1,
+          "static cells checked": 104266,
+          "discovery decodes": 37,
+          "model builds": 146,
+          "minimap uploads": 2,
+          "ticks": 36,
+          "enemy visits": 108
+        },
+        "cpu": {
+          "minimap preparation": {
+            "mean": 0.0307537688419747,
+            "max": 1.3999999985098839,
+            "count": 995
+          },
+          "game preparation": {
+            "mean": 0.49417085428745605,
+            "max": 2.5,
+            "count": 995
+          },
+          "action (inclusive)": {
+            "mean": 0.05193312433446089,
+            "max": 1.599999999627471,
+            "count": 957
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0.0005224660377610813,
+            "max": 0.09999999962747097,
+            "count": 957
+          },
+          "React commit": {
+            "mean": 1.0133817427186875,
+            "max": 18.699999999254942,
+            "count": 1928
+          },
+          "clone/upgrade (inclusive)": {
+            "mean": 0.18545454540713266,
+            "max": 0.8000000007450581,
+            "count": 110
+          },
+          "AI (inclusive)": {
+            "mean": 0.044444444278875984,
+            "max": 0.19999999925494194,
+            "count": 36
+          },
+          "tick (inclusive)": {
+            "mean": 0.04722222204630574,
+            "max": 0.19999999925494194,
+            "count": 36
+          }
+        }
+      }
+    },
+    {
+      "zoom": 1,
+      "label": "Temporary performance session · seed 2225201261 · 100×100 · 15 objects",
+      "distance": 1277,
+      "metrics": {
+        "frames": 1107,
+        "fps": 109.24270235064249,
+        "median": 8.30000000000291,
+        "p95": 16.69999999999709,
+        "counts": {
+          "minimap preparations": 1108,
+          "game preparations": 1108,
+          "queried entries": 11080,
+          "sprite patches": 14839,
+          "active layers": 68088,
+          "active layer sprite slots": 1592696,
+          "static normalization boundaries": 1,
+          "static cells checked": 35646,
+          "discovery decodes": 36,
+          "model builds": 150,
+          "minimap uploads": 3,
+          "ticks": 39,
+          "enemy visits": 117
+        },
+        "cpu": {
+          "minimap preparation": {
+            "mean": 0.029151624557814334,
+            "max": 0.6999999992549419,
+            "count": 1108
+          },
+          "game preparation": {
+            "mean": 0.4237364620955439,
+            "max": 1.799999998882413,
+            "count": 1108
+          },
+          "action (inclusive)": {
+            "mean": 0.0478504672907641,
+            "max": 0.900000000372529,
+            "count": 1070
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0.0014953271041963701,
+            "max": 0.10000000149011612,
+            "count": 1070
+          },
+          "React commit": {
+            "mean": 0.9619685767421605,
+            "max": 9.5,
+            "count": 2164
+          },
+          "clone/upgrade (inclusive)": {
+            "mean": 0.1810810810273832,
+            "max": 0.40000000037252903,
+            "count": 111
+          },
+          "AI (inclusive)": {
+            "mean": 0.03076923079788685,
+            "max": 0.2000000011175871,
+            "count": 39
+          },
+          "tick (inclusive)": {
+            "mean": 0.048717948727500744,
+            "max": 0.2000000011175871,
+            "count": 39
+          }
+        }
+      }
+    },
+    {
+      "zoom": 2,
+      "label": "Temporary performance session · seed 2225201261 · 100×100 · 15 objects",
+      "distance": 1261,
+      "metrics": {
+        "frames": 802,
+        "fps": 82.25641025641026,
+        "median": 8.39999999999418,
+        "p95": 25,
+        "counts": {
+          "minimap preparations": 803,
+          "game preparations": 803,
+          "queried entries": 8030,
+          "sprite patches": 10911,
+          "active layers": 49177,
+          "active layer sprite slots": 1154105,
+          "static normalization boundaries": 1,
+          "discovery decodes": 37,
+          "static cells checked": 33361,
+          "model builds": 138,
+          "minimap uploads": 2,
+          "ticks": 32,
+          "enemy visits": 96
+        },
+        "cpu": {
+          "minimap preparation": {
+            "mean": 0.03200498134463766,
+            "max": 0.5,
+            "count": 803
+          },
+          "game preparation": {
+            "mean": 0.5946450810299567,
+            "max": 3.5,
+            "count": 803
+          },
+          "action (inclusive)": {
+            "mean": 0.0691601050201207,
+            "max": 1.5,
+            "count": 762
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0.00196850393945229,
+            "max": 0.10000000149011612,
+            "count": 762
+          },
+          "React commit": {
+            "mean": 1.4021484374825377,
+            "max": 22.599999997764826,
+            "count": 1536
+          },
+          "clone/upgrade (inclusive)": {
+            "mean": 0.21603773587014316,
+            "max": 0.5,
+            "count": 106
+          },
+          "AI (inclusive)": {
+            "mean": 0.028125000011641532,
+            "max": 0.10000000149011612,
+            "count": 32
+          },
+          "tick (inclusive)": {
+            "mean": 0.03437499998835847,
+            "max": 0.10000000149011612,
+            "count": 32
+          }
+        }
+      }
+    },
+    {
+      "zoom": 4,
+      "label": "Temporary performance session · seed 2225201261 · 100×100 · 15 objects",
+      "distance": 1270,
+      "metrics": {
+        "frames": 988,
+        "fps": 102.7379454490626,
+        "median": 8.30000000000291,
+        "p95": 16.69999999999709,
+        "counts": {
+          "minimap preparations": 989,
+          "game preparations": 989,
+          "queried entries": 9820,
+          "sprite patches": 13109,
+          "active layers": 57737,
+          "active layer sprite slots": 1418601,
+          "static normalization boundaries": 1,
+          "static cells checked": 32904,
+          "discovery decodes": 36,
+          "model builds": 147,
+          "minimap uploads": 3,
+          "ticks": 41,
+          "enemy visits": 123
+        },
+        "cpu": {
+          "minimap preparation": {
+            "mean": 0.028918099097146665,
+            "max": 1,
+            "count": 989
+          },
+          "game preparation": {
+            "mean": 0.4271991910945899,
+            "max": 2.600000001490116,
+            "count": 989
+          },
+          "action (inclusive)": {
+            "mean": 0.05275181725598013,
+            "max": 1,
+            "count": 963
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0.0010384215972350519,
+            "max": 0.10000000149011612,
+            "count": 963
+          },
+          "React commit": {
+            "mean": 0.9483197556216794,
+            "max": 16.199999999254942,
+            "count": 1964
+          },
+          "clone/upgrade (inclusive)": {
+            "mean": 0.19115044247457938,
+            "max": 0.599999999627471,
+            "count": 113
+          },
+          "AI (inclusive)": {
+            "mean": 0.024390243811578286,
+            "max": 0.09999999962747097,
+            "count": 41
+          },
+          "tick (inclusive)": {
+            "mean": 0.03170731700048214,
+            "max": 0.10000000149011612,
+            "count": 41
+          }
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "context": {
+    "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+    "viewport": [
+      1280,
+      720
+    ],
+    "dpr": 1,
+    "cores": 32,
+    "gpu": {
+      "vendor": "nvidia",
+      "architecture": "lovelace",
+      "device": "",
+      "description": ""
+    }
+  }
+}

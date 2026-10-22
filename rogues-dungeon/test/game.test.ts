@@ -2,8 +2,11 @@ import type { ActionResult, Campaign, Enemy, Entity, Item, Direction } from '../
 import type { TileLayer } from '../src/systems/rendering/tile-map-system.ts';
 import assert from 'node:assert/strict';
 import './movement-modes.test.ts';
+import './tactical-area.test.ts';
+import './world-attributes.test.ts';
+import './start-room-decoration.test.ts';
 import test from 'node:test';
-import { applyAction, combatReadiness, createCampaign, createGameSession, createResourcesModel, createRunCampaign, effectiveAttributes, ensureNearbyStairs, entrancePosition, FLOOR_CENTER, FLOOR_HEIGHT, FLOOR_WIDTH, GAME_TUNING, generateFloor, headingFromMovement, isNonBlockingChestPlacementCell, isNonBlockingObjectPlacementCell, isObjectSetBlocked, isObjectSetDoorOpen, isStairPlacementCell, previewEquipment, resourceState, rollStartingAttributes, STAIRS_MAX_DISTANCE_FROM_START, upgradeCampaignResources } from '../src/systems/procedural/world-procedural-system.ts';
+import { applyAction, buildDeathRecovery, cardinalAdjacentPosition, combatReadiness, createCampaign, createGameSession, createResourcesModel, createRunCampaign, effectiveAttributes, effectiveInventoryCapacity, ensureNearbyStairs, entrancePosition, FLOOR_CENTER, FLOOR_HEIGHT, FLOOR_WIDTH, GAME_TUNING, generateFloor, hasAssignedWeapon, headingFromMovement, inventoryFitsCapacity, isNonBlockingChestPlacementCell, isNonBlockingObjectPlacementCell, isObjectSetBlocked, isObjectSetDoorOpen, isStairPlacementCell, previewEquipment, resourceState, rollStartingAttributes, STAIRS_MAX_DISTANCE_FROM_START, upgradeCampaignResources, WORLD_DROPPABLE_ITEM_NAMES } from '../src/systems/procedural/world-procedural-system.ts';
 import { worldFloorSeed } from '../src/systems/procedural/world-seed-system.ts';
 import { projectLogEvents } from '../src/game/log-policy.ts';
 import { projectFloatingFeedback, removeFloatingFeedback } from '../src/game/floating-feedback.ts';
@@ -40,6 +43,7 @@ function transaction(value: ReturnType<ReturnType<typeof createGameSession>['dis
 }
 // Preserve the map-only, incomplete attributes accepted by the compatibility adapter.
 function legacyMapCampaign(value: unknown): Campaign { return value as Campaign; }
+function basicWeapon() { return { id: 'test-stick', name: 'Wooden Stick', group: 'weapons' as const, modifiers: { offense: 1 }, isStackable: false }; }
 class MemoryStorage { values = new Map<string, string>(); get length() { return this.values.size; } key(index: number) { return [...this.values.keys()][index] ?? null; } getItem(key: string) { return this.values.get(key) ?? null; } setItem(key: string, value: unknown) { this.values.set(key, String(value)); } removeItem(key: string) { this.values.delete(key); } }
 
 function enemyAiFixture(id: string, x: number, y: number, state: Enemy['ai']['state'] = 'idle') {
@@ -130,12 +134,29 @@ test('reads a validated randomSeed URL parameter for reproducible campaigns', ()
   for (const search of ['', '?randomSeed=', '?randomSeed=-1', '?randomSeed=1.5', '?randomSeed=4294967296', '?randomSeed=abc']) assert.equal(randomSeedFromSearch(search), null);
 });
 
-test('parses deterministic world, level, slot, seed, map-fix, and level-one test URL options', () => {
-  assert.deepEqual(parseGameUrlOptions('?world=2&level=3&slot=2&run=4&seed=7&mute=1&level-1-test-mode=true&debug-fix-map-autotiled=1&scenario=corridor-joins'), { world: 2, level: 3, run: 4, slot: '2', seed: 7, hasCompleteRunIdentity: true, mute: true, level1TestMode: true, mapFix: true, scenario: 'corridor-joins', map: null });
+test('parses deterministic world, level, slot, seed, map-fix, and item/enemy test URL options', () => {
+  assert.deepEqual(parseGameUrlOptions('?world=2&level=3&slot=2&run=4&seed=7&mute=1&debug-fix-map-autotiled=1&scenario=corridor-joins'), { world: 2, level: 3, run: 4, slot: '2', seed: 7, hasCompleteRunIdentity: true, mute: true, level1ObjectTestMode: false, level1EnemyTestMode: false, mapFix: true, scenario: 'corridor-joins', map: null });
   assert.equal(parseGameUrlOptions('?slot=4').slot, null);
   assert.equal(parseGameUrlOptions('?seed=-1').seed, null);
-  assert.equal(parseGameUrlOptions('?level-1-test-mode=1').level1TestMode, false);
+  assert.equal('level1TestMode' in parseGameUrlOptions('?leveltest=1'), false);
   assert.equal(parseGameUrlOptions('?randomSeed=9').seed, 9);
+});
+
+test('places one deterministic legal teleport arrow per generated level', () => {
+  const first = generateFloor(2, 611, 2);
+  const second = generateFloor(2, 611, 2);
+  const arrows = first.entities.filter((entity) => entity.kind === 'teleport-arrow');
+  assert.equal(arrows.length, 1);
+  assert.deepEqual(arrows[0], second.entities.find((entity) => entity.kind === 'teleport-arrow'));
+  assert.equal(first.cells[arrows[0]!.y]![arrows[0]!.x]!.walkable, true);
+  assert.equal(first.entities.filter((entity) => entity.x === arrows[0]!.x && entity.y === arrows[0]!.y).length, 1);
+});
+
+test('leveltest keeps the level-one teleport arrow within 50 cells of the start', () => {
+  const floor = generateFloor(1, 612, 1, { level1TestMode: true });
+  const arrow = floor.entities.find((entity) => entity.kind === 'teleport-arrow')!;
+  assert.ok(Math.hypot(arrow.x - floor.start.x, arrow.y - floor.start.y) <= 50);
+  assert.equal(floor.entities.filter((entity) => entity.x === arrow.x && entity.y === arrow.y).length, 1);
 });
 
 test('writes compact generated-level deltas and reconstructs changed runtime state', () => {
@@ -197,7 +218,8 @@ test('autosave resume retains player, time, progression, inventory, and compact 
   campaign.floor.time = 19;
   campaign.progression.xp = 37;
   campaign.player.inventory.push({ id: 'resume-item', name: 'Resume Item', group: 'weapons', modifiers: { offense: 2 } });
-  const chest = present(campaign.floor.entities.find((entity): entity is Extract<Entity, { kind: 'chest' }> => entity.kind === 'chest'));
+  const chest: Extract<Entity, { kind: 'chest' }> = { id: 'resume-chest', kind: 'chest', x: campaign.player.x + 2, y: campaign.player.y, opened: false };
+  campaign.floor.entities.push(chest);
   chest.opened = true;
   writeSlot(storage, '3', campaign);
   const restored = present(readSlot(storage, '3'));
@@ -259,32 +281,19 @@ test('reconstructs deterministic floors and round-trips Tiled repair maps', () =
   assert.ok(findCardinalPath(repaired, repaired.start, { x: exit.x, y: exit.y }));
 });
 
-test('places level-one test-mode stairs and starter entities beside the start only', () => {
+test('places the level-one test-mode stair and supplemental crate beside the start', () => {
   for (const seed of [1, 77, 13579, 9001]) {
     const floor = generateFloor(1, seed, 1, { level1TestMode: true });
-    const puzzle = present(floor.objectSets?.find((set) => set.kind === 'floor-trigger-door-barrel'));
-    assert.ok(Math.hypot(puzzle.barrel.x - floor.start.x, puzzle.barrel.y - floor.start.y) <= 3);
     const stairs = floor.entities.filter((entity) => entity.kind === 'stairs');
     assert.equal(stairs.length, 1);
     assert.deepEqual(stairs[0], { id: 'stairs-forward', kind: 'stairs', direction: 'forward', name: 'Stairs up', x: floor.start.x + 2, y: floor.start.y });
     assert.ok(Math.hypot(stairs[0].x - floor.start.x, stairs[0].y - floor.start.y) <= STAIRS_MAX_DISTANCE_FROM_START);
-    assert.ok(floor.entities.some((entity) => entity.id === 'health-potion' && entity.kind === 'potion' && entity.resource === 'health'));
-    assert.ok(floor.entities.some((entity) => entity.id === 'mana-potion' && entity.kind === 'potion' && entity.resource === 'mana'));
-    assert.ok(floor.entities.some((entity) => entity.id === 'starter-key' && entity.kind === 'key'));
-    const chest = floor.entities.find((entity) => entity.id === 'test-chest');
-    assert.deepEqual(chest && { kind: chest.kind, opened: chest.kind === 'chest' ? chest.opened : undefined }, { kind: 'chest', opened: false });
-    assert.equal(floor.entities.filter((entity) => entity.kind === 'chest').length, 1);
-    assert.ok(chest && Math.max(Math.abs(chest.x - floor.start.x), Math.abs(chest.y - floor.start.y)) === 1);
     const crate = floor.entities.find((entity) => entity.id === 'test-crate');
-    assert.deepEqual(crate && { kind: crate.kind, health: crate.kind === 'crate' ? crate.health : undefined, opened: crate.kind === 'crate' ? crate.opened : undefined }, { kind: 'crate', health: 100, opened: undefined });
-    assert.ok(floor.entities.filter((entity) => entity.kind === 'crate').length >= 1);
+    assert.deepEqual(crate && { kind: crate.kind, health: crate.kind === 'crate' ? crate.health : undefined }, { kind: 'crate', health: 100 });
     assert.ok(crate && Math.max(Math.abs(crate.x - floor.start.x), Math.abs(crate.y - floor.start.y)) === 1);
-    assert.ok(floor.entities.some((entity) => entity.id === 'starter-gold' && entity.kind === 'gold'));
-    const testEnemies = floor.entities.filter((entity): entity is Enemy => entity.kind === 'enemy' && entity.id.startsWith('test-'));
-    assert.deepEqual(testEnemies.map((entity) => entity.name).sort(), seed === 77 ? ['Rat', 'Skeleton'] : ['Rat', 'Skeleton', 'Skeleton Archer']);
-    const archer = testEnemies.find((entity) => entity.id === 'test-archer');
-    assert.deepEqual(archer && { attackKind: archer.attackKind, attackRange: archer.attackRange }, seed === 77 ? undefined : { attackKind: 'ranged', attackRange: 5 });
-    assert.ok(testEnemies.every((entity) => Math.hypot(entity.x - floor.start.x, entity.y - floor.start.y) <= 10));
+    const arrow = floor.entities.find((entity) => entity.kind === 'teleport-arrow');
+    assert.ok(arrow && Math.hypot(arrow.x - floor.start.x, arrow.y - floor.start.y) <= 8);
+    assert.equal(floor.entities.some((entity) => entity.id.startsWith('starter-')), false);
   }
 });
 
@@ -355,6 +364,50 @@ test('places the player away from an enemy when entering a saved level', () => {
   assert.notDeepEqual({ x: entered.player.x, y: entered.player.y }, blockedEntry);
   assert.equal(entered.floor.entities.some((entity) => entity.x === entered.player.x && entity.y === entered.player.y), false);
   assert.equal(entered.floor.cells[entered.player.y]?.[entered.player.x]?.walkable, true);
+});
+
+test('teleports between the dungeon and player home without advancing time', () => {
+  const campaign = createCampaign(613, 1, 1, { level1TestMode: true });
+  const arrow = campaign.floor.entities.find((entity) => entity.kind === 'teleport-arrow')!;
+  campaign.player.x = arrow.x; campaign.player.y = arrow.y; campaign.player.pixel = { x: arrow.x * 32 + 16, y: arrow.y * 32 + 16 };
+  const dungeonTime = campaign.floor.time;
+  const entered = applyAction(campaign, { type: 'enter-teleport' });
+  assert.equal(entered.accepted, true);
+  assert.equal(entered.ticks, 0);
+  assert.equal(entered.state.activePrefab?.id, 'player-home');
+  assert.equal(entered.state.floor.level, campaign.floor.level);
+  assert.notDeepEqual({ x: entered.state.player.x, y: entered.state.player.y }, { x: arrow.x, y: arrow.y });
+  assert.equal(entered.state.floor.time, dungeonTime);
+  const homeArrow = entered.state.floor.entities.find((entity) => entity.kind === 'teleport-arrow')!;
+  entered.state.player.x = homeArrow.x; entered.state.player.y = homeArrow.y;
+  const returned = applyAction(entered.state, { type: 'enter-teleport' });
+  assert.equal(returned.accepted, true);
+  assert.equal(returned.ticks, 0);
+  assert.equal(returned.state.activePrefab, undefined);
+  assert.equal(returned.state.floor.level, campaign.floor.level);
+  assert.equal(returned.state.floor.time, dungeonTime);
+  assert.equal(Math.abs(returned.state.player.x - arrow.x) + Math.abs(returned.state.player.y - arrow.y), 1);
+  assert.equal(returned.state.floor.cells[returned.state.player.y]?.[returned.state.player.x]?.walkable, true);
+  assert.equal(returned.state.player.pixel?.x, returned.state.player.x * 32 + 16);
+  assert.equal(returned.state.player.pixel?.y, returned.state.player.y * 32 + 16);
+  assert.equal(returned.events.some((event) => event.type === 'time.advanced'), false);
+});
+
+test('persists an active player-home map and restores it without changing dungeon identity', () => {
+  const storage = new MemoryStorage();
+  const campaign = createCampaign(614, 1, 1, { level1TestMode: true });
+  const arrow = campaign.floor.entities.find((entity) => entity.kind === 'teleport-arrow')!;
+  campaign.player.x = arrow.x; campaign.player.y = arrow.y;
+  const entered = applyAction(campaign, { type: 'enter-teleport' }).state;
+  entered.player.x = 4; entered.player.y = 8;
+  writeSlot(storage, '1', entered);
+  const restored = present(readSlot(storage, '1'));
+  assert.equal(restored.activePrefab?.id, 'player-home');
+  assert.deepEqual({ x: restored.player.x, y: restored.player.y }, { x: 4, y: 8 });
+  assert.equal(restored.floor.level, campaign.floor.level);
+  assert.equal(restored.floor.seed, entered.floor.seed);
+  const malformed = structuredClone(entered); malformed.activePrefab = { id: 'unknown' } as never;
+  assert.equal(migrateCampaign(malformed).activePrefab, undefined);
 });
 
 test('linked stairs return to the previously visited floor', () => {
@@ -522,12 +575,12 @@ test('projects Health changes and Mana gains into transient resource effects', (
 });
 
 test('combat events capture actor positions before enemy removal or player respawn', () => {
-  const melee = createCampaign(301); const enemy = legacyEnemy({ id: 'melee-target', kind: 'enemy', name: 'Cave Rat', x: melee.player.x + 1, y: melee.player.y, hp: 50, damage: 0, xp: 1 });
+  const melee = createCampaign(301); melee.player.equipment.weapons[0] = basicWeapon(); const enemy = legacyEnemy({ id: 'melee-target', kind: 'enemy', name: 'Cave Rat', x: melee.player.x + 1, y: melee.player.y, hp: 50, damage: 0, xp: 1 });
   melee.floor.map![enemy.y][enemy.x] = 0; melee.floor.entities = [enemy];
   const meleeHit = applyAction(melee, { type: 'move', direction: 'e' }).events.find((event) => event.type === 'combat.hit')!;
   assert.equal(meleeHit.facts.targetId, enemy.id); assert.deepEqual(meleeHit.facts.targetPosition, { x: enemy.x, y: enemy.y });
 
-  const ability = createCampaign(302); const target = legacyEnemy({ id: 'wand-target', kind: 'enemy', name: 'Cave Rat', x: ability.player.x + 2, y: ability.player.y, hp: 50, damage: 0, xp: 1 });
+  const ability = createCampaign(302); ability.player.abilities = ['heal', 'wand', null]; const target = legacyEnemy({ id: 'wand-target', kind: 'enemy', name: 'Cave Rat', x: ability.player.x + 2, y: ability.player.y, hp: 50, damage: 0, xp: 1 });
   ability.floor.map![target.y][target.x] = 0; ability.floor.entities = [target];
   const cast = applyAction(ability, { type: 'ability', index: 1 });
   assert.equal(cast.state.floor.time, ability.floor.time);
@@ -542,8 +595,17 @@ test('combat events capture actor positions before enemy removal or player respa
   assert.ok(death.events.some((event) => event.type === 'player.died'));
 });
 
+test('unarmed players cannot attack an adjacent enemy or spend a turn', () => {
+  const campaign = createCampaign(30_101); const target = legacyEnemy({ id: 'unarmed-target', kind: 'enemy', x: campaign.player.x + 1, y: campaign.player.y, hp: 10, damage: 0, xp: 1 });
+  campaign.floor.map![target.y][target.x] = 0; campaign.floor.entities = [target];
+  assert.equal(hasAssignedWeapon(campaign), false);
+  const result = applyAction(campaign, { type: 'move', direction: 'e' });
+  assert.equal(result.accepted, false); assert.equal(result.ticks, 0); assert.equal(result.events[0].facts.reason, 'unarmed');
+  assert.equal(result.state.floor.time, campaign.floor.time); assert.equal(result.events.some((event) => event.type === 'combat.hit'), false);
+});
+
 test('abilities commit Mana before their effect and resolve one tactical turn on completion', () => {
-  const campaign = createCampaign(911); campaign.player.resources.health.current = 10;
+  const campaign = createCampaign(911); campaign.player.abilities = ['heal', 'wand', null]; campaign.player.resources.health.current = 10;
   const mana = campaign.player.resources.mana.current;
   const cast = applyAction(campaign, { type: 'ability', index: 0 });
   assert.equal(cast.accepted, true); assert.equal(cast.ticks, 0);
@@ -555,7 +617,7 @@ test('abilities commit Mana before their effect and resolve one tactical turn on
 });
 
 test('Heal is rejected at full Health without spending Mana or advancing time', () => {
-  const campaign = createCampaign(913);
+  const campaign = createCampaign(913); campaign.player.abilities = ['heal', 'wand', null];
   const mana = campaign.player.resources.mana.current;
   const time = campaign.floor.time;
   const result = applyAction(campaign, { type: 'ability', index: 0 });
@@ -566,7 +628,7 @@ test('Heal is rejected at full Health without spending Mana or advancing time', 
 });
 
 test('Wand resolves only its locked target and harmlessly completes when it is gone', () => {
-  const campaign = createCampaign(912); const target = legacyEnemy({ id: 'locked-target', kind: 'enemy', name: 'Locked Rat', x: campaign.player.x + 2, y: campaign.player.y, hp: 12, damage: 0, xp: 1 });
+  const campaign = createCampaign(912); campaign.player.abilities = ['heal', 'wand', null]; const target = legacyEnemy({ id: 'locked-target', kind: 'enemy', name: 'Locked Rat', x: campaign.player.x + 2, y: campaign.player.y, hp: 12, damage: 0, xp: 1 });
   campaign.floor.map![target.y][target.x] = 0; campaign.floor.entities = [target];
   const cast = applyAction(campaign, { type: 'ability', index: 1 });
   cast.state.floor.entities[0].x += 1;
@@ -578,7 +640,7 @@ test('Wand resolves only its locked target and harmlessly completes when it is g
 });
 
 test('Wand requires a clear cardinal line through walkable tiles', () => {
-  const campaign = createCampaign(914); const target = legacyEnemy({ id: 'behind-wall', kind: 'enemy', name: 'Behind Wall', x: campaign.player.x + 3, y: campaign.player.y, hp: 12, damage: 0, xp: 1 });
+  const campaign = createCampaign(914); campaign.player.abilities = ['heal', 'wand', null]; const target = legacyEnemy({ id: 'behind-wall', kind: 'enemy', name: 'Behind Wall', x: campaign.player.x + 3, y: campaign.player.y, hp: 12, damage: 0, xp: 1 });
   const setWalkable = (x: number, y: number, walkable: boolean) => { campaign.floor.cells[y][x].walkable = walkable; campaign.floor.map![y][x] = walkable ? 0 : 1; };
   campaign.floor.entities = [target];
   setWalkable(campaign.player.x + 1, campaign.player.y, false);
@@ -623,29 +685,77 @@ test('melee enemies attack only adjacent cardinal tiles and ranged enemies requi
   assert.equal(present(rangedResult.state.floor.entities.find((entity): entity is Enemy => entity.kind === 'enemy')).heading, 'w');
 });
 
-test('starts a current campaign with a valid rolled character and bindings', () => {
+test('starts a current campaign with a valid rolled character and an empty loadout', () => {
   const campaign = createCampaign(42);
-  assert.equal(campaign.version, 5);
+  assert.equal(campaign.version, 6);
   assert.equal(campaign.floor.level, 1); assert.equal(campaign.progression.difficulty, 1);
   assert.equal(Object.values(campaign.progression.attributes).reduce((total, value) => total + value, 0), 30);
   assert.ok(Object.values(campaign.progression.attributes).every((value) => value >= 1 && value <= 5));
-  assert.deepEqual(campaign.player.abilities, ['heal', 'wand', null]);
-  assert.deepEqual(campaign.player.equipment, { weapons: [{ id: 'starter-stick', name: 'Wooden Stick', group: 'weapons' as const, modifiers: { offense: 8 }, isStackable: false }, null], armor: [null, null] });
+  assert.deepEqual(campaign.player.abilities, [null, null, null]);
+  assert.deepEqual(campaign.player.equipment, { weapons: [null, null], armor: [null, null] });
   assert.equal(campaign.player.resources.health.current, campaign.player.resources.health.currentMax);
   assert.equal(campaign.player.resources.stamina.current, campaign.player.resources.stamina.currentMax);
   assert.equal(campaign.player.resources.mana.current, campaign.player.resources.mana.currentMax);
-  assert.equal(campaign.player.inventoryCapacity, 10); assert.deepEqual(campaign.player.inventory.map(({ name }) => name), ['Health Potion', 'Mana Potion']); assert.equal(campaign.player.inventory.find((item) => item.name === 'Mana Potion')?.quantity, 2); assert.deepEqual(campaign.player.quickSlots, [null, null]);
-  assert.deepEqual(campaign.counters, { keys: 1, gold: 55 });
+  assert.equal(campaign.player.inventoryCapacity, 5); assert.deepEqual(campaign.player.inventory, []); assert.equal(effectiveInventoryCapacity(campaign), 5); assert.deepEqual(campaign.player.quickSlots, [null, null]);
+  assert.deepEqual(campaign.counters, { keys: 0, gold: 0 });
   assert.equal(campaign.objective, 'Find the exit'); assert.deepEqual(campaign.log, []);
   assert.deepEqual(Object.keys(campaign.progression.attributes), ['health', 'stamina', 'offense', 'defense', 'mana', 'perception', 'strength', 'luck', 'recovery', 'stealth']);
 });
 
-test('new-character starter equipment grants one copy of each new item without changing later runs', () => {
-  const starter = createRunCampaign(123, 1, 1, 1, 1, { starterEquipment: true });
-  assert.deepEqual(starter.player.inventory.filter((item) => item.category !== 'consumable').map((item) => item.name), ['Dagger (Magic)', 'Sword', 'Two-Handed Sword', 'Leg Armor (Magic)', 'Chest Armor', 'Suit of Armor']);
-  assert.equal(starter.player.inventory.length, 8);
-  const later = createRunCampaign(123, 1, 2);
-  assert.deepEqual(later.player.inventory.map((item) => item.name), ['Health Potion', 'Mana Potion']);
+test('new runs always start with empty inventory, equipment, abilities, and quick slots', () => {
+  for (const campaign of [createRunCampaign(123, 1, 1), createRunCampaign(123, 1, 2), createRunCampaign(123, 1, 1, 1, 2)]) {
+    assert.deepEqual(campaign.player.inventory, []);
+    assert.deepEqual(campaign.player.equipment, { weapons: [null, null], armor: [null, null] });
+    assert.deepEqual(campaign.player.abilities, [null, null, null]);
+    assert.deepEqual(campaign.player.quickSlots, [null, null]);
+  }
+});
+
+test('dropping Extra Carrying Capacity +5 restores base capacity by dropping deterministic overflow items', () => {
+  const campaign = createCampaign(125);
+  const extra = { id: 'extra-capacity', name: 'Extra Carrying Capacity +5', group: 'weapons' as const, modifiers: {}, category: 'capacity' as const, capacityBonus: 6, isStackable: false };
+  campaign.player.inventory = [extra, ...Array.from({ length: 10 }, (_, index) => ({ id: `extra-${index}`, name: `Extra ${index}`, group: 'weapons' as const, modifiers: {} }))];
+  assert.equal(effectiveInventoryCapacity(campaign), 11);
+  assert.equal(inventoryFitsCapacity(campaign), true);
+  const dropped = applyAction(campaign, { type: 'drop-item', source: { kind: 'inventory', itemId: extra.id } });
+  assert.equal(dropped.accepted, true);
+  assert.equal(effectiveInventoryCapacity(dropped.state), 5);
+  assert.equal(inventoryFitsCapacity(dropped.state), true);
+  assert.equal(dropped.state.player.inventory.some((item) => item.id === extra.id), false);
+  const dropEvents = dropped.events.filter((event) => event.type === 'item.dropped');
+  assert.equal(dropEvents.length, 6);
+  assert.equal(dropEvents.filter((event) => event.facts.cause === 'capacity-overflow').length, 5);
+  const droppedEntities = dropped.state.floor.entities.filter((entry): entry is Extract<Entity, { kind: 'item' }> => entry.kind === 'item' && dropEvents.some((event) => event.facts.itemId === entry.item.id));
+  assert.equal(droppedEntities.length, 6);
+  assert.equal(new Set(droppedEntities.map((entity) => `${entity.x},${entity.y}`)).size, droppedEntities.length);
+});
+
+test('capacity overflow expands beyond the immediate ring when every nearby cell is occupied', () => {
+  const campaign = createCampaign(126);
+  const extra = { id: 'extra-capacity', name: 'Extra Carrying Capacity +5', group: 'weapons' as const, modifiers: {}, category: 'capacity' as const, capacityBonus: 6, isStackable: false };
+  campaign.player.inventory = [extra, ...Array.from({ length: 10 }, (_, index) => ({ id: `overflow-${index}`, name: `Overflow ${index}`, group: 'weapons' as const, modifiers: {} }))];
+  for (const [index, [dx, dy]] of [[-1, -1], [1, -1], [0, -1], [-1, 0], [1, 0], [0, 1], [-1, 1], [1, 1]].entries()) {
+    const x = campaign.player.x + dx; const y = campaign.player.y + dy;
+    if (campaign.floor.cells[y]?.[x]) campaign.floor.entities.push({ id: `nearby-blocker-${index}`, kind: 'item', x, y, item: { id: `nearby-blocker-item-${index}`, name: 'Nearby Blocker', group: 'weapons', modifiers: {} } });
+  }
+  const dropped = applyAction(campaign, { type: 'drop-item', source: { kind: 'inventory', itemId: extra.id } });
+  assert.equal(dropped.accepted, true);
+  const droppedEntities = dropped.state.floor.entities.filter((entry): entry is Extract<Entity, { kind: 'item' }> => entry.kind === 'item' && (entry.item.id === extra.id || entry.item.id.startsWith('overflow-')));
+  assert.equal(droppedEntities.length, 6);
+  assert.ok(droppedEntities.every((entity) => Math.max(Math.abs(entity.x - campaign.player.x), Math.abs(entity.y - campaign.player.y)) > 1));
+});
+
+test('normalizes capacity items in inventory and dropped world entities', () => {
+  const campaign = createCampaign(124);
+  campaign.player.inventory = campaign.player.inventory.filter((item) => item.category !== 'capacity');
+  const extraSpace = { id: 'legacy-extra-space', name: 'Extra Space', group: 'weapons' as const, modifiers: {}, category: 'capacity' as const, capacityBonus: 5 };
+  campaign.player.inventory.push(extraSpace);
+  campaign.floor.entities.push({ id: 'dropped-extra-space', kind: 'item', item: { ...extraSpace, capacityBonus: 5 }, x: campaign.player.x + 3, y: campaign.player.y });
+  const migrated = upgradeCampaignResources(campaign);
+  assert.equal(migrated.player.inventory.find((item) => item.id === extraSpace.id)?.name, 'Extra Carrying Capacity +5');
+  assert.equal(migrated.player.inventory.find((item) => item.id === extraSpace.id)?.capacityBonus, 6);
+  assert.equal(migrated.floor.entities.find((entity) => entity.kind === 'item')?.kind, 'item');
+  assert.equal(effectiveInventoryCapacity(migrated), 11);
 });
 
 test('accepted move and equipment changes emit events and cost one time unit', () => {
@@ -720,13 +830,13 @@ test('migrates and persists quick-slot stacks without invalid zero quantities', 
   const legacy = structuredClone(createCampaign(303)); delete legacy.player.quickSlots; delete legacy.starterConsumablesSeeded;
   const migrated = migrateCampaign(legacy);
   assert.deepEqual(migrated.player.quickSlots, [null, null]);
-  assert.deepEqual(migrated.player.inventory.filter((item) => item.category === 'consumable').map((item) => item.name), ['Health Potion', 'Mana Potion']); assert.equal(migrated.player.inventory.find((item) => item.name === 'Mana Potion')?.quantity, 2);
-  const potion = createCampaign(304).player.inventory.find((item) => item.name === 'Mana Potion')!;
+  assert.deepEqual(migrated.player.inventory, []);
+  const potion = { id: 'mana-potion', name: 'Mana Potion', group: 'weapons' as const, modifiers: {}, category: 'consumable' as const, consumableResource: 'mana' as const, isStackable: true, quantity: 2 };
   migrated.player.quickSlots = [{ item: potion, quantity: 2 }, { item: potion, quantity: 0 }];
   const storage = new MemoryStorage(); writeSlot(storage, '1', migrated);
   const saved = JSON.parse(storage.getItem('rogues-dungeon.slot.1')!);
-  assert.equal(saved.player.quickSlots[0].quantity, 4); assert.equal(saved.player.quickSlots[1], null);
-  const loaded = readSlot(storage, '1'); assert.equal(loaded?.player.quickSlots?.[0]?.quantity, 4);
+  assert.equal(saved.player.quickSlots[0].quantity, 2); assert.equal(saved.player.quickSlots[1], null);
+  const loaded = readSlot(storage, '1'); assert.equal(loaded?.player.quickSlots?.[0]?.quantity, 2);
 });
 
 test('preferences validate malformed, out-of-range, and unavailable storage', () => {
@@ -751,7 +861,7 @@ test('migrates legacy campaigns without losing world progress or duplicating equ
   assert.equal(migrated.realm, 'Crypt 4'); assert.equal(migrated.player.x, 57); assert.equal(migrated.player.y, 58);
   assert.equal(migrated.floor.width, FLOOR_WIDTH); assert.equal(migrated.floor.height, FLOOR_HEIGHT); assert.deepEqual(migrated.floor.start, { x: 51, y: 52 }); assert.equal(migrated.floor.map![49][49], 0);
   assert.equal(migrated.floor.time, 31); assert.equal(migrated.floor.level, 4); assert.equal(migrated.progression.difficulty, 4);
-  assert.equal(migrated.version, 5); assert.deepEqual(migrated.floor.entities.map((entity) => ({ id: entity.id, kind: entity.kind, x: entity.x, y: entity.y })), [legacyEnemy({ id: 'rat', kind: 'enemy', x: 53, y: 54 })]);
+  assert.equal(migrated.version, 6); assert.deepEqual(migrated.floor.entities.map((entity) => ({ id: entity.id, kind: entity.kind, x: entity.x, y: entity.y })), [legacyEnemy({ id: 'rat', kind: 'enemy', x: 53, y: 54 })]);
   assert.equal(present(migrated.floor.entities.find((entity) => entity.kind === 'enemy')).resources.health.current, 7);
   assert.equal(present(migrated.floor.entities.find((entity) => entity.kind === 'enemy')).resources.xp.current, 10);
   assert.equal(migrated.progression.level, 3); assert.equal(migrated.progression.xp, 45);
@@ -760,16 +870,17 @@ test('migrates legacy campaigns without losing world progress or duplicating equ
   assert.equal(items.length, 2); assert.equal(new Set(items.map((item) => item.id)).size, 2);
 });
 
-test("clears only Rogue's Dungeon local storage records", () => {
+test("clears all local storage records", () => {
   const storage = new MemoryStorage();
   storage.setItem('rogues-dungeon.slot.1', 'save'); storage.setItem('rogues-dungeon.slot.v1-backup.1', 'backup'); storage.setItem('rogues-dungeon.preferences.v1', 'preferences'); storage.setItem('rogues-dungeon.world-seed.v1', '123'); storage.setItem('unrelated.preference', 'keep');
   clearRoguesDungeonStorage(storage);
-  assert.equal(storage.getItem('rogues-dungeon.slot.1'), null); assert.equal(storage.getItem('rogues-dungeon.slot.v1-backup.1'), null); assert.equal(storage.getItem('rogues-dungeon.preferences.v1'), null); assert.equal(storage.getItem('rogues-dungeon.world-seed.v1'), null); assert.equal(storage.getItem('unrelated.preference'), 'keep');
+  assert.equal(storage.getItem('rogues-dungeon.slot.1'), null); assert.equal(storage.getItem('rogues-dungeon.slot.v1-backup.1'), null); assert.equal(storage.getItem('rogues-dungeon.preferences.v1'), null); assert.equal(storage.getItem('rogues-dungeon.world-seed.v1'), null); assert.equal(storage.getItem('unrelated.preference'), null);
   assert.ok(Number.isInteger(readWorldSeed(storage)));
 });
 
 test('a fresh player can defeat three adjacent basic enemies without dying', () => {
   let campaign = createCampaign(305, 1, 1, { attributes: { health: 5, stamina: 5, offense: 5, defense: 5, mana: 5, perception: 1, strength: 1, luck: 1, recovery: 1, stealth: 5 } }); const { x, y } = campaign.player;
+  campaign.player.equipment.weapons[0] = basicWeapon();
   const enemies = [
     { id: 'east-rat', x: x + 1, y },
     { id: 'north-rat', x, y: y - 1 },
@@ -785,11 +896,11 @@ test('a fresh player can defeat three adjacent basic enemies without dying', () 
   assert.equal(campaign.log.some((entry) => ('type' in entry ? entry.type : undefined) === 'player.died'), false);
 });
 
-test('Skeletons are tougher than Rats on the same floor', () => {
+test('Skeleton Warriors are tougher than Rats on the same floor', () => {
   let pair = null;
   for (let seed = 1; seed <= 30 && !pair; seed++) {
     const enemies = generateFloor(2, seed).entities.filter((entity) => entity.kind === 'enemy');
-    const rat = enemies.find((entity) => entity.name === 'Rat')!; const skeleton = enemies.find((entity) => entity.name === 'Skeleton')!;
+    const rat = enemies.find((entity) => entity.name === 'Rat')!; const skeleton = enemies.find((entity) => entity.name === 'Skeleton Warrior')!;
     if (rat && skeleton) pair = { rat, skeleton };
   }
   assert.ok(pair);
@@ -828,7 +939,7 @@ test('backs up legacy bytes before replacing them and leaves invalid records int
   const raw = JSON.stringify(legacy); storage.setItem('rogues-dungeon.slot.2', raw);
   assert.equal(present(readSlot(storage, '2')).floor.time, 1);
   assert.equal(storage.getItem('rogues-dungeon.slot.v1-backup.2'), raw);
-  assert.equal(JSON.parse(present(storage.getItem('rogues-dungeon.slot.2'))).version, 5);
+  assert.equal(JSON.parse(present(storage.getItem('rogues-dungeon.slot.2'))).version, 6);
   const bad = '{broken'; storage.setItem('rogues-dungeon.slot.3', bad);
   assert.equal(readSlotSummary(storage)[2].invalid, true); assert.equal(storage.getItem('rogues-dungeon.slot.3'), bad);
   assert.throws(() => readSlot(Object.assign(new MemoryStorage(), { getItem: () => { throw new Error('blocked'); } }), '1'), /blocked/);
@@ -893,7 +1004,7 @@ test('adds Dungeon Level and saved Difficulty to existing v2 campaigns without l
   const loaded = present(readSlot(storage, '1'));
   assert.equal(loaded.floor.level, 1); assert.equal(loaded.progression.difficulty, 6);
   assert.equal(loaded.floor.time, 1); assert.equal(loaded.progression.level, 5); assert.equal(loaded.progression.xp, 33);
-  assert.equal(loaded.version, 5); assert.equal(loaded.progression.attributes.stealth, 4);
+  assert.equal(loaded.version, 6); assert.equal(loaded.progression.attributes.stealth, 4);
   assert.notEqual(storage.getItem('rogues-dungeon.slot.v1-backup.1'), null);
 });
 
@@ -903,21 +1014,22 @@ test('persists hidden Difficulty across exit, death, and save reload while it sc
   campaign.floor.map![campaign.player.y][campaign.player.x + 1] = 0;
   const descended = applyAction(applyAction(campaign, { type: 'move', direction: 'e' }).state, { type: 'enter-stairs' }).state;
   assert.equal(descended.floor.level, 2); assert.equal(descended.progression.difficulty, 2);
-  const expectedEnemy = (level: number) => 12 + (level - 1) * 3;
-  assert.ok(descended.floor.entities.filter((entity) => entity.kind === 'enemy').every((enemy) => enemy.maxHp >= expectedEnemy(descended.progression.difficulty)));
+  assert.equal(descended.floor.generationProfile?.difficulty, descended.progression.difficulty);
   writeSlot(storage, '1', descended);
   const reloaded = present(readSlot(storage, '1'));
   assert.equal(reloaded.floor.level, 2); assert.equal(reloaded.progression.difficulty, 2);
-  reloaded.floor.level = 7; reloaded.floor.time = 89; reloaded.progression.difficulty = 7;
-  reloaded.player.resources.health.current = 1;
-  reloaded.floor.entities = [legacyEnemy({ id: 'killer', kind: 'enemy', x: reloaded.player.x + 1, y: reloaded.player.y, hp: 99, damage: 99, xp: 1, actionCooldown: 1, nextActionAt: 1 })];
-  reloaded.floor.map![reloaded.player.y][reloaded.player.x + 1] = 0;
-  const death = applyAction(reloaded, { type: 'move', direction: 'e' }).state;
-  assert.equal(death.floor.level, 1); assert.equal(death.floor.time, 1); assert.equal(death.progression.difficulty, 7);
-  assert.ok(death.floor.entities.filter((entity) => entity.kind === 'enemy').every((enemy) => enemy.maxHp >= expectedEnemy(death.progression.difficulty)));
-  writeSlot(storage, '1', death);
+  const deathCandidate = createCampaign(181, 7, 7);
+  deathCandidate.floor.time = 89;
+  deathCandidate.player.resources.health.current = 1;
+  deathCandidate.player.equipment.weapons[0] = basicWeapon();
+  deathCandidate.floor.entities = [legacyEnemy({ id: 'killer', kind: 'enemy', x: deathCandidate.player.x + 1, y: deathCandidate.player.y, hp: 99, damage: 99, xp: 1, actionCooldown: 1, nextActionAt: 1 })];
+  deathCandidate.floor.map![deathCandidate.player.y][deathCandidate.player.x + 1] = 0;
+  const fatal = applyAction(deathCandidate, { type: 'move', direction: 'e' });
+  const recovery = present(buildDeathRecovery(fatal.state));
+  assert.equal(recovery.progression.difficulty, 7);
+  writeSlot(storage, '1', recovery);
   const resumed = present(readSlot(storage, '1'));
-  assert.equal(resumed.floor.level, 1); assert.equal(resumed.floor.time, 1); assert.equal(resumed.progression.difficulty, 7);
+  assert.equal(resumed.progression.difficulty, 7);
 });
 
 test('session serializes committed and rejected actions with unique transaction and event IDs', () => {
@@ -1008,6 +1120,7 @@ test('stackable potion pickups merge into the assigned quick slot or inventory s
 
 test('attacks charge once, award attack and kill XP, and carry threshold overflow', () => {
   const campaign = createCampaign(37); campaign.floor.entities = [];
+  campaign.player.equipment.weapons[0] = basicWeapon();
   const target = { x: campaign.player.x + 1, y: campaign.player.y };
   campaign.floor.map![target.y][target.x] = 0;
   campaign.floor.entities = [legacyEnemy({ id: 'rat', kind: 'enemy', name: 'Cave Rat', x: target.x, y: target.y, hp: 1, damage: 0, xp: 8 })];
@@ -1023,6 +1136,7 @@ test('attacks charge once, award attack and kill XP, and carry threshold overflo
 
 test('progression caps levels and attributes without consuming time for point spending', () => {
   const campaign = createCampaign(369); campaign.progression.level = 98; campaign.progression.xp = 99;
+  campaign.player.equipment.weapons[0] = basicWeapon();
   const target = { x: campaign.player.x + 1, y: campaign.player.y }; campaign.floor.map![target.y][target.x] = 0;
   campaign.floor.entities = [legacyEnemy({ id: 'cap-rat', kind: 'enemy', name: 'Rat', x: target.x, y: target.y, hp: 1, damage: 0, xp: 10 })];
   const gained = applyAction(campaign, { type: 'move', direction: 'e' });
@@ -1125,7 +1239,7 @@ test('character rolls always distribute the same balanced thirty-point pool', ()
   assert.notDeepEqual(low, high);
 });
 
-test('death starts a clean run while preserving persistent progression and bindings', () => {
+test('death starts a clean run while preserving persistent progression but clearing loadout', () => {
   const campaign = createCampaign(38); campaign.floor.entities = [];
   campaign.floor.level = 10; campaign.floor.time = 63; campaign.progression.difficulty = 10;
   campaign.player.resources.health.current = 1; campaign.progression.level = 4; campaign.progression.xp = 27;
@@ -1134,12 +1248,14 @@ test('death starts a clean run while preserving persistent progression and bindi
   campaign.player.equipment.weapons[0] = { id: 'equipped', name: 'Equipped Sword', group: 'weapons' as const, modifiers: { offense: 8 } };
   const target = { x: campaign.player.x + 1, y: campaign.player.y }; campaign.floor.map![target.y][target.x] = 0;
   campaign.floor.entities = [legacyEnemy({ id: 'killer', kind: 'enemy', name: 'Killer', x: target.x + 1, y: target.y, hp: 20, damage: 99, xp: 1, actionCooldown: 1, nextActionAt: 1 })];
-  const result = applyAction(campaign, { type: 'move', direction: 'e' });
-  assert.equal(result.state.realm, 'Underground 1'); assert.equal(result.state.floor.level, 1); assert.equal(result.state.floor.time, 1); assert.equal(result.state.progression.difficulty, 10);
-  assert.equal(result.state.progression.level, 4); assert.equal(result.state.progression.xp, 27);
-  assert.equal(result.state.progression.attributes.strength, 14); assert.deepEqual(result.state.player.abilities, ['wand', 'heal', null]);
-  assert.deepEqual(result.state.player.inventory.map(({ name }) => name), ['Health Potion', 'Mana Potion']); assert.deepEqual(result.state.player.equipment.weapons, [{ id: 'starter-stick', name: 'Wooden Stick', group: 'weapons' as const, modifiers: { offense: 8, }, isStackable: false }, null]);
-  assert.deepEqual(result.state.counters, { keys: 1, gold: 55 });
+  const result = transaction(createGameSession(campaign).dispatch({ type: 'move', direction: 'e' }));
+  assert.equal(result.state.floor.level, 10);
+  const recovery = result.recovery!;
+  assert.equal(recovery.realm, 'Underground 10'); assert.equal(recovery.floor.level, 10); assert.equal(recovery.floor.time, 0); assert.equal(recovery.progression.difficulty, 10);
+  assert.equal(recovery.progression.level, 4); assert.equal(recovery.progression.xp, 27);
+  assert.equal(recovery.progression.attributes.strength, 14); assert.deepEqual(recovery.player.abilities, [null, null, null]);
+  assert.deepEqual(recovery.player.inventory, []); assert.deepEqual(recovery.player.equipment.weapons, [null, null]);
+  assert.deepEqual(recovery.counters, { keys: 0, gold: 0 });
   assert.ok(result.events.some((event) => event.type === 'player.died'));
 });
 
@@ -1150,7 +1266,7 @@ test('inventory collection is alphabetical, capacity bounded, and equipment comm
   const armor = { id: 'a-armor', name: 'A Armor', group: 'armor' as const, modifiers: { defense: 2 } };
   campaign.floor.entities = [{ id: 'loot-z', kind: 'item', x, y, item: sword }];
   const picked = applyAction(campaign, { type: 'move', direction: 'e' });
-  assert.deepEqual(picked.state.player.equipment.weapons, [{ id: 'starter-stick', name: 'Wooden Stick', group: 'weapons' as const, modifiers: { offense: 8 }, isStackable: false }, null]); assert.equal(picked.state.player.inventory[0].id, sword.id);
+  assert.deepEqual(picked.state.player.equipment.weapons, [null, null]); assert.equal(picked.state.player.inventory[0].id, sword.id);
   picked.state.player.inventory.push(armor); picked.state.player.inventory.sort((a, b) => a.name.localeCompare(b.name));
   const equipped = applyAction(picked.state, { type: 'equip', itemId: armor.id, group: 'armor' as const, index: 1 });
   assert.equal(equipped.state.floor.time, picked.state.floor.time + 1); assert.equal(present(equipped.state.player.equipment.armor[1]).id, armor.id);
@@ -1160,13 +1276,13 @@ test('inventory collection is alphabetical, capacity bounded, and equipment comm
   const reordered = applyAction(equipped.state, { type: 'reorder-equipment', group: 'armor' as const, index: 0, other: 1 });
   assert.equal(reordered.state.floor.time, equipped.state.floor.time + 1);
   assert.equal(effectiveAttributes(reordered.state).defense, effectiveAttributes(equipped.state).defense);
-  reordered.state.player.inventory = Array.from({ length: 10 }, (_, index) => ({ id: `i${index}`, name: `Item ${index}`, group: 'weapons' as const, modifiers: {} }));
+  reordered.state.player.inventory = Array.from({ length: reordered.state.player.inventoryCapacity }, (_, index) => ({ id: `i${index}`, name: `Item ${index}`, group: 'weapons' as const, modifiers: {} }));
   assert.equal(applyAction(reordered.state, { type: 'unequip', group: 'armor' as const, index: 0 }).accepted, false);
   const full = structuredClone(campaign); full.player.inventory = Array.from({ length: full.player.inventoryCapacity }, (_, index) => ({ id: `f${index}`, name: `F${index}`, group: 'weapons' as const, modifiers: {} }));
   const lootPosition = { x: full.player.x + 1, y: full.player.y }; full.floor.map![lootPosition.y][lootPosition.x] = 0;
   full.floor.entities = [{ id: 'blocked-loot', kind: 'item', ...lootPosition, item: { id: 'blocked-item', name: 'Blocked', group: 'weapons' as const, modifiers: {} } }];
   const notPicked = applyAction(full, { type: 'move', direction: 'e' });
-  assert.equal(notPicked.state.player.inventory.length, 10); assert.ok(notPicked.state.floor.entities.some((entity) => entity.id === 'blocked-loot'));
+  assert.equal(notPicked.state.player.inventory.length, full.player.inventoryCapacity); assert.ok(notPicked.state.floor.entities.some((entity) => entity.id === 'blocked-loot'));
 });
 
 test('equipment swaps use the same validated projection for one-slot and two-slot targets', () => {
@@ -1309,7 +1425,7 @@ test('Skeleton Archer fires across a clear five-tile cardinal line but not throu
   assert.equal(wall.events.some((event) => event.type === 'resource.changed' && event.facts.cause === 'enemy-attack'), false);
 
   const renderModel = WorldRender.Render({ cells: clear.state.floor.cells, entities: [present(clear.state.floor.entities.find((entity): entity is Enemy => entity.kind === 'enemy'))], player: clear.state.player });
-  assert.equal(renderModel.actors[0]?.kind, 'skeleton');
+  assert.equal(renderModel.actors[0]?.kind, 'skeleton-archer');
 });
 
 test('drag resolver previews and commits only relevant compatible destinations', () => {
@@ -1323,13 +1439,17 @@ test('drag resolver previews and commits only relevant compatible destinations',
   assert.equal(resolveInventoryDrop({ kind: 'slot', group: 'weapons' as const, index: 0, item }, { kind: 'slot', group: 'armor' as const, index: 1 }), null);
   assert.deepEqual(resolveInventoryDrop({ kind: 'slot', group: 'weapons' as const, index: 0, item }, { kind: 'slot', group: 'weapons' as const, index: 1 }), { type: 'reorder-equipment', group: 'weapons' as const, index: 0, other: 1 });
   assert.deepEqual(resolveInventoryDrop({ kind: 'slot', group: 'armor' as const, index: 1, item }, { kind: 'inventory' }), { type: 'unequip', group: 'armor' as const, index: 1 });
-  const potion = createCampaign(40).player.inventory[0];
+  const potion = { id: 'health-potion', name: 'Health Potion', group: 'weapons' as const, modifiers: {}, category: 'consumable' as const, consumableResource: 'health' as const, isStackable: true, quantity: 1 };
   assert.deepEqual(resolveInventoryDrop({ kind: 'inventory', item: potion }, { kind: 'quick-slot', index: 0 }), { type: 'assign-quick-slot', itemId: potion.id, index: 0 });
   assert.deepEqual(resolveInventoryDrop({ kind: 'quick-slot', item: potion, index: 0 }, { kind: 'inventory' }), { type: 'return-quick-slot', index: 0 });
   assert.deepEqual(resolveInventoryDrop({ kind: 'quick-slot', item: potion, index: 0 }, { kind: 'quick-slot', index: 1 }), { type: 'move-quick-slot', from: 0, to: 1 });
   assert.equal(resolveInventoryDrop({ kind: 'inventory', item: potion }, { kind: 'slot', group: 'weapons' as const, index: 0 }), null);
   assert.equal(resolveInventoryDrop({ kind: 'quick-slot', item: potion, index: 0 }, { kind: 'slot', group: 'weapons' as const, index: 0 }), null);
   assert.equal(resolveInventoryDrop({ kind: 'inventory', item }, { kind: 'quick-slot', index: 0 }), null);
+  const abilityItem = { id: 'ability-heal-0', name: 'Heal', group: 'weapons' as const, modifiers: {}, category: 'ability' as const, abilityId: 'heal' as const };
+  assert.deepEqual(resolveInventoryDrop({ kind: 'ability', item: abilityItem, index: 0 }, { kind: 'inventory' }), { type: 'store-ability', index: 0 });
+  assert.deepEqual(resolveInventoryDrop({ kind: 'ability', item: abilityItem, index: 0 }, { kind: 'drop-item' }), { type: 'drop-item', source: { kind: 'ability', index: 0 } });
+  assert.deepEqual(resolveInventoryDrop({ kind: 'inventory', item: abilityItem }, { kind: 'drop-item' }), { type: 'drop-item', source: { kind: 'inventory', itemId: abilityItem.id } });
 });
 
 test('drag descriptions share valid drop actions with transient equip and unequip previews', () => {
@@ -1339,6 +1459,16 @@ test('drag descriptions share valid drop actions with transient equip and unequi
   assert.deepEqual(equip.action, { type: 'equip', itemId: stick.id, group: 'weapons' as const, index: 1 }); assert.equal(present(equip.preview).offense, baseline.offense + 3);
   assert.equal(describeInventoryDrop(campaign, { kind: 'inventory', item: stick }, { kind: 'slot', group: 'armor' as const, index: 0 }), null);
   assert.ok(describeInventoryDrop(campaign, { kind: 'inventory', item: stick }, { kind: 'slot', group: 'weapons' as const, index: 0 }, { id: 'occupied', name: 'Occupied', group: 'weapons', modifiers: {} }));
+  const dropped = present(describeInventoryDrop(campaign, { kind: 'inventory', item: stick }, { kind: 'drop-item' }));
+  assert.equal(dropped.before?.id, stick.id); assert.equal(dropped.after, null);
+  const abilityItem = { id: 'ability-heal', name: 'Heal', group: 'weapons' as const, modifiers: {}, category: 'ability' as const, abilityId: 'heal' as const };
+  campaign.player.inventory = [abilityItem];
+  const ability = present(describeInventoryDrop(campaign, { kind: 'inventory', item: abilityItem }, { kind: 'ability', index: 0 }));
+  assert.equal(ability.before, null); assert.equal(ability.after?.id, abilityItem.id);
+  const potion = { id: 'health-potion', name: 'Health Potion', group: 'weapons' as const, modifiers: {}, category: 'consumable' as const, consumableResource: 'health' as const, isStackable: true, quantity: 1 };
+  campaign.player.inventory = [potion];
+  const quickSlot = present(describeInventoryDrop(campaign, { kind: 'inventory', item: potion }, { kind: 'quick-slot', index: 0 }));
+  assert.equal(quickSlot.before, null); assert.equal(quickSlot.after?.id, potion.id);
   const equipped = createCampaign(402); equipped.player.equipment.weapons[0] = stick; const equippedBaseline = effectiveAttributes(equipped);
   const unequip = present(describeInventoryDrop(equipped, { kind: 'slot', item: stick, group: 'weapons' as const, index: 0 }, { kind: 'inventory' }));
   assert.deepEqual(unequip.action, { type: 'unequip', group: 'weapons' as const, index: 0 }); assert.equal(present(unequip.preview).offense, equippedBaseline.offense - 3);
@@ -1348,7 +1478,7 @@ test('drag descriptions share valid drop actions with transient equip and unequi
 });
 
 test('abilities reject empty or unaffordable bindings and reassignment updates key positions', () => {
-  const campaign = createCampaign(41); campaign.floor.entities = [];
+  const campaign = createCampaign(41); campaign.player.abilities = ['heal', 'wand', null]; campaign.floor.entities = [];
   const insufficient = structuredClone(campaign); insufficient.player.resources.health.current -= 1; insufficient.player.resources.mana.current = 0;
   const rejected = applyAction(insufficient, { type: 'ability', index: 0 });
   assert.equal(rejected.accepted, false); assert.equal(rejected.ticks, 0); assert.equal(rejected.events[0].facts.reason, 'insufficient-mana');
@@ -1361,6 +1491,10 @@ test('abilities reject empty or unaffordable bindings and reassignment updates k
   assert.equal(invalidAbility.accepted, false); assert.equal(invalidAbility.events[0].facts.reason, 'invalid-ability-slot'); assert.equal(invalidAbility.state.floor.time, 1);
   const noTarget = applyAction(campaign, { type: 'ability', index: 1 });
   assert.equal(noTarget.accepted, false); assert.equal(noTarget.events[0].facts.reason, 'no-valid-target');
+  const stored = applyAction(campaign, { type: 'store-ability', index: 0 });
+  assert.equal(stored.accepted, true); assert.equal(stored.state.player.abilities[0], null); assert.equal(stored.state.player.inventory.find((item) => item.category === 'ability')?.abilityId, 'heal');
+  const rebound = applyAction(stored.state, { type: 'assign-ability-from-inventory', itemId: stored.state.player.inventory.find((item) => item.category === 'ability')!.id, index: 2 });
+  assert.equal(rebound.accepted, true); assert.equal(rebound.state.player.abilities[2], 'heal'); assert.equal(rebound.state.player.inventory.some((item) => item.category === 'ability'), false);
 });
 
 test('level one generates one sealed floor-trigger door barrel set with every seeded region role', () => {
@@ -1395,7 +1529,7 @@ test('a barrel push holds and releases its linked door while closed doors block 
   assert.equal(rejectedPush.accepted, false); assert.equal(rejectedPush.ticks, 0); assert.equal(rejectedPush.events[0].facts.reason, 'blocked-barrel');
   campaign.player.x = 47;
   const pushed = applyAction(campaign, { type: 'move', direction: 'e' });
-  assert.equal(pushed.accepted, true); assert.deepEqual(present(pushed.state.floor.objectSets)[0].barrel, { x: 49, y: 50 });
+  assert.equal(pushed.accepted, true); assert.deepEqual(present(pushed.state.floor.objectSets)[0].barrel, { x: 49, y: 50, hasMass: true });
   assert.equal(isObjectSetDoorOpen(present(pushed.state.floor.objectSets)[0], pushed.state.player), true);
   const backedUp = applyAction(pushed.state, { type: 'move', direction: 'w' });
   const approached = applyAction(backedUp.state, { type: 'move', direction: 'e' });
@@ -1439,7 +1573,8 @@ test('any object with hasMass activates a floor trigger', () => {
 });
 
 test('object sets survive save-shaped campaign normalization and render identically in both world views', () => {
-  const campaign = createCampaign(123); const set = present(campaign.floor.objectSets)[0];
+  const campaign = createCampaign(123); const set = present(campaign.floor.objectSets?.find((entry) => entry.kind === 'floor-trigger-door-barrel'));
+  campaign.floor.objectSets = [set];
   campaign.player.x = set.trigger.x; campaign.player.y = set.trigger.y;
   const restored = upgradeCampaignResources(structuredClone(campaign));
   assert.deepEqual(restored.floor.objectSets, campaign.floor.objectSets);
@@ -1455,6 +1590,24 @@ test('object sets survive save-shaped campaign normalization and render identica
   returned.floor = structuredClone(returned.floors['1']);
   assert.deepEqual(upgradeCampaignResources(returned).floor.objectSets, restored.floor.objectSets);
   assert.equal(isObjectSetDoorOpen(present(returned.floor.objectSets)[0], returned.player), true);
+});
+
+test('a moved barrel keeps mass for renderer trigger activation', () => {
+  const campaign = createCampaign(77); campaign.floor.entities = [];
+  campaign.floor.objectSets = [{ id: 'fixture', kind: 'floor-trigger-door-barrel', barrel: { x: 48, y: 50, hasMass: true }, trigger: { x: 49, y: 50 }, door: { x: 54, y: 50 }, regionRole: 'optional-reward' }];
+  campaign.player.x = 47; campaign.player.y = 50;
+  const pushed = applyAction(campaign, { type: 'move', direction: 'e' });
+  const set = present(pushed.state.floor.objectSets)[0];
+  const rendered = WorldRender.Render({ map: pushed.state.floor.map, entities: pushed.state.floor.entities, objectSets: pushed.state.floor.objectSets, player: pushed.state.player });
+  assert.equal(set.barrel.hasMass, true);
+  assert.equal(rendered.puzzleObjects.find((object) => object.kind === 'trigger')?.active, true);
+});
+
+test('a legacy barrel without an explicit mass flag activates its floor trigger', () => {
+  const campaign = createCampaign(78); campaign.floor.entities = [];
+  campaign.floor.objectSets = [{ id: 'legacy-fixture', kind: 'floor-trigger-door-barrel', barrel: { x: 49, y: 50 }, trigger: { x: 49, y: 50 }, door: { x: 54, y: 50 }, regionRole: 'optional-reward' }];
+  const rendered = WorldRender.Render({ map: campaign.floor.map, entities: campaign.floor.entities, objectSets: campaign.floor.objectSets, player: { ...campaign.player, x: 47, y: 50 } });
+  assert.equal(rendered.puzzleObjects.find((object) => object.kind === 'trigger')?.active, true);
 });
 
 test('WorldRender shares exact terrain and entity coordinates while camera policies remain presentation-only', () => {
@@ -1474,7 +1627,7 @@ test('WorldRender shares exact terrain and entity coordinates while camera polic
   assert.deepEqual(getCameraCenter({ mode: 'screen', player: { x: 24, y: 13 }, previousCenter: screen, visibleWidth: 10, visibleHeight: 8 }), screen);
   assert.deepEqual(getCameraCenter({ mode: 'screen', player: { x: 25, y: 14 }, previousCenter: screen, visibleWidth: 10, visibleHeight: 8 }), { x: 30, y: 18 });
   assert.deepEqual(getCameraCenter({ mode: 'screen', player: { x: 14, y: 5 }, previousCenter: screen, visibleWidth: 10, visibleHeight: 8 }), { x: 10, y: 2 });
-  assert.deepEqual(getCameraCenter({ mode: 'center', player: { x: 1, y: 1 }, visibleWidth: 20, visibleHeight: 10, mapWidth: 100, mapHeight: 100 }), { x: 9.5, y: 4.5 });
+  assert.deepEqual(getCameraCenter({ mode: 'center', player: { x: 1, y: 1 }, visibleWidth: 20, visibleHeight: 10, mapWidth: 100, mapHeight: 100 }), { x: 1, y: 1 });
   assert.deepEqual(getCameraCenter({ mode: 'deadzone', player: { x: 98, y: 99 }, previousCenter: { x: 80, y: 80 }, visibleWidth: 20, visibleHeight: 10, mapWidth: 100, mapHeight: 100 }), { x: 89.5, y: 94.5 });
   assert.deepEqual(getCameraCenter({ mode: 'screen', player: { x: 99, y: 99 }, visibleWidth: 20, visibleHeight: 10, mapWidth: 100, mapHeight: 100 }), { x: 89.5, y: 94.5 });
   assert.deepEqual(getCameraCenter({ mode: 'center', player: { x: 1, y: 1 }, visibleWidth: 120, visibleHeight: 120, mapWidth: 100, mapHeight: 100 }), { x: 1, y: 1 });
@@ -1482,6 +1635,9 @@ test('WorldRender shares exact terrain and entity coordinates while camera polic
   assert.deepEqual(getCameraCenter({ mode: 'deadzone', player: { x: 14.5, y: 10 }, previousCenter: player, visibleWidth: 20, visibleHeight: 10 }), { x: 11.5, y: 10 });
   assert.deepEqual(getCameraCenter({ mode: 'screen', player: { x: 20.5, y: 10 }, visibleWidth: 10, visibleHeight: 8 }), { x: 20.5, y: 10 });
   assert.equal(getMouseScreenEdgeExit({ mode: 'screen', player: { x: 24, y: 10 }, target: { x: 24, y: 10 }, direction: 'e', previousCenter: screen, visibleWidth: 10, visibleHeight: 8 }), 'e');
+  assert.equal(getMouseScreenEdgeExit({ mode: 'screen', player: { x: 15, y: 10 }, target: { x: 15, y: 10 }, direction: 'w', previousCenter: screen, visibleWidth: 10, visibleHeight: 8 }), 'w');
+  assert.equal(getMouseScreenEdgeExit({ mode: 'screen', player: { x: 20, y: 6 }, target: { x: 20, y: 6 }, direction: 'n', previousCenter: screen, visibleWidth: 10, visibleHeight: 8 }), 'n');
+  assert.equal(getMouseScreenEdgeExit({ mode: 'screen', player: { x: 20, y: 13 }, target: { x: 20, y: 13 }, direction: 's', previousCenter: screen, visibleWidth: 10, visibleHeight: 8 }), 's');
   assert.equal(getMouseScreenEdgeExit({ mode: 'screen', player: { x: 24, y: 10 }, target: { x: 24, y: 10 }, direction: 'w', previousCenter: screen, visibleWidth: 10, visibleHeight: 8 }), null);
   assert.equal(getMouseScreenEdgeExit({ mode: 'screen', player: { x: 24, y: 10 }, target: { x: 23, y: 10 }, direction: 'e', previousCenter: screen, visibleWidth: 10, visibleHeight: 8 }), null);
   assert.equal(getMouseScreenEdgeExit({ mode: 'screen', player: { x: 99, y: 10 }, target: { x: 99, y: 10 }, direction: 'e', previousCenter: { x: 89.5, y: 10 }, visibleWidth: 20, visibleHeight: 10, mapWidth: 100, mapHeight: 100 }), null);
@@ -1494,6 +1650,17 @@ test('WorldRender shares exact terrain and entity coordinates while camera polic
   assert.ok(game.walls.every((wall) => campaign.floor.map![wall.y][wall.x] === 1), 'wall entries are blocked cells');
   assert.ok(game.walls.some((wall) => wall.frame !== null), 'supported wall boundaries render a Wang face');
   assert.deepEqual(game.diagnostics.map(({ x, y, mask }) => [x, y, mask]), minimap.diagnostics.map(({ x, y, mask }) => [x, y, mask]));
+});
+
+test('WorldRender projects teleport arrows in both game and minimap views', () => {
+  const campaign = createCampaign(615);
+  const arrow = campaign.floor.entities.find((entity) => entity.kind === 'teleport-arrow')!;
+  const game = WorldRender.Render({ cells: campaign.floor.cells, entities: campaign.floor.entities, player: campaign.player, view: 'game' });
+  const minimap = WorldRender.Render({ cells: campaign.floor.cells, entities: campaign.floor.entities, player: campaign.player, view: 'minimap' });
+  const gameArrow = game.objects.find((object) => object.kind === 'teleport-arrow');
+  const mapArrow = minimap.objects.find((object) => object.kind === 'teleport-arrow');
+  assert.deepEqual([gameArrow?.x, gameArrow?.y, gameArrow?.worldX, gameArrow?.worldY], [arrow.x, arrow.y, arrow.x * 32 + 16, arrow.y * 32 + 16]);
+  assert.deepEqual([mapArrow?.x, mapArrow?.y, mapArrow?.worldX, mapArrow?.worldY], [gameArrow?.x, gameArrow?.y, gameArrow?.worldX, gameArrow?.worldY]);
 });
 
 test('characters face the direction of movement and bump interactions', () => {
@@ -1552,13 +1719,58 @@ test('cardinal A* routes around terrain, rejects sealed destinations, and honors
   assert.equal(findCardinalPath({ map: [[0, 1, 0], [1, 1, 1], [0, 1, 0]], entities: [] }, { x: 0, y: 0 }, { x: 2, y: 2 }), null);
   assert.equal(findCardinalPath({ map: [[0, 0, 0]], entities: [{ id: 'blocker', x: 1, y: 0 }] }, { x: 0, y: 0 }, { x: 2, y: 0 }), null);
   assert.deepEqual(findCardinalPath({ map: [[0, 0, 0, 0]], entities: [{ id: 'potion', kind: 'potion', x: 1, y: 0 }, { id: 'gold', kind: 'gold', x: 2, y: 0 }] }, { x: 0, y: 0 }, { x: 3, y: 0 }), [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 3, y: 0 }]);
-  const clearDetour = findCardinalPath({ map: [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]], entities: [{ id: 'potion', kind: 'potion', x: 1, y: 1 }] }, { x: 0, y: 1 }, { x: 4, y: 1 });
-  assert.ok(clearDetour && !clearDetour.some(({ x, y }) => x === 1 && y === 1), 'prefer a longer empty route over a pickup route');
+  const clearDetour = findCardinalPath({ map: [[0, 0, 0, 0, 0], [0, 1, 1, 1, 0], [0, 0, 0, 0, 0]], entities: [{ id: 'coin', kind: 'gold', x: 2, y: 0 }] }, { x: 0, y: 0 }, { x: 4, y: 0 });
+  assert.ok(clearDetour && !clearDetour.some(({ x, y }) => x === 2 && y === 0), 'prefer a coin-free detour when it costs four moves');
+  const goldShortcut = findCardinalPath({ map: [[0, 0, 0, 0, 0], [0, 1, 1, 1, 0], [0, 1, 1, 1, 0], [0, 1, 1, 1, 0], [0, 1, 1, 1, 0], [0, 1, 1, 1, 0], [0, 0, 0, 0, 0]], entities: [{ id: 'coin', kind: 'gold', x: 2, y: 0 }] }, { x: 0, y: 0 }, { x: 4, y: 0 });
+  assert.deepEqual(goldShortcut, [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 3, y: 0 }, { x: 4, y: 0 }], 'take a coin when it saves at least five moves');
   assert.equal(findCardinalPath({ map: [[0, 0, 0]], entities: [{ id: 'chest', kind: 'chest', x: 1, y: 0 }] }, { x: 0, y: 0 }, { x: 2, y: 0 }), null);
   assert.equal(findCardinalPath({ map: [[0, 0, 0]], entities: [legacyEnemy({ id: 'target', kind: 'enemy', x: 2, y: 0 })] }, { x: 0, y: 0 }, { x: 2, y: 0 }), null);
   const closedDoorFloor = { map: [[0, 0, 0]], entities: [], objectSets: [{ kind: 'floor-trigger-door-barrel', barrel: { x: 0, y: 0 }, trigger: { x: 2, y: 0 }, door: { x: 1, y: 0 } }] };
   assert.equal(findCardinalPath(closedDoorFloor, { x: 0, y: 0 }, { x: 2, y: 0 }, { respectObjectSets: true }), null, 'closed doors are hard blockers');
   assert.deepEqual(findCardinalApproachPath(closedDoorFloor, { x: 0, y: 0 }, { x: 2, y: 0 }, { respectObjectSets: true }), [{ x: 0, y: 0 }], 'closed-door approach ends on the cardinal tile before the door');
+});
+
+test('player routes avoid walkable objects only within a five-tile total detour', () => {
+  const object = { x: 2, y: 0 };
+  const fixtures = [
+    ...['potion', 'key', 'gold', 'item', 'stairs', 'teleport-arrow', 'discovery'].map(kind => ({ entities: [{ id: kind, kind, ...object }] })),
+    { entities: [{ id: 'opened-crate', kind: 'crate', opened: true, ...object }] },
+    { decorations: [{ kind: 'trap', ...object }] },
+    { decorations: [{ kind: 'torch', ...object }] },
+    { tiledDecorations: [object] },
+    { objectSets: [{ kind: 'floor-trigger-door-barrel', trigger: object }] },
+    { objectSets: [{ kind: 'encounter-lockdown', completed: true, doors: [object] }] },
+  ];
+  for (const fixture of fixtures) for (const depth of [1, 2, 3]) {
+    const map = Array.from({ length: depth + 1 }, (_, y) => [0, y === 0 || y === depth ? 0 : 1, y === 0 || y === depth ? 0 : 1, y === 0 || y === depth ? 0 : 1, 0]);
+    const campaign = { player: { x: 0, y: 0 }, floor: { map, ...fixture } };
+    const result = getMousePathResult({ x: 4, y: 0 }, campaign);
+    const path = present(result.path);
+    assert.equal(result.reachable, true);
+    assert.equal(path.some(cell => cell.x === object.x && cell.y === object.y), depth === 3, JSON.stringify(fixture));
+    assert.equal(path.length - 1, depth <= 2 ? 4 + depth * 2 : 4);
+    assert.deepEqual(getMouseMovementFromSelectedCell({ x: 4, y: 0, pressed: true }, campaign, path), { direction: path[1].y === 1 ? 's' : 'e', sprint: false });
+    assert.deepEqual(getMousePathResult(object, campaign).path?.at(-1), object, 'explicit object destinations remain reachable');
+  }
+});
+
+test('player object avoidance falls back through unavoidable objects and preserves hard blockers', () => {
+  const player = { x: 0, y: 0 }, target = { x: 4, y: 0 };
+  const floor = { map: [[0, 0, 0, 0, 0]], entities: [{ kind: 'potion', x: 1, y: 0 }, { kind: 'key', x: 2, y: 0 }, { kind: 'gold', x: 3, y: 0 }] };
+  assert.equal(getMousePathResult(target, { player, floor }).path?.length, 5);
+  for (const kind of ['enemy', 'chest', 'crate', 'campfire']) {
+    const result = getMousePathResult(target, { player, floor: { ...floor, entities: [{ kind, x: 2, y: 0 }] } });
+    assert.equal(result.reachable, false, kind);
+    assert.deepEqual(result.path?.at(-1), { x: 1, y: 0 }, kind);
+  }
+  const doorFloor = { ...floor, entities: [], objectSets: [{ kind: 'floor-trigger-door-barrel', barrel: player, trigger: target, door: { x: 2, y: 0 } }] };
+  assert.deepEqual(getMousePathResult(target, { player, floor: doorFloor }).path?.at(-1), { x: 1, y: 0 });
+});
+
+test('player object detour budget covers the whole route rather than each object', () => {
+  const floor = { map: [[0, 0, 0, 0, 0], [0, 1, 1, 1, 0], [0, 1, 1, 1, 0], [0, 0, 0, 0, 0]], entities: [{ kind: 'potion', x: 1, y: 0 }, { kind: 'key', x: 2, y: 0 }, { kind: 'gold', x: 3, y: 0 }] };
+  const result = getMousePathResult({ x: 4, y: 0 }, { player: { x: 0, y: 0 }, floor });
+  assert.deepEqual(result.path, [0, 1, 2, 3, 4].map(x => ({ x, y: 0 })));
 });
 
 test('selected grid cell follows only the next A* route step', () => {
@@ -1757,7 +1969,7 @@ test('turn presentation spaces ten enemy starts and leaves an active tween uncha
 });
 
 test('integrates collect, equipment preview and reorder, ability, potion, descent, and death events', () => {
-  let state = createCampaign(72); state.floor.entities = [];
+  let state = createCampaign(72); state.player.abilities = ['heal', 'wand', null]; state.floor.entities = [];
   const open = (x: number, y: number) => { state.floor.map![y][x] = 0; };
   const loot = { id: 'found-sword', name: 'Found Sword', group: 'weapons' as const, modifiers: { offense: 3 } };
   const x = state.player.x + 1, y = state.player.y; open(x, y);
@@ -1797,11 +2009,11 @@ test('integrates collect, equipment preview and reorder, ability, potion, descen
 
 test('quick slots seed, transfer, stack, consume, and reject full resources', () => {
   const campaign = createCampaign(901);
-  assert.deepEqual(campaign.player.inventory.map(({ name }) => name), ['Health Potion', 'Mana Potion']); assert.equal(campaign.player.inventory.find((item) => item.name === 'Mana Potion')?.quantity, 2);
-  const health = campaign.player.inventory.find((item) => item.name === 'Health Potion')!;
+  const health = { id: 'health-potion', name: 'Health Potion', group: 'weapons' as const, modifiers: {}, category: 'consumable' as const, consumableResource: 'health' as const, isStackable: true, quantity: 1 };
+  const mana = { id: 'mana-potion', name: 'Mana Potion', group: 'weapons' as const, modifiers: {}, category: 'consumable' as const, consumableResource: 'mana' as const, isStackable: true, quantity: 2 };
+  campaign.player.inventory = [health, mana];
   let result = applyAction(campaign, { type: 'assign-quick-slot', itemId: health.id, index: 0 });
   assert.equal(result.accepted, true); assert.equal(result.ticks, 1); assert.equal(result.state.player.quickSlots?.[0]?.quantity, 1);
-  const mana = result.state.player.inventory.find((item) => item.name === 'Mana Potion')!;
   result = applyAction(result.state, { type: 'assign-quick-slot', itemId: mana.id, index: 1 });
   assert.equal(result.state.player.quickSlots?.[1]?.quantity, 2); assert.equal(result.state.player.inventory.length, 0);
   const full = structuredClone(result.state); full.player.resources.health.current = full.player.resources.health.currentMax;
@@ -1813,4 +2025,170 @@ test('quick slots seed, transfer, stack, consume, and reject full resources', ()
   assert.equal(result.accepted, true); assert.equal(result.state.player.quickSlots?.[1]?.quantity, 1); assert.equal(result.state.floor.time, 4);
   result = applyAction(result.state, { type: 'return-quick-slot', index: 1 });
   assert.equal(result.state.player.quickSlots?.[1], null); assert.equal(result.state.player.inventory.filter((item) => item.name === 'Mana Potion').length, 1);
+});
+
+test('drops inventory items into the preferred adjacent cell and recollects them', () => {
+  const campaign = createCampaign(1901);
+  const potion = { id: 'health-potion', name: 'Health Potion', group: 'weapons' as const, modifiers: {}, category: 'consumable' as const, consumableResource: 'health' as const, isStackable: true, quantity: 1 };
+  campaign.player.inventory = [potion];
+  const dropped = applyAction(campaign, { type: 'drop-item', source: { kind: 'inventory', itemId: potion.id } });
+  assert.equal(dropped.accepted, true);
+  const entity = dropped.state.floor.entities.find((entry): entry is Extract<Entity, { kind: 'item' }> => entry.kind === 'item' && entry.item.id === potion.id);
+  assert.ok(entity);
+  assert.deepEqual({ x: entity.x, y: entity.y }, { x: campaign.player.x - 1, y: campaign.player.y - 1 });
+  const dropEvent = dropped.events.find((event) => event.type === 'item.dropped')!;
+  assert.equal(dropEvent.facts.quantity, 1);
+  assert.deepEqual(dropEvent.facts.destination, { x: entity.x, y: entity.y });
+  assert.deepEqual(dropEvent.facts.source, { kind: 'inventory', itemId: potion.id });
+  assert.equal(dropEvent.gameTime, campaign.floor.time);
+  assert.equal(projectLogEvents([], dropped.events).at(-1)?.text, 'You drop Health Potion.');
+  const pickupState = structuredClone(dropped.state);
+  pickupState.player.x = entity.x + 1; pickupState.player.y = entity.y;
+  const recollected = applyAction(pickupState, { type: 'move', direction: 'w' });
+  assert.equal(recollected.accepted, true);
+  assert.ok(recollected.events.some((event) => event.type === 'item.collected' && event.facts.itemId === potion.id));
+  assert.ok(recollected.state.player.inventory.some((item) => item.id === potion.id));
+});
+
+test('uses the deterministic upper-right fallback when the preferred upper-left cell is blocked', () => {
+  const campaign = createCampaign(1900);
+  const potion = { id: 'health-potion', name: 'Health Potion', group: 'weapons' as const, modifiers: {}, category: 'consumable' as const, consumableResource: 'health' as const, isStackable: true, quantity: 1 };
+  campaign.player.inventory = [potion];
+  const preferred = campaign.floor.cells[campaign.player.y - 1]![campaign.player.x - 1]!;
+  preferred.walkable = false;
+  if (campaign.floor.map) campaign.floor.map[campaign.player.y - 1]![campaign.player.x - 1] = 1;
+  const result = applyAction(campaign, { type: 'drop-item', source: { kind: 'inventory', itemId: potion.id } });
+  const entity = result.state.floor.entities.find((entry): entry is Extract<Entity, { kind: 'item' }> => entry.kind === 'item' && entry.item.id === potion.id)!;
+  assert.equal(result.accepted, true);
+  assert.deepEqual({ x: entity.x, y: entity.y }, { x: campaign.player.x + 1, y: campaign.player.y - 1 });
+});
+
+test('rejects a drop without a valid adjacent cell and leaves the source unchanged', () => {
+  const campaign = createCampaign(1902);
+  const potion = { id: 'health-potion', name: 'Health Potion', group: 'weapons' as const, modifiers: {}, category: 'consumable' as const, consumableResource: 'health' as const, isStackable: true, quantity: 1 };
+  campaign.player.inventory = [potion];
+  for (const [dx, dy] of [[-1, -1], [1, -1], [0, -1], [-1, 0], [1, 0], [0, 1], [-1, 1], [1, 1]]) {
+    const cell = campaign.floor.cells[campaign.player.y + dy]?.[campaign.player.x + dx];
+    if (cell) { cell.walkable = false; if (campaign.floor.map) campaign.floor.map[campaign.player.y + dy]![campaign.player.x + dx] = 1; }
+  }
+  const result = applyAction(campaign, { type: 'drop-item', source: { kind: 'inventory', itemId: potion.id } });
+  assert.equal(result.accepted, false);
+  assert.equal(result.events[0]?.type, 'item.drop.rejected');
+  assert.equal(result.events[0]?.facts.outcome, 'rejected');
+  assert.ok(result.state.player.inventory.some((item) => item.id === potion.id));
+  assert.equal(result.state.floor.entities.some((entry) => entry.kind === 'item' && entry.item.id === potion.id), false);
+});
+
+test('persists a dropped item and Extra Space through compact save and load', () => {
+  const storage = new MemoryStorage();
+  const campaign = createCampaign(1903);
+  const potion = { id: 'mana-potion', name: 'Mana Potion', group: 'weapons' as const, modifiers: {}, category: 'consumable' as const, consumableResource: 'mana' as const, isStackable: true, quantity: 2 };
+  const capacity = { id: 'capacity', name: 'Extra Carrying Capacity +5', group: 'weapons' as const, modifiers: {}, category: 'capacity' as const, capacityBonus: 6, isStackable: false };
+  campaign.player.inventory = [potion, capacity];
+  const dropped = applyAction(campaign, { type: 'drop-item', source: { kind: 'inventory', itemId: potion.id } });
+  const entity = dropped.state.floor.entities.find((entry): entry is Extract<Entity, { kind: 'item' }> => entry.kind === 'item' && entry.item.id === potion.id)!;
+  writeSlot(storage, '2', dropped.state);
+  const restored = readSlot(storage, '2')!;
+  const restoredEntity = restored.floor.entities.find((entry): entry is Extract<Entity, { kind: 'item' }> => entry.kind === 'item' && entry.item.id === potion.id)!;
+  assert.deepEqual({ x: restoredEntity.x, y: restoredEntity.y, quantity: restoredEntity.item.quantity }, { x: entity.x, y: entity.y, quantity: entity.item.quantity });
+  assert.equal(restored.player.inventory.find((item) => item.name === 'Extra Carrying Capacity +5')?.capacityBonus, 6);
+  assert.equal(effectiveInventoryCapacity(restored), 11);
+});
+
+test('drops equipment, quick-slot stacks, and abilities through the same world path', () => {
+  const equipped = createCampaign(1904);
+  const weapon = { id: 'stick', name: 'Wooden Stick', group: 'weapons' as const, modifiers: { offense: 1 }, isStackable: false };
+  equipped.player.equipment.weapons[0] = weapon;
+  const equipmentDrop = applyAction(equipped, { type: 'drop-item', source: { kind: 'slot', group: 'weapons', index: 0 } });
+  assert.equal(equipmentDrop.accepted, true); assert.equal(equipmentDrop.state.player.equipment.weapons[0], null);
+  assert.ok(equipmentDrop.state.floor.entities.some((entry): entry is Extract<Entity, { kind: 'item' }> => entry.kind === 'item' && entry.item.id === weapon.id));
+
+  const quick = createCampaign(1905);
+  const health = { id: 'health', name: 'Health Potion', group: 'weapons' as const, modifiers: {}, category: 'consumable' as const, consumableResource: 'health' as const, isStackable: true, quantity: 1 };
+  quick.player.inventory = [health];
+  const assigned = applyAction(quick, { type: 'assign-quick-slot', itemId: health.id, index: 0 });
+  const quickDrop = applyAction(assigned.state, { type: 'drop-item', source: { kind: 'quick-slot', index: 0 } });
+  assert.equal(quickDrop.accepted, true); assert.equal(quickDrop.state.player.quickSlots?.[0], null);
+  assert.equal(quickDrop.state.floor.entities.find((entry): entry is Extract<Entity, { kind: 'item' }> => entry.kind === 'item' && entry.item.id === health.id)?.item.quantity, 1);
+
+  const ability = createCampaign(1906);
+  ability.player.abilities[0] = 'heal';
+  const abilityDrop = applyAction(ability, { type: 'drop-item', source: { kind: 'ability', index: 0 } });
+  assert.equal(abilityDrop.accepted, true); assert.equal(abilityDrop.state.player.abilities[0], null);
+  assert.equal(abilityDrop.state.floor.entities.find((entry): entry is Extract<Entity, { kind: 'item' }> => entry.kind === 'item' && entry.item.category === 'ability')?.item.abilityId, 'heal');
+});
+
+test('normal levels seed deterministic approved pickups', () => {
+  const first = generateFloor(2, 2201, 1);
+  const second = generateFloor(2, 2201, 1);
+  const firstPickups = first.entities.filter((entry) => entry.kind === 'item' || entry.kind === 'potion');
+  const secondPickups = second.entities.filter((entry) => entry.kind === 'item' || entry.kind === 'potion');
+  assert.ok(firstPickups.length > 0);
+  assert.deepEqual(firstPickups.map((entry) => entry.kind === 'item' ? entry.item.name : entry.resource), secondPickups.map((entry) => entry.kind === 'item' ? entry.item.name : entry.resource));
+  assert.ok(firstPickups.every((entry) => entry.kind !== 'item' || WORLD_DROPPABLE_ITEM_NAMES.includes(entry.item.name as typeof WORLD_DROPPABLE_ITEM_NAMES[number])));
+});
+
+test('item-test mode places every approved world item near the level start', () => {
+  const floor = generateFloor(1, 2202, 1, { level1ObjectTestMode: true });
+  const items = floor.entities.filter((entry): entry is Extract<Entity, { kind: 'item' }> => entry.kind === 'item');
+  assert.deepEqual(new Set(items.map((entry) => entry.item.name)), new Set(WORLD_DROPPABLE_ITEM_NAMES));
+  assert.ok(items.every((entry) => Math.hypot(entry.x - floor.start.x, entry.y - floor.start.y) <= 50));
+});
+
+
+test('occupied ability slots preview and swap inventory abilities without losing either ability', () => {
+  const campaign = createCampaign(9041); campaign.floor.entities = [];
+  campaign.player.abilities = ['heal', 'wand', null];
+  const item: Item = { id: 'incoming-wand', name: 'Wand', group: 'weapons', modifiers: {}, category: 'ability', abilityId: 'wand' };
+  campaign.player.inventoryCapacity = 1; campaign.player.inventory = [item];
+  const transfer = present(describeInventoryDrop(campaign, { kind: 'inventory', item }, { kind: 'ability', index: 0 }));
+  assert.equal(transfer.before?.abilityId, 'heal'); assert.equal(transfer.after?.abilityId, 'wand');
+  assert.equal(campaign.player.abilities[0], 'heal');
+  const result = applyAction(campaign, transfer.action);
+  assert.equal(result.accepted, true); assert.equal(result.state.player.abilities[0], 'wand');
+  assert.equal(result.state.player.inventory.length, 1); assert.equal(result.state.player.inventory[0].abilityId, 'heal');
+  assert.equal(new Set(result.state.player.inventory.map(entry => entry.id)).size, result.state.player.inventory.length);
+  const rebound = applyAction(result.state, { type: 'assign-ability-from-inventory', itemId: item.id, index: 0 });
+  assert.equal(rebound.accepted, true); assert.equal(rebound.state.player.abilities[0], 'heal');
+  const reordered = applyAction(campaign, { type: 'assign-ability', from: 0, to: 1 });
+  assert.deepEqual(reordered.state.player.abilities, ['wand', 'heal', null]);
+});
+
+test('occupied quick slots swap stacks with inventory or another slot and preserve quantities', () => {
+  const campaign = createCampaign(9042); campaign.floor.entities = [];
+  const potion = (resource: 'health' | 'mana' | 'stamina', quantity: number): Item => ({ id: resource, name: `${resource} potion`, group: 'weapons', modifiers: {}, category: 'consumable', consumableResource: resource, isStackable: true, quantity });
+  const health = potion('health', 2), mana = potion('mana', 4), stamina = potion('stamina', 3);
+  campaign.player.inventoryCapacity = 1; campaign.player.inventory = [mana];
+  campaign.player.quickSlots = [{ item: health, quantity: 7 }, { item: stamina, quantity: 3 }];
+  const transfer = present(describeInventoryDrop(campaign, { kind: 'inventory', item: mana }, { kind: 'quick-slot', index: 0 }, health));
+  assert.equal(transfer.before?.quantity, 7); assert.equal(transfer.after?.quantity, 4);
+  assert.equal(campaign.player.quickSlots[0]?.item.id, 'health');
+  const assigned = applyAction(campaign, transfer.action);
+  assert.equal(assigned.accepted, true); assert.equal(assigned.state.player.quickSlots?.[0]?.item.id, 'mana');
+  assert.equal(assigned.state.player.quickSlots?.[0]?.quantity, 4);
+  assert.equal(assigned.state.player.inventory[0].id, 'health'); assert.equal(assigned.state.player.inventory[0].quantity, 7);
+  const moved = applyAction(assigned.state, { type: 'move-quick-slot', from: 0, to: 1 });
+  assert.equal(moved.accepted, true);
+  assert.deepEqual(moved.state.player.quickSlots?.map(slot => [slot?.item.id, slot?.quantity]), [['stamina', 3], ['mana', 4]]);
+});
+
+test('quick-slot replacement merges displaced inventory stacks and matching drops still combine', () => {
+  const campaign = createCampaign(9043); campaign.floor.entities = [];
+  const health: Item = { id: 'health', name: 'Health Potion', group: 'weapons', modifiers: {}, category: 'consumable', consumableResource: 'health', isStackable: true, quantity: 2 };
+  const mana: Item = { ...health, id: 'mana', name: 'Mana Potion', consumableResource: 'mana', quantity: 4 };
+  campaign.player.inventory = [mana, health]; campaign.player.quickSlots = [{ item: { ...health, id: 'slotted-health' }, quantity: 7 }, null];
+  const swapped = applyAction(campaign, { type: 'assign-quick-slot', itemId: mana.id, index: 0 });
+  assert.equal(swapped.accepted, true); assert.equal(swapped.state.player.inventory.length, 1);
+  assert.equal(swapped.state.player.inventory[0].quantity, 9);
+  campaign.player.inventory = [{ ...health, id: 'incoming-health', quantity: 3 }];
+  const transfer = present(describeInventoryDrop(campaign, { kind: 'inventory', item: campaign.player.inventory[0] }, { kind: 'quick-slot', index: 0 }, health));
+  assert.equal(transfer.after?.quantity, 10);
+  const combined = upgradeCampaignResources(structuredClone(campaign));
+  assert.equal(combined.player.quickSlots?.[0]?.quantity, 10); assert.equal(combined.player.inventory.length, 0);
+  campaign.player.quickSlots[1] = { item: mana, quantity: 4 }; campaign.player.inventory = [mana];
+  assert.equal(describeInventoryDrop(campaign, { kind: 'inventory', item: mana }, { kind: 'quick-slot', index: 0 }, health), null);
+  assert.equal(applyAction(campaign, { type: 'assign-quick-slot', itemId: mana.id, index: 0 }).accepted, false);
+  const sword: Item = { id: 'sword', name: 'Sword', group: 'weapons', modifiers: {} };
+  assert.equal(resolveInventoryDrop({ kind: 'inventory', item: sword }, { kind: 'quick-slot', index: 0 }, health), null);
+  assert.equal(resolveInventoryDrop({ kind: 'inventory', item: sword }, { kind: 'ability', index: 0 }), null);
 });

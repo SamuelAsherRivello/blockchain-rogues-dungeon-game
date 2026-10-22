@@ -1,3 +1,5 @@
+import { measurePerformance } from "../rendering/performance-system.ts";
+import { revealDiscovery } from "../procedural/map-discovery-system.ts";
 import type { AbilityId, Attributes, Campaign, Floor, Item, Position, Preferences, ResourceInput, ResourceName, StorageAccess, StorageCollection } from "../../game/types.ts";
 interface LegacyItem { id?: string; name?: string; slot?: string; defense?: number; attack?: number }
 type LegacyAttributes = Partial<Attributes> & { agility?: number; vitality?: number };
@@ -8,18 +10,20 @@ interface LegacyCampaign extends Omit<Campaign, "player" | "progression"> {
 }
 // Preserve the existing shallow save guards; normalization owns legacy fields.
 function candidate(value: unknown): Partial<Campaign> | null { return typeof value === "object" && value !== null ? value as Partial<Campaign> : null; }
-import { compactCampaignForSave, createCampaign, createResourcesModel, createRunCampaign, effectiveAttributes, ensureNearbyStairs, FLOOR_HEIGHT, FLOOR_WIDTH, GENERATOR_VERSION, isResourcesModel, normalizeQuickSlots, normalizeStackableLocations, restoreCompactCampaign, upgradeCampaignResources } from "../procedural/world-procedural-system.ts";
+import { compactCampaignForSave, createCampaign, createResourcesModel, createRunCampaign, effectiveAttributes, ensureNearbyStairs, FLOOR_HEIGHT, FLOOR_WIDTH, GENERATOR_VERSION, isResourcesModel, normalizeCampaignRecovery, normalizeQuickSlots, normalizeStackableLocations, normalizeStartRoomMetadata, restoreCompactCampaign, upgradeCampaignResources } from "../procedural/world-procedural-system.ts";
 import { gameZoomPresets } from "../../content/world/zoom.ts";
 import { createSemanticCells, ensureSemanticCells, semanticCellsFromMap } from "../procedural/level-grid-system.ts";
 import { normalizeQuest } from "../quests/quest-progression-system.ts";
+import { assertCampaignPortalLayoutsResolved, initializeWorldCampaign, validateCampaignGeneration } from '../procedural/world-procedural-system.ts';
 
 const PREFIX = "rogues-dungeon.slot.";
 const BACKUP_PREFIX = "rogues-dungeon.slot.v1-backup.";
+const DISCOVERY_BACKUP_PREFIX = "rogues-dungeon.slot.discovery-v2-backup.";
 const PREFERENCE_KEY = "rogues-dungeon.preferences.v1";
 const WORLD_SEED_KEY = "rogues-dungeon.world-seed.v1";
 export const SLOT_IDS = Object.freeze(["1", "2", "3"]);
 export const DEFAULT_PREFERENCES: Readonly<Preferences> = Object.freeze({ movementMode: "grid-tween", zoom: 1, camera: "center", fullscreenDesired: false, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
-const DEFAULT_ABILITIES: readonly (AbilityId | null)[] = Object.freeze(["heal", "wand", null]);
+const DEFAULT_ABILITIES: readonly (AbilityId | null)[] = Object.freeze([null, null, null]);
 
 function normalizeAbilityBindings(value: { player?: { abilities?: (AbilityId | null)[] } }) {
   return Array.isArray(value?.player?.abilities) ? value.player.abilities.slice(0, 3) : [...DEFAULT_ABILITIES];
@@ -45,8 +49,8 @@ export function readWorldSeed(storage: StorageAccess, fallback: number | null = 
   return seed;
 }
 
-export function isValidCampaign(input: unknown): input is Campaign { const value = candidate(input); return Boolean(value?.version === 5 && value.progression?.attributes && value.floor && value.player?.equipment && Array.isArray(value.player.inventory)); }
-function isV2Campaign(input: unknown): input is Campaign { const value = candidate(input); return Boolean((value?.version === 2 || value?.version === 3 || value?.version === 4) && value.progression?.attributes && (value.floor?.cells || value.floor?.map) && value.player?.equipment && Array.isArray(value.player.inventory)); }
+export function isValidCampaign(input: unknown): input is Campaign { const value = candidate(input); return Boolean(value?.version === 6 && value.progression?.attributes && value.floor && value.player?.equipment && Array.isArray(value.player.inventory)); }
+function isV2Campaign(input: unknown): input is Campaign { const value = candidate(input); return Boolean((value?.version === 2 || value?.version === 3 || value?.version === 4 || value?.version === 5) && value.progression?.attributes && (value.floor?.cells || value.floor?.map) && value.player?.equipment && Array.isArray(value.player.inventory)); }
 function validV1(input: unknown): input is LegacyCampaign { const value = candidate(input) as Partial<LegacyCampaign> | null; return Boolean(value?.version === 1 && value.progression?.stats && value.floor?.map && value.player?.equipment); }
 function oldItem(item: LegacyItem, id: string): Item {
   const group = /head|body|leg/i.test(item?.slot ?? "") ? "armor" : "weapons";
@@ -66,6 +70,7 @@ function legacyEquipmentItems(equipment: Record<string, LegacyItem | null> = {})
 }
 function expandUndersizedFloor(campaign: Campaign) {
   ensureSemanticCells(campaign.floor);
+  normalizeStartRoomMetadata(campaign.floor);
   const source = campaign.floor.cells;
   const sourceHeight = source.length;
   const sourceWidth = source[0]?.length ?? 0;
@@ -101,14 +106,23 @@ function rebuildBalanceProfile(campaign: Campaign, legacyAttributes: LegacyAttri
   const caps = effectiveAttributes(campaign);
   campaign.player.resources = createResourcesModel(Object.fromEntries((["health", "stamina", "mana"] as const).map((name) => [name, { current: caps[name] * resourceFraction(legacyResources, legacyAttributes, name), currentMax: caps[name] }])));
 }
+function normalizeActivePrefab(campaign: Campaign) {
+  const prefab = campaign.activePrefab;
+  if (!prefab) return;
+  if (prefab.id !== "player-home" || !Number.isInteger(prefab.returnLevel) || prefab.returnLevel < 1 || !Number.isSafeInteger(prefab.returnPosition?.x) || !Number.isSafeInteger(prefab.returnPosition?.y) || !Number.isSafeInteger(prefab.prefabPosition?.x) || !Number.isSafeInteger(prefab.prefabPosition?.y)) delete campaign.activePrefab;
+}
 export function migrateCampaign(value: unknown): Campaign {
   if (isValidCampaign(value)) {
+    assertCampaignPortalLayoutsResolved(value);
     const campaign = structuredClone(value);
-    if (!Array.isArray(campaign.floor.cells) || campaign.floor.cells.length === 0) return restoreCompactCampaign(campaign);
-    if (campaign.floor.cells.length !== FLOOR_HEIGHT || (campaign.floor.cells[0]?.length ?? 0) !== FLOOR_WIDTH) expandUndersizedFloor(campaign);
+    initializeWorldCampaign(campaign);
+    normalizeActivePrefab(campaign);
+    if (!Array.isArray(campaign.floor.cells) || campaign.floor.cells.length === 0) return normalizeCampaignRecovery(restoreCompactCampaign(campaign));
+    if (!campaign.activePrefab && (campaign.floor.cells.length !== FLOOR_HEIGHT || (campaign.floor.cells[0]?.length ?? 0) !== FLOOR_WIDTH)) expandUndersizedFloor(campaign);
+    normalizeStartRoomMetadata(campaign.floor);
     campaign.player.abilities = normalizeAbilityBindings(campaign);
     campaign.quest = normalizeQuest(campaign.quest);
-    return upgradeCampaignResources(campaign);
+    return normalizeCampaignRecovery(upgradeCampaignResources(campaign));
   }
   if (isV2Campaign(value)) {
     const level = Number.isInteger(value.floor.level) ? value.floor.level : Number.isInteger(value.floor.depth) ? value.floor.depth! : 1;
@@ -120,12 +134,16 @@ export function migrateCampaign(value: unknown): Campaign {
     const needsBalanceMigration = value.version !== 5 || !Object.hasOwn(value.progression.attributes, "stealth") || !Number.isFinite(value.progression.attributePoints) || (value.floor.entities ?? []).some((entity) => entity.kind === "enemy" && (!Number.isFinite(entity.actionCooldown) || !Number.isFinite(entity.nextActionAt)));
     const needsAbilityMigration = !Array.isArray(value.player.abilities) || value.player.abilities.length !== 3;
     const needsQuestMigration = !value.quest;
-    if (value.floor.level === level && value.progression.difficulty === difficulty && !needsSemanticMigration && !needsResourceMigration && !needsFloorMigration && !needsBalanceMigration && !needsAbilityMigration && !needsQuestMigration) { value.quest = normalizeQuest(value.quest); return upgradeCampaignResources(value); }
-    const next = { ...structuredClone(value), version: 5, floor: { ...structuredClone(value.floor), level }, progression: { ...structuredClone(value.progression), difficulty, attributePoints: Math.max(0, Number(value.progression.attributePoints ?? 0)) }, player: { ...structuredClone(value.player), abilities: normalizeAbilityBindings(value) }, realm: value.realm ?? `Underground ${level}`, quest: normalizeQuest(value.quest) };
+    if (value.floor.level === level && value.progression.difficulty === difficulty && !needsSemanticMigration && !needsResourceMigration && !needsFloorMigration && !needsBalanceMigration && !needsAbilityMigration && !needsQuestMigration) {
+      const next = { ...structuredClone(value), version: 6, mode: "adventure" as const, quest: normalizeQuest(value.quest) };
+      return normalizeCampaignRecovery(upgradeCampaignResources(next));
+    }
+    const next = { ...structuredClone(value), version: 6, mode: "adventure" as const, floor: { ...structuredClone(value.floor), level }, progression: { ...structuredClone(value.progression), difficulty, attributePoints: Math.max(0, Number(value.progression.attributePoints ?? 0)) }, player: { ...structuredClone(value.player), abilities: normalizeAbilityBindings(value) }, realm: value.realm ?? `Underground ${level}`, quest: normalizeQuest(value.quest) };
     ensureSemanticCells(next.floor);
+    normalizeStartRoomMetadata(next.floor);
     expandUndersizedFloor(next);
     if (needsBalanceMigration) rebuildBalanceProfile(next, value.progression.attributes, value.player.resources);
-    return upgradeCampaignResources(next);
+    return normalizeCampaignRecovery(upgradeCampaignResources(next));
   }
   if (!validV1(value)) throw new Error("This save is invalid or from an unsupported version.");
   const level = Number.isInteger(value.floor.level) ? value.floor.level : Number.isInteger(value.floor.depth) ? value.floor.depth! : 1;
@@ -133,6 +151,7 @@ export function migrateCampaign(value: unknown): Campaign {
   const next = createCampaign(value.floor.seed, difficulty, level);
   next.floor = ensureSemanticCells(structuredClone(value.floor));
   ensureSemanticCells(next.floor);
+  normalizeStartRoomMetadata(next.floor);
   next.floor.generatorVersion = GENERATOR_VERSION;
   next.floor.level = level;
   next.floor.time = Number.isFinite(value.floor.time) ? value.floor.time : Number.isFinite(value.time) ? value.time! : 0;
@@ -154,48 +173,75 @@ export function migrateCampaign(value: unknown): Campaign {
   expandUndersizedFloor(next);
   rebuildBalanceProfile(next, { ...stats, vitality: undefined }, value.player.resources);
   next.quest = normalizeQuest(next.quest);
-  return upgradeCampaignResources(next);
+  return normalizeCampaignRecovery(upgradeCampaignResources(next));
 }
 export function readSlot(storage: StorageAccess, slot: string | number) {
   if (!SLOT_IDS.includes(String(slot))) throw new Error("Unknown Saved Game.");
   const raw = storage.getItem(PREFIX + slot); if (!raw) return null;
   const original: unknown = JSON.parse(raw); const originalVersion = candidate(original)?.version;
-  if (originalVersion !== 5) {
+  if (isValidCampaign(original)) assertCampaignPortalLayoutsResolved(original);
+  if (originalVersion !== 6) {
     const legacy = migrateCampaign(original);
     const worldSeed = readWorldSeed(storage, legacyWorldSeed(storage));
-    const campaign = createRunCampaign(worldSeed, Number(slot), 1, legacy.progression.difficulty ?? 1, 1, { attributes: structuredClone(legacy.progression.attributes) });
+    const campaign = createRunCampaign(worldSeed, Number(slot), 1, legacy.progression.difficulty ?? 1, 1, { attributes: structuredClone(legacy.progression.attributes), worldAttributes: legacy.worldAttributes, mode: legacy.mode });
     campaign.progression = structuredClone(legacy.progression);
     campaign.player.abilities = legacy.player.abilities.slice(0, 3);
     campaign.quest = normalizeQuest(legacy.quest);
+    normalizeCampaignRecovery(campaign);
     storage.setItem(BACKUP_PREFIX + slot, raw);
     writeSlot(storage, slot, campaign);
     return campaign;
   }
+  if (!candidate(original)?.worldSchemaVersion || Object.keys(candidate(original)?.discovery ?? {}).some((key) => /^\d+$/.test(key))) {
+    if (!storage.getItem(BACKUP_PREFIX + slot)) storage.setItem(BACKUP_PREFIX + slot, raw);
+  }
   const campaign = migrateCampaign(original);
-  if (campaign?.floor?.generatorVersion === GENERATOR_VERSION) ensureNearbyStairs(campaign.floor);
+  if (campaign?.floor?.generatorVersion === GENERATOR_VERSION && !campaign.activePrefab) ensureNearbyStairs(campaign.floor);
+  revealDiscovery(campaign, campaign.player);
   return campaign;
 }
 export function writeSlot(storage: StorageAccess, slot: string | number, campaign: Campaign) {
+  return measurePerformance("save (inclusive)", () => writeSlotCore(storage, slot, campaign));
+}
+function writeSlotCore(storage: StorageAccess, slot: string | number, campaign: Campaign) {
   if (!SLOT_IDS.includes(String(slot))) throw new Error("Unknown Saved Game.");
   if (!isValidCampaign(campaign)) throw new Error("Cannot save an invalid campaign.");
+  assertCampaignPortalLayoutsResolved(campaign);
+  const existingRaw = storage.getItem(PREFIX + slot);
+  let existing: unknown;
+  try { existing = existingRaw ? JSON.parse(existingRaw) : null; } catch { existing = null; }
+  if (isValidCampaign(existing)) assertCampaignPortalLayoutsResolved(existing);
+  // Preserve the first pre-rewrite record, including malformed inactive discovery.
+  // An identical legacy backup already preserves those bytes; never replace it.
+  if (!storage.getItem(DISCOVERY_BACKUP_PREFIX + slot)) {
+    const original = storage.getItem(PREFIX + slot);
+    if (original && storage.getItem(BACKUP_PREFIX + slot) !== original) storage.setItem(DISCOVERY_BACKUP_PREFIX + slot, original);
+  }
   ensureSemanticCells(campaign.floor);
+  normalizeStartRoomMetadata(campaign.floor);
   normalizeQuickSlots(campaign);
   normalizeStackableLocations(campaign);
   campaign.quest = normalizeQuest(campaign.quest);
   campaign.slot = Number(slot);
   campaign.run = Number.isInteger(campaign.run) && campaign.run! > 0 ? campaign.run : 1;
   campaign.worldSeed = Number.isInteger(campaign.worldSeed) && campaign.worldSeed! >= 0 ? campaign.worldSeed : campaign.floor.seed;
+  normalizeCampaignRecovery(campaign);
   const compact = compactCampaignForSave(campaign);
-  storage.setItem(PREFIX + slot, JSON.stringify({ ...compact, player: { ...compact.player, abilities: normalizeAbilityBindings(compact), quickSlots: compact.player.quickSlots }, savedAt: Date.now() }));
+  const serialized = measurePerformance("save serialization", () => JSON.stringify({ ...compact, player: { ...compact.player, abilities: normalizeAbilityBindings(compact), quickSlots: compact.player.quickSlots }, savedAt: Date.now() }));
+  measurePerformance("save storage", () => storage.setItem(PREFIX + slot, serialized));
 }
 export function deleteSlot(storage: StorageAccess, slot: string | number) { if (!SLOT_IDS.includes(String(slot))) throw new Error("Unknown Saved Game."); storage.removeItem(PREFIX + slot); }
 export function clearRoguesDungeonStorage(storage: StorageCollection) {
   const keys = [];
   for (let index = 0; index < storage.length; index++) {
     const key = storage.key(index);
-    if (key === WORLD_SEED_KEY || key === PREFERENCE_KEY || key?.startsWith(PREFIX) || key?.startsWith(BACKUP_PREFIX)) keys.push(key);
+    if (key !== null) keys.push(key);
   }
   keys.forEach((key) => storage.removeItem(key));
+}
+/** Clears the data this control promises to clear without waiting on unrelated site storage. */
+export function clearRoguesDungeonBrowserStorage() {
+  clearRoguesDungeonStorage(localStorage);
 }
 export function formatSavedAgo(savedAt: number | undefined, now = Date.now()) {
   const elapsed = Math.max(0, now - (Number.isFinite(savedAt) ? savedAt! : now));
@@ -207,7 +253,34 @@ export function formatSavedAgo(savedAt: number | undefined, now = Date.now()) {
   if (elapsed < 365 * 86_400_000) return `${rounded(7 * 86_400_000)} weeks ago`;
   return `${rounded(365 * 86_400_000)} years ago`;
 }
-export function readSlotSummary(storage: StorageAccess) { return SLOT_IDS.map((slot) => { try { const state = readSlot(storage, slot); return { slot, occupied: Boolean(state), level: state?.floor.level ?? state?.floor.depth ?? null, xpLevel: state?.progression.level ?? null, savedAt: state?.savedAt }; } catch (error) { return { slot, occupied: true, invalid: true, error: error instanceof Error ? error.message : String(error) }; } }); }
+export interface SavedGameSummary { slot: string; occupied: boolean; level: number | null; xpLevel: number | null; mode?: Campaign["mode"]; savedAt?: number; invalid?: boolean; error?: string }
+const summaryCache = new WeakMap<StorageAccess, Map<string, { raw: string | null; summary: SavedGameSummary }>>();
+/** Current-format menu metadata needs neither playable terrain nor discovery decoding. */
+export function readSlotSummary(storage: StorageAccess): SavedGameSummary[] {
+  let cache = summaryCache.get(storage);
+  if (!cache) { cache = new Map(); summaryCache.set(storage, cache); }
+  return SLOT_IDS.map((slot): SavedGameSummary => {
+    let raw: string | null | undefined;
+    try {
+      raw = storage.getItem(PREFIX + slot);
+      const cached = cache.get(slot);
+      if (cached?.raw === raw) return { ...cached.summary };
+      const parsed: unknown = raw ? JSON.parse(raw) : null;
+      let state: Campaign | null;
+      if (!raw) state = null;
+      else if (isValidCampaign(parsed)) {
+        assertCampaignPortalLayoutsResolved(parsed); validateCampaignGeneration(parsed); state = parsed;
+      } else state = readSlot(storage, slot); // Preserve legacy migration and backups.
+      const summary = { slot, occupied: Boolean(state), level: state?.floor.level ?? state?.floor.depth ?? null, xpLevel: state?.progression.level ?? null, mode: state?.mode, savedAt: state?.savedAt };
+      cache.set(slot, { raw: storage.getItem(PREFIX + slot), summary });
+      return { ...summary };
+    } catch (error) {
+      const summary = { slot, occupied: true, level: null, xpLevel: null, invalid: true, error: error instanceof Error ? error.message : String(error) };
+      if (raw !== undefined) cache.set(slot, { raw, summary });
+      return { ...summary };
+    }
+  });
+}
 function normalizeVolume(value: unknown, fallback: number) { return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 100 ? value : fallback; }
 export function normalizePreferences(input: unknown): Preferences { const value = typeof input === "object" && input !== null ? input as Record<string, unknown> : {}; return { movementMode: ["grid-snap", "grid-tween", "gridless"].includes(String(value.movementMode)) ? value.movementMode as Preferences["movementMode"] : DEFAULT_PREFERENCES.movementMode, zoom: typeof value.zoom === "number" && gameZoomPresets.includes(value.zoom) ? value.zoom : DEFAULT_PREFERENCES.zoom, camera: typeof value.camera === "string" && ["center", "deadzone", "screen"].includes(value.camera) ? value.camera as Preferences["camera"] : DEFAULT_PREFERENCES.camera, fullscreenDesired: value?.fullscreenDesired === true, sfxVolume: normalizeVolume(value?.sfxVolume, DEFAULT_PREFERENCES.sfxVolume), musicVolume: normalizeVolume(value?.musicVolume, DEFAULT_PREFERENCES.musicVolume), muteAll: value?.muteAll === true, urlArgs: value?.urlArgs === true }; }
 export function readPreferences(storage: StorageAccess) { try { return normalizePreferences(JSON.parse(storage.getItem(PREFERENCE_KEY) ?? "null")); } catch { return { ...DEFAULT_PREFERENCES }; } }

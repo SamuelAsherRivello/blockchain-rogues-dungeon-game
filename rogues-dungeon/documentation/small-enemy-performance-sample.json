@@ -1,0 +1,349 @@
+{
+  "scenario": "Perf 50x50 eight enemies, 40 X-key waits, isolated Edge 156, mutable shared checkout",
+  "samples": [
+    {
+      "live": true,
+      "before": {
+        "seed": 2225201261,
+        "width": 50,
+        "height": 50,
+        "time": 1,
+        "enemies": [
+          {
+            "id": "perf-enemy-0",
+            "x": 26,
+            "y": 22
+          },
+          {
+            "id": "perf-enemy-1",
+            "x": 24,
+            "y": 22
+          },
+          {
+            "id": "perf-enemy-2",
+            "x": 27,
+            "y": 23
+          },
+          {
+            "id": "perf-enemy-3",
+            "x": 23,
+            "y": 23
+          },
+          {
+            "id": "perf-enemy-4",
+            "x": 28,
+            "y": 24
+          },
+          {
+            "id": "perf-enemy-5",
+            "x": 22,
+            "y": 24
+          },
+          {
+            "id": "perf-enemy-6",
+            "x": 28,
+            "y": 26
+          },
+          {
+            "id": "perf-enemy-7",
+            "x": 27,
+            "y": 27
+          }
+        ],
+        "player": {
+          "x": 25,
+          "y": 25
+        }
+      },
+      "after": {
+        "seed": 2225201261,
+        "width": 50,
+        "height": 50,
+        "time": 41,
+        "enemies": [
+          {
+            "id": "perf-enemy-0",
+            "x": 25,
+            "y": 24
+          },
+          {
+            "id": "perf-enemy-1",
+            "x": 24,
+            "y": 25
+          },
+          {
+            "id": "perf-enemy-2",
+            "x": 26,
+            "y": 24
+          },
+          {
+            "id": "perf-enemy-3",
+            "x": 27,
+            "y": 24
+          },
+          {
+            "id": "perf-enemy-4",
+            "x": 27,
+            "y": 25
+          },
+          {
+            "id": "perf-enemy-5",
+            "x": 25,
+            "y": 27
+          },
+          {
+            "id": "perf-enemy-6",
+            "x": 26,
+            "y": 26
+          },
+          {
+            "id": "perf-enemy-7",
+            "x": 24,
+            "y": 26
+          }
+        ],
+        "player": {
+          "x": 25,
+          "y": 25
+        }
+      },
+      "metrics": {
+        "frames": 496,
+        "fps": 93.58667144663107,
+        "median": 8.300000000001091,
+        "p95": 33.30000000000018,
+        "counts": {
+          "minimap preparations": 497,
+          "game preparations": 497,
+          "queried entries": 9443,
+          "sprite patches": 40727,
+          "active layers": 70182,
+          "active layer sprite slots": 700875,
+          "static normalization boundaries": 1,
+          "ticks": 37,
+          "enemy visits": 296,
+          "enemy navigation batches": 37,
+          "enemy reachability cells": 395,
+          "enemy path searches": 202,
+          "navigation cells tested": 3392,
+          "model builds": 74,
+          "enemy route searches rejected": 225,
+          "enemy paths rejected": 27
+        },
+        "cpu": {
+          "minimap preparation": {
+            "mean": 0.054124748525425224,
+            "max": 0.30000000074505806,
+            "count": 497
+          },
+          "game preparation": {
+            "mean": 0.89275653918894,
+            "max": 2.5,
+            "count": 497
+          },
+          "clone/upgrade (inclusive)": {
+            "mean": 0.3405405403794469,
+            "max": 0.9000000022351742,
+            "count": 37
+          },
+          "navigation (inclusive)": {
+            "mean": 0.0462882096297616,
+            "max": 1.3999999985098839,
+            "count": 229
+          },
+          "AI (inclusive)": {
+            "mean": 0.4243243246062382,
+            "max": 4.300000000745058,
+            "count": 37
+          },
+          "tick (inclusive)": {
+            "mean": 0.4324324326337995,
+            "max": 4.300000000745058,
+            "count": 37
+          },
+          "action (inclusive)": {
+            "mean": 0.8486486489104258,
+            "max": 6.800000000745058,
+            "count": 37
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0.005405405485952222,
+            "max": 0.10000000149011612,
+            "count": 37
+          },
+          "React commit": {
+            "mean": 3.0733333334326742,
+            "max": 18.399999998509884,
+            "count": 195
+          }
+        }
+      },
+      "canvases": 2,
+      "errors": []
+    },
+    {
+      "live": false,
+      "before": {
+        "seed": 2225201261,
+        "width": 50,
+        "height": 50,
+        "time": 1,
+        "enemies": [
+          {
+            "id": "perf-enemy-0",
+            "x": 26,
+            "y": 22
+          },
+          {
+            "id": "perf-enemy-1",
+            "x": 24,
+            "y": 22
+          },
+          {
+            "id": "perf-enemy-2",
+            "x": 27,
+            "y": 23
+          },
+          {
+            "id": "perf-enemy-3",
+            "x": 23,
+            "y": 23
+          },
+          {
+            "id": "perf-enemy-4",
+            "x": 28,
+            "y": 24
+          },
+          {
+            "id": "perf-enemy-5",
+            "x": 22,
+            "y": 24
+          },
+          {
+            "id": "perf-enemy-6",
+            "x": 28,
+            "y": 26
+          },
+          {
+            "id": "perf-enemy-7",
+            "x": 27,
+            "y": 27
+          }
+        ],
+        "player": {
+          "x": 25,
+          "y": 25
+        }
+      },
+      "after": {
+        "seed": 2225201261,
+        "width": 50,
+        "height": 50,
+        "time": 41,
+        "enemies": [
+          {
+            "id": "perf-enemy-0",
+            "x": 26,
+            "y": 22
+          },
+          {
+            "id": "perf-enemy-1",
+            "x": 24,
+            "y": 22
+          },
+          {
+            "id": "perf-enemy-2",
+            "x": 27,
+            "y": 23
+          },
+          {
+            "id": "perf-enemy-3",
+            "x": 23,
+            "y": 23
+          },
+          {
+            "id": "perf-enemy-4",
+            "x": 28,
+            "y": 24
+          },
+          {
+            "id": "perf-enemy-5",
+            "x": 22,
+            "y": 24
+          },
+          {
+            "id": "perf-enemy-6",
+            "x": 28,
+            "y": 26
+          },
+          {
+            "id": "perf-enemy-7",
+            "x": 27,
+            "y": 27
+          }
+        ],
+        "player": {
+          "x": 25,
+          "y": 25
+        }
+      },
+      "metrics": {
+        "frames": 525,
+        "fps": 102.44102323947783,
+        "median": 8.300000000001091,
+        "p95": 16.600000000000364,
+        "counts": {
+          "minimap preparations": 526,
+          "game preparations": 526,
+          "queried entries": 9994,
+          "sprite patches": 15392,
+          "active layers": 47340,
+          "active layer sprite slots": 714834,
+          "static normalization boundaries": 1,
+          "ticks": 36,
+          "enemy turns suppressed": 36,
+          "model builds": 72
+        },
+        "cpu": {
+          "minimap preparation": {
+            "mean": 0.04809885936658192,
+            "max": 0.29999999701976776,
+            "count": 526
+          },
+          "game preparation": {
+            "mean": 0.7923954374266668,
+            "max": 4,
+            "count": 526
+          },
+          "clone/upgrade (inclusive)": {
+            "mean": 0.3583333332919412,
+            "max": 0.8000000007450581,
+            "count": 36
+          },
+          "tick (inclusive)": {
+            "mean": 0.008333333354029391,
+            "max": 0.10000000149011612,
+            "count": 36
+          },
+          "action (inclusive)": {
+            "mean": 0.4388888891165455,
+            "max": 2.600000001490116,
+            "count": 36
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0.002777777819169892,
+            "max": 0.10000000149011612,
+            "count": 36
+          },
+          "React commit": {
+            "mean": 5.102597402771572,
+            "max": 16.5,
+            "count": 77
+          }
+        }
+      },
+      "canvases": 2,
+      "errors": []
+    }
+  ]
+}

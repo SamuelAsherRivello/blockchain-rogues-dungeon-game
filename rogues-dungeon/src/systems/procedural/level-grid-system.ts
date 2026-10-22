@@ -2,6 +2,11 @@ import type { Entity, Position, TerrainCell } from "../../game/types.ts";
 export interface Grid { cells?: TerrainCell[][]; map?: number[][]; width?: number; height?: number }
 interface Scope extends Position { width: number; height: number }
 interface LevelOptions { worldId?: string; realmId?: string; levelId?: number; seed?: number; width?: number; height?: number; cells?: TerrainCell[][] | null; entities?: Entity[]; start?: Position | null; exit?: Position | null }
+// Only an authoritative session marks a floor runtime-readonly. Legacy callers
+// remain on the validating path; replacing either static reference invalidates it.
+const runtimeGrids = new WeakMap<Grid, { cells: Grid["cells"]; map: Grid["map"] }>();
+export function isRuntimeGridValid(floor: Grid) { const entry=runtimeGrids.get(floor); return Boolean(entry && entry.cells===floor.cells && entry.map===floor.map); }
+export function markRuntimeGridValid(floor: Grid) { runtimeGrids.set(floor,{cells:floor.cells,map:floor.map}); }
 export interface LevelContext extends Grid { worldId: string; realmId: string; levelId: number; seed: number; width: number; height: number; cells: TerrainCell[][]; entities: Entity[]; start: Position | null; exit: Position | null; protectedCells: Position[]; occupiedCells: Position[]; diagnostics: (Position & { type: string; reason: string })[]; passes: { id: string; diagnostics: number }[]; generation: { seed: number; generator: string | null }; activeScope?: Scope | null; reserveCell(x: number, y: number): boolean; reserveEntityCell(x: number, y: number): boolean; writeCell(x: number, y: number, patch?: Partial<TerrainCell>, scope?: Scope | null): boolean }
 interface LevelPass { id: string; scope?: Scope; run(context: LevelContext): Partial<LevelContext> | void }
 export const TERRAIN_ROLES = Object.freeze({
@@ -43,6 +48,7 @@ export function attachLegacyMapAdapter<T extends Grid>(floor: T): T {
 
 export function ensureSemanticCells<T extends Grid>(floor: T): T & { cells: TerrainCell[][] } {
   if (!floor) return floor as T & { cells: TerrainCell[][] };
+  if (isRuntimeGridValid(floor)) return floor as T & { cells: TerrainCell[][] };
   if (!Array.isArray(floor.cells)) floor.cells = semanticCellsFromMap(floor.map ?? []);
   else if (Array.isArray(floor.map) && JSON.stringify(mapFromSemanticCells(floor.cells)) !== JSON.stringify(floor.map)) floor.cells = semanticCellsFromMap(floor.map);
   floor.width ??= floor.cells[0]?.length ?? 0;

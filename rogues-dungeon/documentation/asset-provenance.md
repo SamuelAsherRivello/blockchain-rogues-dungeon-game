@@ -1,6 +1,6 @@
 # Asset Provenance
 
-The project stores the user-supplied `Dungeons-and-Pixels-v1.4` folder at `rogues-dungeon/public/assets/art/vendors/dungeons-and-pixels-v1.4/`. Its image, character, enemy, item, prop, Tiled tileset (`.tsx`), and sample map (`.tmx`) files retain their original paths within that folder. The sample maps reference tilesets under `Tilesets/`.
+The project stores the user-supplied `Dungeons-and-Pixels-v1.4` assets under `rogues-dungeon/public/assets/art/`, organized by use. Characters, enemies, items, and props are direct asset categories; canonical tile atlas PNGs are under `tilesets/art/`; runtime Tiled definitions are under `tilesets/data/`; and non-runtime sample maps are under `maps/examples/`. The source-pack name is retained here as provenance rather than as a required directory name.
 
 Source provided in the conversation: `D:/Documents/Projects/docker-sandboxes/docker-sandbox-codex/babylon-lite-ascii-rpg/ascii-rpg/public/assets/images/Dungeons-and-Pixels-v1.4/`.
 
@@ -12,14 +12,18 @@ The Hero Warrior runtime mapping is documented in `documentation/hero-warrior.md
 
 The following original menu assets were generated with the built-in image-generation tool on 2026-10-15 and are stored locally for runtime use:
 
-- `public/assets/art/menu/dungeon-hero-background.png` — 16-bit-style dungeon corridor, with the hero composed in the lower-right-center and open space for the menu and logo.
-- `public/assets/art/menu/rogues-dungeon-logo.png` — transparent 16-bit-style title treatment with the exact text `ROGUE'S DUNGEON`.
+- `public/assets/art/ui/menu/dungeon-hero-background.png` — 16-bit-style dungeon corridor, with the hero composed in the lower-right-center and open space for the menu and logo.
+- `public/assets/art/ui/menu/rogues-dungeon-logo.png` — transparent 16-bit-style title treatment with the exact text `ROGUE'S DUNGEON`.
 
 On 2026-10-17, the original menu background was used as the edit target for four transparent parallax layers generated with the built-in image-generation tool:
 
-- `public/assets/art/menu/dungeon-hallway-rear.png` — distant hall and throne.
-- `public/assets/art/menu/dungeon-environment-frame.png` — surrounding hallway frame.
-- `public/assets/art/menu/dungeon-hero.png` — hero cutout.
-- `public/assets/art/menu/dungeon-foreground-rocks.png` — rocks in front of the hero.
+- `public/assets/art/ui/menu/dungeon-hallway-rear.png` — distant hall and throne.
+- `public/assets/art/ui/menu/dungeon-environment-frame.png` — surrounding hallway frame.
+- `public/assets/art/ui/menu/dungeon-hero.png` — hero cutout.
+- `public/assets/art/ui/menu/dungeon-foreground-rocks.png` — rocks in front of the hero.
 
 They are project-owned generated artwork; they do not derive from the supplied Dungeons-and-Pixels vendor pack.
+
+## Wooden Vest item sprite
+
+On 2026-10-23, `public/assets/art/game-view/items/droppable-item-sprite-sheet.png` was edited with the built-in image-generation tool. The existing atlas was the edit target; the generated Wooden Vest occupies its previously unused final cell. The vest is project-owned generated artwork, while the unchanged surrounding atlas items retain their supplied-pack provenance.

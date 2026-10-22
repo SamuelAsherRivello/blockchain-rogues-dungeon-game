@@ -15,9 +15,11 @@
 
 - [x] 3.1 Extend the shared world render model with ordered barrel, trigger, and door entries and their resolved states; verify model tests assert matching coordinates and state data for game and minimap views.
 - [x] 3.2 Add Babylon sprite assets and bounded layers for barrel, props-animated three-frame trigger transition, and closed or open door. Render the trigger as a floor panel above terrain and below all world objects and characters. Map the first door frame to the open state and the second to the closed state. Animate the barrel through the shared sub-grid movement presentation with the player push, and document the compatible mover list; verify focused tests cover source frames, state updates, trigger playback, layering, and barrel interpolation without stale sprites.
-- [ ] 3.3 Add one muted Edge Playwright scenario that pushes the barrel onto the trigger and confirms the visible game view and minimap change together; verify it runs with `?mute=1` after this implementation group.
+- [x] 3.3 Add one muted Edge Playwright scenario that pushes the barrel onto the trigger and confirms the visible game view and minimap change together; verify it runs with `?mute=1` after this implementation group.
 
 ## 4. Integration verification
 
-- [ ] 4.1 Run the relevant Node test suite, TypeScript compile, lint, and the focused puzzle Playwright test; record results and fix regressions before finalization.
-- [ ] 4.2 During finalization, run the full applicable test suite, including broader browser coverage, and confirm that the level-one set remains visible and usable after a save reload.
+- [x] 4.1 Run the relevant Node test suite, TypeScript compile, lint, and the focused puzzle Playwright test; record results and fix regressions before finalization.
+- [x] 4.2 During finalization, run the full applicable test suite, including broader browser coverage, and confirm that the level-one set remains visible and usable after a save reload.
+
+Verification reconciliation and the authorized marker fix on 2026-10-24 are recorded in [verification.md](verification.md). The generated-puzzle pixel/reload scenario now passes against repository source in both configured browsers. Node tests, typecheck, and whitespace checks pass. No lint script or linter is configured; that absence is reported rather than claiming a lint run or adding tooling. No historical completion date is inferred.

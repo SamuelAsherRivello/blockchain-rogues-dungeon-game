@@ -1,0 +1,155 @@
+{
+  "context": {
+    "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+    "viewport": [
+      1280,
+      720
+    ],
+    "dpr": 1,
+    "cores": 32,
+    "gpu": {
+      "vendor": "nvidia",
+      "architecture": "lovelace",
+      "device": "",
+      "description": ""
+    }
+  },
+  "results": [
+    {
+      "name": "reference",
+      "label": "Temporary performance session · seed 2225201261 · 100×100 · 15 objects",
+      "distance": 1276,
+      "metrics": {
+        "frames": 866,
+        "fps": 87.62255521941053,
+        "median": 8.399999999999636,
+        "p95": 25,
+        "counts": {
+          "minimap preparations": 867,
+          "game preparations": 867,
+          "queried entries": 7811,
+          "sprite patches": 8867,
+          "active layers": 51991,
+          "active layer sprite slots": 1244983,
+          "static normalization boundaries": 1,
+          "static cells checked": 34275,
+          "discovery decodes": 38,
+          "model builds": 143,
+          "ticks": 37,
+          "enemy visits": 111,
+          "minimap uploads": 1
+        },
+        "cpu": {
+          "minimap preparation": {
+            "mean": 0.03990772779871986,
+            "max": 0.7999999988824129,
+            "count": 867
+          },
+          "game preparation": {
+            "mean": 0.4843137254820322,
+            "max": 3.599999999627471,
+            "count": 867
+          },
+          "action (inclusive)": {
+            "mean": 0.07521160824411292,
+            "max": 3.099999999627471,
+            "count": 827
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0.0006045949214026602,
+            "max": 0.10000000149011612,
+            "count": 827
+          },
+          "React commit": {
+            "mean": 1.2790919952172444,
+            "max": 17.700000001117587,
+            "count": 1674
+          },
+          "clone/upgrade (inclusive)": {
+            "mean": 0.24513274333975485,
+            "max": 1.299999998882413,
+            "count": 113
+          },
+          "AI (inclusive)": {
+            "mean": 0.045945946076834526,
+            "max": 0.5,
+            "count": 37
+          },
+          "tick (inclusive)": {
+            "mean": 0.07027027051191072,
+            "max": 0.5,
+            "count": 37
+          }
+        }
+      }
+    },
+    {
+      "name": "200",
+      "label": "Temporary performance session · seed 2225201261 · 200×200 · 74 objects",
+      "distance": 1257,
+      "metrics": {
+        "frames": 829,
+        "fps": 84.3045131897411,
+        "median": 8.400000000001455,
+        "p95": 25,
+        "counts": {
+          "minimap preparations": 830,
+          "game preparations": 830,
+          "queried entries": 11031,
+          "sprite patches": 8468,
+          "active layers": 91093,
+          "active layer sprite slots": 1683567,
+          "static normalization boundaries": 1,
+          "static cells checked": 79606,
+          "discovery decodes": 38,
+          "model builds": 141,
+          "ticks": 36,
+          "enemy visits": 468,
+          "minimap uploads": 1
+        },
+        "cpu": {
+          "minimap preparation": {
+            "mean": 0.04518072288483381,
+            "max": 3.099999999627471,
+            "count": 830
+          },
+          "game preparation": {
+            "mean": 0.5909638554329075,
+            "max": 2,
+            "count": 830
+          },
+          "action (inclusive)": {
+            "mean": 0.1474083438892431,
+            "max": 3.899999998509884,
+            "count": 791
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0.0005056889993803841,
+            "max": 0.09999999962747097,
+            "count": 791
+          },
+          "React commit": {
+            "mean": 1.344249999979511,
+            "max": 18.5,
+            "count": 1600
+          },
+          "clone/upgrade (inclusive)": {
+            "mean": 0.39732142858805936,
+            "max": 0.8000000007450581,
+            "count": 112
+          },
+          "AI (inclusive)": {
+            "mean": 0.06388888875436452,
+            "max": 0.2000000011175871,
+            "count": 36
+          },
+          "tick (inclusive)": {
+            "mean": 0.07777777759151326,
+            "max": 0.2000000011175871,
+            "count": 36
+          }
+        }
+      }
+    }
+  ]
+}

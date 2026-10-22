@@ -1,0 +1,46 @@
+async page => {
+  const base="http://127.0.0.1:6080/blockchain-rogues-dungeon-game/";
+  const errors=[];
+  const onError=message=>{if(message.type()==="error")errors.push(message.text());};
+  page.on("console",onError);
+  await page.goto(base+"?mute=1");
+  const key=await page.evaluate(async()=>{
+    if(localStorage.getItem("rogues-dungeon.slot.3"))throw new Error("Test slot already occupied");
+    const {createRunCampaign}=await import("/blockchain-rogues-dungeon-game/src/systems/procedural/world-procedural-system.ts");
+    const {writeSlot}=await import("/blockchain-rogues-dungeon-game/src/systems/persistence/save-system.ts");
+    const campaign=createRunCampaign(17,3,1);
+    const stair=campaign.floor.entities.find(e=>e.kind==="stairs"&&e.direction==="forward");
+    const adjacent=[[1,0,"ArrowLeft"],[-1,0,"ArrowRight"],[0,1,"ArrowUp"],[0,-1,"ArrowDown"]].find(([dx,dy])=>campaign.floor.cells[stair.y+dy]?.[stair.x+dx]?.walkable&&!campaign.floor.entities.some(e=>e.x===stair.x+dx&&e.y===stair.y+dy));
+    if(!adjacent)throw new Error("No clear stair approach");
+    campaign.player.x=stair.x+adjacent[0];campaign.player.y=stair.y+adjacent[1];
+    campaign.player.pixel={x:campaign.player.x*32+16,y:campaign.player.y*32+16};
+    writeSlot(localStorage,"3",campaign);
+    return adjacent[2];
+  });
+  await page.reload();await page.getByRole("button",{name:/Saved Game 3/}).click();
+  await page.locator(".world-view[data-renderer-ready=true]").waitFor();
+  await page.getByRole("combobox",{name:"Movement mode",exact:true}).selectOption("grid-snap");
+  const before=await page.evaluate(()=>localStorage.getItem("rogues-dungeon.slot.3"));
+  await page.getByRole("button",{name: "P: 0",exact:true}).click();
+  await page.locator(".world-view[data-renderer-ready=true]").waitFor();
+  await page.getByRole("button",{name:"Fullscreen",exact:true}).click();
+  const fullscreen=await page.evaluate(()=>Boolean(document.fullscreenElement));
+  await page.getByRole("button",{name:"Fullscreen",exact:true}).click();
+  await page.getByRole("button",{name:"AR: L",exact:true}).click();
+  await page.getByRole("button",{name:"AR: P",exact:true}).click();
+  await page.locator(".world-view .ui_iris_transition").waitFor({state:"hidden"});
+  await page.keyboard.press(key);
+  await page.waitForFunction(()=>document.querySelector(".title-bar")?.textContent?.includes("Level: 2"),null,{timeout:20000});
+  await page.locator(".world-view[data-renderer-ready=true]").waitFor();
+  const temporaryFloor=await page.locator(".performance-controls").innerText();
+  const untouched=before===await page.evaluate(()=>localStorage.getItem("rogues-dungeon.slot.3"));
+  await page.getByRole("button",{name:"Exit Perf",exact:true}).click();
+  await page.locator(".world-view[data-renderer-ready=true]").waitFor();
+  await page.locator(".world-view .ui_iris_transition").waitFor({state:"hidden"});
+  await page.keyboard.press(key);
+  await page.waitForFunction(()=>JSON.parse(localStorage.getItem("rogues-dungeon.slot.3")||"{}").floor?.level===2,null,{timeout:20000});
+  await page.locator(".world-view[data-renderer-ready=true]").waitFor();
+  const result={fullscreen,temporaryReachedLevel2:temporaryFloor.includes("Temporary performance session"),temporaryStorageUnchanged:untouched,normalSavedLevel:await page.evaluate(()=>JSON.parse(localStorage.getItem("rogues-dungeon.slot.3")).floor.level),canvasCount:await page.locator("canvas").count(),errors};
+  await page.evaluate(()=>{localStorage.removeItem("rogues-dungeon.slot.3");localStorage.removeItem("rogues-dungeon.slot.v1-backup.3");});
+  page.off("console",onError);return result;
+}

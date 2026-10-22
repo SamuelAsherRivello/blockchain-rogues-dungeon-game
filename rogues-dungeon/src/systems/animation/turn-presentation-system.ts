@@ -41,6 +41,7 @@ export class TurnPresentationSystem {
   private headings = new Map<string, Direction>();
   private playerMode: MovementMode = "grid-tween";
   private playerPixelTraveling = false;
+  private interactionActors = new Set<string>();
 
   setPlayerMode(mode: MovementMode) { if (mode !== this.playerMode) this.playerPixelTraveling = false; this.playerMode = mode; }
 
@@ -49,6 +50,7 @@ export class TurnPresentationSystem {
   reset(campaign: Campaign) {
     this.floorKey = `${campaign.floor.seed}:${campaign.floor.level}`;
     this.playerPixelTraveling = false;
+    this.interactionActors.clear();
     this.ranks.clear(); this.nextRank = 0; this.active = null; this.motions.clear(); this.bumps.clear(); this.damageReactions.clear(); this.headings.clear();
     this.positions = new Map(subGridMovers(campaign).map((mover) => [mover.id, clonePosition(mover)]));
     this.positions.set("player", precisePlayerPosition(campaign.player));
@@ -84,11 +86,16 @@ export class TurnPresentationSystem {
     });
     if (current.player.heading) this.headings.set("player", current.player.heading);
     const playerBefore = precisePlayerPosition(previous.player); const playerAfter = precisePlayerPosition(current.player);
-    if (this.playerMode !== "grid-tween") { this.motions.delete("player"); this.positions.set("player", playerAfter); }
-    else if (!samePosition(playerBefore, playerAfter)) this.setMotion("player", { from: this.positions.get("player") ?? playerBefore, to: playerAfter, startAt: now, endAt: now + CHARACTER_MOVEMENT_DURATION_MS }, now);
-    else if (!this.motions.has("player")) this.positions.set("player", playerAfter);
+    // An interaction bump owns the player's presented position even when the
+    // campaign commits its result at the bump apex.  In particular, Gridless
+    // must not snap the sprite back to its cell centre before the bump returns.
+    if (this.interactionActors.has("player")) { /* The interaction owns this position until its consequence commits. */ }
+    else if (this.playerMode !== "grid-tween") { this.motions.delete("player"); if (!this.bumps.has("player")) this.positions.set("player", playerAfter); }
+    else if (!this.bumps.has("player") && !samePosition(playerBefore, playerAfter) && !samePosition(this.positions.get("player"), playerAfter)) this.setMotion("player", { from: this.positions.get("player") ?? playerBefore, to: playerAfter, startAt: now, endAt: now + CHARACTER_MOVEMENT_DURATION_MS }, now);
+    else if (!this.motions.has("player") && !this.bumps.has("player")) this.positions.set("player", playerAfter);
     for (const barrel of barrels(current)) {
-      if (!samePosition(before.get(barrel.id), barrel)) this.setMotion(barrel.id, { from: this.positions.get(barrel.id) ?? clonePosition(before.get(barrel.id) ?? barrel), to: clonePosition(barrel), startAt: now, endAt: now + CHARACTER_MOVEMENT_DURATION_MS }, now);
+      if (this.interactionActors.has(barrel.id)) continue;
+      if (!samePosition(before.get(barrel.id), barrel) && !samePosition(this.positions.get(barrel.id), barrel)) this.setMotion(barrel.id, { from: this.positions.get(barrel.id) ?? clonePosition(before.get(barrel.id) ?? barrel), to: clonePosition(barrel), startAt: now, endAt: now + CHARACTER_MOVEMENT_DURATION_MS }, now);
       else if (!this.motions.has(barrel.id)) this.positions.set(barrel.id, clonePosition(barrel));
     }
     for (const enemy of enemies(current)) if ((!visibleEnemyIds.has(enemy.id) || !changed.some((entry) => entry.id === enemy.id)) && !this.motions.has(enemy.id)) this.positions.set(enemy.id, clonePosition(enemy));
@@ -125,7 +132,22 @@ export class TurnPresentationSystem {
     this.motions.clear(); this.active = null;
   }
 
+  /** Finish committed enemy motion without interrupting player travel. Perf only. */
+  settleEnemies(campaign: Campaign) {
+    for (const enemy of enemies(campaign)) {
+      this.positions.set(enemy.id, clonePosition(enemy));
+      this.motions.delete(enemy.id); this.bumps.delete(enemy.id);
+    }
+    this.active = null;
+  }
+
   positionOf(id: string, fallback: Position): Position { return this.positions.get(id) ?? fallback; }
+  ownInteractionActor(id: string) { this.interactionActors.add(id); this.motions.delete(id); }
+  releaseInteractionActors() { for (const id of this.interactionActors) { this.motions.delete(id); this.bumps.delete(id); } this.interactionActors.clear(); }
+  tweenInteractionActor(id: string, from: Position, to: Position, now: number) { this.setMotion(id, { from: clonePosition(from), to: clonePosition(to), startAt: now, endAt: now + CHARACTER_MOVEMENT_DURATION_MS }, now); }
+  endInteractionBump() { this.bumps.delete("player"); }
+  faceInteraction(direction: Direction) { this.headings.set("player", direction); }
+  get isPlayerMoving() { return this.motions.has("player"); }
   /** Start a cardinal bump and face its direction for the entire gesture. */
   beginBump(id: string, origin: Position, direction: Direction | Position, now: number) { const heading = typeof direction === "string" ? direction : bumpDirectionFromOffset(direction); const offset = bumpOffsets[heading]; this.positions.set(id, clonePosition(origin)); this.headings.set(id, heading); this.bumps.set(id, { origin: clonePosition(origin), direction: clonePosition(offset), startAt: now }); }
   isBumping(id: string, now: number) { const bump = this.bumps.get(id); return Boolean(bump && now - bump.startAt < INTERACTIVE_BUMP_DURATION_MS); }

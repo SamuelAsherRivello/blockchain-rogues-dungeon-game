@@ -1,6 +1,10 @@
 # Rogue's Dungeon Audio
 
+General mode selects Spooky Dungeon and Battle mode selects JRPG - End Dungeon. Each mode change crossfades for 0.5 seconds. The outgoing track pauses after fading out and resumes at its retained playback position when selected again. Reversing a fade starts from the current volumes. Dungeon 04 remains bundled with its credits but is not selected by this soundtrack. Music volume, Mute All, and the ?mute=1 URL setting apply throughout transitions.
+
 Audio files are bundled under `public/assets/audio/`. The Music and SFX buses have independent 0–100 levels and a persisted **Mute All** checkbox in Settings. New preferences default to SFX 80, Music 20, and Mute All off. Zero on either slider silences only that bus.
+
+Mute All reflects both the saved preference and `?mute=1`. Checking it adds `mute=1` to the current URL; unchecking it removes the parameter and enables audio without reloading. Other URL parameters and the fragment are preserved.
 
 For silent browser automation and AI sessions, open the app with `?mute=1`, for example:
 
@@ -38,7 +42,7 @@ When the main menu opens, the audio manager begins loading every known music and
 | Non-diegetic | Heal ability activation succeeds | `sfx/magic-heal.ogg` | [Spell sounds](https://opengameart.org/content/spell-sounds), healing.ogg by Augmentality / Brandon Morris; CC0 | Short rising healing spell |
 | Non-diegetic | Wand ability activation succeeds | `sfx/magic-wand.ogg` | [Magic Spell SFX](https://opengameart.org/content/magic-spell-sfx), magical_1.ogg by JaggedStone; CC0 | Short spellcast cue for the wand |
 | Non-diegetic | Generic or future ability activation | `sfx/magic-teleport.ogg` | [Spell sounds](https://opengameart.org/content/spell-sounds), teleport.ogg by Augmentality / Brandon Morris; CC0 | Ancient, resonant magic fallback |
-| Non-diegetic | Character attributes are rerolled | `sfx/dice-roll.mp3` | User-supplied `DiceRoll01.mp3` | Dice roll during character creation |
+| Non-diegetic | Character or world attributes are rerolled, or combat resolves a visible roll | `sfx/dice-roll.mp3` | User-supplied `DiceRoll01.mp3` | Shared dice-roll cue |
 
 Fourteen OGG SFX are selected from rubberduck's **100 CC0 SFX #2** pack on [OpenGameArt](https://opengameart.org/content/100-cc0-sfx-2), licensed CC0. The three crate-hit variations come from rubberduck's [75 CC0 breaking / falling / hit sfx](https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx), also licensed CC0. The additional `pickup-click.wav` is the CC0 click by qubodup listed above. `barrel-slide.wav` and `crate-hit.wav` are original, procedurally synthesized effects. The source archives are not shipped; only the listed files are included. Original entry names are recorded to make each selection traceable.
 

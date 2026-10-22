@@ -50,7 +50,7 @@ for the muted Playwright smoke and full-suite commands.
 - `?randomSeed=235234` starts a deterministic new campaign with that unsigned 32-bit seed when an empty save slot is selected. Existing saves resume unchanged.
 - `?mute=1` mutes all audio, including when combined as `?randomSeed=235234&mute=1`.
 
-The 50 unwalkable tiles closest to a new run's start room use the wall edge, corner, and solid wall-face frames demonstrated by `Tiled_Examples/wall_combinations01.tmx`. The rest of the procedural map retains the general wall treatment.
+Each generated start room records its 7-by-7 footprint. Only the blocked one-cell ring around that footprint receives presentation-only room-frame decoration: corners use tiles 0/5/48/53 and faces use 1/12/17/49 from the canonical dungeon tileset. A walkable ring cell is a corridor doorway and receives no blocking decoration; opaque void-center art is never selected. The plan is deterministic for a seed and level, does not affect collision or saves, and is omitted by the minimap. Inspect a muted deterministic start room at `?randomSeed=1&mute=1` with an empty save slot.
 
 ## Controls
 

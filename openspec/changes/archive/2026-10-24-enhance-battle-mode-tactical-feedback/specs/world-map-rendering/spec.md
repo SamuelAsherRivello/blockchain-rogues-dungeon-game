@@ -1,0 +1,34 @@
+# Spec Delta
+
+## ADDED Requirements
+
+### Requirement: Show a binary tactical area for detected enemies
+During Battle, the game view SHALL have exactly two brightness zones. The tactical area SHALL union a player-centered 3x3 region with filled inclusive rectangles to detected threats and the nearest clear-line threat, regardless of Perception. All regions SHALL extend one row upward for artwork. Overlap SHALL not increase brightness. Walls and closed doors SHALL block enemy-specific spatial hints.
+
+#### Scenario: One detected enemy
+- **WHEN** Battle is active with one detected qualifying enemy
+- **THEN** the player cell, enemy cell, and rectilinear engagement area between them belong to the tactical area
+- **AND** one full row above the rectangle is included to protect character artwork
+- **AND** cells outside the union with the minimum player focus belong to the non-tactical area
+
+#### Scenario: Multiple detected enemies
+- **WHEN** Battle is active with multiple detected qualifying enemies
+- **THEN** the tactical area is the union of each player-to-enemy engagement area
+- **AND** overlapping areas are rendered as one combined tactical area
+
+#### Scenario: No detected enemy
+- **WHEN** Battle is active but all qualifying enemies are concealed by walls or closed doors
+- **THEN** no enemy-specific tactical area is shown
+- **AND** the player-centered 3x3 area plus one row above remains highlighted
+- **AND** the presentation does not reveal hidden enemy location information
+
+### Requirement: Preserve world geometry and interaction
+The tactical-area presentation SHALL be a visual overlay over the existing world rendering and SHALL not change terrain geometry, camera coordinates, minimap geometry, collision, route selection, reticles, or pointer input.
+
+#### Scenario: Interact inside tactical area
+- **WHEN** the player moves or selects a cell within the tactical area
+- **THEN** existing movement, combat, and mouse interaction rules remain unchanged
+
+#### Scenario: Reframe or zoom the world
+- **WHEN** the camera or world Zoom changes during Battle
+- **THEN** the tactical area reprojects from the same world coordinates without changing its membership

@@ -8,7 +8,7 @@ test("preserves all Hero Warrior animation groups and directional sequences", ()
   assert.deepEqual(catalog.map(({ frameCount }) => frameCount), [4, 4, 4, 6, 6, 6, 4, 4, 4, 6]);
   assert.equal(catalog[0].frames[0].widthPx, 32); assert.equal(catalog[0].frames[0].heightPx, 48);
   assert.equal(catalog.at(-1)?.frames[0].widthPx, 48); assert.equal(catalog.at(-1)?.frames[0].heightPx, 48);
-  assert.equal(catalog[0].frames[0].path, "/game/assets/art/vendors/dungeons-and-pixels-v1.4/characters/hero-warrior/frames/idle/down/00.png");
+  assert.equal(catalog[0].frames[0].path, "/game/assets/art/game-view/characters/hero-warrior/frames/idle/down/00.png");
 });
 
 test("starts the player on right-facing idle/side and exposes deferred action animations", () => {

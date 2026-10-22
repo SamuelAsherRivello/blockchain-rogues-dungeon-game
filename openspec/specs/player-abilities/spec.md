@@ -6,22 +6,30 @@ Expose four reorderable abilities with clear positional key bindings, Mana costs
 ## Requirements
 
 ### Requirement: Provide four positional ability bindings
-Abilities SHALL contain four positions without group titles. Initially Heal SHALL occupy position 01 and offensive Wand position 02, with 03 and 04 empty. Keyboard keys 1–4 and matching mobile buttons SHALL activate the ability in the corresponding position. Empty positions SHALL not activate an action.
+Abilities SHALL retain their three existing positions without group titles. A newly created or post-death replacement run SHALL initialize positions 01–03 empty. Keyboard keys 1–3 and matching mobile buttons SHALL activate the ability in the corresponding position after an ability is assigned. Key 4 and any fourth position SHALL not activate an ability. Empty positions SHALL not activate an action.
 
 #### Scenario: Activate by position
-- **WHEN** the player presses 1 with Heal in position 01
+- **WHEN** Heal has been assigned to position 01 and the player presses 1
 - **THEN** Heal is requested
 
 #### Scenario: Press an empty binding
-- **WHEN** the player presses 3 with position 03 empty
+- **WHEN** the player presses any ability binding in a new run before assigning an ability
 - **THEN** no action, Mana cost, message, or world tick occurs
 
+#### Scenario: Press the removed fourth key
+- **WHEN** the player presses key 4
+- **THEN** no ability action, Mana cost, message, or world tick occurs
+
 ### Requirement: Render ability rows and costs
-Each populated ability SHALL appear as one full-width horizontal row in the order position number, ability icon, title, plain Mana cost, and drag icon. Filled rows SHALL use the Mana color family. Empty rows SHALL be drop targets with no text. Ability costs SHALL NOT have an additional Mana icon.
+Each populated ability SHALL appear as one full-width horizontal row in the order position number, ability icon, title, plain Mana cost, and drag icon. Filled rows SHALL use the Mana color family. Empty rows SHALL be drop targets with no text. Ability costs SHALL NOT have an additional Mana icon. Exactly three ability rows SHALL be rendered.
 
 #### Scenario: Read Heal row
 - **WHEN** Heal occupies position 01
 - **THEN** its row reads as `[01] ability-icon Heal mana-cost drag-icon`
+
+#### Scenario: Render the available positions
+- **WHEN** the ability panel is displayed
+- **THEN** it contains rows 01, 02, and 03, and no row 04
 
 ### Requirement: Disable abilities with insufficient Mana
 An ability SHALL have a Mana cost. When current Mana is below that cost, its row and mobile activation button SHALL be greyed out and activation SHALL be rejected through all input paths without a message or world tick.
@@ -42,12 +50,27 @@ An accepted ability SHALL deduct its Mana cost immediately, begin its configured
 - **THEN** Health is restored within its maximum before the resulting time increment and enemy phase
 
 ### Requirement: Reorder ability bindings through drag
-The player SHALL be able to move an ability to an empty position or swap populated positions by drag. A committed reorder SHALL change the positional key bindings and cost one tick. Preview, cancellation, or return to the original position SHALL not change the bindings or time.
+The player SHALL be able to move an ability to an empty position or swap populated positions within positions 01–03. A committed reorder SHALL change the positional key bindings and cost one tick. Preview, cancellation, or return to the original position SHALL not change the bindings or time. Position 04 SHALL not be a valid drag destination.
 
 #### Scenario: Move Heal to another key
-- **WHEN** Heal is committed from position 01 to position 04
-- **THEN** key 4 activates Heal and position 01 becomes empty, with one time increment
+- **WHEN** Heal is committed from position 01 to position 03
+- **THEN** key 3 activates Heal and position 01 becomes empty, with one time increment
 
 #### Scenario: Swap abilities
 - **WHEN** Heal and Wand exchange populated positions
 - **THEN** their displayed numbers and key bindings exchange without changing their Mana costs
+
+#### Scenario: Reject a fourth-position destination
+- **WHEN** a drag attempts to target position 04
+- **THEN** the binding order and world time remain unchanged
+
+### Requirement: Transfer abilities through Inventory
+An occupied Ability position SHALL be draggable to Inventory or Drop Item, and an ability in Inventory SHALL be draggable back to an empty or compatible Ability position using the existing positional binding rules.
+
+#### Scenario: Return an ability to a binding
+- **WHEN** Wand is dragged from Inventory to Ability position 03
+- **THEN** position 03 binds Wand, its Inventory entry is removed, and keyboard activation uses position 03
+
+#### Scenario: Drop an ability
+- **WHEN** Wand is dragged from an Ability position to Drop Item
+- **THEN** the ability leaves its binding and becomes a collectible world object

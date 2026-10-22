@@ -25,16 +25,16 @@ test("distributes wall torches on valid faces and traps on walkable cells", () =
     assert.ok(floor.decorations!.some((decoration) => decoration.kind === "trap"));
     for (const decoration of floor.decorations!) {
       if (decoration.kind === "torch") assert.equal(isWallDecorationCell(floor.map!, decoration), true, `${seed}:${decoration.id} must have a walkable left, right, or bottom neighbor`);
-      else assert.equal(floor.cells[decoration.y][decoration.x].walkable, true, `${seed}:${decoration.id} must be walkable so it can hurt the player`);
+      else if (decoration.kind === "trap") assert.equal(floor.cells[decoration.y][decoration.x].walkable, true, `${seed}:${decoration.id} must be walkable so it can hurt the player`);
     }
   }
 });
 
-test("adds one extra walkable trap beside the level-one test entrance", () => {
+test("does not let the level-one teleport test alter trap generation", () => {
   const floor = generateFloor(1, 17, 1, { level1TestMode: true });
   const traps = floor.decorations!.filter((decoration) => decoration.kind === "trap");
-  assert.equal(traps.length, 3);
-  assert.ok(traps.some((trap) => Math.abs(trap.x - floor.start.x) <= 2 && Math.abs(trap.y - floor.start.y) <= 1));
+  const normal = generateFloor(1, 17, 1).decorations!.filter((decoration) => decoration.kind === "trap");
+  assert.equal(traps.length, normal.length);
 });
 
 test("strikes a player who remains on raised spikes, including on later cycles", () => {

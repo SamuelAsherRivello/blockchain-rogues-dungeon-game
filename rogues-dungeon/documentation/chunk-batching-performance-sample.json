@@ -1,0 +1,141 @@
+{
+  "results": [
+    {
+      "batched": false,
+      "normalChunk": "16",
+      "chunk": "16",
+      "metrics": {
+        "frames": 775,
+        "fps": 78.41510426679348,
+        "median": 8.399999999999636,
+        "p95": 25.100000000000364,
+        "counts": {
+          "minimap preparations": 776,
+          "game preparations": 776,
+          "queried entries": 6993,
+          "sprite patches": 7975,
+          "active layers": 46349,
+          "active layer sprite slots": 1114125,
+          "static normalization boundaries": 1,
+          "static cells checked": 36103,
+          "discovery decodes": 39,
+          "model builds": 145,
+          "ticks": 36,
+          "enemy visits": 108,
+          "minimap uploads": 2
+        },
+        "cpu": {
+          "minimap preparation": {
+            "mean": 0.04368556700598871,
+            "max": 2.300000000745058,
+            "count": 776
+          },
+          "game preparation": {
+            "mean": 0.6212628866094596,
+            "max": 2.799999998882413,
+            "count": 776
+          },
+          "action (inclusive)": {
+            "mean": 0.0759259259288825,
+            "max": 2.299999998882413,
+            "count": 756
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0.0007936507956218467,
+            "max": 0.10000000149011612,
+            "count": 756
+          },
+          "React commit": {
+            "mean": 1.4541884816973347,
+            "max": 16.999999998137355,
+            "count": 1528
+          },
+          "clone/upgrade (inclusive)": {
+            "mean": 0.22719298247574715,
+            "max": 1,
+            "count": 114
+          },
+          "AI (inclusive)": {
+            "mean": 0.04444444448583656,
+            "max": 0.30000000074505806,
+            "count": 36
+          },
+          "tick (inclusive)": {
+            "mean": 0.06111111109041505,
+            "max": 0.40000000037252903,
+            "count": 36
+          }
+        }
+      }
+    },
+    {
+      "batched": true,
+      "normalChunk": "16",
+      "chunk": "32",
+      "metrics": {
+        "frames": 889,
+        "fps": 90.79210752073207,
+        "median": 8.399999999997817,
+        "p95": 25,
+        "counts": {
+          "static normalization boundaries": 1,
+          "minimap preparations": 890,
+          "game preparations": 890,
+          "queried entries": 8020,
+          "sprite patches": 9102,
+          "active layers": 39949,
+          "active layer sprite slots": 1277939,
+          "static cells checked": 34275,
+          "discovery decodes": 38,
+          "model builds": 155,
+          "ticks": 43,
+          "enemy visits": 129,
+          "minimap uploads": 2
+        },
+        "cpu": {
+          "action (inclusive)": {
+            "mean": 0.06444954126859682,
+            "max": 1,
+            "count": 872
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0.0014908256910638798,
+            "max": 0.10000000149011612,
+            "count": 872
+          },
+          "minimap preparation": {
+            "mean": 0.03573033707530311,
+            "max": 0.6999999992549419,
+            "count": 890
+          },
+          "game preparation": {
+            "mean": 0.4347191010884355,
+            "max": 2.099999999627471,
+            "count": 890
+          },
+          "React commit": {
+            "mean": 1.2341477272915653,
+            "max": 15.400000000372529,
+            "count": 1760
+          },
+          "clone/upgrade (inclusive)": {
+            "mean": 0.20924369741951218,
+            "max": 0.599999999627471,
+            "count": 119
+          },
+          "AI (inclusive)": {
+            "mean": 0.01860465118011763,
+            "max": 0.10000000149011612,
+            "count": 43
+          },
+          "tick (inclusive)": {
+            "mean": 0.027906976726859115,
+            "max": 0.10000000149011612,
+            "count": 43
+          }
+        }
+      }
+    }
+  ],
+  "errors": []
+}

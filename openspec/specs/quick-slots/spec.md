@@ -7,15 +7,15 @@ Quick Slots provide two fast, keyboard-accessible positions for consumable items
 ## Requirements
 
 ### Requirement: Render two neutral Quick Slots
-The game SHALL render a Quick Slots panel beneath Abilities with exactly two full-width rows. Each row SHALL show its position as `01` or `02`, use neutral slot styling rather than the purple ability accent, and show either a centered empty `+` marker or the quick-slotted item name with its positive quantity as `Name XN`.
+The game SHALL render a Quick Slots panel beneath Abilities with exactly two full-width rows. A newly created or post-death replacement run SHALL initialize both positions empty. Each row SHALL retain its existing positional label and show either a centered empty `+` marker or the quick-slotted item name with its positive quantity. Filled and empty rows SHALL use the green Quick category strip instead of neutral-only styling or the purple Ability accent. Unavailable activation content SHALL retain its disabled treatment independently of the strip.
 
 #### Scenario: Show empty Quick Slots
-- **WHEN** a new campaign has no quick-slotted items
-- **THEN** the panel shows rows `01` and `02`, each with a `+` marker and no `X0` text
+- **WHEN** a new campaign or post-death replacement run begins with no quick-slotted items
+- **THEN** both rows show a green left strip, their existing positional labels, and a centered `+` marker without zero-quantity text
 
 #### Scenario: Show a populated stack
-- **WHEN** Mana Potion quantity 2 occupies Quick Slot 02
-- **THEN** row 02 reads `Mana Potion X2` and uses neutral slot colors
+- **WHEN** Mana Potion quantity 2 occupies the second Quick Slot
+- **THEN** that row shows Mana Potion and quantity 2 with a green category strip
 
 ### Requirement: Accept only quick-slottable consumables
 Quick Slots SHALL accept Health Potion and Mana Potion items, and SHALL reject weapons, armor, abilities, and any other non-consumable item without changing state or time.
@@ -64,3 +64,14 @@ Using a Quick Slot potion SHALL be rejected when the corresponding resource is a
 #### Scenario: Reject a full Health resource
 - **WHEN** Quick Slot 01 contains Health Potion X1 and Health is already full
 - **THEN** the potion remains in the slot, time remains unchanged, and a full-resource rejection event is emitted
+
+### Requirement: Drop a quick-slot stack through Drop Item
+A populated Quick Slot SHALL be draggable to Drop Item, and a committed drop SHALL remove the complete positive stack from the Quick Slot and create a collectible world representation using the stack quantity.
+
+#### Scenario: Drop Mana Potion stack
+- **WHEN** Quick Slot 02 contains Mana Potion X2 and is released over Drop Item
+- **THEN** Quick Slot 02 clears and the world contains a Mana Potion representation with quantity 2
+
+#### Scenario: Cancel quick-slot drop
+- **WHEN** a Quick Slot stack is dragged away from Drop Item and released elsewhere
+- **THEN** the stack remains in its original Quick Slot

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { getMousePathResult, getMouseMovementFromSelectedCell } from "../src/game/mouse-selection.ts";
+import { getMousePathResult, getMouseMovementFromSelectedCell, MAX_MOUSE_TRAVEL_STEPS, planMouseTravel } from "../src/game/mouse-selection.ts";
 import { applyAction, createCampaign, effectiveAttributes, gameMode, progressionStatNames, upgradeCampaignResources } from "../src/systems/procedural/world-procedural-system.ts";
 import { normalizePreferences, migrateCampaign } from "../src/systems/persistence/save-system.ts";
 import { cellCenter, centerCrossings, normalizePlayerPosition, occupiedCell, PixelMovementIntegrator } from "../src/game/player-position.ts";
@@ -112,8 +112,8 @@ test("current detection has inclusive range, blocked sight, reacquisition and in
   enemy.x = 23; campaign.progression.attributes.perception = 0;
   assert.equal(gameMode(campaign), "Battle"); assert.equal(detectedEnemyIds(campaign).size, 0);
   campaign.progression.attributes.perception = 5; assert.equal(detectedEnemyIds(campaign).size, 1);
-  campaign.floor.cells[20][22].walkable = false; assert.equal(detectedEnemyIds(campaign).size, 0); assert.equal(gameMode(campaign), "Battle");
-  campaign.floor.cells[20][22].walkable = true; assert.equal(detectedEnemyIds(campaign).size, 1);
+  campaign.floor.cells[20][22].walkable = false; assert.equal(detectedEnemyIds(campaign).size, 0); assert.equal(gameMode(campaign), "General");
+  campaign.floor.cells[20][22].walkable = true; assert.equal(detectedEnemyIds(campaign).size, 1); assert.equal(gameMode(campaign), "Battle");
   enemy.x = 31; assert.equal(gameMode(campaign), "General"); assert.equal(detectedEnemyIds(campaign).size, 0);
   setCell(campaign.floor, 21, 20, { walkable: false }); setCell(campaign.floor, 20, 21, { walkable: false });
   assert.equal(hasPerceptionLineOfSight(campaign, { x: 20, y: 20 }, { x: 21, y: 21 }), false);
@@ -140,15 +140,24 @@ test("player snap and precise travel do not disable enemy or barrel tweening", (
   presentation.reset(before); presentation.setPlayerMode("gridless"); presentation.begin(before, free, new Set(), 0);
   assert.equal(presentation.playerPositionOf(free.player).x, 660 / 32 - .5);
 });
+test("interaction bumps retain their tween while a Gridless action commits", () => {
+  const campaign = arena();
+  const presentation = new TurnPresentationSystem(); presentation.reset(campaign); presentation.setPlayerMode("gridless");
+  presentation.beginBump("player", campaign.player, "e", 0);
+  presentation.begin(campaign, campaign, new Set(), 31);
+  assert.ok(presentation.playerPositionOf(campaign.player).x > campaign.player.x, "the action commit must not snap a Gridless bump back to its origin");
+  presentation.sample(125);
+  assert.deepEqual(presentation.playerPositionOf(campaign.player), { x: campaign.player.x, y: campaign.player.y });
+});
 test("cursor resolution respects detection and legal barrel pushes", () => {
   const campaign = arena();
   assert.equal(resolveWorldCursor(campaign, { x: 21, y: 20 }, true, new Set()), "walk");
   assert.equal(resolveWorldCursor(campaign, { x: 21, y: 20 }, false, new Set()), "blocked");
   campaign.floor.entities.push({ id: "crate", kind: "crate", health: 100, x: 21, y: 20 });
-  assert.equal(resolveWorldCursor(campaign, { x: 21, y: 20 }, false, new Set()), "fight");
+  assert.equal(resolveWorldCursor(campaign, { x: 21, y: 20 }, false, new Set()), "interact");
   campaign.floor.entities = [];
   campaign.floor.objectSets = [{ id: "barrel", kind: "floor-trigger-door-barrel", barrel: { x: 21, y: 20 }, trigger: { x: 23, y: 20 }, door: { x: 25, y: 20 }, regionRole: "optional-reward" }];
-  assert.equal(resolveWorldCursor(campaign, { x: 21, y: 20 }, false, new Set()), "push");
+  assert.equal(resolveWorldCursor(campaign, { x: 21, y: 20 }, false, new Set()), "interact");
   setCell(campaign.floor, 22, 20, { walkable: false });
   assert.equal(resolveWorldCursor(campaign, { x: 21, y: 20 }, false, new Set()), "blocked");
 });
@@ -163,16 +172,16 @@ test("Gridless entry updates triggers and stairs once without an extra movement 
   const result = applyAction(stairs, { type: "move-pixels", to: { x: 752, y: 656 } });
   assert.equal(result.state.player.x, 21); assert.equal(result.events.filter(event => event.type === "stairs.entered").length, 1); assert.equal(result.ticks, 0);
 });
-test("closed doors block detection until opened, without changing Battle", () => {
+test("closed doors block detection and fresh Battle entry until opened", () => {
   const campaign = arena();
   const enemy = createCampaign(4321).floor.entities.find(entity => entity.kind === "enemy")!;
   if (enemy.kind !== "enemy") throw Error("Missing enemy fixture");
   Object.assign(enemy, { x: 23, y: 20, awareness: 6 }); campaign.floor.entities = [enemy]; campaign.progression.attributes.perception = 5;
   const gate = { id: "gate", kind: "floor-trigger-door-barrel" as const, barrel: { x: 18, y: 20 }, trigger: { x: 19, y: 20 }, door: { x: 22, y: 20 }, regionRole: "optional-reward" as const };
   campaign.floor.objectSets = [gate];
-  assert.equal(detectedEnemyIds(campaign).size, 0); assert.equal(gameMode(campaign), "Battle");
-  gate.barrel = { ...gate.trigger }; assert.equal(detectedEnemyIds(campaign).size, 1);
-  gate.barrel = { x: 18, y: 20 }; assert.equal(detectedEnemyIds(campaign).size, 0);
+  assert.equal(detectedEnemyIds(campaign).size, 0); assert.equal(gameMode(campaign), "General");
+  gate.barrel = { ...gate.trigger }; assert.equal(detectedEnemyIds(campaign).size, 1); assert.equal(gameMode(campaign), "Battle");
+  gate.barrel = { x: 18, y: 20 }; assert.equal(detectedEnemyIds(campaign).size, 0); assert.equal(gameMode(campaign), "General");
   enemy.hp = 0; assert.equal(gameMode(campaign), "General");
 });
 test("Battle entry centers the occupied cell with a tween and no extra enemy action", () => {
@@ -208,9 +217,44 @@ test("existing cardinal previews and closed-door approaches remain authoritative
   assert.equal(result.reachable, false); assert.deepEqual(result.path!.at(-1), { x: 22, y: 20 });
   assert.equal(getMouseMovementFromSelectedCell({ x: 26, y: 20, pressed: true }, campaign, result.path)!.direction, "e");
   const renderer = await readFile(new URL("../src/systems/rendering/babylon-render-system.tsx", import.meta.url), "utf8");
-  assert.ok(renderer.includes('mousePath.slice(1).filter((cell) => !(cell.x === selectedCell.x && cell.y === selectedCell.y && targetKindAt(cell.x, cell.y) === "item"))'));
   assert.ok(renderer.includes('kind === "item" ? " world-view__path-dot--interactive"'));
   assert.ok(renderer.includes('targetKind === "item" || targetKind === "enemy" ? targetKind : selectedCellReachable === false ? "invalid" : targetKind'));
   const palette = await readFile(new URL("../src/ui/interaction-colors.ts", import.meta.url), "utf8");
   for (const color of ["#f5f1e6", "#6dd873", "#dc3d40", "#090909"]) assert.ok(palette.includes(color));
+});
+
+test("mouse previews cross hazards but each fresh gesture pauses before an unconfirmed trap", () => {
+  const campaign = arena();
+  campaign.floor.decorations = [{ id: "trap", kind: "trap", x: 23, y: 20, wallMounted: false }];
+  for (let y = 0; y < 100; y++) for (let x = 0; x < 100; x++) setCell(campaign.floor, x, y, { walkable: y === 20 && x >= 20 && x <= 26 });
+  for (const target of [{ x: 23, y: 20 }, { x: 26, y: 20 }]) {
+    const result = getMousePathResult(target, campaign);
+    assert.equal(result.reachable, true);
+    assert.ok(result.path?.some(cell => cell.x === 23));
+    assert.equal(getMouseMovementFromSelectedCell({ ...target, pressed: true }, campaign, result.path)?.direction, "e");
+    const plan = planMouseTravel({ ...target, pressed: true }, campaign);
+    assert.equal(plan.destination.x, 22); assert.deepEqual(plan.warnedHazard, { x: 23, y: 20 });
+    campaign.player.x = 22; campaign.player.pixel = cellCenter(campaign.player);
+    assert.equal(getMouseMovementFromSelectedCell(planMouseTravel({ ...target, pressed: true }, campaign).destination, campaign), null);
+    const confirmed = planMouseTravel({ ...target, pressed: true }, campaign, plan.warnedHazard);
+    assert.equal(confirmed.destination.x, target.x); assert.deepEqual(confirmed.confirmedHazard, { x: 23, y: 20 });
+    campaign.player.x = 20; campaign.player.pixel = cellCenter(campaign.player);
+  }
+  campaign.floor.decorations.push({ id: "second-trap", kind: "trap", x: 25, y: 20, wallMounted: false });
+  campaign.player.x = 22; campaign.player.pixel = cellCenter(campaign.player);
+  const nextHazard = planMouseTravel({ x: 26, y: 20, pressed: true }, campaign, { x: 23, y: 20 });
+  assert.equal(nextHazard.destination.x, 24); assert.deepEqual(nextHazard.warnedHazard, { x: 25, y: 20 });
+  // Deliberate keyboard/domain movement still permits entering a trap.
+  campaign.player.x = 22; campaign.player.pixel = cellCenter(campaign.player);
+  assert.equal(applyAction(campaign, { type: "move", direction: "e", hazardElapsedMs: 0 }).state.player.x, 23);
+});
+
+test("mouse previews and click destinations have a thirty-step UX limit", () => {
+  const campaign = arena();
+  const target = { x: 80, y: 20, pressed: true };
+  const preview = getMousePathResult(target, campaign);
+  assert.equal(MAX_MOUSE_TRAVEL_STEPS, 30); assert.equal(preview.path!.length, 31);
+  assert.equal(preview.reachable, false); assert.deepEqual(preview.path!.at(-1), { x: 50, y: 20 });
+  assert.equal(planMouseTravel(target, campaign).destination.x, 50);
+  assert.equal(getMousePathResult({ x: 50, y: 20 }, campaign).reachable, true);
 });

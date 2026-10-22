@@ -1,8 +1,10 @@
-import type { Direction, Entity, FloorTriggerDoorBarrelSet, MassBearingPosition, Position, TerrainCell, WorldDecoration } from "../../game/types.ts";
+import { countPerformance } from "./performance-system.ts";
+import type { Direction, Entity, FloorTriggerDoorBarrelSet, MassBearingPosition, ObjectSet, Position, TerrainCell, WorldDecoration } from "../../game/types.ts";
+import { enemyCharacterForName } from "../../content/enemies/enemy-idle-animation.ts";
 type RenderGrid = number[][] | TerrainCell[][];
 interface WangEntry extends Position { mask: number; worldX: number; worldY: number; frame: number | null; floorFrame?: number | null; quarters?: import("./tileset-wang-rules.ts").WallQuarter[] }
 interface WangModel { tileSize: number; terrain: WangEntry[]; walls: WangEntry[]; diagnostics: Omit<WangEntry, "frame">[]; wallDiagnostics: Omit<WangEntry, "frame">[] }
-interface WorldOptions { map?: number[][] | null; cells?: TerrainCell[][] | null; entities?: Entity[]; decorations?: WorldDecoration[]; objectSets?: FloorTriggerDoorBarrelSet[]; player: MassBearingPosition; start?: Position; tileSize?: number; view?: string; detail?: string; groundTiles?: number[] | null; wallTiles?: number[] | null }
+interface WorldOptions { map?: number[][] | null; cells?: TerrainCell[][] | null; entities?: Entity[]; decorations?: WorldDecoration[]; objectSets?: ObjectSet[]; player: MassBearingPosition; start?: Position; tileSize?: number; view?: string; detail?: string; groundTiles?: number[] | null; wallTiles?: number[] | null; isDiscovered?: (position: Position) => boolean }
 interface Projection { center: Position; viewportWidth: number; viewportHeight: number; tileCssSize: number }
 export interface WorldCellBounds { minX: number; maxX: number; minY: number; maxY: number }
 function isLegacyGrid(grid: RenderGrid): grid is number[][] { return Array.isArray(grid) && (grid.length === 0 || typeof grid[0]?.[0] === "number"); }
@@ -15,6 +17,7 @@ function getWangTerrain(grid: RenderGrid, tileSize: number): WangModel {
   const legacyGrid = isLegacyGrid(grid);
   let result = wangTerrainCache.get(grid);
   if (!result || result.tileSize !== tileSize) {
+    countPerformance("static compilations");
     result = { tileSize, ...buildDungeonWangTerrain(legacyGrid ? { map: grid, tileSize } : { cells: grid, tileSize }), ...buildDungeonWangWalls(legacyGrid ? { map: grid, tileSize } : { cells: grid, tileSize }) };
     wangTerrainCache.set(grid, result);
   }
@@ -72,20 +75,38 @@ export function compileStaticWorldPresentation(grid: RenderGrid, tileSize: numbe
 
 /** Build renderer-neutral geometry/placement for either world view. */
 export const WorldRender = Object.freeze({
-  Render({ map = null, cells = null, entities = [], decorations = [], objectSets = [], player, start = player, tileSize = 32, view = "game", detail = "full", groundTiles = null, wallTiles = null }: WorldOptions) {
+  Render({ map = null, cells = null, entities = [], decorations = [], objectSets = [], player, start = player, tileSize = 32, view = "game", detail = "full", groundTiles = null, wallTiles = null, isDiscovered = () => true }: WorldOptions) {
+    countPerformance("model builds");
     const grid = (cells ?? map)!;
-    const { terrain, walls, diagnostics, wallDiagnostics } = compileStaticWorldPresentation(grid, tileSize, groundTiles, wallTiles);
-    const actors = entities.filter((entry) => entry.kind === "enemy").map((entry) => ({ id: entry.id, kind: entry.name === "Skeleton" || entry.name === "Skeleton Archer" ? "skeleton" : "rat", heading: entry.heading ?? "e", x: entry.x, y: entry.y, worldX: entry.x * tileSize + tileSize / 2, worldY: entry.y * tileSize + tileSize / 2 }));
-    const objects = entities.filter((entry) => ["item", "potion", "key", "gold", "chest", "crate", "campfire", "stairs", "discovery"].includes(entry.kind)).map((entry) => ({ id: entry.id, kind: entry.kind, direction: entry.kind === "stairs" ? entry.direction : undefined, resource: entry.kind === "potion" ? entry.resource : null, opened: entry.kind === "chest" || entry.kind === "crate" ? Boolean(entry.opened) : false, openFrame: entry.kind === "crate" ? entry.openFrame : undefined, x: entry.x, y: entry.y, worldX: entry.x * tileSize + tileSize / 2, worldY: entry.y * tileSize + tileSize / 2 }));
+    const rendered = compileStaticWorldPresentation(grid, tileSize, groundTiles, wallTiles);
+    // Static dungeon geometry is visible without fog. Discovery only gates
+    // semantic objects until a separate fog presentation is implemented.
+    const { diagnostics, wallDiagnostics } = rendered;
+    const terrain = rendered.terrain;
+    const walls = rendered.walls;
+    const actors = entities.filter((entry): entry is Extract<Entity, { kind: "enemy" }> => entry.kind === "enemy" && isDiscovered(entry)).map((entry) => ({ id: entry.id, kind: (entry.character ?? enemyCharacterForName(entry.name)) as ReturnType<typeof enemyCharacterForName>, character: (entry.character ?? enemyCharacterForName(entry.name)) as ReturnType<typeof enemyCharacterForName>, heading: entry.heading ?? "e", x: entry.x, y: entry.y, worldX: entry.x * tileSize + tileSize / 2, worldY: entry.y * tileSize + tileSize / 2 }));
+    const objects = entities.filter((entry) => isDiscovered(entry) && ["item", "potion", "key", "gold", "chest", "crate", "campfire", "stairs", "teleport-arrow", "discovery"].includes(entry.kind)).map((entry) => ({ id: entry.id, kind: entry.kind, item: entry.kind === "item" ? entry.item : undefined, direction: entry.kind === "stairs" || entry.kind === "teleport-arrow" ? entry.direction : undefined, resource: entry.kind === "potion" ? entry.resource : null, opened: entry.kind === "chest" || entry.kind === "crate" ? Boolean(entry.opened) : false, openFrame: entry.kind === "crate" ? entry.openFrame : undefined, x: entry.x, y: entry.y, worldX: entry.x * tileSize + tileSize / 2, worldY: entry.y * tileSize + tileSize / 2 }));
     const puzzleObjects = objectSets.flatMap((set) => {
-      const active = [player, set.barrel, ...entities].some((object) => "hasMass" in object && object.hasMass === true && set.trigger.x === object.x && set.trigger.y === object.y);
+      if (set.kind === "encounter-lockdown") {
+        const doorsOpen = !set.activated || set.completed;
+        return [
+          ...set.triggers.map((trigger, index) => ({ id: `${set.id}-trigger-${index}`, kind: "trigger" as const, active: set.activated && !set.completed, x: trigger.x, y: trigger.y, worldX: trigger.x * tileSize + tileSize / 2, worldY: trigger.y * tileSize + tileSize / 2 })),
+          ...set.doors.map((door, index) => ({ id: `${set.id}-door-${index}`, kind: "door" as const, active: doorsOpen, x: door.x, y: door.y, worldX: door.x * tileSize + tileSize / 2, worldY: door.y * tileSize + tileSize / 2 })),
+        ].filter(isDiscovered);
+      }
+      const active = [player, set.barrel, ...entities].some((object) => {
+        const hasMass = object === set.barrel
+          ? (object as MassBearingPosition).hasMass !== false
+          : "hasMass" in object && object.hasMass === true;
+        return hasMass && set.trigger.x === object.x && set.trigger.y === object.y;
+      });
       return [
         { id: `${set.id}-trigger`, kind: "trigger" as const, active, x: set.trigger.x, y: set.trigger.y, worldX: set.trigger.x * tileSize + tileSize / 2, worldY: set.trigger.y * tileSize + tileSize / 2 },
         { id: `${set.id}-barrel`, kind: "barrel" as const, active: false, x: set.barrel.x, y: set.barrel.y, worldX: set.barrel.x * tileSize + tileSize / 2, worldY: set.barrel.y * tileSize + tileSize / 2 },
         { id: `${set.id}-door`, kind: "door" as const, active, x: set.door.x, y: set.door.y, worldX: set.door.x * tileSize + tileSize / 2, worldY: set.door.y * tileSize + tileSize / 2 },
-      ];
+      ].filter(isDiscovered);
     });
-    const wallDecorations = decorations.map((decoration) => ({ ...decoration, worldX: decoration.x * tileSize + tileSize / 2, worldY: decoration.y * tileSize + tileSize / 2 }));
+    const wallDecorations = decorations.filter(isDiscovered).filter((decoration) => view === "game" || decoration.kind !== "start-room-wall").map((decoration) => ({ ...decoration, worldX: decoration.x * tileSize + tileSize / 2, worldY: decoration.y * tileSize + tileSize / 2 }));
     return { view, detail, tileSize, width: grid[0]?.length ?? 0, height: grid.length, terrain, grounds: terrain, walls, diagnostics, wallDiagnostics, actors, objects, puzzleObjects, wallDecorations, markers: { player: { x: player.x, y: player.y }, exit: objects.find((entry) => entry.kind === "stairs") ?? null } };
   },
 });
@@ -122,7 +143,7 @@ export function getCameraCenter({ mode = "center", player, previousCenter = play
   } else if (mode === "deadzone") {
     const halfX = Math.max(0, visibleWidth * 0.15); const halfY = Math.max(0, visibleHeight * 0.15);
     center = { x: player.x < previousCenter.x - halfX ? player.x + halfX : player.x > previousCenter.x + halfX ? player.x - halfX : previousCenter.x, y: player.y < previousCenter.y - halfY ? player.y + halfY : player.y > previousCenter.y + halfY ? player.y - halfY : previousCenter.y };
-  } else center = { x: player.x, y: player.y };
+  } else return { x: player.x, y: player.y };
   return { x: clampCameraAxis(center.x, visibleWidth, mapWidth), y: clampCameraAxis(center.y, visibleHeight, mapHeight) };
 }
 
@@ -156,4 +177,43 @@ export function getWorldCellScreenCenter({ x, y, center, viewportWidth, viewport
     left: viewportWidth / 2 + (x - center.x) * tileCssSize,
     top: viewportHeight / 2 + (y - center.y) * tileCssSize,
   };
+}
+/** Retain semantic presentation until domain inputs change; query buckets before animation. */
+export function createWorldPresentationReader() {
+  let previous: WorldOptions | null = null, previousRevision = "";
+  let cached: ReturnType<typeof WorldRender.Render> | null = null;
+  let queryActors: ReturnType<typeof indexWorldPositions<ReturnType<typeof WorldRender.Render>["actors"][number]>>;
+  let queryObjects: ReturnType<typeof indexWorldPositions<ReturnType<typeof WorldRender.Render>["objects"][number]>>;
+  let queryPuzzle: ReturnType<typeof indexWorldPositions<ReturnType<typeof WorldRender.Render>["puzzleObjects"][number]>>;
+  let queryDecorations: ReturnType<typeof indexWorldPositions<ReturnType<typeof WorldRender.Render>["wallDecorations"][number]>>;
+  return (options: WorldOptions, revision = "", bounds?: WorldCellBounds) => {
+    if (!cached || !previous || previous.cells !== options.cells || previous.map !== options.map ||
+        previous.entities !== options.entities || previous.decorations !== options.decorations || previous.objectSets !== options.objectSets ||
+        previous.groundTiles !== options.groundTiles || previous.wallTiles !== options.wallTiles ||
+        previous.player.x !== options.player.x || previous.player.y !== options.player.y || previousRevision !== revision) {
+      cached = WorldRender.Render(options); previous = options; previousRevision = revision;
+      queryActors = indexWorldPositions(cached.actors); queryObjects = indexWorldPositions(cached.objects);
+      queryPuzzle = indexWorldPositions(cached.puzzleObjects); queryDecorations = indexWorldPositions(cached.wallDecorations);
+    }
+    if (!bounds) return cached;
+    return { ...cached, actors: queryActors(bounds), objects: queryObjects(bounds), puzzleObjects: queryPuzzle(bounds), wallDecorations: queryDecorations(bounds) };
+  };
+}
+
+export function indexWorldPositions<T extends Position>(entries: readonly T[], size = 16) {
+  const buckets = new Map<string, T[]>();
+  for (const entry of entries) { const key = Math.floor(entry.x / size) + "," + Math.floor(entry.y / size); const bucket = buckets.get(key) ?? []; bucket.push(entry); buckets.set(key, bucket); }
+  return (bounds: WorldCellBounds): T[] => {
+    const result: T[] = [];
+    for (let y = Math.floor(bounds.minY / size); y <= Math.floor(bounds.maxY / size); y++) for (let x = Math.floor(bounds.minX / size); x <= Math.floor(bounds.maxX / size); x++) {
+      for (const entry of buckets.get(x + "," + y) ?? []) { countPerformance("queried entries"); if (isWorldCellVisible(entry, bounds)) result.push(entry); }
+    }
+    return result;
+  };
+}
+
+export function performanceCellBounds(player: Position, camera: WorldCellBounds, width: number, height: number): WorldCellBounds {
+  const x = Math.floor(player.x) - 10, y = Math.floor(player.y) - 10;
+  return { minX: Math.max(0, x, camera.minX), maxX: Math.min(width - 1, x + 19, camera.maxX),
+    minY: Math.max(0, y, camera.minY), maxY: Math.min(height - 1, y + 19, camera.maxY) };
 }

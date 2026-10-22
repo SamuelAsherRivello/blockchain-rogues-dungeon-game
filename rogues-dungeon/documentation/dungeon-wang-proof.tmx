@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.11" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="12" height="12" tilewidth="32" tileheight="32" infinite="0" nextlayerid="3" nextobjectid="3">
- <tileset firstgid="1" source="../public/assets/art/vendors/dungeons-and-pixels-v1.4/tiled-examples/tilesets/tileset-dungeon.tsx"/>
- <tileset firstgid="109" source="../public/assets/art/vendors/dungeons-and-pixels-v1.4/tiled-examples/tilesets/props-animated.tsx"/>
+ <tileset firstgid="1" source="../public/assets/art/game-view/tilesets/data/tileset-dungeon.tsx"/>
+ <tileset firstgid="109" source="../public/assets/art/game-view/tilesets/data/props-animated.tsx"/>
  <layer id="1" name="Walls" width="12" height="12">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,

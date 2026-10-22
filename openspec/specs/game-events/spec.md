@@ -62,3 +62,39 @@ Quick Slot transfers, successful consumable uses, and rejected uses SHALL publis
 #### Scenario: Record a full-resource rejection
 - **WHEN** a Health Potion is used while Health is full
 - **THEN** a rejected event identifies the resource, current and maximum values, item, and rejection reason
+
+### Requirement: Publish structured drop outcomes
+The game SHALL publish structured events for committed drops, rejected drops, and recollection of dropped objects, including item identity, quantity, source, destination or world position, outcome, and game time.
+
+#### Scenario: Publish a committed drop
+- **WHEN** a Sword is dropped into the world
+- **THEN** subscribers receive one committed event identifying Sword, its source, and settled world position
+
+#### Scenario: Publish a rejected drop
+- **WHEN** no valid nearby cell exists for a requested drop
+- **THEN** subscribers receive a rejected event and the source item remains unchanged
+
+### Requirement: Publish combat outcome facts
+Combat events SHALL identify HIT, CRIT, or MISS outcomes, attempted and applied damage, attack direction, mitigation, and projectile identity when applicable. Equipment swap events SHALL identify every displaced and equipped item.
+
+#### Scenario: Publish a critical attack
+- **WHEN** a player attack critically hits
+- **THEN** its combat event identifies the critical outcome and applied damage
+
+#### Scenario: Publish an equipment swap
+- **WHEN** a valid equipment swap commits
+- **THEN** its equipment event identifies the incoming item and each displaced item
+
+### Requirement: Publish ordered combat facts for death recap
+Combat and death events SHALL identify the acting player or enemy, the affected target, damage when applicable, and the fatal source when the player dies. The facts SHALL remain structured and ordered so the Log and death recap can select their own bounded presentation without gameplay systems formatting sentences.
+
+#### Scenario: Record a fatal enemy attack
+- **WHEN** a Skeleton Warrior reduces the player to zero Health
+- **THEN** the committed event sequence identifies the player damage, Skeleton Warrior as the fatal source, and the resulting death in deterministic order
+
+### Requirement: Select combat lines for death recap
+The message projection policy SHALL produce recap-eligible text for player damage, enemy damage, defeated enemies, the fatal enemy's defeat of the player, and player death. It SHALL exclude movement, battle entry, and battle exit events from the death recap.
+
+#### Scenario: Project recent combat only
+- **WHEN** a player moves, exchanges attacks, and dies
+- **THEN** the death recap's recent-lines selection contains the combat outcome lines but no movement or encounter-transition line

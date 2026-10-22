@@ -1,7 +1,7 @@
 # Priority Ideas
 
-1. F4. Extend the in-game art animation system for independent character, main-sprite, and shadow-sprite tweens.
-2. F5. Support programmatic art effects, such as a 0.1-second white flash that fades back to the original color.
+1. G4. Extend the in-game art animation system for independent character, main-sprite, and shadow-sprite tweens.
+2. G5. Support programmatic art effects, such as a 0.1-second white flash that fades back to the original color.
 
 # All Ideas
 
@@ -38,7 +38,13 @@
    1. Define the exterior and interior appearance of each building.
    2. Decide whether entering a building loads a separate map or keeps one map and hides roof-covering tiles.
 
-## D. Dungeon flow and world interactions
+## D. Building
+
+1. Let players chop down trees to collect wood.
+2. Let players turn wood into blueprints.
+3. Let players turn blueprints into a house.
+
+## E. Dungeon flow and world interactions
 
 1. Add an introductory story sequence.
 2. Add campfires. Bumping into one shows "Rest? (20 gold)." Resting costs 20 gold, restores health, and updates the checkpoint.
@@ -55,7 +61,7 @@
 6. Add a gate to Hell guarded by a devil. The devil asks, "Enter the Gate to Hell?"
 7. Entering Hell loads a red-tinted version of the current level with the same art and layout, but enemies and encounters are about ten times harder.
 
-## E. Minimap and quest tracking
+## F. Minimap and quest tracking
 
 1. Highlight a target location on the minimap.
 2. When the target is inside the minimap area, show a yellow dot at its location.
@@ -63,7 +69,7 @@
 4. Size both indicators to about one minimap grid cell.
 5. Use these indicators for the selected quest subtask location.
 
-## F. Animation and special effects
+## G. Animation and special effects
 
 1. Add sprite sheets for transient particle effects that play over gameplay actions.
 2. Add a particle-effects system that spawns and removes short-lived groups of effect sprites.
@@ -71,7 +77,7 @@
 4. Extend the in-game art animation system so it can tween a whole character, its main sprite, or its shadow sprite independently.
 5. Support programmatic effects such as flashing a target white for 0.1 seconds, then fading back to its original color.
 
-## G. Kill your darlings
+## H. Kill your darlings
 
 1. Decide whether to remove the zoom controls.
 2. Decide whether to remove the camera modes.

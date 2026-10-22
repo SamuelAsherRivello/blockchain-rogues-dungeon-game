@@ -1,0 +1,710 @@
+{
+  "capturedAt": "2026-10-25T17:54:57.158Z",
+  "description": "Pre-portal dungeon-graph-1 compact records with original single walkable-floor portal. Missing portal-content version must preserve these exact bases. Do not regenerate these expectations using the changed portal algorithm.",
+  "sourcePath": "output/multi-pass-world-generation/integration-draft/rogues-dungeon/src/systems/procedural/world-procedural-system.ts",
+  "sourceSha256": "4ea82465725c2eaa2195f16875539080930501712ace0ad53082437c89d1f62e",
+  "dependencySha256": {
+    "rogues-dungeon/src/systems/procedural/dungeon-graph-layout-system.ts": "255451d09743c8298ab015cdc3ed52d0919db6fba225c4fa13a1bb24c7a063c5",
+    "rogues-dungeon/src/systems/procedural/dungeon-topology-system.ts": "157b7539cd0ba6b95a841372728e3bb424e3f6278a5b5820f336690c84925019",
+    "rogues-dungeon/src/systems/procedural/world-attributes.ts": "c061a4158c61f9cc5836f890849b8c7a03b4dbe6af0b3bb9b4686cd2e4dcbd6f",
+    "rogues-dungeon/src/systems/procedural/world-balance.ts": "fae25d9ac64a25b4854cf24126797fd364725dc5bff47a5de1c3e1cd0f743336",
+    "rogues-dungeon/src/content/world/start-wall-autotile.ts": "fec1709f3c22077acc2fd35191c912d5c8fe9405f7843adb4b8d3b15d2ae7fff"
+  },
+  "hashContract": {
+    "geometry": "sha256(JSON.stringify({width,height,cells,start,startRoom}))",
+    "placements": "sha256(JSON.stringify({entities,objectSets,decorations,prefabPlacements}))"
+  },
+  "cases": [
+    {
+      "input": {
+        "name": "graph-one-single-portal",
+        "worldSeed": 1,
+        "slot": 2,
+        "run": 1,
+        "difficulty": 1,
+        "level": 1,
+        "options": {}
+      },
+      "record": {
+        "version": 6,
+        "mode": "adventure",
+        "world": "One",
+        "realm": "Underground 1",
+        "floor": {
+          "seed": 1638621706,
+          "width": 100,
+          "height": 100,
+          "cells": [],
+          "start": {
+            "x": 50,
+            "y": 50
+          },
+          "entities": [],
+          "time": 1,
+          "level": 1,
+          "generatorVersion": "rogues-dungeon-floor-v4",
+          "generationProfile": {
+            "seed": 1638621706,
+            "difficulty": 1,
+            "generatorVersion": "rogues-dungeon-floor-v4",
+            "topologyVersion": "dungeon-graph-1"
+          }
+        },
+        "combatRollState": 1638621706,
+        "generatorVersion": "rogues-dungeon-floor-v4",
+        "levelStates": {
+          "1": {
+            "time": 1,
+            "removedGeneratedIds": [],
+            "entityOverrides": {},
+            "spawnedEntities": [],
+            "objectSetOverrides": {}
+          }
+        },
+        "progression": {
+          "attributes": {
+            "health": 4,
+            "stamina": 2,
+            "offense": 3,
+            "defense": 3,
+            "mana": 2,
+            "perception": 4,
+            "strength": 4,
+            "luck": 3,
+            "recovery": 3,
+            "stealth": 2
+          },
+          "level": 1,
+          "xp": 0,
+          "nextXp": 100,
+          "totalKills": 0,
+          "difficulty": 1,
+          "attributePoints": 0
+        },
+        "player": {
+          "x": 50,
+          "y": 50,
+          "hasMass": true,
+          "heading": "e",
+          "resources": {
+            "health": {
+              "current": 40,
+              "currentMax": 40
+            },
+            "stamina": {
+              "current": 20,
+              "currentMax": 20
+            },
+            "offense": {
+              "current": 3,
+              "currentMax": 3
+            },
+            "defense": {
+              "current": 3,
+              "currentMax": 3
+            },
+            "mana": {
+              "current": 20,
+              "currentMax": 20
+            },
+            "xp": {
+              "current": 0,
+              "currentMax": 100,
+              "level": 1
+            }
+          },
+          "equipment": {
+            "weapons": [
+              null,
+              null
+            ],
+            "armor": [
+              null,
+              null
+            ]
+          },
+          "inventory": [],
+          "inventoryCapacity": 5,
+          "abilities": [
+            null,
+            null,
+            null
+          ],
+          "quickSlots": [
+            null,
+            null
+          ],
+          "sneaking": false,
+          "encumberedDirection": null
+        },
+        "counters": {
+          "keys": 0,
+          "gold": 0
+        },
+        "objective": "Find the exit",
+        "quest": {
+          "id": "my-first-quest",
+          "title": "My First Quest",
+          "items": [
+            {
+              "id": "walk-through-stairs",
+              "title": "Walk through the stairs",
+              "complete": false
+            },
+            {
+              "id": "collect-health-potion",
+              "title": "Collect a Health Potion",
+              "complete": false
+            },
+            {
+              "id": "collect-coin",
+              "title": "Collect a coin",
+              "complete": false
+            }
+          ],
+          "activeItemId": "walk-through-stairs"
+        },
+        "log": [],
+        "topologyVersion": "dungeon-graph-1",
+        "discovery": {
+          "[\"discovery-v2\",1,\"One\",1,\"dungeon:1\",1638621706,100,100]": "100x100:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfAAAAAAAAAAAAAAD4AwAAAAAAAAAAAADAfwAAAAAAAAAAAAAA/AcAAAAAAAAAAAAAwH8AAAAAAAAAAAAAAPwHAAAAAAAAAAAAAMB/AAAAAAAAAAAAAAD4AwAAAAAAAAAAAAAAHwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+        },
+        "worldSeed": 1,
+        "slot": 2,
+        "run": 1,
+        "floorProfiles": {
+          "1": {
+            "seed": 1638621706,
+            "difficulty": 1,
+            "generatorVersion": "rogues-dungeon-floor-v4",
+            "topologyVersion": "dungeon-graph-1"
+          }
+        }
+      },
+      "expected": {
+        "geometryHash": "a67f3ee58f763d01a1a8afe6a52b44ab3330092cc89994934935e1d0648c866d",
+        "placementHash": "757bd8d792c0a9cb80b6d0e87cec50583fdac177868004bc32cc87294ddb81dd",
+        "portals": [
+          {
+            "id": "teleport-arrow-1",
+            "kind": "teleport-arrow",
+            "destination": "player-home",
+            "direction": "n",
+            "name": "Home",
+            "x": 79,
+            "y": 72
+          }
+        ],
+        "width": 100,
+        "height": 100
+      }
+    },
+    {
+      "input": {
+        "name": "graph-world-single-portal",
+        "worldSeed": 1,
+        "slot": 2,
+        "run": 1,
+        "difficulty": 1,
+        "level": 1,
+        "options": {
+          "worldAttributes": {
+            "clarity": 3,
+            "comfort": 3,
+            "discovery": 3,
+            "fortune": 3,
+            "guidance": 3,
+            "mercy": 3,
+            "openness": 3,
+            "peace": 3,
+            "plenty": 3,
+            "safety": 3
+          }
+        }
+      },
+      "record": {
+        "version": 6,
+        "mode": "adventure",
+        "world": "One",
+        "realm": "Underground 1",
+        "floor": {
+          "seed": 1638621706,
+          "width": 70,
+          "height": 70,
+          "cells": [],
+          "start": {
+            "x": 35,
+            "y": 35
+          },
+          "entities": [],
+          "time": 1,
+          "level": 1,
+          "generatorVersion": "world-attributes-1",
+          "generationProfile": {
+            "seed": 1638621706,
+            "difficulty": 1,
+            "attributes": {
+              "clarity": 3,
+              "comfort": 3,
+              "discovery": 3,
+              "fortune": 3,
+              "guidance": 3,
+              "mercy": 3,
+              "openness": 3,
+              "peace": 3,
+              "plenty": 3,
+              "safety": 3
+            },
+            "generatorVersion": "world-attributes-1",
+            "tuningVersion": "world-attributes-1:world-balance-1",
+            "topologyVersion": "dungeon-graph-1",
+            "level1TestMode": false,
+            "level1ObjectTestMode": false,
+            "level1EnemyTestMode": false
+          }
+        },
+        "combatRollState": 1638621706,
+        "generatorVersion": "world-attributes-1",
+        "levelStates": {
+          "1": {
+            "time": 1,
+            "removedGeneratedIds": [],
+            "entityOverrides": {},
+            "spawnedEntities": [],
+            "objectSetOverrides": {}
+          }
+        },
+        "progression": {
+          "attributes": {
+            "health": 4,
+            "stamina": 2,
+            "offense": 3,
+            "defense": 3,
+            "mana": 2,
+            "perception": 4,
+            "strength": 4,
+            "luck": 3,
+            "recovery": 3,
+            "stealth": 2
+          },
+          "level": 1,
+          "xp": 0,
+          "nextXp": 100,
+          "totalKills": 0,
+          "difficulty": 1,
+          "attributePoints": 0
+        },
+        "player": {
+          "x": 35,
+          "y": 35,
+          "hasMass": true,
+          "heading": "e",
+          "resources": {
+            "health": {
+              "current": 40,
+              "currentMax": 40
+            },
+            "stamina": {
+              "current": 20,
+              "currentMax": 20
+            },
+            "offense": {
+              "current": 3,
+              "currentMax": 3
+            },
+            "defense": {
+              "current": 3,
+              "currentMax": 3
+            },
+            "mana": {
+              "current": 20,
+              "currentMax": 20
+            },
+            "xp": {
+              "current": 0,
+              "currentMax": 100,
+              "level": 1
+            }
+          },
+          "equipment": {
+            "weapons": [
+              null,
+              null
+            ],
+            "armor": [
+              null,
+              null
+            ]
+          },
+          "inventory": [],
+          "inventoryCapacity": 5,
+          "abilities": [
+            null,
+            null,
+            null
+          ],
+          "quickSlots": [
+            null,
+            null
+          ],
+          "sneaking": false,
+          "encumberedDirection": null
+        },
+        "counters": {
+          "keys": 0,
+          "gold": 0
+        },
+        "objective": "Find the exit",
+        "quest": {
+          "id": "my-first-quest",
+          "title": "My First Quest",
+          "items": [
+            {
+              "id": "walk-through-stairs",
+              "title": "Walk through the stairs",
+              "complete": false
+            },
+            {
+              "id": "collect-health-potion",
+              "title": "Collect a Health Potion",
+              "complete": false
+            },
+            {
+              "id": "collect-coin",
+              "title": "Collect a coin",
+              "complete": false
+            }
+          ],
+          "activeItemId": "walk-through-stairs"
+        },
+        "log": [],
+        "topologyVersion": "dungeon-graph-1",
+        "worldAttributes": {
+          "clarity": 3,
+          "comfort": 3,
+          "discovery": 3,
+          "fortune": 3,
+          "guidance": 3,
+          "mercy": 3,
+          "openness": 3,
+          "peace": 3,
+          "plenty": 3,
+          "safety": 3
+        },
+        "worldGrowth": [],
+        "worldSchemaVersion": 1,
+        "discovery": {
+          "[\"discovery-v2\",1,\"One\",1,\"dungeon:1\",1638621706,70,70]": "70x70:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD4AAAAAAAAAAB/AAAAAAAAAOA/AAAAAAAAAPgPAAAAAAAAAP4DAAAAAAAAgP8AAAAAAAAA4D8AAAAAAAAA8AcAAAAAAAAA+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+        },
+        "worldSeed": 1,
+        "slot": 2,
+        "run": 1,
+        "floorProfiles": {
+          "1": {
+            "seed": 1638621706,
+            "difficulty": 1,
+            "attributes": {
+              "clarity": 3,
+              "comfort": 3,
+              "discovery": 3,
+              "fortune": 3,
+              "guidance": 3,
+              "mercy": 3,
+              "openness": 3,
+              "peace": 3,
+              "plenty": 3,
+              "safety": 3
+            },
+            "generatorVersion": "world-attributes-1",
+            "tuningVersion": "world-attributes-1:world-balance-1",
+            "topologyVersion": "dungeon-graph-1",
+            "level1TestMode": false,
+            "level1ObjectTestMode": false,
+            "level1EnemyTestMode": false
+          }
+        }
+      },
+      "expected": {
+        "geometryHash": "b30e23a6880b09bb105abbed61bc6648e2692c80e8d917bbb2c9522ede024e34",
+        "placementHash": "bea68e28e835315faab500896da23dbba4613d1394f8e5dc1db2c47766676a05",
+        "portals": [
+          {
+            "id": "teleport-arrow-1",
+            "kind": "teleport-arrow",
+            "destination": "player-home",
+            "direction": "n",
+            "name": "Home",
+            "x": 20,
+            "y": 24
+          }
+        ],
+        "width": 70,
+        "height": 70
+      }
+    },
+    {
+      "input": {
+        "name": "graph-lt-single-portal",
+        "worldSeed": 613,
+        "slot": 2,
+        "run": 1,
+        "difficulty": 1,
+        "level": 1,
+        "options": {
+          "level1TestMode": true
+        }
+      },
+      "record": {
+        "version": 6,
+        "mode": "adventure",
+        "world": "One",
+        "realm": "Underground 1",
+        "floor": {
+          "seed": 1934681307,
+          "width": 100,
+          "height": 100,
+          "cells": [],
+          "start": {
+            "x": 50,
+            "y": 50
+          },
+          "entities": [],
+          "time": 1,
+          "level": 1,
+          "generatorVersion": "rogues-dungeon-floor-v4",
+          "generationProfile": {
+            "seed": 1934681307,
+            "difficulty": 1,
+            "generatorVersion": "rogues-dungeon-floor-v4",
+            "topologyVersion": "dungeon-graph-1"
+          }
+        },
+        "combatRollState": 1934681307,
+        "generatorVersion": "rogues-dungeon-floor-v4",
+        "levelStates": {
+          "1": {
+            "time": 1,
+            "removedGeneratedIds": [
+              "crate-1",
+              "key-1",
+              "starter-health-potion",
+              "starter-wooden-stick"
+            ],
+            "entityOverrides": {
+              "campfire-1": {
+                "id": "campfire-1",
+                "kind": "campfire",
+                "name": "CampFire",
+                "x": 63,
+                "y": 83
+              },
+              "gold-1": {
+                "id": "gold-1",
+                "kind": "gold",
+                "amount": 14,
+                "x": 37,
+                "y": 50
+              },
+              "gold-2": {
+                "id": "gold-2",
+                "kind": "gold",
+                "amount": 10,
+                "x": 18,
+                "y": 36
+              },
+              "gold-3": {
+                "id": "gold-3",
+                "kind": "gold",
+                "amount": 17,
+                "x": 20,
+                "y": 87
+              },
+              "stairs-forward": {
+                "id": "stairs-forward",
+                "kind": "stairs",
+                "direction": "forward",
+                "name": "Stairs up",
+                "x": 52,
+                "y": 50
+              }
+            },
+            "spawnedEntities": [
+              {
+                "id": "gold-4",
+                "kind": "gold",
+                "amount": 17,
+                "x": 74,
+                "y": 8
+              },
+              {
+                "id": "health-potion-1",
+                "kind": "potion",
+                "resource": "health",
+                "x": 50,
+                "y": 39
+              },
+              {
+                "id": "mana-potion-2",
+                "kind": "potion",
+                "resource": "mana",
+                "x": 46,
+                "y": 83
+              },
+              {
+                "id": "stamina-potion-3",
+                "kind": "potion",
+                "resource": "stamina",
+                "x": 30,
+                "y": 50
+              },
+              {
+                "id": "test-crate",
+                "kind": "crate",
+                "health": 100,
+                "x": 49,
+                "y": 51
+              }
+            ],
+            "objectSetOverrides": {}
+          }
+        },
+        "progression": {
+          "attributes": {
+            "health": 4,
+            "stamina": 5,
+            "offense": 3,
+            "defense": 5,
+            "mana": 2,
+            "perception": 1,
+            "strength": 3,
+            "luck": 2,
+            "recovery": 3,
+            "stealth": 2
+          },
+          "level": 1,
+          "xp": 0,
+          "nextXp": 100,
+          "totalKills": 0,
+          "difficulty": 1,
+          "attributePoints": 0
+        },
+        "player": {
+          "x": 50,
+          "y": 50,
+          "hasMass": true,
+          "heading": "e",
+          "resources": {
+            "health": {
+              "current": 40,
+              "currentMax": 40
+            },
+            "stamina": {
+              "current": 50,
+              "currentMax": 50
+            },
+            "offense": {
+              "current": 3,
+              "currentMax": 3
+            },
+            "defense": {
+              "current": 5,
+              "currentMax": 5
+            },
+            "mana": {
+              "current": 20,
+              "currentMax": 20
+            },
+            "xp": {
+              "current": 0,
+              "currentMax": 100,
+              "level": 1
+            }
+          },
+          "equipment": {
+            "weapons": [
+              null,
+              null
+            ],
+            "armor": [
+              null,
+              null
+            ]
+          },
+          "inventory": [],
+          "inventoryCapacity": 5,
+          "abilities": [
+            null,
+            null,
+            null
+          ],
+          "quickSlots": [
+            null,
+            null
+          ],
+          "sneaking": false,
+          "encumberedDirection": null
+        },
+        "counters": {
+          "keys": 0,
+          "gold": 0
+        },
+        "objective": "Find the exit",
+        "quest": {
+          "id": "my-first-quest",
+          "title": "My First Quest",
+          "items": [
+            {
+              "id": "walk-through-stairs",
+              "title": "Walk through the stairs",
+              "complete": false
+            },
+            {
+              "id": "collect-health-potion",
+              "title": "Collect a Health Potion",
+              "complete": false
+            },
+            {
+              "id": "collect-coin",
+              "title": "Collect a coin",
+              "complete": false
+            }
+          ],
+          "activeItemId": "walk-through-stairs"
+        },
+        "log": [],
+        "topologyVersion": "dungeon-graph-1",
+        "discovery": {
+          "[\"discovery-v2\",613,\"One\",1,\"dungeon:1\",1934681307,100,100]": "100x100:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfAAAAAAAAAAAAAAD4AwAAAAAAAAAAAADAfwAAAAAAAAAAAAAA/AcAAAAAAAAAAAAAwH8AAAAAAAAAAAAAAPwHAAAAAAAAAAAAAMB/AAAAAAAAAAAAAAD4AwAAAAAAAAAAAAAAHwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+        },
+        "worldSeed": 613,
+        "slot": 2,
+        "run": 1,
+        "floorProfiles": {
+          "1": {
+            "seed": 1934681307,
+            "difficulty": 1,
+            "generatorVersion": "rogues-dungeon-floor-v4",
+            "topologyVersion": "dungeon-graph-1"
+          }
+        }
+      },
+      "expected": {
+        "geometryHash": "956dba76607844a9f9026bb20ab76552c3a2f356b77be20043ec836c22eae137",
+        "placementHash": "c185d3f605124a973cb8961f070250de71d618dc3bbf19c3a48b316d8088462b",
+        "portals": [
+          {
+            "id": "teleport-arrow-1",
+            "kind": "teleport-arrow",
+            "destination": "player-home",
+            "direction": "n",
+            "name": "Home",
+            "x": 52,
+            "y": 52
+          }
+        ],
+        "width": 100,
+        "height": 100
+      }
+    }
+  ]
+}

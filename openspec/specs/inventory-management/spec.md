@@ -13,11 +13,11 @@ Ordinary item pickups SHALL enter Inventory without auto-equipping, prompting, o
 - **THEN** it leaves the world, transfers to its planned Inventory row, and appears there after the transfer without an equipment or attribute change or dialog
 
 ### Requirement: Display bounded alphabetical Inventory
-Inventory SHALL show full-width horizontal item entries without groups, ordered alphabetically by item name. Its bordered card title SHALL show current/max carry with at least two-digit counts, such as `Inventory 07/10`. Inventory SHALL always show a vertical scroll track. Capacity SHALL count Inventory entries; equipped items SHALL be outside that count.
+Inventory SHALL show full-width horizontal item entries without groups, ordered alphabetically by item name. Its bordered card title SHALL show current/max carry with at least two-digit counts, such as `Inventory 00/05`. A new run's base capacity SHALL be five entries. Inventory SHALL always show a vertical scroll track. Capacity SHALL count Inventory entries; equipped items SHALL be outside that count.
 
 #### Scenario: Display Inventory count
-- **WHEN** seven items are carried and capacity is ten
-- **THEN** the title reads `Inventory 07/10`
+- **WHEN** no items are carried in a newly created run
+- **THEN** the title reads `Inventory 00/05`
 
 #### Scenario: Ignore Inventory drop position
 - **WHEN** an equipped item is dropped anywhere in Inventory
@@ -27,11 +27,40 @@ Inventory SHALL show full-width horizontal item entries without groups, ordered 
 - **WHEN** the player walks onto an ordinary item with no remaining capacity
 - **THEN** movement is accepted and the item remains in the world without a prompt or attribute change
 
+### Requirement: Start each run with empty item bindings
+A newly created campaign and its post-death replacement run SHALL begin with empty Inventory, all equipment positions empty, and both Quick Slots empty. The run SHALL not create starter gear, potions, capacity items, or resource counters outside the generated starter pack.
+
+#### Scenario: Confirm a new character
+- **WHEN** the player confirms a new character
+- **THEN** Inventory reads `00/05`, Equipment and Quick Slots are empty, and gold and keys begin at zero
+
+#### Scenario: Begin a replacement run after death
+- **WHEN** a character begins the post-death replacement run
+- **THEN** its run-bound items, equipment, Quick Slots, gold, and keys are reset to the same empty starting state
+
+### Requirement: Provide net carrying capacity items
+`Extra Carrying Capacity +5` SHALL be a non-stackable Inventory item that occupies one Inventory entry and increases total capacity by six, yielding five more usable carrying positions than the same Inventory without it. Its rows and comparisons SHALL show a dedicated carrying-capacity icon and a `+5` carrying-capacity effect.
+
+#### Scenario: Carry one capacity item
+- **WHEN** an Inventory at base capacity contains Extra Carrying Capacity +5
+- **THEN** its maximum capacity is 11 and ten other entries can be carried alongside it
+
+#### Scenario: Acquire a second capacity item
+- **WHEN** the player collects a second Extra Carrying Capacity +5
+- **THEN** it occupies its own entry and is not combined into a quantity stack
+
+### Requirement: Add Level One wooden chest armor
+Wooden Vest SHALL be an armor item that occupies one Armor position, grants `+1` Defense, and uses a distinct wooden chest-only visual without arms, waist, or legs.
+
+#### Scenario: Equip Wooden Vest
+- **WHEN** Wooden Vest is assigned to an empty Armor position
+- **THEN** the player gains `+1` Defense and the item is no longer counted in Inventory
+
 ### Requirement: Accept equipment by compatible group
-Equipment SHALL expose Weapons and Armor groups with two positions each. A compatible item SHALL be assignable to either position within its group. Sword and shield SHALL both be compatible with Weapons. Position within a group SHALL have no independent attribute modifier. Incompatible or unavailable destinations SHALL reject the drop without committing.
+Equipment SHALL expose Weapons and Armor groups with two positions each. A compatible item SHALL be assignable to either position within its group. Two-slot equipment SHALL require and occupy both positions in its compatible group. Sword and shield SHALL both be compatible with Weapons. Position within a group SHALL have no independent attribute modifier. Incompatible or unavailable destinations SHALL reject the drop without committing. A compatible Inventory item dropped into occupied required positions SHALL swap atomically when every displaced item can enter Inventory.
 
 #### Scenario: Choose weapon position
-- **WHEN** a sword is dragged into either available Weapons position
+- **WHEN** a one-slot sword is dragged into either available Weapons position
 - **THEN** it enables there and applies the same item modifiers in either position
 
 #### Scenario: Reject incompatible equipment
@@ -39,22 +68,34 @@ Equipment SHALL expose Weapons and Armor groups with two positions each. A compa
 - **THEN** the item returns to its source and the player state and time remain unchanged
 
 #### Scenario: Reject an occupied equipment destination
-- **WHEN** an Inventory item is dropped onto an occupied equipment position
+- **WHEN** an Inventory item is dropped onto an occupied equipment position but the displaced items cannot all enter Inventory
 - **THEN** the drop is rejected, the item remains in Inventory, and no prompt, state change, or world tick occurs
 
+#### Scenario: Swap one-slot weapon
+- **WHEN** a Sword is released over an occupied Weapons position and Inventory has room for the displaced item
+- **THEN** the Sword equips, the displaced item enters alphabetical Inventory order, and one turn advances
+
+#### Scenario: Reject two-slot capacity failure
+- **WHEN** a Two-Handed Sword is released while both Weapons positions are occupied and Inventory lacks room for both displaced items
+- **THEN** the release is rejected with no equipment, Inventory, attribute, or time change
+
 ### Requirement: Preview attributes only over a relevant equipment slot
-While an item is actively being dragged over a compatible equipment position, Slot Drag Preview SHALL show the projected attribute values for that destination. Values SHALL be green for an increase, red for a decrease, and white when unchanged. Starting a drag, hovering Inventory, hovering an incompatible or occupied position, leaving a relevant equipment position, or ending the drag SHALL show no projected values. Preview SHALL NOT change authoritative attributes, resources, Inventory, combat effects, or world time.
+While an item is actively being dragged over a compatible complete equipment destination, Slot Drag Preview SHALL show the projected complete-loadout attribute values for that destination. It SHALL compare current and projected Offense, Defense, Mana, and perks. Values SHALL be green for an increase, red for a decrease, and white when unchanged. Starting a drag, hovering Inventory, hovering an incompatible or invalid destination, leaving a relevant equipment position, or ending the drag SHALL show no projected values. Preview SHALL NOT change authoritative attributes, resources, Inventory, combat effects, or world time.
 
 #### Scenario: Preview drag-in
 - **WHEN** an Inventory item hovers over a compatible available equipment position
 - **THEN** Attributes show the values that enabling that item would produce, using green/red for differences
+
+#### Scenario: Preview an occupied slot
+- **WHEN** Dagger (Magic) hovers an occupied Weapons position and the displaced item fits in Inventory
+- **THEN** the comparison includes the equipped item's removal and the Dagger's addition before release
 
 #### Scenario: Clear preview outside an equipment target
 - **WHEN** the pointer leaves a compatible equipment position while an item remains in a drag operation
 - **THEN** projected attribute values clear until the item enters another relevant equipment position
 
 ### Requirement: Commit or cancel equipment drag atomically
-A valid release into or out of equipment SHALL enable or disable the item, apply its modifiers, end preview, restore white attribute numbers, and advance exactly one time unit. A canceled drag, invalid drop, return to the source, or capacity failure SHALL restore the original display and commit nothing.
+A valid release into, out of, or within equipment SHALL apply the complete projected loadout transaction, end preview, restore white attribute numbers, and advance exactly one time unit. A canceled drag, invalid drop, return to the source, or capacity failure SHALL restore the original display and commit nothing.
 
 #### Scenario: Enable equipment
 - **WHEN** an Inventory item is fully released into an available compatible position
@@ -93,3 +134,62 @@ Inventory SHALL distinguish quick-slottable consumables from equipment. Health P
 #### Scenario: Preserve Inventory after an invalid Quick Slot drop
 - **WHEN** an incompatible item is released over a Quick Slot
 - **THEN** the item remains in its original location and Inventory ordering is unchanged
+
+### Requirement: Mark Inventory items by destination category
+Every occupied Inventory row SHALL show a vertical left-edge strip in its item's destination-category color. Quick-slottable consumables SHALL use green and equipment SHALL use blue. Every displayed row of a multi-position item SHALL share that color. Generic empty Inventory positions SHALL remain neutral until valid return-hover feedback applies. Category cues SHALL NOT override equipment-group or drop-validation rules.
+
+#### Scenario: Identify potion destinations
+- **WHEN** Health Potion and Mana Potion stacks appear in Inventory
+- **THEN** both have green strips matching Quick Slots regardless of the resource restored
+
+#### Scenario: Identify equipment destinations
+- **WHEN** a weapon or armor item appears in Inventory
+- **THEN** each displayed row has a blue strip matching Equipment while Weapons and Armor labels distinguish compatible groups
+
+#### Scenario: Preserve two-position identity
+- **WHEN** an Inventory item occupies two displayed positions
+- **THEN** both rows show the same blue strip and the secondary row retains its existing non-draggable state
+
+#### Scenario: Avoid a false inventory category
+- **WHEN** an Inventory position is empty and no valid return drag hovers it
+- **THEN** it shows its neutral empty treatment without an Ability, Quick, or Equipment strip
+
+### Requirement: Apply inventory capacity modifiers
+Inventory SHALL calculate effective capacity as the base capacity plus the modifiers granted by carried capacity items. Extra Space SHALL occupy one inventory slot and grant five additional capacity slots while carried.
+
+#### Scenario: Carry Extra Space
+- **WHEN** the base capacity is 10 and Extra Space is carried in Inventory
+- **THEN** the inventory title shows 15 effective capacity and Extra Space consumes one of those slots
+
+#### Scenario: Remove Extra Space
+- **WHEN** Extra Space is moved out of Inventory
+- **THEN** effective capacity decreases by five and the transfer is rejected if removing it would leave the remaining contents over capacity
+
+### Requirement: Provide a permanent Drop Item destination
+Inventory SHALL render a first Drop Item row above all capacity-counted rows regardless of current item count. The row SHALL accept incoming transferable objects, SHALL not be draggable, and SHALL not count toward capacity.
+
+#### Scenario: Read Drop Item
+- **WHEN** Inventory is displayed with any number of items
+- **THEN** a neutral empty-looking row labeled `[ Drop Item ]` appears above the first inventory row
+
+#### Scenario: Drop from Inventory
+- **WHEN** an Inventory item is released over Drop Item
+- **THEN** the item is removed from Inventory only after the world drop commits
+
+#### Scenario: Drop Extra Space while over capacity
+- **WHEN** Extra Space is released over Drop Item and the remaining inventory exceeds base capacity
+- **THEN** the same action deterministically drops enough additional inventory stacks to restore base capacity, placing each dropped object in a distinct walkable cell found by expanding beyond the nearby ring when necessary
+
+### Requirement: Store abilities in Inventory
+Inventory SHALL accept an ability transferred from an occupied Ability position and SHALL display it as a draggable ability entry without applying its effect while stored there.
+
+#### Scenario: Move Heal to Inventory
+- **WHEN** Heal is dragged from Ability position 01 to an available Inventory destination
+- **THEN** position 01 becomes empty, Heal appears in Inventory, and no ability effect or world tick occurs until the transfer commits according to the existing transaction rules
+
+### Requirement: Penalize encumbered movement
+When Inventory entry count exceeds carrying capacity, the player SHALL need two valid movement inputs in the same intended direction to move one tile. Non-movement inputs and rejected movement SHALL not arm or consume the pending movement input.
+
+#### Scenario: Take an encumbered step
+- **WHEN** an encumbered player presses the same valid movement direction twice
+- **THEN** the second input moves one tile and advances one turn

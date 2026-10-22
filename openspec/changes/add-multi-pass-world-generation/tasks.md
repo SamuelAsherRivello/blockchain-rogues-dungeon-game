@@ -10,15 +10,15 @@
 - [x] 1.6 Migrate Tiled repair import/export and world rendering/autotiling to semantic cells while preserving current dungeon terrain, wall, actor, start, exit, and minimap coordinates; verify round-trip, map validation, and game/minimap renderer tests pass.
 - [x] 1.7 Remove production reads and writes that treat `floor.map` as gameplay authority, retaining only explicitly tested legacy adapters; verify repository search and the focused Node suite show no unapproved runtime map dependency.
 - [x] 1.8 Document the world/realm/level/pass model, semantic-cell contract, legacy migration, and milestone-1 generation behavior; verify every documented seed/debug command remains runnable.
-- [ ] 1.9 Run one focused muted browser smoke check for the migrated dungeon and then perform the requested human playtest with at least two fixed seeds; verify the dungeon is playable, the exit is reachable, and feedback is recorded before milestone 2 changes begin.
+- [x] 1.9 Run one focused muted browser smoke check for the migrated dungeon and then perform the requested human playtest with at least two fixed seeds; verify the dungeon is playable, the exit is reachable, and feedback is recorded before milestone 2 changes begin.
 
 ## 2. Milestone 2 — Improve dungeon generation (medium complexity)
 
-- [ ] 2.1 Replace the implicit room chain with an explicit seeded room graph that guarantees a start-to-exit spanning route and can add bounded branches or loops; verify graph connectivity and deterministic graph tests.
-- [ ] 2.2 Add room roles and corridor-quality controls for arenas, treasure rooms, hubs, dead ends, socket placement, corridor width, and bend/intersection behavior; verify generated fixtures cover each role and corridor constraint.
-- [ ] 2.3 Add post-generation quality validation for reachability, minimum room/corridor dimensions, required distance or pacing constraints, entity bounds, and protected cells; verify invalid seeded fixtures produce diagnostics or deterministic repair rather than activating silently.
-- [ ] 2.4 Tune encounter and reward placement against the improved topology without changing turn, combat, inventory, or save semantics; verify focused gameplay tests cover entity placement, reachable stairs, and stable difficulty scaling.
-- [ ] 2.5 Update generation documentation with the room graph, role parameters, debug fixtures, and known tuning controls; verify the documented seeded comparison workflow reproduces the expected layouts.
+- [x] 2.1 Replace the implicit room chain with an explicit seeded room graph that guarantees a start-to-exit spanning route and can add bounded branches or loops; verify graph connectivity and deterministic graph tests.
+- [x] 2.2 Add room roles and corridor-quality controls for arenas, treasure rooms, hubs, dead ends, socket placement, corridor width, and bend/intersection behavior; verify generated fixtures cover each role and corridor constraint.
+- [x] 2.3 Add post-generation quality validation for reachability, minimum room/corridor dimensions, required distance or pacing constraints, entity bounds, and protected cells; verify invalid seeded fixtures produce diagnostics or deterministic repair rather than activating silently.
+- [x] 2.4 Tune encounter and reward placement against the improved topology without changing turn, combat, inventory, or save semantics; verify focused gameplay tests cover entity placement, reachable stairs, and stable difficulty scaling.
+- [x] 2.5 Update generation documentation with the room graph, role parameters, debug fixtures, and known tuning controls; verify the documented seeded comparison workflow reproduces the expected layouts.
 - [ ] 2.6 Run one focused muted browser smoke check for the improved dungeon and then perform the second human playtest; verify branches, loops, pacing, combat spaces, and exit reachability are acceptable before milestone 3 begins.
 
 ## 3. Milestone 3 — Add the organic overworld and level transitions (high complexity)

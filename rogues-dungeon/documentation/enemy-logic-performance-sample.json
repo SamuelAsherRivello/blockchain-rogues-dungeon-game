@@ -1,0 +1,800 @@
+{
+  "protocol": "Muted Edge 156, 1280x720, seed identity 17, 100x100 floor seed 2225201261, four active enemies, three-second warmup, twenty alternating A/D holds of 500ms. Native Enemy logic button, test-only fixture/session probes. Sequential development-build samples, not a locked-FPS guarantee.",
+  "before": [
+    {
+      "mode": "normal",
+      "useNative": true,
+      "fixture": {
+        "seed": 2225201261,
+        "width": 100,
+        "height": 100,
+        "enemies": [
+          {
+            "x": 55,
+            "y": 50
+          },
+          {
+            "x": 53,
+            "y": 52
+          },
+          {
+            "x": 53,
+            "y": 48
+          },
+          {
+            "x": 52,
+            "y": 53
+          }
+        ]
+      },
+      "patches": {
+        "domain": 1,
+        "renderer": 1,
+        "playback": 1
+      },
+      "before": {
+        "time": 2,
+        "player": {
+          "x": 1616,
+          "y": 1616
+        },
+        "enemies": [
+          {
+            "id": "enemy-probe-0",
+            "x": 55,
+            "y": 50
+          },
+          {
+            "id": "enemy-probe-1",
+            "x": 53,
+            "y": 52
+          },
+          {
+            "id": "enemy-probe-2",
+            "x": 53,
+            "y": 48
+          },
+          {
+            "id": "enemy-probe-3",
+            "x": 52,
+            "y": 53
+          }
+        ],
+        "drawn": 3
+      },
+      "after": {
+        "time": 20,
+        "enemies": [
+          {
+            "id": "enemy-probe-0",
+            "x": 53,
+            "y": 50
+          },
+          {
+            "id": "enemy-probe-1",
+            "x": 49,
+            "y": 52
+          },
+          {
+            "id": "enemy-probe-2",
+            "x": 49,
+            "y": 50
+          },
+          {
+            "id": "enemy-probe-3",
+            "x": 48,
+            "y": 51
+          }
+        ],
+        "drawn": 4
+      },
+      "distance": 576,
+      "metrics": {
+        "frames": 1150,
+        "fps": 112.28604626185107,
+        "median": 8.300000000001091,
+        "p95": 8.5,
+        "counts": {
+          "minimap preparations": 1151,
+          "game preparations": 1151,
+          "queried entries": 16114,
+          "sprite patches": 22220,
+          "active layers": 77564,
+          "active layer sprite slots": 1661340,
+          "discovery decodes": 17,
+          "ticks": 17,
+          "enemy visits": 68,
+          "model builds": 34,
+          "minimap uploads": 3,
+          "static cells checked": 15538
+        },
+        "cpu": {
+          "minimap preparation": {
+            "mean": 0.06029539529256827,
+            "max": 0.7999999988824129,
+            "count": 1151
+          },
+          "game preparation": {
+            "mean": 0.6289313640299825,
+            "max": 1.800000000745058,
+            "count": 1151
+          },
+          "clone/upgrade (inclusive)": {
+            "mean": 0.2578947367636781,
+            "max": 0.40000000037252903,
+            "count": 19
+          },
+          "navigation (inclusive)": {
+            "mean": 4.8264705881695535,
+            "max": 8.699999999254942,
+            "count": 34
+          },
+          "AI (inclusive)": {
+            "mean": 9.752941176514415,
+            "max": 25.09999999962747,
+            "count": 17
+          },
+          "tick (inclusive)": {
+            "mean": 9.758823529543246,
+            "max": 25.09999999962747,
+            "count": 17
+          },
+          "action (inclusive)": {
+            "mean": 9.17894736844066,
+            "max": 25.699999999254942,
+            "count": 19
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0,
+            "max": 0,
+            "count": 17
+          },
+          "React commit": {
+            "mean": 1.2427597955389669,
+            "max": 15.099999999627471,
+            "count": 587
+          }
+        }
+      },
+      "errors": []
+    },
+    {
+      "mode": "paused",
+      "useNative": true,
+      "fixture": {
+        "seed": 2225201261,
+        "width": 100,
+        "height": 100,
+        "enemies": [
+          {
+            "x": 55,
+            "y": 50
+          },
+          {
+            "x": 53,
+            "y": 52
+          },
+          {
+            "x": 53,
+            "y": 48
+          },
+          {
+            "x": 52,
+            "y": 53
+          }
+        ]
+      },
+      "patches": {
+        "domain": 1,
+        "renderer": 1,
+        "playback": 1
+      },
+      "before": {
+        "time": 2,
+        "player": {
+          "x": 1616,
+          "y": 1616
+        },
+        "enemies": [
+          {
+            "id": "enemy-probe-0",
+            "x": 55,
+            "y": 50
+          },
+          {
+            "id": "enemy-probe-1",
+            "x": 53,
+            "y": 52
+          },
+          {
+            "id": "enemy-probe-2",
+            "x": 53,
+            "y": 48
+          },
+          {
+            "id": "enemy-probe-3",
+            "x": 52,
+            "y": 53
+          }
+        ],
+        "drawn": 3
+      },
+      "after": {
+        "time": 22,
+        "enemies": [
+          {
+            "id": "enemy-probe-0",
+            "x": 55,
+            "y": 50
+          },
+          {
+            "id": "enemy-probe-1",
+            "x": 53,
+            "y": 52
+          },
+          {
+            "id": "enemy-probe-2",
+            "x": 53,
+            "y": 48
+          },
+          {
+            "id": "enemy-probe-3",
+            "x": 52,
+            "y": 53
+          }
+        ],
+        "drawn": 3
+      },
+      "distance": 640,
+      "metrics": {
+        "frames": 1227,
+        "fps": 117.60308240841913,
+        "median": 8.300000000001091,
+        "p95": 8.5,
+        "counts": {
+          "minimap preparations": 1228,
+          "game preparations": 1228,
+          "queried entries": 17192,
+          "sprite patches": 22564,
+          "active layers": 82439,
+          "active layer sprite slots": 1772167,
+          "discovery decodes": 20,
+          "ticks": 20,
+          "enemy turns suppressed": 20,
+          "model builds": 40,
+          "minimap uploads": 1,
+          "static cells checked": 18280
+        },
+        "cpu": {
+          "minimap preparation": {
+            "mean": 0.04527687295628196,
+            "max": 0.5,
+            "count": 1228
+          },
+          "game preparation": {
+            "mean": 0.5057817589679691,
+            "max": 1.300000000745058,
+            "count": 1228
+          },
+          "clone/upgrade (inclusive)": {
+            "mean": 0.21999999973922968,
+            "max": 0.5,
+            "count": 20
+          },
+          "tick (inclusive)": {
+            "mean": 0.005000000074505806,
+            "max": 0.10000000149011612,
+            "count": 20
+          },
+          "action (inclusive)": {
+            "mean": 0.3299999997019768,
+            "max": 0.7999999988824129,
+            "count": 20
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0,
+            "max": 0,
+            "count": 20
+          },
+          "React commit": {
+            "mean": 0.910699001450979,
+            "max": 8.699999999254942,
+            "count": 701
+          }
+        }
+      },
+      "errors": []
+    }
+  ],
+  "after": [
+    {
+      "mode": "normal",
+      "useNative": true,
+      "fixture": {
+        "seed": 2225201261,
+        "width": 100,
+        "height": 100,
+        "enemies": [
+          {
+            "x": 55,
+            "y": 50
+          },
+          {
+            "x": 53,
+            "y": 52
+          },
+          {
+            "x": 53,
+            "y": 48
+          },
+          {
+            "x": 52,
+            "y": 53
+          }
+        ]
+      },
+      "patches": {
+        "domain": 1,
+        "renderer": 1,
+        "playback": 1
+      },
+      "before": {
+        "time": 2,
+        "player": {
+          "x": 1616,
+          "y": 1616
+        },
+        "enemies": [
+          {
+            "id": "enemy-probe-0",
+            "x": 55,
+            "y": 50
+          },
+          {
+            "id": "enemy-probe-1",
+            "x": 53,
+            "y": 52
+          },
+          {
+            "id": "enemy-probe-2",
+            "x": 53,
+            "y": 48
+          },
+          {
+            "id": "enemy-probe-3",
+            "x": 52,
+            "y": 53
+          }
+        ],
+        "drawn": 3
+      },
+      "after": {
+        "time": 20,
+        "enemies": [
+          {
+            "id": "enemy-probe-0",
+            "x": 53,
+            "y": 50
+          },
+          {
+            "id": "enemy-probe-1",
+            "x": 49,
+            "y": 52
+          },
+          {
+            "id": "enemy-probe-2",
+            "x": 49,
+            "y": 50
+          },
+          {
+            "id": "enemy-probe-3",
+            "x": 48,
+            "y": 51
+          }
+        ],
+        "drawn": 4
+      },
+      "distance": 576,
+      "metrics": {
+        "frames": 1239,
+        "fps": 116.61066719372053,
+        "median": 8.300000000001091,
+        "p95": 8.5,
+        "counts": {
+          "minimap preparations": 1240,
+          "game preparations": 1240,
+          "queried entries": 17360,
+          "sprite patches": 24293,
+          "active layers": 83672,
+          "active layer sprite slots": 1789912,
+          "discovery decodes": 18,
+          "ticks": 18,
+          "enemy visits": 72,
+          "navigation cells tested": 1664,
+          "model builds": 36,
+          "minimap uploads": 3,
+          "static cells checked": 16452
+        },
+        "cpu": {
+          "minimap preparation": {
+            "mean": 0.05467741935994596,
+            "max": 0.7000000011175871,
+            "count": 1240
+          },
+          "game preparation": {
+            "mean": 0.5527419354781629,
+            "max": 2.5,
+            "count": 1240
+          },
+          "clone/upgrade (inclusive)": {
+            "mean": 0.21500000013038517,
+            "max": 0.30000000074505806,
+            "count": 20
+          },
+          "navigation (inclusive)": {
+            "mean": 0.10294117641580455,
+            "max": 0.6999999992549419,
+            "count": 34
+          },
+          "AI (inclusive)": {
+            "mean": 0.227777777860562,
+            "max": 1.400000000372529,
+            "count": 18
+          },
+          "tick (inclusive)": {
+            "mean": 0.238888888930281,
+            "max": 1.5,
+            "count": 18
+          },
+          "action (inclusive)": {
+            "mean": 0.5549999999813735,
+            "max": 2,
+            "count": 20
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0.005555555534859498,
+            "max": 0.09999999962747097,
+            "count": 18
+          },
+          "React commit": {
+            "mean": 1.05914149441666,
+            "max": 11.199999999254942,
+            "count": 629
+          }
+        }
+      },
+      "errors": []
+    },
+    {
+      "mode": "paused",
+      "useNative": true,
+      "fixture": {
+        "seed": 2225201261,
+        "width": 100,
+        "height": 100,
+        "enemies": [
+          {
+            "x": 55,
+            "y": 50
+          },
+          {
+            "x": 53,
+            "y": 52
+          },
+          {
+            "x": 53,
+            "y": 48
+          },
+          {
+            "x": 52,
+            "y": 53
+          }
+        ]
+      },
+      "patches": {
+        "domain": 1,
+        "renderer": 1,
+        "playback": 1
+      },
+      "before": {
+        "time": 2,
+        "player": {
+          "x": 1616,
+          "y": 1616
+        },
+        "enemies": [
+          {
+            "id": "enemy-probe-0",
+            "x": 55,
+            "y": 50
+          },
+          {
+            "id": "enemy-probe-1",
+            "x": 53,
+            "y": 52
+          },
+          {
+            "id": "enemy-probe-2",
+            "x": 53,
+            "y": 48
+          },
+          {
+            "id": "enemy-probe-3",
+            "x": 52,
+            "y": 53
+          }
+        ],
+        "drawn": 3
+      },
+      "after": {
+        "time": 22,
+        "enemies": [
+          {
+            "id": "enemy-probe-0",
+            "x": 55,
+            "y": 50
+          },
+          {
+            "id": "enemy-probe-1",
+            "x": 53,
+            "y": 52
+          },
+          {
+            "id": "enemy-probe-2",
+            "x": 53,
+            "y": 48
+          },
+          {
+            "id": "enemy-probe-3",
+            "x": 52,
+            "y": 53
+          }
+        ],
+        "drawn": 3
+      },
+      "distance": 640,
+      "metrics": {
+        "frames": 1133,
+        "fps": 115.31806615776084,
+        "median": 8.300000000001091,
+        "p95": 8.5,
+        "counts": {
+          "minimap preparations": 1134,
+          "game preparations": 1134,
+          "queried entries": 15876,
+          "sprite patches": 20803,
+          "active layers": 76145,
+          "active layer sprite slots": 1636529,
+          "discovery decodes": 19,
+          "ticks": 19,
+          "enemy turns suppressed": 19,
+          "model builds": 38,
+          "minimap uploads": 1,
+          "static cells checked": 16909
+        },
+        "cpu": {
+          "minimap preparation": {
+            "mean": 0.059788359784089175,
+            "max": 0.6999999992549419,
+            "count": 1134
+          },
+          "game preparation": {
+            "mean": 0.5888007054732853,
+            "max": 1.699999999254942,
+            "count": 1134
+          },
+          "clone/upgrade (inclusive)": {
+            "mean": 0.23684210506709,
+            "max": 0.40000000037252903,
+            "count": 19
+          },
+          "tick (inclusive)": {
+            "mean": 0.005263157875130051,
+            "max": 0.09999999962747097,
+            "count": 19
+          },
+          "action (inclusive)": {
+            "mean": 0.39999999988235924,
+            "max": 0.900000000372529,
+            "count": 19
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0,
+            "max": 0,
+            "count": 19
+          },
+          "React commit": {
+            "mean": 1.0992175273842095,
+            "max": 10.100000001490116,
+            "count": 639
+          }
+        }
+      },
+      "errors": []
+    }
+  ],
+  "resumeVerification": [
+    {
+      "mode": "paused",
+      "useNative": true,
+      "fixture": {
+        "seed": 2225201261,
+        "width": 100,
+        "height": 100,
+        "enemies": [
+          {
+            "x": 55,
+            "y": 50
+          },
+          {
+            "x": 53,
+            "y": 52
+          },
+          {
+            "x": 53,
+            "y": 48
+          },
+          {
+            "x": 52,
+            "y": 53
+          }
+        ]
+      },
+      "patches": {
+        "domain": 1,
+        "renderer": 1,
+        "playback": 1
+      },
+      "before": {
+        "time": 2,
+        "player": {
+          "x": 1616,
+          "y": 1616
+        },
+        "enemies": [
+          {
+            "id": "enemy-probe-0",
+            "x": 55,
+            "y": 50
+          },
+          {
+            "id": "enemy-probe-1",
+            "x": 53,
+            "y": 52
+          },
+          {
+            "id": "enemy-probe-2",
+            "x": 53,
+            "y": 48
+          },
+          {
+            "id": "enemy-probe-3",
+            "x": 52,
+            "y": 53
+          }
+        ],
+        "drawn": 3
+      },
+      "after": {
+        "time": 22,
+        "enemies": [
+          {
+            "id": "enemy-probe-0",
+            "x": 55,
+            "y": 50
+          },
+          {
+            "id": "enemy-probe-1",
+            "x": 53,
+            "y": 52
+          },
+          {
+            "id": "enemy-probe-2",
+            "x": 53,
+            "y": 48
+          },
+          {
+            "id": "enemy-probe-3",
+            "x": 52,
+            "y": 53
+          }
+        ],
+        "drawn": 3
+      },
+      "distance": 640,
+      "metrics": {
+        "frames": 1223,
+        "fps": 116.19842091761596,
+        "median": 8.300000000001091,
+        "p95": 8.5,
+        "counts": {
+          "minimap preparations": 1224,
+          "game preparations": 1224,
+          "queried entries": 17136,
+          "sprite patches": 22467,
+          "active layers": 82149,
+          "active layer sprite slots": 1766373,
+          "discovery decodes": 20,
+          "ticks": 20,
+          "enemy turns suppressed": 20,
+          "model builds": 40,
+          "minimap uploads": 1,
+          "static cells checked": 18280
+        },
+        "cpu": {
+          "minimap preparation": {
+            "mean": 0.0455882353069005,
+            "max": 0.599999999627471,
+            "count": 1224
+          },
+          "game preparation": {
+            "mean": 0.499264705853135,
+            "max": 1.700000001117587,
+            "count": 1224
+          },
+          "clone/upgrade (inclusive)": {
+            "mean": 0.22000000020489097,
+            "max": 0.30000000074505806,
+            "count": 20
+          },
+          "tick (inclusive)": {
+            "mean": 0,
+            "max": 0,
+            "count": 20
+          },
+          "action (inclusive)": {
+            "mean": 0.34500000020489097,
+            "max": 0.7000000011175871,
+            "count": 20
+          },
+          "commit/save callbacks (inclusive)": {
+            "mean": 0,
+            "max": 0,
+            "count": 20
+          },
+          "React commit": {
+            "mean": 0.9940170939810086,
+            "max": 10.400000000372529,
+            "count": 702
+          }
+        }
+      },
+      "resume": {
+        "ticks": 1,
+        "elapsed": 1,
+        "enemies": [
+          {
+            "id": "enemy-probe-0",
+            "x": 55,
+            "y": 50
+          },
+          {
+            "id": "enemy-probe-1",
+            "x": 52,
+            "y": 52
+          },
+          {
+            "id": "enemy-probe-2",
+            "x": 52,
+            "y": 48
+          },
+          {
+            "id": "enemy-probe-3",
+            "x": 52,
+            "y": 53
+          }
+        ]
+      },
+      "savesUnchanged": true,
+      "liveRestored": true,
+      "errors": []
+    }
+  ],
+  "occupiedSaveVerification": {
+    "moved": true,
+    "restored": true,
+    "enemyLogicReset": true,
+    "nonemptyStorage": 5339,
+    "unchanged": true
+  }
+}

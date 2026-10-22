@@ -10,6 +10,12 @@ Turn presentation supplies shared sub-grid coordinates only for the player, enem
 
 The floor trigger is a floor-panel layer: it renders above terrain and below walls, props, pickups, barrels, doors, enemies, and the player. Its sprite is anchored half a tile lower than the cell center, which keeps the panel on the floor beneath the object activating it.
 
+## Fog and illumination
+
+Normal play enables exploration fog and grid illumination together. The nearest-sampled floor field changes independently of retained terrain geometry. Walls and oversized sprites use owning-cell or displayed-anchor permission and tint. The semantic minimap shares discovery but keeps its own unlit colors; recap always respects exploration, while Create World previews deliberately show the full map. See [fog-and-lighting.md](fog-and-lighting.md) for radii, persistence and developer RT comparisons.
+
+Tactical dimming composes above the world canvas and its optional S treatment. Lighting never changes tactical membership or enemy detection. Unknown cells suppress identifying object, hazard and enemy hints and hover information. Ordinary mouse walking can target and cross reachable fogged or dark cells, using the same white reticle, white route dots and boot cursor as revealed-terrain walking. Fog does not clip this neutral walking preview or travel route. Concealed-target clicks carry walking intent only, without authorizing attacks, pickups or object interactions; normal collision, travel limits and turn rules still apply. Hover and route selection do not grant discovery before accepted movement.
+
 ## World depth order
 
 The game view uses three render passes. Walkable terrain renders first. Floor-attached decals such as triggers render next. Floor traps render above those decals, and settled combat particles render above floor traps. Walls, other decorations, props, pickups, stairs, barrels, enemies, player, moving coins, and non-owner-fixed particles share the world-depth pass.

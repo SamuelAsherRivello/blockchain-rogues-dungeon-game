@@ -4,7 +4,7 @@ export const FLOOR_TRIGGER_OFF_FRAME = 14;
 export const FLOOR_TRIGGER_ON_FRAME = 16;
 
 function frame(baseUrl: string, sheetFrame: number) {
-  return { path: `${baseUrl}assets/art/vendors/dungeons-and-pixels-v1.4/tilesets/props-animated.png`, widthPx: 32, heightPx: 32, sheetFrame };
+  return { path: `${baseUrl}assets/art/game-view/tilesets/art/props-animated.png`, widthPx: 32, heightPx: 32, sheetFrame };
 }
 
 /** The third props-animated row: three pressure-plate states, held at either end. */

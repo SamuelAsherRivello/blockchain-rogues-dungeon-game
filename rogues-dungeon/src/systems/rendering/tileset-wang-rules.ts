@@ -15,6 +15,7 @@ export interface DungeonWangFamily {
 }
 
 export interface DungeonTilesetRules {
+  readonly inwardCornerRules: Readonly<Record<number, number>>;
   readonly floorTiles: readonly number[];
   readonly wallQuarterProfiles: Readonly<Record<string, readonly number[]>>;
   readonly tileWidth: number;
@@ -77,6 +78,10 @@ export function parseDungeonTilesetRules(xml: string): DungeonTilesetRules {
     return null;
   };
   const floorTiles = (property("dungeon:floor-tiles") ?? "13").split(",").map(Number);
+  const inwardCornerRules = JSON.parse(property("dungeon:inward-corner-rules") ?? "{}") as Record<number, number>;
+  for (const [mask, tileId] of Object.entries(inwardCornerRules)) {
+    if (![5, 20, 65, 80].includes(Number(mask)) || !Number.isInteger(tileId) || tileId < 0 || tileId >= tileCount) throw new Error("Invalid inward corner rule");
+  }
   const wallQuarterProfiles = JSON.parse(property("dungeon:wall-quarter-profiles") ?? "{}") as Record<string, number[]>;
   for (const ids of [floorTiles, ...Object.values(wallQuarterProfiles)]) {
     if (ids.some(id => !Number.isInteger(id) || id < 0 || id >= tileCount)) throw new Error("Composition tile is outside the atlas");
@@ -120,7 +125,7 @@ export function parseDungeonTilesetRules(xml: string): DungeonTilesetRules {
     });
     families.set(name, { name, rules: Object.freeze(rules), byMask: new Map(rules.map(rule => [rule.mask, rule])) });
   }
-  return { floorTiles, wallQuarterProfiles, tileWidth, tileHeight, tileCount, columns, imageSource: unescapeXml(image.source), imageWidth, imageHeight, families };
+  return { inwardCornerRules, floorTiles, wallQuarterProfiles, tileWidth, tileHeight, tileCount, columns, imageSource: unescapeXml(image.source), imageWidth, imageHeight, families };
 }
 
 export interface WallQuarter { tileId: number; quarter: number }

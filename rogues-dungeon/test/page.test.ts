@@ -8,10 +8,26 @@ import { statusCapMarker } from '../src/game/status-cap-marker.ts';
 test("builds Rogue's Dungeon from its GitHub Pages base", () => {
   assert.equal(viteConfig.root, 'rogues-dungeon'); assert.equal(viteConfig.base, '/blockchain-rogues-dungeon-game/');
 });
-test('fits both landscape and portrait command-desk surfaces', () => {
-  assert.equal(defaultLayout.label, '16:9'); assert.equal(aspectRatioPresets.portrait.label, '9:16');
-  for (const layout of [defaultLayout, { orientation: 'portrait' as const, ...aspectRatioPresets.portrait }]) { const fitted = fitViewport(900, 900, layout); assert.ok(fitted.width <= 900 && fitted.height <= 900); assert.equal(fitted.x * 2 + fitted.width, 900); }
+test('fits landscape and portrait command-desk aspect ranges', () => {
+  assert.equal(defaultLayout.label, '16:10–16:9'); assert.equal(aspectRatioPresets.portrait.label, '9:16–10:16');
+  const cases = [
+    { name: 'landscape minimum', layout: defaultLayout, surface: [1600, 1000], ratio: 16 / 10 },
+    { name: 'landscape intermediate', layout: defaultLayout, surface: [1680, 1000], ratio: 168 / 100 },
+    { name: 'landscape maximum', layout: defaultLayout, surface: [1920, 1000], ratio: 16 / 9 },
+    { name: 'portrait minimum', layout: { orientation: 'portrait' as const, ...aspectRatioPresets.portrait }, surface: [900, 1600], ratio: 9 / 16 },
+    { name: 'portrait intermediate', layout: { orientation: 'portrait' as const, ...aspectRatioPresets.portrait }, surface: [600, 1000], ratio: 3 / 5 },
+    { name: 'portrait maximum', layout: { orientation: 'portrait' as const, ...aspectRatioPresets.portrait }, surface: [800, 1000], ratio: 10 / 16 },
+  ] as const;
+  for (const { name, layout, surface: [width, height], ratio } of cases) {
+    const fitted = fitViewport(width, height, layout);
+    assert.ok(fitted.width <= width && fitted.height <= height, name);
+    assert.ok(Math.abs(fitted.width / fitted.height - ratio) < 1e-10, name);
+    assert.ok(Math.abs(fitted.x * 2 + fitted.width - width) < 1e-10, name);
+    assert.ok(Math.abs(fitted.y * 2 + fitted.height - height) < 1e-10, name);
+  }
   assert.throws(() => validateLayout({ orientation: 'portrait', width: 16, height: 9 }));
+  assert.throws(() => validateLayout({ orientation: 'landscape', width: 16, height: 9, minAspectRatio: 16 / 9, maxAspectRatio: 16 / 10 }));
+  assert.throws(() => validateLayout({ orientation: 'portrait', width: 9, height: 16, minAspectRatio: 9 / 16, maxAspectRatio: 16 / 10 }));
 });
 test('status capacity markers make creation ranks legible without reaching the full track early', () => {
   assert.equal(statusCapMarker(1), 10);
@@ -22,7 +38,7 @@ test('status capacity markers make creation ranks legible without reaching the f
 test('labels character meters as Status and exposes exact current values with the XP level', async () => {
   const [game, panels] = await Promise.all(['../src/game/game.tsx', '../src/game/panels/information-panels.tsx'].map((path) => readFile(new URL(path, import.meta.url), 'utf8')));
   assert.match(panels, /GameCard title="Status"/);
-  assert.match(game, /Level \$\{String\(value\.level\)\.padStart\(2, "0"\)\}\. \$\{value\.current\} \/ \$\{value\.currentMax\} XP\./);
+  assert.match(game, /Level \$\{String\(displayedValue\.level\)\.padStart\(2, "0"\)\}\. \$\{displayedValue\.current\} \/ \$\{displayedValue\.currentMax\} XP\./);
   assert.match(game, /resource_level--empty/);
   assert.match(game, /resource_level--filled/);
   assert.match(game, /LVL \$\{String\(value\.level\)\.padStart\(2, "0"\)\}/);
@@ -37,14 +53,21 @@ test('renders equipment and Inventory details for combat properties and two-slot
   assert.match(game, /slot_item_details/);
 });
 test('renders an occupied-or-empty equipment swap comparison with complete deltas', async () => {
-  const [game, css] = await Promise.all(['../src/game/game.tsx', '../src/ui/style.css'].map((path) => readFile(new URL(path, import.meta.url), 'utf8')));
+  const { itemComparisonStats } = await import('../src/game/item-comparison-stats.ts');
+  const item = (modifiers: Record<string, number>, category?: 'capacity') => ({ id: 'test', name: 'Test', group: 'weapons' as const, modifiers, category });
+  assert.deepEqual(itemComparisonStats(item({ offense: 3 }), item({ offense: 5, defense: 2, mana: 4 })), [
+    { name: 'offense', value: 3, delta: -2 }, { name: 'defense', value: 0, delta: -2 }, { name: 'mana', value: 0, delta: -4 },
+  ]);
+  assert.deepEqual(itemComparisonStats(item({ offense: 3 }), null), [{ name: 'offense', value: 3, delta: 3 }]);
+  assert.deepEqual(itemComparisonStats(null, item({ defense: 2 })), [{ name: 'defense', value: 0, delta: -2 }]);
+  assert.deepEqual(itemComparisonStats(item({}, 'capacity'), item({}, 'capacity')), [{ name: 'capacity', value: 5, delta: 0 }]);
+  assert.deepEqual(itemComparisonStats(item({}), item({}, 'capacity')), [{ name: 'capacity', value: 0, delta: -5 }]);
+  const [game, css] = await Promise.all(['../src/game/game.tsx', '../src/ui/style.css'].map(path => readFile(new URL(path, import.meta.url), 'utf8')));
   assert.match(game, /aria-label="Equipment comparison"/);
-  assert.match(game, /Before:/);
-  assert.match(game, /After:/);
-  assert.match(game, /\["offense", "defense", "mana"\] as const/);
-  assert.match(game, /destination\.index \+ 1\} \+ \$\{destination\.index === 0 \? 2 : 1/);
+  assert.match(game, /itemComparisonStats\(item, title === "After" \? baseline : null\)/);
+  assert.match(game, /<p><i>\(empty\)<\/i><\/p>/);
   assert.match(game, /<EquipmentComparison campaign=\{campaign\} drag=\{dragPresentation\} \/>/);
-  assert.match(css, /\.equipment_comparison/);
+  assert.match(css, /\.item-comparison-panel/);
 });
 test('recovers a wall-adjacent barrel only when its current and starting cells are both offscreen', async () => {
   const renderer = await readFile(new URL('../src/systems/rendering/babylon-render-system.tsx', import.meta.url), 'utf8');
@@ -57,49 +80,62 @@ test('selects aspect by mobile platform signal with a PC-only developer preview 
   assert.equal(classifyPlatform({ userAgentDataMobile: false, userAgent: 'Windows NT 10.0' }), 'pc');
   assert.equal(classifyPlatform({ userAgentDataMobile: true, userAgent: 'Desktop' }), 'mobile');
   assert.equal(classifyPlatform({ userAgent: 'Mozilla/5.0 (Linux; Android 14) Mobile' }), 'mobile');
-  assert.equal(layoutForPlatform('pc').orientation, 'landscape');
-  assert.equal(layoutForPlatform('pc', 'portrait').orientation, 'portrait');
-  assert.equal(layoutForPlatform('mobile', 'landscape').orientation, 'portrait');
+  const landscape = layoutForPlatform('pc');
+  const portraitPreview = layoutForPlatform('pc', 'portrait');
+  const mobile = layoutForPlatform('mobile', 'landscape');
+  assert.equal(landscape.orientation, 'landscape'); assert.equal(landscape.minAspectRatio, 16 / 10); assert.equal(landscape.maxAspectRatio, 16 / 9);
+  assert.equal(portraitPreview.orientation, 'portrait'); assert.equal(portraitPreview.minAspectRatio, 9 / 16); assert.equal(portraitPreview.maxAspectRatio, 10 / 16);
+  assert.equal(mobile.orientation, 'portrait'); assert.equal(mobile.minAspectRatio, 9 / 16); assert.equal(mobile.maxAspectRatio, 10 / 16);
 });
-test('keeps the developer aspect override behind the development build flag', async () => {
-  const app = await readFile(new URL('../src/ui/App.tsx', import.meta.url), 'utf8');
+test('keeps the saved aspect ratio control within developer settings', async () => {
+  const app = await readFile(new URL('../src/ui/app.tsx', import.meta.url), 'utf8');
   assert.match(app, /platform === "pc" && import\.meta\.env\.DEV/);
-  assert.match(app, /layoutForPlatform\(platform, canOverride \? developerAspect : null\)/);
+  assert.match(app, /layoutForPlatform\(platform, aspectRatio\)/);
   const [game, gameScreen] = await Promise.all(['../src/game/game.tsx', '../src/game/screens/game-screen.tsx'].map((path) => readFile(new URL(path, import.meta.url), 'utf8')));
-  assert.match(game, /canOverride && orientation === "portrait"/);
-  assert.match(game, /setDeveloperAspect\("landscape"\)/);
+  assert.match(game, /D Settings[\s\S]*AR: \{orientation === "landscape" \? "L" : "P"\}/);
+  assert.match(game, /className="mobile_status"[\s\S]*canOverride[\s\S]*AR: \{orientation === "landscape" \? "L" : "P"\}/);
+  assert.match(game, /setAspectRatio\(orientation === "landscape" \? "portrait" : "landscape"\)/);
+  const settings = await readFile(new URL("../src/game/windows/settings-window.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(settings, /AR: |LayoutContext/);
   assert.match(gameScreen, /className="game-screen" data-orientation=\{orientation\}/);
   const css = await readFile(new URL('../src/ui/style.css', import.meta.url), 'utf8');
   assert.match(css, /\.game-screen\[data-orientation="portrait"\]/);
   assert.doesNotMatch(css, /@media\s*\(max-aspect-ratio|@container\s*\(max-aspect-ratio/);
 });
-test('persists the developer character-pivot overlay and renders it above game art only when enabled', async () => {
-  const [app, game, renderer] = await Promise.all(['../src/ui/App.tsx', '../src/game/game.tsx', '../src/systems/rendering/babylon-render-system.tsx'].map((path) => readFile(new URL(path, import.meta.url), 'utf8')));
-  assert.match(app, /const PIVOT_POINTS_STORAGE_KEY = "rogues-dungeon\.dev\.show-pivot-points"/);
-  assert.match(app, /localStorage\.setItem\(PIVOT_POINTS_STORAGE_KEY, String\(next\)\)/);
+test('persists the developer character-pivot overlay and renders it above game art only when enabled', async (t) => {
+  const { DEV_SETTINGS_STORAGE_KEYS, readDevBoolean, writeDevBoolean } = await import('../src/ui/dev-settings.ts');
+  const values = new Map<string, string>();
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => { values.set(key, value); },
+    removeItem: (key: string) => { values.delete(key); }, clear: () => values.clear(),
+    key: (index: number) => [...values.keys()][index] ?? null, get length() { return values.size; },
+  } satisfies Storage });
+  t.after(() => { if (descriptor) Object.defineProperty(globalThis, 'localStorage', descriptor); else Reflect.deleteProperty(globalThis, 'localStorage'); });
+  assert.equal(DEV_SETTINGS_STORAGE_KEYS.pivots, 'rogues-dungeon.dev.show-pivot-points');
+  assert.equal(readDevBoolean(DEV_SETTINGS_STORAGE_KEYS.pivots), false);
+  writeDevBoolean(DEV_SETTINGS_STORAGE_KEYS.pivots, true);
+  assert.equal(readDevBoolean(DEV_SETTINGS_STORAGE_KEYS.pivots), true);
+  writeDevBoolean(DEV_SETTINGS_STORAGE_KEYS.pivots, false);
+  assert.equal(readDevBoolean(DEV_SETTINGS_STORAGE_KEYS.pivots), false);
+  const [app, game, renderer] = await Promise.all(['../src/ui/app.tsx', '../src/game/game.tsx', '../src/systems/rendering/babylon-render-system.tsx'].map(path => readFile(new URL(path, import.meta.url), 'utf8')));
+  assert.match(app, /readDevBoolean\(DEV_SETTINGS_STORAGE_KEYS.pivots\)/);
+  assert.match(app, /writeDevBoolean\(DEV_SETTINGS_STORAGE_KEYS.pivots, next\)/);
   assert.match(app, /useState\(readShowPivotPoints\)/);
+  assert.match(app, /showPivotPoints: canOverride && showPivotPoints/);
   assert.match(game, /showPivotPoints=\{showPivotPoints\}/);
-  assert.match(game, /Pivots: \{showPivotPoints \? "On" : "Off"\}/);
-  assert.match(game, /Url: \{urlArgs \? "On" : "Off"\}/);
-  assert.match(game, /setUrlArgs\(!urlArgs\)/);
-  assert.match(game, /MapTest: \{mapTest \? "On" : "Off"\}/);
-  assert.match(game, /const \[mapTest, setMapTest\] = useState\(false\)/);
-  assert.match(game, /<MapTestControls campaign=\{campaign\} \/>/);
-  assert.match(game, /Open Current Map/);
-  assert.match(game, /Open Floor\/Wall Tileset/);
-  assert.match(game, /urlArgs=\{preferences\.urlArgs\} setUrlArgs=\{\(urlArgs\) => setPreference\(\{ urlArgs \}\)\} mapTest=\{mapTest\} setMapTest=\{setMapTest\}/);
+  assert.match(game, /PV: \{showPivotPoints \? 1 : 0\}/);
   assert.match(renderer, /showPivotPoints = false/);
   assert.match(renderer, /pivotMarkerLayer\.order = OVERLAY_RENDER_ORDER \+ 1/);
   assert.match(renderer, /updatePivotMarkers\(playerPivotMarkers, playerSprite, positionPx, pivotsVisible\)/);
   assert.match(renderer, /updatePivotMarkers\(actorPivotMarkers\[key\]\[i\], character, positionPx, pivotsVisible\)/);
   assert.match(renderer, /markers\.forEach\(\(marker\) => updateSprite2D\(marker, \{ positionPx: \[-10000, -10000\] \}\)\)/);
   assert.match(renderer, /showPivotPoints && <span className="world-view__grid-reticle-code"/);
-  assert.match(renderer, /String\(selectedCell\.y\)\.padStart\(2, "0"\).*String\(selectedCell\.x\)\.padStart\(2, "0"\)/);
-  assert.match(await readFile(new URL('../src/ui/style.css', import.meta.url), 'utf8'), /\.world-view__grid-reticle-code[^}]*color:#f5f1e6/);
 });
 test('loads Libron locally as the global game font', async () => {
   const [app, css, license] = await Promise.all([
-    readFile(new URL('../src/ui/App.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/ui/app.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../src/ui/style.css', import.meta.url), 'utf8'),
     readFile(new URL('../public/assets/fonts/libron/OFL.txt', import.meta.url), 'utf8'),
   ]);
@@ -108,22 +144,22 @@ test('loads Libron locally as the global game font', async () => {
   assert.match(css, /#browser_surface,#browser_surface \* \{ font-family:"Libron",serif !important; \}/);
   assert.match(license, /SIL OPEN FONT LICENSE/);
 });
-test('removes fitted gutters while the browser surface is fullscreen', async () => {
-  const surface = await readFile(new URL('../src/ui/BrowserSurface.tsx', import.meta.url), 'utf8');
-  assert.match(surface, /fullscreen \? \{ x: 0, y: 0, width: size\.width, height: size\.height \}/);
+test('preserves the selected aspect ratio while the browser surface is fullscreen', async () => {
+  const surface = await readFile(new URL('../src/ui/browser-surface.tsx', import.meta.url), 'utf8');
+  assert.match(surface, /const viewport = error \? null : fitViewport\(size\.width, size\.height, activeLayout\)/);
   assert.match(surface, /fullscreenchange/);
   assert.doesNotMatch(surface, /size\.height > size\.width/);
 });
 test('uses a command desk and removes template corner units', async () => {
-  const [game, controlsArea, app, css, settingsWindow, mobileControls, titleBar, informationPanels] = await Promise.all(['src/game/game.tsx', 'src/ui/ControlsArea.tsx', 'src/ui/App.tsx', 'src/ui/style.css', 'src/game/windows/settings-window.tsx', 'src/game/controls/mobile-controls.tsx', 'src/game/panels/title-bar.tsx', 'src/game/panels/information-panels.tsx'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));
-  assert.match(informationPanels, /PrimaryInfoPanel/); assert.match(informationPanels, /SecondaryInfoPanel/); assert.match(game, /Start Game/); assert.match(game, /Dev Settings/);
+  const [game, controlsArea, app, css, settingsWindow, mobileControls, titleBar, informationPanels] = await Promise.all(['src/game/game.tsx', 'src/ui/ControlsArea.tsx', 'src/ui/app.tsx', 'src/ui/style.css', 'src/game/windows/settings-window.tsx', 'src/game/controls/mobile-controls.tsx', 'src/game/panels/title-bar.tsx', 'src/game/panels/information-panels.tsx'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));
+  assert.match(informationPanels, /PrimaryInfoPanel/); assert.match(informationPanels, /SecondaryInfoPanel/); assert.match(game, /Start Game/); assert.match(game, /D Settings/);
   assert.match(titleBar, /className="title-bar__left"/); assert.match(titleBar, /className="title-bar__right"/); assert.match(titleBar, /className="title-bar__identity"/); assert.match(titleBar, /className="title-bar__progress"/); assert.match(titleBar, /World: \{campaign\.world === "One" \? 1 : campaign\.world\}/);
-  assert.match(titleBar, /aria-label="Time">⏱️<\/span>/); assert.match(titleBar, /data-ui-counter-icon="gold" role="img" aria-label="Gold"><img className="title-bar__icon-image" src=\{`\$\{itemArtBase\}animated\/frames\/gold-coin\/00\.png`\} alt="" \/><\/span><span className="title-bar__counter-value">\{counters\.gold\}/); assert.match(titleBar, /data-ui-counter-icon="key" role="img" aria-label="Keys"><img className="title-bar__icon-image" src=\{`\$\{itemArtBase\}static\/golden-key\.png`\} alt="" \/><\/span><span className="title-bar__counter-value">\{String\(counters\.keys\)/);
+  assert.match(titleBar, /aria-label="Time">⏱️<\/span>/); assert.match(titleBar, /data-ui-counter-icon="gold" role="img" aria-label="Gold"><span className="title-bar__icon-image title-bar__icon-sprite title-bar__icon-sprite--gold" style=\{\{ backgroundImage: `url\(\$\{itemAtlasBase\}items-animated\.png\)` \}\} \/><\/span><span className="title-bar__counter-value">\{counters\.gold\}/); assert.match(titleBar, /data-ui-counter-icon="key" role="img" aria-label="Keys"><span className="title-bar__icon-image title-bar__icon-sprite title-bar__icon-sprite--key" style=\{\{ backgroundImage: `url\(\$\{itemAtlasBase\}items-static\.png\)` \}\} \/><\/span><span className="title-bar__counter-value">\{String\(counters\.keys\)/);
   assert.doesNotMatch(titleBar, /titlebar_icon_group/); assert.doesNotMatch(css, /titlebar_icon_group/);
-  assert.match(titleBar, /className="title-bar__identity">Rogue's Dungeon<\/span>/);
+  assert.match(titleBar, /className="title-bar__identity" onClick=\{onSaveAndQuit\}>Rogue's Dungeon<\/button>/);
   assert.doesNotMatch(titleBar, /Dungeon Roguelite/);
   assert.match(titleBar, /className="title-bar__utility"/); assert.match(css, /\.title-bar__utility \{[^}]*align-items:center[^}]*padding:0 \.35em/);
-  assert.match(settingsWindow, /Clear Local Storage/); assert.match(game, /clearRoguesDungeonStorage\(localStorage\)/); assert.match(game, /window\.location\.reload\(\)/);
+  assert.match(settingsWindow, /Clear Local Storage/); assert.match(game, /clearRoguesDungeonBrowserStorage\(\)/); assert.match(game, /window\.location\.reload\(\)/);
   assert.match(css, /\.title-bar \.title-bar__select-utility \{ width:9\.5em; flex:0 0 9\.5em/); assert.match(css, /\.title-bar \.title-bar__select-utility select \{ width:7\.4em/);
   assert.match(titleBar, /const selectPreference = \(event: SyntheticEvent<HTMLElement>, preference: Partial<Preferences>\) => \{/);
   assert.match(game, /keyboardControlRows/); assert.match(game, /collapsedKeyboardGroups/); assert.match(controlsArea, /aria-label="Keyboard controls"/); assert.match(mobileControls, /dispatch\(\{ type: "wait" \}\)/); assert.match(mobileControls, /Quick 1/); assert.match(mobileControls, /Quick 2/); assert.match(mobileControls, />Wait<\/button>/); assert.match(game, /X: "Wait 1 time tick"/); assert.match(game, /key === "X" \? onWait/); assert.match(game, /onWait=\{\(\) => dispatch\(\{ type: "wait" \}\)\}/); assert.doesNotMatch(mobileControls, /Sprint:/); assert.doesNotMatch(mobileControls, /Sneak:/); assert.doesNotMatch(mobileControls, /\[1, 2, 3, 4\]/); assert.match(game, /<InputKey key=\{key\}/); assert.match(css, /\.mobile-controls__actions \{ display:grid; grid-template-columns:repeat\(3,1fr\)/); assert.match(css, /\.keyboard_tray_keys \{[^}]*grid-template-columns:repeat\(3,2\.25rem\)/);
@@ -154,9 +190,12 @@ test('centers a new screen-mode page on the player', async () => {
   assert.match(renderer, /const resetKey = \[state\.floor\.seed, mapWidth, mapHeight, cameraNow, zoomNow\]\.join\(":"\)/);
   assert.match(renderer, /previousCenter = cameraCenterRef\.current\?\.key === resetKey \? cameraCenterRef\.current : playerPosition/);
 });
-test('returns to the saved-game menu when a player death event is committed', async () => {
-  const game = await readFile(new URL('../src/game/game.tsx', import.meta.url), 'utf8');
-  assert.match(game, /event\.type === "player\.died"/); assert.match(game, /returnToMainMenu\(\); return;/);
+test('opens an in-game death recap when a player death event is committed', async () => {
+  const [game, recap, mode, css] = await Promise.all(['../src/game/game.tsx', '../src/game/windows/death-recap-window.tsx', '../src/game/windows/select-mode-window.tsx', '../src/ui/style.css'].map((path) => readFile(new URL(path, import.meta.url), 'utf8')));
+  assert.match(game, /event\.type === "player\.died"/); assert.match(game, /setDeathSequence\(\{ fatal: structuredClone\(result\.state\)/); assert.match(game, /setDeathRecap\(deathSequence\)/); assert.match(game, /<DeathRecapWindow campaign=\{deathRecap\.fatal\}/);
+  assert.match(recap, /title="YOU DIED"/); assert.match(recap, /dismissible=\{false\}/); assert.match(recap, /Resume at Checkpoint/); assert.match(recap, /Restart Level/); assert.match(recap, /Return to Main Menu/);
+  assert.match(mode, /title="Create Game"/); assert.match(mode, />Confirm<\/button>/); assert.match(mode, /Roguelike Berlin Criteria/);
+  assert.match(css, /\.death-recap-window/); assert.match(css, /\.select-mode-window__cards/);
   assert.match(game, /setInterval\(\(\) => setSummaryNow\(Date\.now\(\)\), 60_000\)/);
   assert.match(game, /formatSavedAgo\(entry\.savedAt, summaryNow\)/);
 });
@@ -165,8 +204,11 @@ test('saves a running game before returning to the main menu', async () => {
   const [game, settingsWindow] = await Promise.all(['../src/game/game.tsx', '../src/game/windows/settings-window.tsx'].map((path) => readFile(new URL(path, import.meta.url), 'utf8')));
   assert.match(settingsWindow, /Save &amp; Exit/);
   assert.match(game, /const saveAndQuit = useCallback/);
-  assert.match(game, /writeSlot\(localStorage, slot, campaign\);[\s\S]*setSummaries\(readSlotSummary\(localStorage\)\);[\s\S]*returnToMainMenu\(\);/);
-  assert.match(game, /onSaveAndQuit=\{saveAndQuit\}/);
+  assert.match(game, /const currentCampaign = sessionRef\.current\?\.getState\(\) \?\? campaign;/);
+  assert.match(game, /writeSlot\(localStorage, slot, currentCampaign\);[\s\S]*setSummaries\(readSlotSummary\(localStorage\)\);[\s\S]*returnToMainMenu\(\);/);
+  assert.match(game, /const requestSaveAndQuit = useCallback/);
+  assert.match(game, /onSaveAndQuit=\{requestSaveAndQuit\}/);
+  assert.match(game, /<ConfirmationDialog title="Are you sure\?" message="Save your progress and exit\."/);
 });
 
 test('saves and quits on Escape during play while Settings keeps Escape for closing the dialog', async () => {
@@ -179,7 +221,21 @@ test('saves and quits on Escape during play while Settings keeps Escape for clos
 test('uses randomSeed to seed only a newly selected save slot', async () => {
   const game = await readFile(new URL('../src/game/game.tsx', import.meta.url), 'utf8');
   assert.match(game, /parseGameUrlOptions\(window\.location\.search\)/);
-  assert.match(game, /const initial = unsavedUrlRun \|\| urlOptions\.level1TestMode \? freshTestCampaign : existing \?\? freshTestCampaign/);
+  assert.match(game, /const worldSeed = unsavedUrlRun \? urlOptions.seed! : randomSeed \?\? readWorldSeed\(localStorage\)/);
+  assert.match(game, /if \(!unsavedUrlRun\) existing = readSlot\(localStorage, targetSlot\)/);
+  const expression = game.match(/const initial = ([^;]+);/)?.[1];
+  assert.ok(expression);
+  const select = new Function('override', 'unsavedUrlRun', 'levelTest', 'objectTest', 'enemyTestMode', 'freshTestCampaign', 'existing', 'return ' + expression);
+  const saved = { seed: 123 }, fresh = { seed: 456 }, override = { seed: 789 };
+  let generated = 0;
+  const createFresh = () => { generated++; return fresh; };
+  assert.equal(select(null, false, false, false, false, createFresh, saved), saved, 'existing save wins over randomSeed-generated content');
+  assert.equal(generated, 0, 'resuming a save must not generate a discarded campaign');
+  assert.equal(select(null, false, false, false, false, createFresh, null), fresh, 'an empty slot uses the fresh seeded campaign');
+  assert.equal(select(null, true, false, false, false, createFresh, saved), fresh, 'explicit URL run is separate from saved-slot resume');
+  const beforeOverride = generated;
+  assert.equal(select(override, false, false, false, false, createFresh, saved), override, 'explicit recovery override is preserved');
+  assert.equal(generated, beforeOverride, 'Perf/recovery installation must not generate a discarded campaign');
   assert.match(game, /New Game · Seed \$\{randomSeed\}/);
 });
 test('supports deterministic direct-slot map-fix URLs', async () => {
@@ -232,6 +288,7 @@ test('uses SlotItem for vertically aligned abilities and equipment', async () =>
   assert.match(informationPanels, /GameCard title="Equipment"/);
   assert.match(game, /<EquipmentItem key=\{index\}/);
   assert.match(css, /\.slot_item \{[^}]*align-items:center/);
+   assert.match(css, /\.slot_item \{[^}]*line-height:1\.15/);
   assert.match(css, /\.slot_item_number,\.slot_item_icon \{ color:var\(--slot-accent-color,#c6b994\)/);
   assert.doesNotMatch(css, /\.slot_item--ability \{/);
 });
@@ -263,11 +320,17 @@ test('matches inventory row spacing to the abilities list', async () => {
 test('fills unused inventory capacity with empty plus slots', async () => {
   const game = await readFile(new URL('../src/game/game.tsx', import.meta.url), 'utf8');
   assert.match(game, /const usedSlots = stacks\.reduce\(\(total, \{ item \}\) => total \+ \(item\.slotSpan \?\? 1\), 0\)/);
-  assert.match(game, /const emptySlots = Math\.max\(0, campaign\.player\.inventoryCapacity - usedSlots\)/);
+  assert.match(game, /const emptySlots = Math\.max\(0, effectiveInventoryCapacity\(campaign\) - usedSlots\)/);
   assert.match(game, /Array\.from\(\{ length: emptySlots \}/);
   assert.match(game, /data-drop-inventory-slot/);
   assert.match(game, /drag\?\.destination\?\.kind === "inventory" && \(\(drag\.source\.item as Item\)\.slotSpan === 2/);
   assert.doesNotMatch(game, /data-drop-inventory>/);
+  assert.match(game, /text="\[ Drop Item \]"/);
+  assert.match(game, /data-drop-item/);
+  assert.match(game, /inventory_drop_item/);
+  assert.match(game, /effectiveInventoryCapacity\(campaign\)/);
+  assert.match(game, /const dropItemSlot = <SlotItem type="inventory"/);
+  assert.match(game, /<div className="inventory_drop_item_row">\{dropItemSlot\}<\/div><ScrollArea className="inventory_scroll">/);
 });
 test('uses permanent in-game scrollbars for the log and inventory', async () => {
   const css = await readFile(new URL('../src/ui/style.css', import.meta.url), 'utf8');
@@ -276,12 +339,20 @@ test('uses permanent in-game scrollbars for the log and inventory', async () => 
   assert.match(css, /\.info-panel--primary \.inventory_scroll,\.info-panel__log-card \.log_scroll \{ height:calc\(100% - 4px\); margin-top:0; \}/);
   assert.match(css, /\.scroll-area__track \{ position:absolute; top:0; right:-2px; bottom:0; width:4px;/);
   assert.match(css, /\.scroll-area__thumb \{ width:4px; min-height:12px;[^}]*background:#e4b85e;/);
+  assert.match(css, /\.inventory_drop_item \{ justify-content:center; color:var\(--slot-disabled-color\); text-align:center; \}/);
   assert.match(css, /\.slot_scroll \{ height:100%; min-height:0;[^}]*overflow-y:auto/);
 });
-test('removes the permanent green tint from the game view', async () => {
-  const [renderer, css] = await Promise.all(['src/systems/rendering/babylon-render-system.tsx', 'src/ui/style.css'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));
-  assert.doesNotMatch(renderer, /gameViewShaderSystem|green-tint|world-view__shader-layer/);
-  assert.doesNotMatch(css, /world-view__shader-layer|rgb\(54 220 112\)/);
+test('cycles one green Game View shader over only the primary game canvas', async () => {
+  const [game, renderer, shaderSystem, css] = await Promise.all(['src/game/game.tsx', 'src/systems/rendering/babylon-render-system.tsx', 'src/systems/rendering/game-view-shader-system.ts', 'src/ui/style.css'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));
+  assert.match(shaderSystem, /export class GameViewShaderSystem/);
+  assert.match(shaderSystem, /id: 0, canvasClassName: null/);
+  assert.match(shaderSystem, /id: 1, canvasClassName: "world-view__canvas--green-monochrome"/);
+  assert.match(shaderSystem, /next\(id: GameViewShaderId\)/);
+  assert.match(game, /S: \{gameViewShader\}/);
+  assert.match(game, /setGameViewShader\(gameViewShaderSystem\.next\(gameViewShader\)\)/);
+  assert.match(renderer, /gameViewShaderSystem\.canvasClassName\(gameViewShader, minimap\)/);
+  assert.match(css, /\.world-view__canvas--green-monochrome \{ filter:grayscale\(1\) sepia\(1\) hue-rotate\(72deg\) saturate\(13\) contrast\(1\.45\) brightness\(\.72\); \}/);
+  assert.doesNotMatch(renderer, /world-view__shader-layer/);
 });
 test('renders one transient resource pulse over the game view only', async () => {
   const [game, renderer, css] = await Promise.all(['src/game/game.tsx', 'src/systems/rendering/babylon-render-system.tsx', 'src/ui/style.css'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));
@@ -305,14 +376,13 @@ test('renders transient item drag feedback without intercepting drops', async ()
   assert.match(game, /window\.addEventListener\("pointercancel", pointerCancel\)/);
   assert.match(css, /\.item-drag-preview\{[^}]*pointer-events:none/); assert.match(css, /\.item-drag-preview\{[^}]*width:min\(11rem/); assert.match(css, /\.drag_departure/); assert.match(css, /\.drag_landing/);
 });
-test('anchors item comparison to the inventory panel with a fixed ten-pixel gap', async () => {
-  const game = await readFile(new URL('../src/game/game.tsx', import.meta.url), 'utf8');
+test('renders item comparison over the world with an inventory anchor', async () => {
+  const [game, css] = await Promise.all(['../src/game/game.tsx', '../src/ui/style.css'].map((path) => readFile(new URL(path, import.meta.url), 'utf8')));
   const panels = await readFile(new URL('../src/game/panels/information-panels.tsx', import.meta.url), 'utf8');
   assert.match(panels, /className="info-panel__inventory-card"/);
   assert.match(game, /querySelector<HTMLElement>\("\.info-panel__inventory-card"\)/);
-  assert.match(game, /right: window\.innerWidth - inventoryPanelRect\.left \+ 10/);
-  assert.match(game, /transform: "translateY\(-50%\)"/);
-  assert.doesNotMatch(game, /rect\.left - 36/);
+  assert.match(game, /querySelector<HTMLElement>\("\.world-view-region"\)/);
+  assert.match(css, /\.item-comparison-panel \{ position:absolute;/);
 });
 test('dims keyboard inputs while their ability or quick slot is being dragged', async () => {
   const [game, css] = await Promise.all(['src/game/game.tsx', 'src/ui/style.css'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));
@@ -322,7 +392,7 @@ test('dims keyboard inputs while their ability or quick slot is being dragged', 
 
 test('renders the Stealth stat and progression dialog from game-rule state', async () => {
   const [game, attributePanel, progressionWindow] = await Promise.all(['../src/game/game.tsx', '../src/game/panels/attribute-panel.tsx', '../src/game/windows/progression-window.tsx'].map((path) => readFile(new URL(path, import.meta.url), 'utf8')));
-  assert.match(attributePanel, /progressionStatNames\.slice\(5\)/);
+  assert.match(attributePanel, /progressionStatNames/);
   assert.match(progressionWindow, /export function ProgressionWindow/);
   assert.match(game, /spend-attribute-points/);
   assert.match(progressionWindow, /attribute point/);
@@ -352,11 +422,12 @@ test('uses delta values to pulse only when an attribute turns red or green', asy
 test('adds a nested How To Play reference dialog to Settings', async () => {
   const [game, settingsWindow, helpWindow, dialog, css] = await Promise.all(['src/game/game.tsx', 'src/game/windows/settings-window.tsx', 'src/game/windows/how-to-play-window.tsx', 'src/ui/Dialog.tsx', 'src/ui/style.css'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));
   for (const topic of ['The Basics', 'Movement', 'Combat', 'Exploration', 'Quests', 'Items', 'Leveling Up', 'Saving Your Game', 'Tips']) assert.match(helpWindow, new RegExp(`\\["${topic}"`));
-  assert.match(helpWindow, /title="How To Play"/); assert.match(helpWindow, /<select/); assert.match(helpWindow, /\{index \+ 1\}\. \{topic\}/); assert.match(helpWindow, /Left-click to walk or attack\. Right-click to run or attack\./);
+  assert.match(helpWindow, /title="How To Play"/); assert.match(helpWindow, /aria-haspopup="listbox"/); assert.match(helpWindow, /role="option"/); assert.match(helpWindow, /\{index \+ 1\}\. \{topic\}/); assert.match(helpWindow, /Left-click to walk or attack\. Right-click to run or attack\./);
+  assert.match(helpWindow, /heading: "Keyboard"/); assert.match(helpWindow, /heading: "Mouse"/); assert.match(helpWindow, /heading: "Mobile"/); assert.match(helpWindow, /Mobile currently disabled\./);
   assert.match(helpWindow, /setSelectedTopic\(\(topic\) => topic - 1\)/); assert.match(helpWindow, /setSelectedTopic\(\(topic\) => topic \+ 1\)/); assert.match(helpWindow, /disabled=\{selectedTopic === 0\}/); assert.match(helpWindow, /disabled=\{selectedTopic === topics\.length - 1\}/);
   assert.match(settingsWindow, /How To Play/); assert.match(settingsWindow, /onOpenHowToPlay/); assert.match(settingsWindow, /dismissible=\{!helpOpen\}/);
   assert.match(settingsWindow, /bounds=\{bounds\}/); assert.match(settingsWindow, /onOpenHowToPlay\(dialogBounds\(event\.currentTarget\.closest\("\.settings-window"\)!\)\)/); assert.match(helpWindow, /bounds=\{bounds\}/);
   assert.match(game, /const \[howToPlay, setHowToPlay\] = useState\(false\)/); assert.match(game, /<HowToPlayWindow origin="menu"/); assert.match(game, /<HowToPlayWindow origin="game"/);
   assert.match(dialog, /dismissible = true/); assert.match(dialog, /export interface DialogBounds/); assert.match(dialog, /function dialogBounds\(element: Element\)/); assert.match(dialog, /width: bounds\.width, height: bounds\.height/); assert.match(dialog, /if \(!dismissible\) return undefined/); assert.match(dialog, /onClick=\{dismissible \? requestClose : undefined\}/);
-  assert.match(css, /\.dialog_backdrop:has\(\.how-to-play-window\) \{ z-index:4; \}/); assert.match(css, /\.dialog--bounded \{ box-sizing:border-box; max-width:none; max-height:none; \}/); assert.match(css, /\.how-to-play-window__topics select \{ width:100%;/); assert.match(css, /\.how-to-play-window \.dialog_footer \{ justify-content:space-between; gap:\.5rem; \}/);
+  assert.match(css, /\.dialog_backdrop:has\(\.how-to-play-window\) \{ z-index:4; \}/); assert.match(css, /\.dialog--bounded \{[^}]*box-sizing:border-box;[^}]*max-width:none;[^}]*max-height:none;/); assert.match(css, /\.how-to-play-window__topic-options \{ position:absolute;/); assert.match(css, /\.how-to-play-window__topic-trigger \{ display:flex;/); assert.match(css, /\.how-to-play-window__warning \{ padding:\.42rem/); assert.match(css, /\.how-to-play-window \.dialog_footer \{ justify-content:space-between; gap:\.5rem; \}/);
 });

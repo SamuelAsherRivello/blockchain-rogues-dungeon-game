@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile, stat } from 'node:fs/promises';
 import test from 'node:test';
 import { contentConfig, getRenderingPolicy, pixelPerfectOptions } from '../src/content/babylon/config.ts';
 import { getInitializationMessage } from '../src/content/babylon/initialization.ts';
-import { gameZoomPresets, getRenderedTileCssSize, getTileCssSize } from '../src/content/world/zoom.ts';
+import { availableGameZoomPresets, gameZoomPresets, getCutsceneBarHeightPx, getRenderedTileCssSize, getTileCssSize } from '../src/content/world/zoom.ts';
 import { GRID_RENDER_PASS, orderWorldRenderEntries, sortGridRenderEntries } from '../src/systems/rendering/grid-render-order-system.ts';
 import { DUNGEON_FLOOR_TILE_GIDS } from '../src/systems/rendering/tile-map-system.ts';
 
@@ -72,10 +72,20 @@ test('uses Zoom presets whose 32-unit tile stays independent of backing density'
   for (const zoom of gameZoomPresets) for (const dpr of [1, 1.5, 2, 3]) assert.equal(getTileCssSize(zoom), 32 * zoom);
 });
 
+test('keeps zoom testing off by default while allowing all presets when enabled', () => {
+  assert.deepEqual(availableGameZoomPresets(), [1, 2]);
+  assert.deepEqual(availableGameZoomPresets(false), [1, 2]);
+  assert.deepEqual(availableGameZoomPresets(true), gameZoomPresets);
+});
+
 test('derives CSS tile size from the same backing scale used by the sprite view', () => {
   assert.equal(getRenderedTileCssSize({ zoom: 2, devicePixelRatio: 1, backingPixelsPerCssPixel: 1 }), 64);
   assert.equal(getRenderedTileCssSize({ zoom: 2, devicePixelRatio: 1.5, backingPixelsPerCssPixel: 1.5 }), 64);
   assert.equal(getRenderedTileCssSize({ zoom: 2, devicePixelRatio: 1.5, backingPixelsPerCssPixel: 2 }), 48);
+});
+
+test('rounds cutscene bars to zoom-aware grid rows', () => {
+  assert.deepEqual(gameZoomPresets.map((zoom) => getCutsceneBarHeightPx(zoom)), [64, 64, 64, 128, 128]);
 });
 
 test('mounts the dungeon and minimap in Babylon Lite from the same world component', async () => {
@@ -111,24 +121,35 @@ test('mounts the dungeon and minimap in Babylon Lite from the same world compone
   assert.match(source, /triggerLayers\[i\]\.order = FLOOR_DECAL_RENDER_ORDER/);
   assert.match(source, /debugLayer\.order = OVERLAY_RENDER_ORDER/);
   assert.match(source, /pivotMarkerLayer\.order = OVERLAY_RENDER_ORDER \+ 1/);
-  assert.match(source, /const visible = Boolean\(effect && position && !offscreen\); particleLayers\[i\]\.visible = visible; if \(!visible \|\| !effect \|\| !position\) return/);
+  assert.match(source, /const visible = Boolean\(effect && position && !offscreen && allowed\(position\)\); particleLayers\[i\]\.visible = visible; if \(!visible \|\| !effect \|\| !position\) return/);
   assert.match(source, /else if \(damage\) particleLayers\[i\]\.order = LANDED_DAMAGE_PARTICLE_RENDER_ORDER/);
   assert.match(source, /model\.diagnostics/);
-  assert.match(source, /model\.grounds\.forEach\(\(tile\) => \{ const chunk = chunkFor/);
+  assert.match(source, /model\.grounds\.forEach\(\(tile\) => \{ if \(tile\.frame === null\) return; const chunk = chunkFor/);
   assert.match(source, /staticChunkList\.forEach\(\(chunk\) => \{/);
   assert.match(source, /isWorldChunkVisible\(chunk, visibleBounds\)/);
   assert.match(source, /const chestLayers = Array\.from\(\{ length: 40 \}/);
   assert.match(source, /chests\.forEach\(\(sprite, i\) => \{ const chestObject = chestObjects\[i\]/);
   assert.match(source, /getInitializationMessage\(Boolean\(navigator\.gpu\), error\)/);
   assert.doesNotMatch(source, /shouldRenderWorld/, 'the main renderer mounts immediately behind the loading iris');
+  assert.match(source, /useState<UiIrisPhase>\("closed"\)/, 'the game starts fully covered by the iris');
+  assert.match(source, /useState\(true\);[\s\S]*const \[irisRequested/, 'the startup iris is mounted before the renderer opens it');
   assert.match(source, /irisPhase === "closed" && rendererLoaded/, 'the iris reveals only after the mounted renderer is ready');
-  assert.doesNotMatch(source, /getContext\(["'](?:2d|webgl2?)["']/i);
+  assert.doesNotMatch(source, /getContext\(["']webgl2?["']/i, "no WebGL fallback renderer");
+  assert.match(source, /semanticCanvas\.getContext\("2d"\)/, "Canvas2D prepares the semantic minimap texture, not a fallback renderer");
+});
+
+test('suspends the minimap renderer after its panel exits and remounts it on opening', async () => {
+  const panels = await readFile(new URL('../src/game/panels/information-panels.tsx', import.meta.url), 'utf8');
+  assert.match(panels, /const \[minimapRendering, setMinimapRendering\] = useState\(secondaryOpen\)/);
+  assert.match(panels, /if \(secondaryOpen\) setMinimapRendering\(true\)/);
+  assert.match(panels, /if \(!secondaryOpen\) setMinimapRendering\(false\)/);
+  assert.match(panels, /minimapRendering && <BabylonWorld/);
 });
 
 test('uses controller-derived path availability to render an unreachable mouse reticle as black', async () => {
   const world = await readFile(new URL('../src/systems/rendering/babylon-render-system.tsx', import.meta.url), 'utf8');
   const game = await readFile(new URL('../src/game/game.tsx', import.meta.url), 'utf8');
-  assert.match(game, /getMousePathResult\(selectedGridSpot, campaign\)/);
+  assert.match(game, /getMousePathResult\(selectedGridSpot, campaign,/);
   assert.match(game, /selectedCellReachable=\{selectedCellReachable\}/);
   assert.match(world, /selectedCellReachable === false \? "invalid"/);
   assert.match(world, /world-view__grid-reticle--\$\{reticleKind\}/);
@@ -144,17 +165,33 @@ test('uses current camera state and reconfiguration inputs when framing the main
 });
 
 test('declares and retains the provided 32-pixel Tiled dungeon assets', async () => {
-  const tileset = await readFile(new URL('../public/assets/art/vendors/dungeons-and-pixels-v1.4/tiled-examples/tilesets/tileset-dungeon.tsx', import.meta.url), 'utf8');
+  const tileset = await readFile(new URL('../public/assets/art/game-view/tilesets/data/tileset-dungeon.tsx', import.meta.url), 'utf8');
   const world = await readFile(new URL('../src/systems/rendering/babylon-render-system.tsx', import.meta.url), 'utf8');
   assert.match(tileset, /tilewidth="32" tileheight="32"/);
   assert.match(tileset, /tileset-dungeon\.png/);
   assert.match(world, /cellWidthPx: 32, cellHeightPx: 32, columns: 12, rows: 9/);
   for (const path of [
-    '../public/assets/art/vendors/dungeons-and-pixels-v1.4/tilesets/tileset-dungeon.png',
-    '../public/assets/art/vendors/dungeons-and-pixels-v1.4/characters/hero-warrior/frames/idle/down/00.png',
-    '../public/assets/art/vendors/dungeons-and-pixels-v1.4/enemies/rat/frames/idle/00.png',
+    '../public/assets/art/game-view/tilesets/art/tileset-dungeon.png',
+    '../public/assets/art/game-view/characters/hero-warrior/frames/idle/down/00.png',
+    '../public/assets/art/game-view/enemies/rat/frames/idle/00.png',
   ]) {
     const bytes = await readFile(new URL(path, import.meta.url));
     assert.deepEqual([...bytes.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
+  }
+});
+
+test('resolves every moved Tiled definition and example-map reference', async () => {
+  const assetRoot = new URL('../public/assets/art/game-view/', import.meta.url);
+  for (const [directory, extension] of [['tilesets/data/', '.tsx'], ['maps/examples/', '.tmx'], ['maps/prefabs/', '.tmx']] as const) {
+    const directoryUrl = new URL(directory, assetRoot);
+    for (const name of await readdir(directoryUrl)) {
+      if (!name.endsWith(extension)) continue;
+      const fileUrl = new URL(name, directoryUrl);
+      const source = await readFile(fileUrl, 'utf8');
+      assert.doesNotMatch(source, /vendors|tiled-examples/);
+      for (const [, referencedPath] of source.matchAll(/source="([^"]+)"/g)) {
+        assert.equal((await stat(new URL(referencedPath, fileUrl))).isFile(), true, `${name} references missing ${referencedPath}`);
+      }
+    }
   }
 });

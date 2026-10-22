@@ -1,0 +1,53 @@
+import { expect, test } from '@playwright/test';
+import { compactCampaignForSave, createRunCampaign } from '../../src/systems/procedural/world-procedural-system.ts';
+import { DEFAULT_WORLD_ATTRIBUTES } from '../../src/systems/procedural/world-attributes.ts';
+import { selectSavedGame } from './start-saved-game.ts';
+
+test('creates a rolled world after a character and persists its visible identity', async ({ page }) => {
+  await page.goto('/blockchain-rogues-dungeon-game/?mute=1');
+  await selectSavedGame(page, 2);
+  const character = page.getByRole('dialog', { name: 'Create Character', exact: true });
+  await character.getByRole('button', { name: 'Roll', exact: true }).click();
+  await character.getByRole('button', { name: 'Confirm', exact: true }).click();
+  const world = page.getByRole('dialog', { name: 'Create World', exact: true });
+  await expect(world).toBeVisible();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('rogues-dungeon.slot.2'))).toBeNull();
+  await expect(world.getByRole('button', { name: 'Confirm', exact: true })).toBeDisabled();
+  await world.getByRole('button', { name: 'Roll', exact: true }).click();
+  await expect(world.getByRole('button', { name: 'Confirm', exact: true })).toBeEnabled();
+  await expect(world.locator('[data-renderer-ready="true"]')).toBeVisible();
+  const values = await world.locator('.game-card').first().locator('.delta_value_number').allTextContents();
+  expect(values.reduce((sum, n) => sum + Number(n), 0)).toBe(30);
+  await world.getByRole('button', { name: 'Fortune', exact: true }).hover();
+  await expect(page.getByRole('tooltip')).toHaveText('Improves reward chances, payout amounts, and reward quality.');
+  await world.getByRole('button', { name: 'Confirm', exact: true }).click();
+  await expect(page.locator('.game-screen')).toBeVisible();
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('rogues-dungeon.slot.2')!));
+  expect(saved.slot).toBe(2); expect(saved.run).toBe(1);
+  expect(saved.floorProfiles['1'].attributes).toEqual(saved.worldAttributes);
+});
+
+test('completes character spending then shows an automatic saved world result once', async ({ page }) => {
+  const campaign = createRunCampaign(42, 1, 1, 1, 1, { worldAttributes: { ...DEFAULT_WORLD_ATTRIBUTES } });
+  campaign.progression.level = 2; campaign.progression.attributePoints = 3;
+  campaign.worldGrowth = [{ id: 'world-growth-2', seed: campaign.floor.seed, level: 2, difficulty: 1, spent: 0 }];
+  const record = compactCampaignForSave(campaign);
+  await page.addInitScript(saved => localStorage.setItem('rogues-dungeon.slot.1', JSON.stringify(saved)), record);
+  await page.goto('/blockchain-rogues-dungeon-game/?mute=1');
+  await page.getByRole('button', { name: /Saved Game 1/ }).click();
+  await page.getByRole('button', { name: 'Open Progression', exact: true }).click();
+  for (let i = 0; i < 3; i++) await page.getByRole('button', { name: 'Increase Health', exact: true }).click();
+  await page.getByRole('button', { name: 'Confirm 3 attribute points', exact: true }).click();
+  const result = page.getByRole('dialog', { name: 'Level Up — World', exact: true });
+  await expect(result).toBeVisible();
+  const changes = await result.locator('.delta_value_green').count();
+  expect(changes).toBeGreaterThan(0); expect(changes).toBeLessThanOrEqual(3);
+  await expect(result.locator('.attribute_adjustment')).toHaveCount(0);
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('rogues-dungeon.slot.1')!));
+  expect(Object.values(saved.worldAttributes).reduce<number>((sum, n) => sum + Number(n), 0)).toBe(33);
+  expect(saved.floorProfiles).toEqual(record.floorProfiles);
+  expect(saved.floor.time).toBe(record.floor.time);
+  await result.getByRole('button', { name: 'Continue', exact: true }).click();
+  await expect(result).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('rogues-dungeon.slot.1')!).worldGrowth[0].acknowledged)).toBe(true);
+});
