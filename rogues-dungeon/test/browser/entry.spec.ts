@@ -267,8 +267,8 @@ test("@smoke keeps moving when Shift is added to a held direction", async ({ pag
     for (let x = 50; x <= 60; x++) map[50][x] = 0;
     const resource = (current: number, currentMax: number) => ({ current, currentMax });
     localStorage.setItem("rogues-dungeon.slot.1", JSON.stringify({
-      version: 3, world: "One", realm: "Underground 1",
-      floor: { generatorVersion, seed: 1, width: 100, height: 100, map, start: { x: 50, y: 50 }, time: 0, level: 1, entities: [] },
+      version: 5, world: "One", realm: "Underground 1",
+      floor: { generatorVersion, seed: 1, width: 100, height: 100, map, cells: map.map(row => row.map(tile => ({ walkable: tile === 0, role: "ground" }))), start: { x: 50, y: 50 }, time: 0, level: 1, entities: [] },
       progression: { attributes: { health: 30, stamina: 16, offense: 0, defense: 1, mana: 12, vitality: 0, strength: 0, luck: 0, recovery: 0, stealth: 0 }, level: 1, xp: 0, nextXp: 100, totalKills: 0, difficulty: 1, attributePoints: 0 },
       player: { x: 50, y: 50, resources: { health: resource(30, 30), stamina: resource(16, 16), offense: resource(8, 8), defense: resource(1, 1), mana: resource(12, 12), xp: { ...resource(0, 100), level: 1 } }, equipment: { weapons: [{ id: "starter-stick", name: "Wooden Stick", group: "weapons", modifiers: { offense: 8 } }, null], armor: [null, null] }, inventory: [], inventoryCapacity: 10, abilities: ["heal", "wand", null], sneaking: false },
       counters: { keys: 1, gold: 55 }, objective: "Find the exit", log: [],
@@ -276,6 +276,7 @@ test("@smoke keeps moving when Shift is added to a held direction", async ({ pag
   }, GENERATOR_VERSION);
   await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
   await openSavedGame(page);
+  await expect(page.locator(".dev_settings output")).toHaveText(/FPS: [0-9]/);
   await page.keyboard.down("ArrowRight");
   await page.waitForTimeout(40);
   await page.keyboard.down("Shift");

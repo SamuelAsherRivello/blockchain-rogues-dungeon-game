@@ -8,6 +8,8 @@ export interface ObjectLayer { id: number; name: string; type: "objectgroup"; vi
 export interface TiledMap { type: string; version: string; tiledversion: string; orientation: string; renderorder: string; width: number; height: number; tilewidth: number; tileheight: number; infinite: boolean; properties: TiledProperty[]; tilesets: { firstgid: number; source: string }[]; layers: (TileLayer | ObjectLayer)[] }
 import { FLOOR_HEIGHT, FLOOR_WIDTH, GENERATOR_VERSION, generateFloor } from "../procedural/world-procedural-system.ts";
 import { ensureSemanticCells, isWalkable, semanticCellsFromMap } from "../procedural/level-grid-system.ts";
+import { DUNGEON_CANONICAL_RULES } from "./tileset-dungeon-wang.generated.ts";
+import { ruleForMask, wallQuartersForMask, type WallQuarter } from "./tileset-wang-rules.ts";
 
 export const TILED_TILE_SIZE = 32;
 export const DUNGEON_TILESET_SOURCE = "../../assets/art/vendors/dungeons-and-pixels-v1.4/tiled-examples/tilesets/tileset-dungeon.tsx";
@@ -16,7 +18,7 @@ export const DUNGEON_TILESET_SOURCE = "../../assets/art/vendors/dungeons-and-pix
 // the same 12-by-9 atlas layout. The omitted variants contain bright green
 // moss at a tile edge, which reads as a seam when adjacent floor cells use a
 // cleaner variant.
-export const DUNGEON_FLOOR_TILE_GIDS = Object.freeze([14, 26, 27, 29, 38, 39, 40]);
+export const DUNGEON_FLOOR_TILE_GIDS = Object.freeze(DUNGEON_CANONICAL_RULES.floorTiles.map(id => id + 1));
 
 function dungeonFloorTileGid(x: number, y: number) {
   const hash = Math.imul(x, 374761393) ^ Math.imul(y, 668265263);
@@ -24,18 +26,48 @@ function dungeonFloorTileGid(x: number, y: number) {
 }
 
 const DIRECTIONS = Object.freeze([[0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1]]);
-export const DUNGEON_WANG_TILE_BY_MASK: Readonly<Record<number, number>> = Object.freeze({ 7: 48, 28: 0, 31: 12, 112: 5, 124: 1, 127: 32, 193: 53, 199: 49, 223: 8, 241: 17, 247: 6, 253: 30, 255: 13 });
-export const DUNGEON_WANG_INTERIOR_TILE = 13;
-const DUNGEON_WANG_WALL_BY_MASK: Readonly<Record<number, number>> = Object.freeze({ 1: 49, 4: 12, 16: 1, 64: 17, 5: 12, 17: 1, 20: 1, 65: 17, 68: 17, 80: 1, 2: 48, 8: 0, 15: 8, 128: 53, 135: 8, 143: 8, 195: 6, 227: 6, 225: 6, 226: 59, 230: 21, 232: 34, 236: 21, 238: 21 });
-const CARDINAL_BITS = Object.freeze([1, 4, 16, 64]);
-const DIAGONAL_BITS = Object.freeze([2, 8, 32, 128]);
-function maskDistance(actual: number, candidate: number) { let score = 0; for (const bit of CARDINAL_BITS) if ((actual & bit) !== (candidate & bit)) score += 8; for (const bit of DIAGONAL_BITS) if ((actual & bit) !== (candidate & bit)) score += 1; return score; }
-function nearestFrame(mask: number, table: Readonly<Record<number, number>>) { return Object.entries(table).map(([candidate, frame]) => ({ candidate: Number(candidate), frame, score: maskDistance(mask, Number(candidate)) })).sort((a, b) => a.score - b.score || a.candidate - b.candidate)[0]?.frame ?? null; }
+function familyRecord(name: string) { return Object.freeze(Object.fromEntries([...DUNGEON_CANONICAL_RULES.families.get(name)?.byMask.entries() ?? []].map(([mask, rule]) => [mask, rule.tileId]))); }
+export const DUNGEON_WANG_TILE_BY_MASK: Readonly<Record<number, number>> = familyRecord("Room frame");
+export const DUNGEON_WANG_INTERIOR_TILE = DUNGEON_WANG_TILE_BY_MASK[255] ?? 13;
+export const DUNGEON_WANG_WALL_BY_MASK: Readonly<Record<number, number>> = familyRecord("Generated wall boundary");
 function walkableAt(grid: number[][] | Grid | undefined, x: number, y: number) { return Array.isArray(grid) ? grid[y]?.[x] === 0 : isWalkable(grid, x, y); }
 export function walkableMask(grid: number[][] | Grid | undefined, x: number, y: number) { return DIRECTIONS.reduce((mask, [dx, dy], index) => mask | (walkableAt(grid, x + dx, y + dy) ? 1 << index : 0), 0); }
 export function isWalkableBoundary(mask: number) { return mask !== 255; }
-export function buildDungeonWangTerrain({ map, cells, tileSize = 32 }: { map?: number[][]; cells?: TerrainCell[][]; tileSize?: number }) { const grid = cells ? { cells } : map; const height = cells?.length ?? map?.length ?? 0; const width = cells?.[0]?.length ?? map?.[0]?.length ?? 0; const terrain = []; const diagnostics: { x: number; y: number; mask: number; worldX: number; worldY: number }[] = []; for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) { if (!walkableAt(grid, x, y)) continue; const mask = walkableMask(grid, x, y); const frame = dungeonFloorTileGid(x, y) - 1; terrain.push({ x, y, mask, worldX: x * tileSize + tileSize / 2, worldY: y * tileSize + tileSize / 2, frame, floorFrame: frame, wallFrame: null, wall: false }); } return { terrain, diagnostics }; }
-export function buildDungeonWangWalls({ map, cells, tileSize = 32 }: { map?: number[][]; cells?: TerrainCell[][]; tileSize?: number }) { const grid = cells ? { cells } : map; const height = cells?.length ?? map?.length ?? 0; const width = cells?.[0]?.length ?? map?.[0]?.length ?? 0; const walls = []; const diagnostics: { x: number; y: number; mask: number; worldX: number; worldY: number }[] = []; for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) { if (walkableAt(grid, x, y)) continue; const mask = walkableMask(grid, x, y); if (!mask) continue; const frame = DUNGEON_WANG_WALL_BY_MASK[mask] ?? nearestFrame(mask, DUNGEON_WANG_WALL_BY_MASK); const entry = { x, y, mask, worldX: x * tileSize + tileSize / 2, worldY: y * tileSize + tileSize / 2, frame }; if (frame == null) diagnostics.push({ ...entry }); walls.push(entry); } return { walls, wallDiagnostics: diagnostics }; }
+export function buildDungeonWangTerrain({ map, cells, tileSize = 32 }: { map?: number[][]; cells?: TerrainCell[][]; tileSize?: number }) {
+  const grid = cells ? { cells } : map;
+  const height = cells?.length ?? map?.length ?? 0;
+  const width = cells?.[0]?.length ?? map?.[0]?.length ?? 0;
+  const terrain = [];
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    if (!walkableAt(grid, x, y)) continue;
+    const frame = dungeonFloorTileGid(x, y) - 1;
+    terrain.push({ x, y, mask: walkableMask(grid, x, y), worldX: x * tileSize + tileSize / 2, worldY: y * tileSize + tileSize / 2, frame, floorFrame: frame, wallFrame: null, wall: false });
+  }
+  return { terrain, diagnostics: [] as { x: number; y: number; mask: number; worldX: number; worldY: number }[] };
+}
+
+export function buildDungeonWangWalls({ map, cells, tileSize = 32 }: { map?: number[][]; cells?: TerrainCell[][]; tileSize?: number }) {
+  const grid = cells ? { cells } : map;
+  const height = cells?.length ?? map?.length ?? 0;
+  const width = cells?.[0]?.length ?? map?.[0]?.length ?? 0;
+  const walls: { x: number; y: number; mask: number; worldX: number; worldY: number; frame: number | null; quarters?: WallQuarter[] }[] = [];
+  const diagnostics: { x: number; y: number; mask: number; worldX: number; worldY: number }[] = [];
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    if (walkableAt(grid, x, y)) continue;
+    const mask = walkableMask(grid, x, y);
+    if (!mask) continue;
+    const cardinal = mask & 85;
+    // Diagonal neighbors do not change a straight boundary's artwork.
+    const straight = [1, 4, 16, 64].includes(cardinal) ? cardinal : mask;
+    const rule = ruleForMask(DUNGEON_CANONICAL_RULES, "Generated wall boundary", mask) ?? ruleForMask(DUNGEON_CANONICAL_RULES, "Generated wall boundary", straight);
+    const quarters = rule ? undefined : wallQuartersForMask(DUNGEON_CANONICAL_RULES, mask) ?? undefined;
+    const frame = rule?.tileId ?? quarters?.[0].tileId ?? null;
+    const entry = { x, y, mask, worldX: x * tileSize + tileSize / 2, worldY: y * tileSize + tileSize / 2, frame, ...(quarters ? { quarters } : {}) };
+    if (frame === null) diagnostics.push(entry);
+    walls.push(entry);
+  }
+  return { walls, wallDiagnostics: diagnostics };
+}
 
 function propertiesObject(properties: TiledProperty[] = []) { return Object.fromEntries(properties.map(({ name, value }) => [name, value])); }
 function propertiesArray(values: Record<string, unknown>): TiledProperty[] { return Object.entries(values).filter(([, value]) => value !== undefined).map(([name, value]) => ({ name, type: typeof value === "number" ? "int" : "string", value })); }

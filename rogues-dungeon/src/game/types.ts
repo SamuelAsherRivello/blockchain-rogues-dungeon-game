@@ -6,7 +6,9 @@ export type Direction = "n" | "s" | "w" | "e";
 /** The last cardinal direction in which a character successfully moved. */
 export type CharacterHeading = Direction;
 export type ResourceName = "health" | "stamina" | "offense" | "defense" | "mana" | "xp";
-export type AttributeName = Exclude<ResourceName, "xp"> | "vitality" | "strength" | "luck" | "recovery" | "stealth";
+export type AttributeName = Exclude<ResourceName, "xp"> | "perception" | "strength" | "luck" | "recovery" | "stealth";
+export type MovementMode = "grid-snap" | "grid-tween" | "gridless";
+export type GameMode = "General" | "Battle";
 export type Attributes = Record<AttributeName, number>;
 export interface Resource { current: number; currentMax: number; level?: number }
 export type Resources = Record<ResourceName, Resource>;
@@ -75,14 +77,16 @@ export interface Campaign {
   /** Legacy snapshot compatibility. New campaigns never write this field. */
   floors?: Record<string, Floor>;
   progression: { attributes: Attributes; level: number; xp: number; nextXp: number; totalKills: number; difficulty: number; attributePoints: number };
-  player: MassBearingPosition & { resources: Resources; equipment: Equipment; inventory: Item[]; inventoryCapacity: number; abilities: (AbilityId | null)[]; quickSlots?: [QuickSlot | null, QuickSlot | null]; sneaking: boolean; heading?: CharacterHeading; encumberedDirection?: Direction | null };
+  player: MassBearingPosition & { pixel?: Position; resources: Resources; equipment: Equipment; inventory: Item[]; inventoryCapacity: number; abilities: (AbilityId | null)[]; quickSlots?: [QuickSlot | null, QuickSlot | null]; sneaking: boolean; heading?: CharacterHeading; encumberedDirection?: Direction | null };
   starterConsumablesSeeded?: boolean;
   counters: { keys: number; gold: number }; objective: string; quest?: Quest; log: LogEntry[]; savedAt?: number;
 }
-export interface Preferences { zoom: number; camera: "center" | "deadzone" | "screen"; fullscreenDesired: boolean; sfxVolume: number; musicVolume: number; muteAll: boolean; urlArgs: boolean }
+export interface Preferences { movementMode: MovementMode; zoom: number; camera: "center" | "deadzone" | "screen"; fullscreenDesired: boolean; sfxVolume: number; musicVolume: number; muteAll: boolean; urlArgs: boolean }
 export interface StorageAccess { getItem(key: string): string | null; setItem(key: string, value: string): void; removeItem(key: string): void }
 export interface StorageCollection extends StorageAccess { length: number; key(index: number): string | null }
 export type Action =
+  | { type: "move-pixels"; to: Position; hazardElapsedMs?: number }
+  | { type: "center-player" }
   | { type: "move"; direction: string; hazardElapsedMs?: number }
   | { type: "trap-strike"; hazardElapsedMs: number }
   | { type: "enter-stairs" }
@@ -118,7 +122,7 @@ export interface EventFacts {
 export interface GameEvent { type: string; facts: EventFacts; source?: string; gameTime: number; sequence: number; eventId?: string; transactionId?: string | null; outcome?: string }
 export interface ActionResult { state: Campaign; events: GameEvent[]; accepted: boolean; ticks: number; transactionId?: string; system?: boolean }
 export interface LogEntry { id?: string; text: string }
-export interface SelectedCell extends Position { pressed?: boolean; sprint?: boolean; left?: number; top?: number; size?: number; kind?: string }
+export interface SelectedCell extends Position { pixel?: Position; pressed?: boolean; sprint?: boolean; left?: number; top?: number; size?: number; kind?: string }
 export interface Feedback extends Position { id?: string; kind: string; text: string; color: string; duration: number }
 export type DragSource = { kind: "inventory"; item: Item } | { kind: "slot"; item: Item; group: EquipmentGroup; index: number } | { kind: "quick-slot"; item: Item; index: number };
 export type DropDestination = { kind: "inventory"; index?: number } | { kind: "slot"; group: EquipmentGroup; index: number } | { kind: "quick-slot"; index: number };

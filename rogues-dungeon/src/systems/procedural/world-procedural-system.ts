@@ -3,6 +3,7 @@ import { createLevelContext, ensureSemanticCells, isWalkable, runLevelPasses } f
 import { isWallDecorationCell, TRAP_FRAME_DURATION_MS, trapFrameAt, trapIsDangerous, trapStrikeDamage } from "./world-hazards-system.ts";
 import { worldFloorSeed } from "./world-seed-system.ts";
 import { planEnemyActions } from "../../game/enemy-ai-system.ts";
+import { cellCenter, centerCrossings, normalizePlayerPosition, occupiedCell } from "../../game/player-position.ts";
 
 export const FLOOR_WIDTH = 100;
 export const FLOOR_HEIGHT = 100;
@@ -25,6 +26,7 @@ export const GAME_TUNING = Object.freeze({
   recoveryMoveBonus: 1,
   luckTierRanks: 2,
 });
+export const REST_GOLD_COST = 20;
 export const STAIRS_MAX_DISTANCE_FROM_START = 10;
 
 const objectSetRoles: readonly ObjectSetRegionRole[] = ["optional-reward", "exit"];
@@ -54,6 +56,9 @@ function emitFloorTriggerChanges(events: GameEvent[], previous: Campaign, curren
 export function floorTriggerDoorSets(floor: Floor) { return (floor.objectSets ?? []).filter((set): set is FloorTriggerDoorBarrelSet => set.kind === "floor-trigger-door-barrel"); }
 function barrelSetAt(floor: Floor, x: number, y: number) { return floorTriggerDoorSets(floor).find((set) => set.barrel.x === x && set.barrel.y === y); }
 export function isBarrelAdjacentToWall(floor: Parameters<typeof isWalkable>[0], barrel: Position) { return [[0, -1], [1, 0], [0, 1], [-1, 0]].some(([dx, dy]) => !isWalkable(floor, barrel.x + dx, barrel.y + dy)); }
+export function isBlockingPathCell(floor: Parameters<typeof isWalkable>[0], cell: Position) {
+  return [[0, -1], [1, 0], [0, 1], [-1, 0]].filter(([dx, dy]) => isWalkable(floor, cell.x + dx, cell.y + dy)).length === 2;
+}
 export function isStairPlacementCell(floor: Parameters<typeof isWalkable>[0], position: Position) {
   return isWalkable(floor, position.x, position.y)
     && [[0, -1], [1, 0], [0, 1], [-1, 0]].every(([dx, dy]) => isWalkable(floor, position.x + dx, position.y + dy));
@@ -92,8 +97,8 @@ export function headingFromMovement(dx: number, dy: number, fallback: Direction 
 }
 export const resourceNames: readonly ResourceName[] = Object.freeze(["health", "stamina", "offense", "defense", "mana", "xp"]);
 export const EVENT_TYPES = Object.freeze(["action.committed", "action.rejected", "time.advanced", "player.moved", "player.waited", "player.sneak.changed", "combat.hit", "enemy.defeated", "resource.changed", "item.collected", "item.collection.rejected", "potion.consumed", "quick-slot.changed", "quick-slot.use.rejected", "chest.opened", "crate.bumped", "crate.opened", "equipment.changed", "ability.used", "ability.assignment.changed", "barrel.pushed", "floor-trigger.changed", "xp.gained", "xp.level.changed", "progression.points.spent", "realm.entered", "player.died", "campaign.save.succeeded", "campaign.save.failed"]);
-export const progressionStatNames: readonly AttributeName[] = Object.freeze(["health", "stamina", "offense", "defense", "mana", "vitality", "strength", "luck", "recovery", "stealth"]);
-export const attributeLabels = Object.freeze({ health: "Health", stamina: "Stamina", offense: "Offense", defense: "Defense", mana: "Mana", vitality: "Vitality", strength: "Strength", luck: "Luck", recovery: "Recovery", stealth: "Stealth" });
+export const progressionStatNames: readonly AttributeName[] = Object.freeze(["health", "stamina", "offense", "defense", "mana", "perception", "strength", "luck", "recovery", "stealth"]);
+export const attributeLabels = Object.freeze({ health: "Health", stamina: "Stamina", offense: "Offense", defense: "Defense", mana: "Mana", perception: "Perception", strength: "Strength", luck: "Luck", recovery: "Recovery", stealth: "Stealth" });
 export const statLabels = attributeLabels;
 export const abilityCatalog = Object.freeze({
   heal: Object.freeze({ id: "heal", title: "Heal", icon: "✦", manaCost: 5, kind: "heal", amount: 8, target: "self", isStackable: false }),
@@ -248,6 +253,7 @@ export function isNonBlockingObjectPlacementCell(cells: ReturnType<typeof create
   const neighbours = [[0, -1], [1, 0], [0, 1], [-1, 0]]
     .map(([dx, dy]) => ({ x: cell.x + dx, y: cell.y + dy }))
     .filter(({ x, y }) => Boolean(cells[y]?.[x]?.walkable) && !blocked.has(`${x},${y}`));
+  if (neighbours.length === 2) return false;
   if (neighbours.length < 2) return true;
 
   const visited = new Set<string>([`${neighbours[0].x},${neighbours[0].y}`]);
@@ -329,7 +335,7 @@ export function combatReadiness(currentStamina: number, maximumStamina: number) 
 function statRank(attributes: Partial<Attributes>, name: AttributeName) { return Math.max(0, Number(attributes?.[name] ?? 0)); }
 function lootTier(campaign: Campaign) { return Math.floor(statRank(campaign.progression.attributes, "luck") / GAME_TUNING.luckTierRanks); }
 function recoveryAmount(campaign: Campaign) { return GAME_TUNING.moveStaminaRecovery + statRank(campaign.progression.attributes, "recovery") * GAME_TUNING.recoveryMoveBonus; }
-function effectiveAwareness(campaign: Campaign, enemy: Enemy) {
+export function effectiveAwareness(campaign: Campaign, enemy: Enemy) {
   const base = Number(enemy.awareness ?? GAME_TUNING.enemyAwareness);
   const stealthReduction = 0;
   return Math.max(1, base - stealthReduction - (campaign.player.sneaking ? GAME_TUNING.sneakingAwarenessReduction : 0));
@@ -351,6 +357,15 @@ function enemyResources(enemy: Pick<Enemy, "hp" | "maxHp" | "damage" | "xp"> & {
 }
 
 export function upgradeCampaignResources(campaign: Campaign) {
+  normalizePlayerPosition(campaign.player);
+  const attributes = campaign.progression.attributes as Attributes & { vitality?: number };
+  attributes.perception ??= attributes.vitality ?? 1;
+  delete attributes.vitality;
+  for (const item of [...campaign.player.inventory, ...Object.values(campaign.player.equipment).flat(), ...(campaign.floor.entities ?? []).flatMap((entity) => entity.kind === "item" ? [entity.item] : [])]) {
+    if (!item) continue;
+    const modifiers = item.modifiers as Partial<Attributes> & { vitality?: number };
+    if (modifiers.vitality !== undefined) { modifiers.perception ??= modifiers.vitality; delete modifiers.vitality; }
+  }
   campaign.worldSeed ??= campaign.floor.seed;
   campaign.slot = Number.isInteger(campaign.slot) && campaign.slot! > 0 ? campaign.slot : 1;
   campaign.run = Number.isInteger(campaign.run) && campaign.run! > 0 ? campaign.run : 1;
@@ -389,7 +404,7 @@ export function upgradeCampaignResources(campaign: Campaign) {
   campaign.progression.xp = Math.max(0, Math.trunc(Number(campaign.progression.xp) || 0));
   campaign.progression.nextXp = GAME_TUNING.xpThreshold;
   campaign.progression.attributePoints = Math.max(0, Math.trunc(Number(campaign.progression.attributePoints) || 0));
-  for (const name of progressionStatNames) campaign.progression.attributes[name] = Math.max(1, Math.min(99, Math.trunc(Number(campaign.progression.attributes[name]) || 1)));
+  for (const name of progressionStatNames) { const value = Number(campaign.progression.attributes[name]); campaign.progression.attributes[name] = Math.max(name === "perception" ? 0 : 1, Math.min(99, Math.trunc(Number.isFinite(value) ? value : 1))); }
   return campaign;
 }
 
@@ -418,7 +433,8 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
     map[sealedDoor.y][sealedDoor.x] = 0;
   }
   const exitCandidates: Position[] = [];
-  for (let y = 1; y < FLOOR_HEIGHT - 1; y++) for (let x = 1; x < FLOOR_WIDTH - 1; x++) if (map[y][x] === 0 && Math.hypot(x - start.x, y - start.y) >= 20) exitCandidates.push({ x, y });
+  const exitDistance = 20;
+  for (let y = 1; y < FLOOR_HEIGHT - 1; y++) for (let x = 1; x < FLOOR_WIDTH - 1; x++) if (map[y][x] === 0 && Math.hypot(x - start.x, y - start.y) >= exitDistance) exitCandidates.push({ x, y });
   const distantExit = exitCandidates[Math.floor(random() * exitCandidates.length)] ?? { x: start.x + 3, y: start.y };
   // Keep the nearby test-mode stair one clear tile away from the sealed door.
   // A stair beside a door makes its interaction hard to distinguish from opening
@@ -465,7 +481,7 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
       ];
       const layout = layouts[Math.floor(random() * layouts.length)];
       const claimSetCell = (cell: Position) => generation.reserveEntityCell(cell.x, cell.y);
-      if (!isBarrelAdjacentToWall(generation, layout.barrel) && claimSetCell(layout.barrel) && claimSetCell(layout.trigger) && claimSetCell(sealedDoor)) {
+      if (!isBlockingPathCell(generation, layout.barrel) && !isBarrelAdjacentToWall(generation, layout.barrel) && claimSetCell(layout.barrel) && claimSetCell(layout.trigger) && claimSetCell(sealedDoor)) {
         objectSets.push({ id: "floor-trigger-door-barrel-1", kind: "floor-trigger-door-barrel", barrel: layout.barrel, barrelStart: { ...layout.barrel }, trigger: layout.trigger, door: sealedDoor, regionRole });
         blockingCells.push(layout.barrel, sealedDoor);
         if (regionRole === "optional-reward" && claimSetCell(sealedGoal)) add({ id: "sealed-reward", kind: "chest", opened: false, ...sealedGoal });
@@ -502,17 +518,18 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
     for (let i = 1; i < rooms.length; i++) {
       const room = rooms[i]; const preferred = { x: room.x + 2, y: room.y + 2 };
       const enemyCell = !route.has(`${preferred.x},${preferred.y}`) && isSolidObjectPlacementCell(generation.cells, preferred) && isNonBlockingObjectPlacementCell(generation.cells, preferred, blockingCells) && claim(preferred) ? preferred : nextBlockingCell();
-      if (enemyCell && random() < 0.76) {
+      if (enemyCell && random() < .76) {
         const archer = difficulty > 2 && random() < .18; const skeleton = !archer && difficulty > 1 && random() < .4;
-        const health = archer ? 20 + (difficulty - 2) * 4 : skeleton ? 20 + (difficulty - 2) * 4 : 12 + (difficulty - 1) * 3;
-        const damage = archer ? 4 + (difficulty - 3) : skeleton ? 6 + (difficulty - 2) * 2 : 3 + (difficulty - 1) * 2;
+        const threatScale = 1;
+        const health = Math.max(6, Math.round((archer ? 20 + (difficulty - 2) * 4 : skeleton ? 20 + (difficulty - 2) * 4 : 12 + (difficulty - 1) * 3) * threatScale));
+        const damage = Math.max(1, Math.round((archer ? 4 + (difficulty - 3) : skeleton ? 6 + (difficulty - 2) * 2 : 3 + (difficulty - 1) * 2) * threatScale));
         const enemy: Omit<Enemy, "resources"> = { id: `enemy-${i}`, kind: "enemy", x: enemyCell.x, y: enemyCell.y, hasMass: true, hp: health, maxHp: health, damage, awareness: GAME_TUNING.enemyAwareness, actionCooldown: GAME_TUNING.enemyActionCooldown, nextActionAt: GAME_TUNING.enemyActionCooldown, name: archer ? "Skeleton Archer" : skeleton ? "Skeleton" : "Rat", attackKind: archer ? "ranged" : "melee", attackRange: archer ? 5 : 1, xp: GAME_TUNING.xpPerKillBase + difficulty, heading: "e", ai: { state: "idle", targetId: null } };
         add({ ...enemy, resources: enemyResources(enemy, level) });
       }
-      if (!level1TestMode && random() < 0.35) {
+        if (!level1TestMode && random() < .35) {
         const chestCell = nextBlockingCell(); if (chestCell) add({ id: `chest-${i}`, kind: "chest", x: chestCell.x, y: chestCell.y, opened: false });
       }
-      if (random() < 0.25) {
+        if (random() < .25) {
         const crateCell = nextBlockingCell(); if (crateCell) add({ id: `crate-${i}`, kind: "crate", x: crateCell.x, y: crateCell.y, health: 100 });
       }
     }
@@ -537,10 +554,13 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
     // same reservation set, so density never creates overlaps.
     const densities = options.pickupDensity ?? {};
     const density = (kind: keyof typeof PICKUP_DENSITY_DEFAULTS) => ({ ...PICKUP_DENSITY_DEFAULTS[kind], ...(densities[kind] ?? {}) });
-    const healthCount = Math.max(1, stochasticCount(random, FLOOR_WIDTH * FLOOR_HEIGHT, density("health")));
-    const manaCount = Math.max(1, stochasticCount(random, FLOOR_WIDTH * FLOOR_HEIGHT, density("mana")));
-    const keyCount = stochasticCount(random, FLOOR_WIDTH * FLOOR_HEIGHT, density("key"));
-    const goldCount = stochasticCount(random, FLOOR_WIDTH * FLOOR_HEIGHT, density("gold"));
+    const supplyScale = 1;
+    const lootScale = 1;
+    const scaled = (kind: keyof typeof PICKUP_DENSITY_DEFAULTS, scale: number) => { const base = density(kind); return { min: base.min * scale, max: base.max * scale }; };
+    const healthCount = Math.max(1, stochasticCount(random, FLOOR_WIDTH * FLOOR_HEIGHT, scaled("health", supplyScale)));
+    const manaCount = Math.max(1, stochasticCount(random, FLOOR_WIDTH * FLOOR_HEIGHT, scaled("mana", supplyScale)));
+    const keyCount = stochasticCount(random, FLOOR_WIDTH * FLOOR_HEIGHT, scaled("key", supplyScale));
+    const goldCount = stochasticCount(random, FLOOR_WIDTH * FLOOR_HEIGHT, scaled("gold", lootScale));
     for (let index = 1; index < healthCount; index++) addPickup("health", index + 1);
     for (let index = 1; index < manaCount; index++) addPickup("mana", index + 1);
     for (let index = 0; index < keyCount; index++) addCounterPickup("key", index + 1);
@@ -568,14 +588,14 @@ export function effectiveAttributesFor(base: Attributes, equipment: Equipment): 
     for (const [key, value] of Object.entries(item.modifiers ?? {}) as [AttributeName, number][]) all[key] = (all[key] ?? 0) + value;
     return all;
   }, {});
-  const vitality = statRank(base, "vitality"); const strength = statRank(base, "strength");
+  const perception = Math.max(0, Math.min(99, statRank(base, "perception") + Number(mods.perception ?? 0))); const strength = statRank(base, "strength");
   return {
     health: Math.max(1, Number(base.health ?? GAME_TUNING.startingHealth) * 10 + Number(mods.health ?? 0)),
     stamina: Math.max(0, Number(base.stamina ?? GAME_TUNING.startingStamina) * 10 + Number(mods.stamina ?? 0)),
     offense: Math.max(1, Number(base.offense ?? 1) + Number(mods.offense ?? 0)),
     defense: Math.max(0, Number(base.defense ?? GAME_TUNING.innateDefense) + Number(mods.defense ?? 0)),
     mana: Math.max(0, Number(base.mana ?? GAME_TUNING.startingMana) * 10 + Number(mods.mana ?? 0)),
-    vitality, strength, luck: statRank(base, "luck"), recovery: statRank(base, "recovery"), stealth: statRank(base, "stealth"),
+    perception, strength, luck: statRank(base, "luck"), recovery: statRank(base, "recovery"), stealth: statRank(base, "stealth"),
   };
 }
 
@@ -595,17 +615,14 @@ export function rollStartingAttributes(random = Math.random): Attributes {
   }
   return attributes;
 }
-
 export function createCampaign(seed = seedNow(), difficulty = 1, level = 1, options: { level1TestMode?: boolean; attributes?: Attributes; starterEquipment?: boolean } = {}): Campaign {
-  const floor = generateFloor(level, seed, difficulty, options); const attributes = options.attributes ? { ...options.attributes } : rollStartingAttributes(rng(seed));
+  const floor = generateFloor(level, seed, difficulty, { level1TestMode: options.level1TestMode }); const attributes = options.attributes ? { ...options.attributes } : rollStartingAttributes(rng(seed));
   const starterEquipment = options.starterEquipment ? itemCatalog.slice(0, 6).map((item, index) => itemInstance(item, `new-character-${index + 1}`)) : [];
   const campaign: Campaign = { version: 5, world: "One", realm: `Underground ${floor.level}`, floor, combatRollState: seed >>> 0, generatorVersion: GENERATOR_VERSION, levelStates: {}, floors: { [level]: structuredClone(floor) }, progression: { attributes, level: 1, xp: 0, nextXp: GAME_TUNING.xpThreshold, totalKills: 0, difficulty, attributePoints: 0 }, player: { x: floor.start.x, y: floor.start.y, hasMass: true, heading: "e", resources: createResourcesModel(), equipment: { weapons: [itemInstance(itemCatalog[7], "starter-stick"), null], armor: [null, null] }, inventory: [consumableInstance("health", "starter-health-potion"), consumableInstance("mana", "starter-mana-potion", 2), ...starterEquipment], inventoryCapacity: ITEM_CAPACITY, abilities: ["heal", "wand", null], quickSlots: [null, null], sneaking: false, encumberedDirection: null }, starterConsumablesSeeded: true, counters: { keys: 1, gold: 55 }, objective: "Find the exit", quest: { id: "my-first-quest", title: "My First Quest", items: [{ id: "walk-through-stairs", title: "Walk through the stairs", complete: false }, { id: "collect-health-potion", title: "Collect a Health Potion", complete: false }, { id: "collect-coin", title: "Collect a coin", complete: false }], activeItemId: "walk-through-stairs" }, log: [] };
   campaign.player.resources = playerResourcesFromCampaign(campaign, { health: effectiveAttributes(campaign).health, stamina: effectiveAttributes(campaign).stamina, mana: effectiveAttributes(campaign).mana });
   return campaign;
 }
 
-const blobFrames = Object.freeze([3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4]);
-export function wallFrameAt(floor: Floor, x: number, y: number) { const wall = (tx: number, ty: number) => !isWalkable(floor, tx, ty); const mask = Number(wall(x, y - 1)) | (Number(wall(x + 1, y)) << 1) | (Number(wall(x, y + 1)) << 2) | (Number(wall(x - 1, y)) << 3); return blobFrames[mask]; }
 
 function tick(state: Campaign, events: GameEvent[], restTime = false) { const previous = state.floor.time; state.floor.time++; state.floor.projectiles = (state.floor.projectiles ?? []).filter((projectile) => projectile.createdAt >= state.floor.time); emit(events, "time.advanced", { previous, current: state.floor.time }, state); if (!restTime) enemyPhase(state, events); }
 function normalizeResources(state: Campaign, events: GameEvent[], cause: string, previousCaps: Attributes) { const caps = effectiveAttributes(state); for (const key of ["health", "stamina", "mana"] as const) { const prior = state.player.resources[key].current; const oldMax = previousCaps[key]; const ratio = oldMax > 0 ? prior / oldMax : 0; const next = Math.max(0, Math.min(caps[key], ratio * caps[key])); state.player.resources[key] = { current: next, currentMax: caps[key] }; if (prior !== next) emit(events, "resource.changed", { resource: key, previous: prior, current: next, previousMax: oldMax, currentMax: caps[key], cause }, state); } state.player.resources = playerResourcesFromCampaign(state, state.player.resources); }
@@ -850,8 +867,73 @@ function openCrate(state: Campaign, events: GameEvent[], crate: Extract<Entity, 
   gainXp(state, events, GAME_TUNING.xpPerContainer, "crate");
 }
 
-export function applyAction(campaign: Campaign, action: Action): ActionResult {
+export function gameMode(campaign: Campaign): "General" | "Battle" {
+  return campaign.floor.entities.some((enemy) => enemy.kind === "enemy" && enemy.hp > 0 && Math.max(Math.abs(enemy.x - campaign.player.x), Math.abs(enemy.y - campaign.player.y)) <= effectiveAwareness(campaign, enemy)) ? "Battle" : "General";
+}
+
+export function applyAction(campaign: Campaign, action: Action, options: { freeEntry?: boolean } = {}): ActionResult {
+  const result = applyDomainAction(campaign, action, options);
+  if (result.accepted && !options.freeEntry) {
+    normalizePlayerPosition(result.state.player);
+    if (gameMode(result.state) === "Battle") result.state.player.pixel = cellCenter(result.state.player);
+  }
+  return result;
+}
+
+function applyDomainAction(campaign: Campaign, action: Action, options: { freeEntry?: boolean }): ActionResult {
+  // Most free-motion frames stay inside one cell and cross no center line.
+  // Copy only the player in that case; terrain and navigation are unchanged.
+  if (action.type === "move-pixels" && campaign.player.pixel && [action.to.x, action.to.y].every(Number.isSafeInteger) && gameMode(campaign) === "General") {
+    const cell = occupiedCell(action.to); const origin = campaign.player.pixel;
+    if (cell.x === campaign.player.x && cell.y === campaign.player.y && !centerCrossings(origin, action.to).length && (origin.x !== action.to.x || origin.y !== action.to.y)) {
+      return { state: { ...campaign, player: { ...campaign.player, pixel: { ...action.to } } }, events: [], accepted: true, ticks: 0 };
+    }
+  }
   const state = upgradeCampaignResources(structuredClone(campaign)); const events: GameEvent[] = []; const reject = (reason: string, facts: EventFacts = {}, type = "action.rejected"): ActionResult => ({ state: campaign, events: [{ type, facts: { reason, ...facts }, gameTime: campaign.floor.time, sequence: 1 }], accepted: false, ticks: 0 });
+  if (action.type === "center-player") {
+    state.player.pixel = cellCenter(state.player);
+    return { state, events, accepted: true, ticks: 0 };
+  }
+  if (action.type === "move-pixels") {
+    if (gameMode(state) === "Battle") return reject("battle-requires-grid-step");
+    if (![action.to.x, action.to.y].every(Number.isSafeInteger)) return reject("invalid-pixel-position");
+    const origin = state.player.pixel!; const dx = action.to.x - origin.x; const dy = action.to.y - origin.y;
+    const steps = Math.max(Math.abs(dx), Math.abs(dy));
+    if (!steps || steps > 4096) return reject("invalid-pixel-distance");
+    let current = state; let ticks = 0; let moved = false;
+    const floorKey = `${state.floor.seed}:${state.floor.level}:${state.run}`;
+    for (let step = 1; step <= steps; step++) {
+      const pixel = { x: origin.x + Math.round(dx * step / steps), y: origin.y + Math.round(dy * step / steps) };
+      const previousPixel = current.player.pixel!; const cell = occupiedCell(pixel);
+      const cx = cell.x - current.player.x; const cy = cell.y - current.player.y;
+      if (cx || cy) {
+        const blockedCorner = (x: number, y: number) => !isWalkable(current.floor, x, y) || isObjectSetBlocked(current.floor, current.player, x, y) || current.floor.entities.some((entity) => entity.x === x && entity.y === y && (entity.kind === "enemy" || entity.kind === "campfire" || entity.kind === "chest" || entity.kind === "crate" && !entity.opened));
+        if (!isWalkable(current.floor, cell.x, cell.y) || isObjectSetBlocked(current.floor, current.player, cell.x, cell.y)) break;
+        if (cx && cy && (blockedCorner(current.player.x + cx, current.player.y) || blockedCorner(current.player.x, current.player.y + cy))) break;
+        const occupant = entityAt(current.floor.entities, cell.x, cell.y);
+        if (occupant?.kind === "enemy" || occupant?.kind === "campfire" || occupant?.kind === "chest" || occupant?.kind === "crate" && !occupant.opened) break;
+        // Reuse entry effects, but tactical time belongs to center crossings.
+        if (cx && cy) {
+          if (current.floor.entities.some((entity) => entity.x === cell.x && entity.y === current.player.y)) break;
+          current.player.x = cell.x;
+        }
+        const entry = applyAction(current, { type: "move", direction: cy ? cy > 0 ? "s" : "n" : cx > 0 ? "e" : "w", hazardElapsedMs: action.hazardElapsedMs }, { freeEntry: true });
+        if (entry.accepted && entry.events.some((event) => event.type === "player.died" || event.type === "realm.entered")) { current = entry.state; events.push(...entry.events); moved = true; break; }
+        if (!entry.accepted) break;
+        if (entry.state.player.x !== cell.x || entry.state.player.y !== cell.y) { current = entry.state; events.push(...entry.events); moved = true; break; }
+        current = entry.state; events.push(...entry.events);
+      }
+      current.player.pixel = pixel; moved = true;
+      for (const _crossing of centerCrossings(previousPixel, pixel)) {
+        tick(current, events); ticks++;
+        if (`${current.floor.seed}:${current.floor.level}:${current.run}` !== floorKey || gameMode(current) === "Battle") break;
+      }
+      if (`${current.floor.seed}:${current.floor.level}:${current.run}` !== floorKey || gameMode(current) === "Battle" || current.floor.entities.some((entity) => entity.kind === "stairs" && entity.x === current.player.x && entity.y === current.player.y)) break;
+    }
+    if (!moved) return reject("blocked-pixel-movement");
+    if (gameMode(current) === "Battle") current.player.pixel = cellCenter(current.player);
+    return { state: current, events, accepted: true, ticks };
+  }
   if (action.type === "trap-strike") {
     applyActiveTrapStrikes(state, events, action.hazardElapsedMs);
     resetPlayerAfterDeath(state, events);
@@ -876,7 +958,12 @@ export function applyAction(campaign: Campaign, action: Action): ActionResult {
     emit(events, "barrel.returned", { id: set.id, from, to: { ...start } }, state); return { state, events, accepted: true, ticks: 0 };
   }
   if (action.type === "wait") { emit(events, "player.waited", {}, state); tick(state, events); return { state, events, accepted: true, ticks: 1 }; }
-  if (action.type === "rest") { tick(state, events, true); return { state, events, accepted: true, ticks: 1 }; }
+  if (action.type === "rest") {
+    if (state.counters.gold < REST_GOLD_COST) return reject("insufficient-gold", { amount: REST_GOLD_COST });
+    state.counters.gold -= REST_GOLD_COST;
+    tick(state, events, true);
+    return { state, events, accepted: true, ticks: 1 };
+  }
   if (action.type === "enter-stairs") {
     const stair = state.floor.entities.find((entity): entity is Extract<Entity, { kind: "stairs" }> => entity.kind === "stairs" && entity.x === state.player.x && entity.y === state.player.y);
     if (!stair) return reject("not-on-stairs");
@@ -952,7 +1039,10 @@ export function applyAction(campaign: Campaign, action: Action): ActionResult {
       }
       changeResource(state, events, "stamina", state.player.resources.stamina.current + recoveryAmount(state), "move");
     }
-    tick(state, events); return { state, events, accepted: true, ticks: 1 };
+    state.player.pixel = cellCenter(state.player);
+    if (options.freeEntry) resetPlayerAfterDeath(state, events);
+    if (!options.freeEntry) tick(state, events);
+    return { state, events, accepted: true, ticks: options.freeEntry ? 0 : 1 };
   }
   if (action.type === "ability") { if (!Number.isInteger(action.index) || action.index < 0 || action.index >= 3) return reject("invalid-ability-slot"); const abilityId = state.player.abilities[action.index]; const ability = abilityId ? abilityCatalog[abilityId] : null; if (!ability) return reject("empty-ability"); if (ability.kind === "heal" && state.player.resources.health.current >= state.player.resources.health.currentMax) return reject("health-full"); if (state.player.resources.mana.current < ability.manaCost) return reject("insufficient-mana"); const enemy = ability.kind === "wand" ? [...state.floor.entities.filter((entry): entry is Enemy => entry.kind === "enemy" && Math.abs(entry.x - state.player.x) + Math.abs(entry.y - state.player.y) <= ability.range && hasClearCardinalLine(state.floor, state.player, entry))].sort((a, b) => Math.abs(a.x - state.player.x) + Math.abs(a.y - state.player.y) - Math.abs(b.x - state.player.x) - Math.abs(b.y - state.player.y) || a.id.localeCompare(b.id))[0] : null; if (ability.kind === "wand" && !enemy) return reject("no-valid-target"); changeResource(state, events, "mana", state.player.resources.mana.current - ability.manaCost, "ability"); emit(events, "ability.used", { id: ability.id, abilityId: ability.id, title: ability.title, manaCost: ability.manaCost, target: ability.target, targetId: enemy?.id, position: { x: state.player.x, y: state.player.y } }, state); return { state, events, accepted: true, ticks: 0 }; }
   if (action.type === "resolve-ability") { const ability = abilityCatalog[action.abilityId]; if (!ability) return reject("unknown-ability"); if (ability.kind === "heal") changeResource(state, events, "health", state.player.resources.health.current + ability.amount, "heal"); else { const target = state.floor.entities.find((entry): entry is Enemy => entry.kind === "enemy" && entry.id === action.targetId); if (target) { const health = target.resources.health; const damage = integerDamage(ability.damage); const previousHealth = health.current; health.current = Math.max(0, health.current - damage); target.hp = health.current; emit(events, "combat.hit", { target: target.name, targetId: target.id, targetPosition: { x: target.x, y: target.y }, damage, previousHealth, currentHealth: health.current, source: ability.id }, state); if (health.current <= 0) { state.floor.entities = state.floor.entities.filter((entry) => entry.id !== target.id); gainXp(state, events, target.resources.xp.current, "kill"); emit(events, "enemy.defeated", { name: target.name, xp: target.resources.xp.current }, state); } } } tick(state, events); return { state, events, accepted: true, ticks: 1 }; }

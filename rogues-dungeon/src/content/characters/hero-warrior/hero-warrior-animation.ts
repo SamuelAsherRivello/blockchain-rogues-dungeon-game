@@ -11,6 +11,11 @@ export function heroWarriorIdleAnimationForHeading(heading: CharacterHeading = "
 }
 
 const directions = ["down", "side", "up"] as const;
+export function heroWarriorRunAnimationForHeading(heading: CharacterHeading = "e"): HeroWarriorAnimationName {
+  if (heading === "n") return "run/up";
+  if (heading === "s") return "run/down";
+  return "run/side";
+}
 type Direction = typeof directions[number];
 
 function framePath(baseUrl: string, animation: string, direction: Direction | null, index: number) {

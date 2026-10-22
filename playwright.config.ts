@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const host = "127.0.0.1";
-const port = 4173;
+const port = Number(process.env.PLAYWRIGHT_PORT ?? 4173);
 const basePath = "/blockchain-rogues-dungeon-game/";
 const baseURL = `http://${host}:${port}${basePath}`;
 
@@ -19,10 +19,13 @@ export default defineConfig({
     baseURL,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
-    video: "retain-on-failure",
+    video: process.env.PLAYWRIGHT_VIDEO === "1" ? "retain-on-failure" : "off",
   },
-  projects: [{ name: "edge", use: { ...devices["Desktop Edge"], headless: process.env.PLAYWRIGHT_HEADED !== "1", launchOptions: { channel: "msedge" } } }],
-  webServer: {
+  projects: [
+    { name: "chromium", use: { ...devices["Desktop Chrome"], headless: process.env.PLAYWRIGHT_HEADED !== "1", launchOptions: { executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" } } },
+    { name: "edge", use: { ...devices["Desktop Edge"], headless: process.env.PLAYWRIGHT_HEADED !== "1", launchOptions: { channel: "msedge" } } },
+  ],
+  webServer: process.env.PLAYWRIGHT_EXTERNAL_SERVER === "1" ? undefined : {
     command: `npm run dev -- --host ${host} --port ${port} --strictPort`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,

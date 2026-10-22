@@ -140,3 +140,13 @@ Do not hand-edit generated OpenSpec skills.
 Do not create a pull request unless the user explicitly asks for one in the
 current request. A push, commit, or completed template/OpenSpec workflow does
 not imply approval to create a pull request.
+
+## GitHub authentication
+
+When the connected GitHub app/integration is available for the task, use that
+authentication for repository reads and writes, including release metadata,
+workflow dispatches, and release verification. Prefer the connected GitHub
+integration over local `gh` credentials. If local `gh` authentication is
+expired or invalid, do not modify the repository or retry release operations
+with that credential; use the connected integration or stop and request
+reauthentication.

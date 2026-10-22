@@ -6,15 +6,15 @@ import { GameCard, type PanelPopup } from "../cards/game-card.tsx";
 
 const columns = [progressionStatNames.slice(0, 5), progressionStatNames.slice(5)] as const;
 export const attributeHelp: Record<AttributeName, string> = {
-  health: "Maximum Health; zero ends the run.",
-  stamina: "Low Stamina lowers damage.",
-  offense: "Attack power after Stamina readiness.",
-  defense: "Defense reduces incoming damage.",
-  mana: "Maximum Mana for abilities.",
-  vitality: "(Not implemented.)",
+  health: "Expands maximum Health; zero ends the run.",
+  stamina: "Boosts offense and boosts defense.",
+  offense: "Increases outgoing damage.",
+  defense: "Decreases incoming damage.",
+  mana: "Increases maximum Mana for abilities.",
+  perception: "Improves detection of enemies and points of interest.",
   strength: "(Not implemented.)",
   luck: "Improves loot quality.",
-  recovery: "Adds Stamina restored per move.",
+  recovery: "Restores Stamina on each move.",
   stealth: "(Not implemented.)",
 };
 
@@ -45,11 +45,11 @@ export function AttributePanel({ attributes, preview = null, help = {}, theme = 
     const increaseEnabled = adjustments?.canIncrease(name) ?? false;
     const decreaseButton = <button type="button" aria-label={`Decrease ${attributeLabels[name]}`} disabled={!decreaseEnabled} onClick={() => adjustments?.onDecrease(name)}>‹</button>;
     const increaseButton = <button type="button" aria-label={`Increase ${attributeLabels[name]}`} disabled={!increaseEnabled} onClick={() => adjustments?.onIncrease(name)}>›</button>;
-    const valueControl = adjustments ? <span className="attribute_adjustment">{decreaseEnabled ? <Tooltip content={`Decrease ${attributeLabels[name]} to ${value - 1} (-1).`}>{decreaseButton}</Tooltip> : decreaseButton}<DeltaValue value={value} tone={tone} />{increaseEnabled ? <Tooltip content={`Increase ${attributeLabels[name]} to ${value + 1} (+1).`}>{increaseButton}</Tooltip> : increaseButton}</span> : <DeltaValue value={value} tone={tone} />;
+    const valueControl = adjustments ? <span className="attribute_adjustment">{decreaseEnabled ? <Tooltip content={`Decrease ${attributeLabels[name]} to ${value - 1}.`}>{decreaseButton}</Tooltip> : decreaseButton}<DeltaValue value={value} tone={tone} />{increaseEnabled ? <Tooltip content={`Increase ${attributeLabels[name]} to ${value + 1}.`}>{increaseButton}</Tooltip> : increaseButton}</span> : <DeltaValue value={value} tone={tone} />;
     return <div className="attribute_item" key={name}>{help[name] ? <Tooltip content={help[name]}><button tabIndex={-1} type="button" className="attribute_tooltip_trigger">{attributeLabels[name]}</button></Tooltip> : label}{valueControl}</div>;
   })}</div>)}</div>;
 }
 
-export function AttributesCard({ attributes, preview = null, contentHidden = false, panelPopup, adjustments }: { attributes: Attributes; preview?: Attributes | null; contentHidden?: boolean; panelPopup?: PanelPopup; adjustments?: AttributeAdjustments }) {
-  return <GameCard title="Attributes" contentHidden={contentHidden} panelPopup={panelPopup}><AttributePanel attributes={attributes} preview={preview} help={attributeHelp} adjustments={adjustments} /></GameCard>;
+export function AttributesCard({ attributes, preview = null, contentHidden = false, panelPopup, adjustments, shineToken }: { attributes: Attributes; preview?: Attributes | null; contentHidden?: boolean; panelPopup?: PanelPopup; adjustments?: AttributeAdjustments; shineToken?: number }) {
+  return <GameCard title="Attributes" contentHidden={contentHidden} panelPopup={panelPopup} shineToken={shineToken}><AttributePanel attributes={attributes} preview={preview} help={attributeHelp} adjustments={adjustments} /></GameCard>;
 }

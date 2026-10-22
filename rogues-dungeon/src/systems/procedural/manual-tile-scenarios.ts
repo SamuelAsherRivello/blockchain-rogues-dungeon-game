@@ -14,11 +14,11 @@ function carve(cells: ReturnType<typeof createSemanticCells>, room: Room) {
 
 function corridor(cells: ReturnType<typeof createSemanticCells>, from: Position, to: Position, width: number) {
   const half = Math.floor(width / 2); let x = from.x; let y = from.y;
-  const carveHorizontal = () => { for (let offset = -half; offset < width - half; offset++) if (cells[y]?.[x + offset]) cells[y][x + offset].walkable = true; };
-  const carveVertical = () => { for (let offset = -half; offset < width - half; offset++) if (cells[y + offset]?.[x]) cells[y + offset][x].walkable = true; };
+  const carveHorizontal = () => { for (let offset = -half; offset < width - half; offset++) if (cells[y + offset]?.[x]) cells[y + offset][x].walkable = true; };
+  const carveVertical = () => { for (let offset = -half; offset < width - half; offset++) if (cells[y]?.[x + offset]) cells[y][x + offset].walkable = true; };
   while (x !== to.x) { carveHorizontal(); x += Math.sign(to.x - x); }
   while (y !== to.y) { carveVertical(); y += Math.sign(to.y - y); }
-  carveVertical();
+  if (from.y === to.y) carveHorizontal(); else carveVertical();
 }
 
 function buildCorridorJoins(seed = 13579, level = 1): Floor {
@@ -36,9 +36,37 @@ function buildCorridorJoins(seed = 13579, level = 1): Floor {
 }
 
 export const MANUAL_TILE_SCENARIOS: Readonly<Record<string, ManualTileScenario>> = Object.freeze({
+  "wang-topology-matrix": {
+    name: "wang-topology-matrix", description: "Isolated room, hole, bend, T/plus junction, corridor widths and socket references.",
+    build(seed = 13579, level = 1) {
+      const cells = createSemanticCells(FLOOR_WIDTH, FLOOR_HEIGHT);
+      const rooms = [{ x: 8, y: 8, w: 9, h: 9 }, { x: 8, y: 58, w: 15, h: 15 }, { x: 34, y: 58, w: 9, h: 9 }];
+      rooms.forEach(room => carve(cells, room));
+      for (let y = 63; y < 68; y++) for (let x = 13; x < 18; x++) cells[y][x].walkable = false;
+      for (const width of [1, 2, 3]) corridor(cells, { x: 28, y: 8 + width * 5 }, { x: 44, y: 8 + width * 5 }, width);
+      corridor(cells, { x: 8, y: 30 }, { x: 18, y: 43 }, 1);
+      corridor(cells, { x: 30, y: 30 }, { x: 44, y: 30 }, 2);
+      corridor(cells, { x: 37, y: 30 }, { x: 37, y: 43 }, 2);
+      corridor(cells, { x: 60, y: 34 }, { x: 74, y: 34 }, 3);
+      corridor(cells, { x: 67, y: 27 }, { x: 67, y: 43 }, 3);
+      corridor(cells, { x: 42, y: 62 }, { x: 54, y: 62 }, 1);
+      const start = { x: 12, y: 12 };
+      return ensureSemanticCells({ seed, width: FLOOR_WIDTH, height: FLOOR_HEIGHT, cells, start, entities: [{ id: "stairs", kind: "stairs", x: 14, y: 14 }], time: 0, level, generatorVersion: GENERATOR_VERSION, scenario: "wang-topology-matrix" } as Floor);
+    },
+  },
   "corridor-joins": { name: "corridor-joins", description: "Room joins with one, two, and three tile corridors.", build: buildCorridorJoins },
 });
 
-export function getManualTileScenario(name: string | null | undefined) { return name ? MANUAL_TILE_SCENARIOS[name] ?? null : null; }
+const matrixFocuses: Readonly<Record<string, Position>> = {
+  "wang-focus-widths": { x: 36, y: 18 }, "wang-focus-bend": { x: 18, y: 35 },
+  "wang-focus-t": { x: 37, y: 30 }, "wang-focus-plus": { x: 67, y: 34 },
+  "wang-focus-hole": { x: 12, y: 62 }, "wang-focus-socket": { x: 42, y: 62 },
+};
+export function getManualTileScenario(name: string | null | undefined): ManualTileScenario | null {
+  if (!name) return null;
+  const focus = matrixFocuses[name];
+  if (focus) return { name, description: "Native-scale topology inspection", build(seed, level) { const floor = MANUAL_TILE_SCENARIOS["wang-topology-matrix"].build(seed, level); floor.start = { ...focus }; return floor; } };
+  return MANUAL_TILE_SCENARIOS[name] ?? null;
+}
 export function buildManualTileScenario(name: string, seed = 13579, level = 1) { const scenario = getManualTileScenario(name); if (!scenario) return null; return scenario.build(seed, level); }
 export function scenarioMap(floor: Floor) { return mapFromSemanticCells(floor.cells); }

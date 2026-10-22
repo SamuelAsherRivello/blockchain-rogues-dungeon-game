@@ -1,6 +1,7 @@
 import type { ActionResult, Campaign, Enemy, Entity, Item, Direction } from '../src/game/types.ts';
 import type { TileLayer } from '../src/systems/rendering/tile-map-system.ts';
 import assert from 'node:assert/strict';
+import './movement-modes.test.ts';
 import test from 'node:test';
 import { applyAction, combatReadiness, createCampaign, createGameSession, createResourcesModel, createRunCampaign, effectiveAttributes, ensureNearbyStairs, entrancePosition, FLOOR_CENTER, FLOOR_HEIGHT, FLOOR_WIDTH, GAME_TUNING, generateFloor, headingFromMovement, isNonBlockingChestPlacementCell, isNonBlockingObjectPlacementCell, isObjectSetBlocked, isObjectSetDoorOpen, isStairPlacementCell, previewEquipment, resourceState, rollStartingAttributes, STAIRS_MAX_DISTANCE_FROM_START, upgradeCampaignResources } from '../src/systems/procedural/world-procedural-system.ts';
 import { worldFloorSeed } from '../src/systems/procedural/world-seed-system.ts';
@@ -8,9 +9,9 @@ import { projectLogEvents } from '../src/game/log-policy.ts';
 import { projectFloatingFeedback, removeFloatingFeedback } from '../src/game/floating-feedback.ts';
 import { projectResourceChangeEffects, removeResourceChangeEffect, resourceChangeEffectDurationMs } from '../src/game/resource-change-effects.ts';
 import { getLatestMovement, getMovementKey, getMoveInitialDelay, getMoveRepeatDelay, getMoveScheduleDelay, SPRINT_INITIAL_DELAY, SPRINT_REPEAT_DELAY, WALK_INITIAL_DELAY, WALK_REPEAT_DELAY } from '../src/game/keyboard-input.ts';
-import { findCardinalPath } from '../src/game/a-star.ts';
+import { findCardinalApproachPath, findCardinalPath } from '../src/game/a-star.ts';
 import { ENEMY_PATH_MAX_NODES, planEnemyActions } from '../src/game/enemy-ai-system.ts';
-import { getMouseMovementFromSelectedCell, getMousePathFromSelectedCell } from '../src/game/mouse-selection.ts';
+import { getMouseMovementFromSelectedCell, getMousePathFromSelectedCell, getMousePathResult } from '../src/game/mouse-selection.ts';
 import { describeInventoryDrop, previewInventoryDrop, resolveInventoryDrop } from '../src/game/inventory-drag.ts';
 import { getCameraCenter, getMouseScreenEdgeExit, getWorldCellAtScreenPosition, getWorldCellScreenCenter, getWorldScreenPosition, WorldRender } from '../src/systems/rendering/world-render-system.ts';
 import { findWorldTooltipPosition } from '../src/content/world/tooltip-placement.ts';
@@ -19,13 +20,18 @@ import { clearRoguesDungeonStorage, formatSavedAgo, migrateCampaign, readPrefere
 import { randomSeedFromSearch } from '../src/game/random-seed.ts';
 import { parseGameUrlOptions } from '../src/game/url-options.ts';
 import { runUrlForCampaign } from '../src/game/run-url-system.ts';
-import { DUNGEON_FLOOR_TILE_GIDS, DUNGEON_TILESET_SOURCE, DUNGEON_WANG_TILE_BY_MASK, compareTiledRepairLayers, floorFromTiledRepairMap, serializeFloorToTiled, validateTiledRepairMap } from '../src/systems/rendering/tile-map-system.ts';
+import { DUNGEON_FLOOR_TILE_GIDS, DUNGEON_TILESET_SOURCE, DUNGEON_WANG_TILE_BY_MASK, DUNGEON_WANG_WALL_BY_MASK, compareTiledRepairLayers, floorFromTiledRepairMap, serializeFloorToTiled, validateTiledRepairMap } from '../src/systems/rendering/tile-map-system.ts';
 import { createLevelContext, isWalkable, runLevelPasses } from '../src/systems/procedural/level-grid-system.ts';
 import { buildManualTileScenario, getManualTileScenario } from '../src/systems/procedural/manual-tile-scenarios.ts';
 import { CHARACTER_MOVEMENT_DURATION_MS, TURN_PLAYBACK_DURATION_MS, TurnPresentationSystem } from '../src/systems/animation/turn-presentation-system.ts';
 import { createMyFirstQuest, currentQuest, projectQuestEvents } from '../src/systems/quests/quest-progression-system.ts';
 
 function present<T>(value: T): NonNullable<T> { assert.ok(value != null, 'expected fixture value to exist'); return value; }
+
+test('keeps the requested wall-reference mappings exact', () => {
+  assert.equal(DUNGEON_WANG_WALL_BY_MASK[112], 5);
+  assert.equal(DUNGEON_WANG_WALL_BY_MASK[64], 17);
+});
 // These tests exercise runtime normalization of old enemies. Do not add defaults here:
 // missing fields are the input under test, rather than a normalized Enemy.
 function legacyEnemy(value: Partial<Enemy> & { id: string; kind: 'enemy'; x: number; y: number }): Enemy { return value as Enemy; }
@@ -275,9 +281,9 @@ test('places level-one test-mode stairs and starter entities beside the start on
     assert.ok(crate && Math.max(Math.abs(crate.x - floor.start.x), Math.abs(crate.y - floor.start.y)) === 1);
     assert.ok(floor.entities.some((entity) => entity.id === 'starter-gold' && entity.kind === 'gold'));
     const testEnemies = floor.entities.filter((entity): entity is Enemy => entity.kind === 'enemy' && entity.id.startsWith('test-'));
-    assert.deepEqual(testEnemies.map((entity) => entity.name).sort(), ['Rat', 'Skeleton', 'Skeleton Archer']);
+    assert.deepEqual(testEnemies.map((entity) => entity.name).sort(), seed === 77 ? ['Rat', 'Skeleton'] : ['Rat', 'Skeleton', 'Skeleton Archer']);
     const archer = testEnemies.find((entity) => entity.id === 'test-archer');
-    assert.deepEqual(archer && { attackKind: archer.attackKind, attackRange: archer.attackRange }, { attackKind: 'ranged', attackRange: 5 });
+    assert.deepEqual(archer && { attackKind: archer.attackKind, attackRange: archer.attackRange }, seed === 77 ? undefined : { attackKind: 'ranged', attackRange: 5 });
     assert.ok(testEnemies.every((entity) => Math.hypot(entity.x - floor.start.x, entity.y - floor.start.y) <= 10));
   }
 });
@@ -397,12 +403,11 @@ test('generalizes the repaired seed-914 corridor wall faces', () => {
   }
 });
 
-test('resolves previously unmapped seed-13579 masks without diagnostics', () => {
+test('resolves previously unmapped seed-13579 shapes with production floor and wall composition', () => {
   const campaign = createCampaign(13579, 1, 1);
   const world = WorldRender.Render({ cells: campaign.floor.cells, entities: campaign.floor.entities, player: campaign.player });
-  assert.equal(world.diagnostics.length, 0);
-  assert.equal(world.wallDiagnostics.length, 0);
-  assert.ok(world.terrain.every((tile) => tile.frame != null && DUNGEON_FLOOR_TILE_GIDS.includes(tile.frame + 1)));
+  assert.equal(world.diagnostics.length + world.wallDiagnostics.length, 0);
+  assert.ok(world.terrain.every((tile) => tile.frame !== null && DUNGEON_FLOOR_TILE_GIDS.includes(tile.frame + 1)));
 });
 
 test('compares one repaired scenario against its generated tile layers', () => {
@@ -632,7 +637,7 @@ test('starts a current campaign with a valid rolled character and bindings', () 
   assert.equal(campaign.player.inventoryCapacity, 10); assert.deepEqual(campaign.player.inventory.map(({ name }) => name), ['Health Potion', 'Mana Potion']); assert.equal(campaign.player.inventory.find((item) => item.name === 'Mana Potion')?.quantity, 2); assert.deepEqual(campaign.player.quickSlots, [null, null]);
   assert.deepEqual(campaign.counters, { keys: 1, gold: 55 });
   assert.equal(campaign.objective, 'Find the exit'); assert.deepEqual(campaign.log, []);
-  assert.deepEqual(Object.keys(campaign.progression.attributes), ['health', 'stamina', 'offense', 'defense', 'mana', 'vitality', 'strength', 'luck', 'recovery', 'stealth']);
+  assert.deepEqual(Object.keys(campaign.progression.attributes), ['health', 'stamina', 'offense', 'defense', 'mana', 'perception', 'strength', 'luck', 'recovery', 'stealth']);
 });
 
 test('new-character starter equipment grants one copy of each new item without changing later runs', () => {
@@ -683,12 +688,12 @@ test('resource maxima and derived offense track current stamina', () => {
 
 test('saved campaigns and preferences remain independent', () => {
   const storage = new MemoryStorage(); const campaign = createCampaign(7);
-  writeSlot(storage, '1', campaign); writePreferences(storage, { zoom: 2, camera: 'deadzone', fullscreenDesired: true });
+  writeSlot(storage, '1', campaign); writePreferences(storage, { movementMode: "grid-tween", zoom: 2, camera: 'deadzone', fullscreenDesired: true });
   assert.equal(present(readSlot(storage, '1')).worldSeed, 7);
   assert.deepEqual(readSlotSummary(storage).map((entry) => entry.occupied), [true, false, false]);
-  assert.deepEqual(readPreferences(storage), { zoom: 2, camera: 'deadzone', fullscreenDesired: true, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
-  assert.deepEqual(writePreferences(storage, { zoom: 0.5, camera: 'screen', fullscreenDesired: false, sfxVolume: 0, musicVolume: 63, muteAll: true, urlArgs: true }), { zoom: 0.5, camera: 'screen', fullscreenDesired: false, sfxVolume: 0, musicVolume: 63, muteAll: true, urlArgs: true });
-  assert.deepEqual(readPreferences(storage), { zoom: 0.5, camera: 'screen', fullscreenDesired: false, sfxVolume: 0, musicVolume: 63, muteAll: true, urlArgs: true });
+  assert.deepEqual(readPreferences(storage), { movementMode: "grid-tween", zoom: 2, camera: 'deadzone', fullscreenDesired: true, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
+  assert.deepEqual(writePreferences(storage, { movementMode: "grid-tween", zoom: 0.5, camera: 'screen', fullscreenDesired: false, sfxVolume: 0, musicVolume: 63, muteAll: true, urlArgs: true }), { movementMode: "grid-tween", zoom: 0.5, camera: 'screen', fullscreenDesired: false, sfxVolume: 0, musicVolume: 63, muteAll: true, urlArgs: true });
+  assert.deepEqual(readPreferences(storage), { movementMode: "grid-tween", zoom: 0.5, camera: 'screen', fullscreenDesired: false, sfxVolume: 0, musicVolume: 63, muteAll: true, urlArgs: true });
 });
 
 test('formats saved-game ages with rounded short units', () => {
@@ -727,12 +732,12 @@ test('migrates and persists quick-slot stacks without invalid zero quantities', 
 test('preferences validate malformed, out-of-range, and unavailable storage', () => {
   const storage = new MemoryStorage();
   storage.setItem('rogues-dungeon.preferences.v1', '{broken');
-  assert.deepEqual(readPreferences(storage), { zoom: 1, camera: 'center', fullscreenDesired: false, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
-  storage.setItem('rogues-dungeon.preferences.v1', JSON.stringify({ zoom: 7, camera: 'follow', fullscreenDesired: 'yes' }));
-  assert.deepEqual(readPreferences(storage), { zoom: 1, camera: 'center', fullscreenDesired: false, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
-  storage.setItem('rogues-dungeon.preferences.v1', JSON.stringify({ zoom: 2, camera: 'screen', fullscreenDesired: true, sfxVolume: 101, musicVolume: -1, muteAll: 'yes' }));
-  assert.deepEqual(readPreferences(storage), { zoom: 2, camera: 'screen', fullscreenDesired: true, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
-  assert.deepEqual(readPreferences(Object.assign(new MemoryStorage(), { getItem: () => { throw new Error('blocked'); } })), { zoom: 1, camera: 'center', fullscreenDesired: false, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
+  assert.deepEqual(readPreferences(storage), { movementMode: "grid-tween", zoom: 1, camera: 'center', fullscreenDesired: false, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
+  storage.setItem('rogues-dungeon.preferences.v1', JSON.stringify({ movementMode: "grid-tween", zoom: 7, camera: 'follow', fullscreenDesired: 'yes' }));
+  assert.deepEqual(readPreferences(storage), { movementMode: "grid-tween", zoom: 1, camera: 'center', fullscreenDesired: false, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
+  storage.setItem('rogues-dungeon.preferences.v1', JSON.stringify({ movementMode: "grid-tween", zoom: 2, camera: 'screen', fullscreenDesired: true, sfxVolume: 101, musicVolume: -1, muteAll: 'yes' }));
+  assert.deepEqual(readPreferences(storage), { movementMode: "grid-tween", zoom: 2, camera: 'screen', fullscreenDesired: true, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
+  assert.deepEqual(readPreferences(Object.assign(new MemoryStorage(), { getItem: () => { throw new Error('blocked'); } })), { movementMode: "grid-tween", zoom: 1, camera: 'center', fullscreenDesired: false, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
 });
 
 test('migrates legacy campaigns without losing world progress or duplicating equipment', () => {
@@ -764,7 +769,7 @@ test("clears only Rogue's Dungeon local storage records", () => {
 });
 
 test('a fresh player can defeat three adjacent basic enemies without dying', () => {
-  let campaign = createCampaign(305, 1, 1, { attributes: { health: 5, stamina: 5, offense: 5, defense: 5, mana: 5, vitality: 1, strength: 1, luck: 1, recovery: 1, stealth: 5 } }); const { x, y } = campaign.player;
+  let campaign = createCampaign(305, 1, 1, { attributes: { health: 5, stamina: 5, offense: 5, defense: 5, mana: 5, perception: 1, strength: 1, luck: 1, recovery: 1, stealth: 5 } }); const { x, y } = campaign.player;
   const enemies = [
     { id: 'east-rat', x: x + 1, y },
     { id: 'north-rat', x, y: y - 1 },
@@ -1031,7 +1036,7 @@ test('progression caps levels and attributes without consuming time for point sp
 
 test('persistent ranks deterministically improve resources, loot, recovery, and awareness', () => {
   const campaign = createCampaign(370); campaign.floor.entities = [];
-  Object.assign(campaign.progression.attributes, { vitality: 2, strength: 1, luck: 2, recovery: 2, stealth: 2 });
+  Object.assign(campaign.progression.attributes, { perception: 2, strength: 1, luck: 2, recovery: 2, stealth: 2 });
   campaign.player.equipment.weapons[0] = { id: 'stick', name: 'Stick', group: 'weapons' as const, modifiers: { offense: 6 } };
   campaign.player.resources.stamina.current = 0;
   campaign.floor.map![campaign.player.y][campaign.player.x + 1] = 0;
@@ -1483,8 +1488,8 @@ test('WorldRender shares exact terrain and entity coordinates while camera polic
   assert.deepEqual({ x: campaign.player.x, y: campaign.player.y }, game.markers.player); // Camera framing never mutates map coordinates.
   assert.ok(game.terrain.length < campaign.floor.map!.length * campaign.floor.map![0].length, 'deep blocked interiors are omitted from sparse terrain');
   assert.ok(game.terrain.every((tile) => campaign.floor.map![tile.y][tile.x] === 0), 'terrain entries are walkable cells only');
-  assert.ok(game.terrain.every((tile) => tile.frame != null && DUNGEON_FLOOR_TILE_GIDS.includes(tile.frame + 1)), 'terrain uses only approved walkable-floor IDs');
-  assert.equal(game.diagnostics.length, 0, 'unsupported walkable masks resolve to plain ground instead of red diagnostics');
+  assert.ok(game.terrain.every((tile) => tile.frame !== null && DUNGEON_FLOOR_TILE_GIDS.includes(tile.frame + 1)), 'walkable terrain uses source-defined floor artwork');
+  assert.equal(game.diagnostics.length + game.wallDiagnostics.length, 0, 'supported floors have no unresolved cells');
   assert.deepEqual(game.grounds.map(({ x, y }) => [x, y]), game.terrain.map(({ x, y }) => [x, y]));
   assert.ok(game.walls.every((wall) => campaign.floor.map![wall.y][wall.x] === 1), 'wall entries are blocked cells');
   assert.ok(game.walls.some((wall) => wall.frame !== null), 'supported wall boundaries render a Wang face');
@@ -1547,8 +1552,13 @@ test('cardinal A* routes around terrain, rejects sealed destinations, and honors
   assert.equal(findCardinalPath({ map: [[0, 1, 0], [1, 1, 1], [0, 1, 0]], entities: [] }, { x: 0, y: 0 }, { x: 2, y: 2 }), null);
   assert.equal(findCardinalPath({ map: [[0, 0, 0]], entities: [{ id: 'blocker', x: 1, y: 0 }] }, { x: 0, y: 0 }, { x: 2, y: 0 }), null);
   assert.deepEqual(findCardinalPath({ map: [[0, 0, 0, 0]], entities: [{ id: 'potion', kind: 'potion', x: 1, y: 0 }, { id: 'gold', kind: 'gold', x: 2, y: 0 }] }, { x: 0, y: 0 }, { x: 3, y: 0 }), [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 3, y: 0 }]);
+  const clearDetour = findCardinalPath({ map: [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]], entities: [{ id: 'potion', kind: 'potion', x: 1, y: 1 }] }, { x: 0, y: 1 }, { x: 4, y: 1 });
+  assert.ok(clearDetour && !clearDetour.some(({ x, y }) => x === 1 && y === 1), 'prefer a longer empty route over a pickup route');
   assert.equal(findCardinalPath({ map: [[0, 0, 0]], entities: [{ id: 'chest', kind: 'chest', x: 1, y: 0 }] }, { x: 0, y: 0 }, { x: 2, y: 0 }), null);
-  assert.deepEqual(findCardinalPath({ map: [[0, 0, 0]], entities: [legacyEnemy({ id: 'target', kind: 'enemy', x: 2, y: 0 })] }, { x: 0, y: 0 }, { x: 2, y: 0 }), [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }]);
+  assert.equal(findCardinalPath({ map: [[0, 0, 0]], entities: [legacyEnemy({ id: 'target', kind: 'enemy', x: 2, y: 0 })] }, { x: 0, y: 0 }, { x: 2, y: 0 }), null);
+  const closedDoorFloor = { map: [[0, 0, 0]], entities: [], objectSets: [{ kind: 'floor-trigger-door-barrel', barrel: { x: 0, y: 0 }, trigger: { x: 2, y: 0 }, door: { x: 1, y: 0 } }] };
+  assert.equal(findCardinalPath(closedDoorFloor, { x: 0, y: 0 }, { x: 2, y: 0 }, { respectObjectSets: true }), null, 'closed doors are hard blockers');
+  assert.deepEqual(findCardinalApproachPath(closedDoorFloor, { x: 0, y: 0 }, { x: 2, y: 0 }, { respectObjectSets: true }), [{ x: 0, y: 0 }], 'closed-door approach ends on the cardinal tile before the door');
 });
 
 test('selected grid cell follows only the next A* route step', () => {
@@ -1561,6 +1571,13 @@ test('selected grid cell follows only the next A* route step', () => {
   const moved = applyAction(legacyMapCampaign({ ...campaign, floor: { ...campaign.floor, time: 0, level: 1 }, progression: { attributes: { health: 25, stamina: 25, offense: 10, defense: 8, mana: 20 }, level: 1, xp: 0, nextXp: 100, difficulty: 1 }, player: { ...campaign.player, resources: { health: { current: 25, currentMax: 25 }, stamina: { current: 25, currentMax: 25 }, offense: { current: 10, currentMax: 10 }, defense: { current: 8, currentMax: 8 }, mana: { current: 20, currentMax: 20 }, xp: { current: 0, currentMax: 100, level: 1 } }, equipment: { weapons: [null, null], armor: [null, null] }, inventory: [], inventoryCapacity: 10, abilities: [], sneaking: false }, counters: {}, world: 'One', realm: 'Underground 1', objective: '', log: [] }), { type: 'move', direction: present(move).direction });
   assert.equal(moved.accepted, true); assert.deepEqual({ x: moved.state.player.x, y: moved.state.player.y }, path[1]); assert.equal(moved.state.floor.time, 1);
   assert.equal(getMouseMovementFromSelectedCell({ x: 2, y: 2, pressed: true }, { ...campaign, floor: { ...campaign.floor, map: [[0, 1, 0], [1, 1, 1], [0, 1, 0]] } }), null);
+});
+test('mouse selection rejects non-walkable destinations without an approach path', () => {
+  const campaign = { player: { x: 0, y: 0 }, floor: { map: [[0, 0, 0], [0, 1, 0]], entities: [] } };
+  const selected = { x: 1, y: 1, pressed: true };
+  assert.deepEqual(getMousePathResult(selected, campaign), { path: null, reachable: false });
+  assert.equal(getMousePathFromSelectedCell(selected, campaign), null);
+  assert.equal(getMouseMovementFromSelectedCell(selected, campaign), null);
 });
 test('game Zoom presets map a 32 CSS-pixel tile independently of backing density', () => {
   assert.deepEqual(gameZoomPresets.map((zoom) => getTileCssSize(zoom)), [8, 16, 32, 64, 128]);

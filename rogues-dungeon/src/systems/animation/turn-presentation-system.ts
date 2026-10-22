@@ -1,4 +1,5 @@
-import type { Campaign, Direction, Enemy, Position } from "../../game/types.ts";
+import type { Campaign, Direction, Enemy, MovementMode, Position } from "../../game/types.ts";
+import { precisePlayerPosition } from "../../game/player-position.ts";
 import { easeOutCubic } from "./tween-animation-system.ts";
 
 export const TURN_PLAYBACK_DURATION_MS = 1000;
@@ -38,14 +39,19 @@ export class TurnPresentationSystem {
   private bumps = new Map<string, { origin: Position; direction: Position; startAt: number }>();
   private damageReactions = new Map<string, number>();
   private headings = new Map<string, Direction>();
+  private playerMode: MovementMode = "grid-tween";
+  private playerPixelTraveling = false;
+
+  setPlayerMode(mode: MovementMode) { if (mode !== this.playerMode) this.playerPixelTraveling = false; this.playerMode = mode; }
 
   constructor(private readonly subGridMovement = SUB_GRID_MOVEMENT) {}
 
   reset(campaign: Campaign) {
     this.floorKey = `${campaign.floor.seed}:${campaign.floor.level}`;
+    this.playerPixelTraveling = false;
     this.ranks.clear(); this.nextRank = 0; this.active = null; this.motions.clear(); this.bumps.clear(); this.damageReactions.clear(); this.headings.clear();
     this.positions = new Map(subGridMovers(campaign).map((mover) => [mover.id, clonePosition(mover)]));
-    this.positions.set("player", clonePosition(campaign.player));
+    this.positions.set("player", precisePlayerPosition(campaign.player));
   }
 
   begin(previous: Campaign, current: Campaign, visibleEnemyIds: ReadonlySet<string>, now: number): TurnPlaybackPlan {
@@ -77,8 +83,10 @@ export class TurnPresentationSystem {
       return entry;
     });
     if (current.player.heading) this.headings.set("player", current.player.heading);
-    if (!samePosition(previous.player, current.player)) this.setMotion("player", { from: this.positions.get("player") ?? clonePosition(previous.player), to: clonePosition(current.player), startAt: now, endAt: now + CHARACTER_MOVEMENT_DURATION_MS }, now);
-    else if (!this.motions.has("player")) this.positions.set("player", clonePosition(current.player));
+    const playerBefore = precisePlayerPosition(previous.player); const playerAfter = precisePlayerPosition(current.player);
+    if (this.playerMode !== "grid-tween") { this.motions.delete("player"); this.positions.set("player", playerAfter); }
+    else if (!samePosition(playerBefore, playerAfter)) this.setMotion("player", { from: this.positions.get("player") ?? playerBefore, to: playerAfter, startAt: now, endAt: now + CHARACTER_MOVEMENT_DURATION_MS }, now);
+    else if (!this.motions.has("player")) this.positions.set("player", playerAfter);
     for (const barrel of barrels(current)) {
       if (!samePosition(before.get(barrel.id), barrel)) this.setMotion(barrel.id, { from: this.positions.get(barrel.id) ?? clonePosition(before.get(barrel.id) ?? barrel), to: clonePosition(barrel), startAt: now, endAt: now + CHARACTER_MOVEMENT_DURATION_MS }, now);
       else if (!this.motions.has(barrel.id)) this.positions.set(barrel.id, clonePosition(barrel));
@@ -127,6 +135,12 @@ export class TurnPresentationSystem {
   damageScaleOf(id: string, now: number) { const start = this.damageReactions.get(id); if (start === undefined) return 1; const progress = Math.max(0, Math.min(1, (now - start) / DAMAGE_REACTION_DURATION_MS)); return 1 - .1 * Math.sin(Math.PI * progress); }
   headingOf(id: string, fallback: Direction): Direction { return this.headings.get(id) ?? fallback; }
   playerPositionOf(fallback: Position): Position { return this.positionOf("player", fallback); }
+  // Input owns the stop signal, so slow frames cannot interrupt the run loop.
+  notePlayerPixelTravel(previous: Campaign["player"], current: Campaign["player"]) {
+    if (this.playerMode === "gridless" && !samePosition(precisePlayerPosition(previous), precisePlayerPosition(current))) this.playerPixelTraveling = true;
+  }
+  stopPlayerPixelTravel() { this.playerPixelTraveling = false; }
+  isPlayerTraveling() { return this.playerMode === "gridless" && this.playerPixelTraveling; }
   /**
    * The player keeps the origin tile's depth while rising, then takes the
    * destination tile's depth at the movement apex. The sprite position itself

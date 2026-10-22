@@ -1,17 +1,20 @@
 import type { Position } from "../../game/types.ts";
+import { DUNGEON_CANONICAL_RULES } from "../../systems/rendering/tileset-dungeon-wang.generated.ts";
+import { ruleForMask } from "../../systems/rendering/tileset-wang-rules.ts";
 export const START_WALL_TILE_LIMIT = 50;
 
+function voidFrame(mask: number) { return ruleForMask(DUNGEON_CANONICAL_RULES, "Void frame", mask)?.tileId ?? null; }
 const wallFrameGrid = Object.freeze({
-  top: Object.freeze([6, 7, 8]),
-  bottom: Object.freeze([30, 31, 32]),
+  top: Object.freeze([voidFrame(28)!, voidFrame(124)!, voidFrame(112)!]),
+  bottom: Object.freeze([voidFrame(7)!, voidFrame(199)!, voidFrame(193)!]),
 });
 
 function isFloor(map: number[][], x: number, y: number) { return map[y]?.[x] === 0; }
 function edgeFrame(before: boolean, after: boolean, frames: readonly number[]) { return before ? after ? frames[1] : frames[2] : after ? frames[0] : frames[1]; }
 function inwardWallFrame(x: number, y: number, start: Position) {
   const horizontal = Math.abs(x - start.x) >= Math.abs(y - start.y);
-  if (horizontal) return x < start.x ? 18 : 20;
-  return y < start.y ? 7 : 31;
+  if (horizontal) return x < start.x ? voidFrame(31)! : voidFrame(241)!;
+  return y < start.y ? voidFrame(124)! : voidFrame(199)!;
 }
 
 /**
@@ -33,12 +36,12 @@ export function startWallAutotileFrames({ map, start, limit = START_WALL_TILE_LI
     let frame = null;
     if (south) frame = edgeFrame(isFloor(map, x - 1, y + 1), isFloor(map, x + 1, y + 1), wallFrameGrid.top);
     else if (north) frame = edgeFrame(isFloor(map, x - 1, y - 1), isFloor(map, x + 1, y - 1), wallFrameGrid.bottom);
-    else if (east) frame = edgeFrame(north, south, [6, 18, 30]);
-    else if (west) frame = edgeFrame(north, south, [8, 20, 32]);
-    else if (isFloor(map, x + 1, y + 1)) frame = 6;
-    else if (isFloor(map, x - 1, y + 1)) frame = 8;
-    else if (isFloor(map, x + 1, y - 1)) frame = 30;
-    else if (isFloor(map, x - 1, y - 1)) frame = 32;
+    else if (east) frame = edgeFrame(north, south, [voidFrame(28)!, voidFrame(31)!, voidFrame(7)!]);
+    else if (west) frame = edgeFrame(north, south, [voidFrame(112)!, voidFrame(241)!, voidFrame(193)!]);
+    else if (isFloor(map, x + 1, y + 1)) frame = voidFrame(28);
+    else if (isFloor(map, x - 1, y + 1)) frame = voidFrame(112);
+    else if (isFloor(map, x + 1, y - 1)) frame = voidFrame(7);
+    else if (isFloor(map, x - 1, y - 1)) frame = voidFrame(193);
     // The reference motif reserves frame 19 for a black, enclosed void. The
     // nearby solid cells instead continue the wall face nearest the room.
     else frame = inwardWallFrame(x, y, start);

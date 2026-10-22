@@ -104,7 +104,7 @@ export function useUiMotion(_kind: UiAnimationKind, target: UiMotion, duration =
 }
 
 /** Cover then reveal a UI region through a centered circular iris. */
-export function UiIrisTransition({ phase, label = "Loading world", onPhaseComplete }: { phase: UiIrisPhase; label?: string; onPhaseComplete?(phase: UiIrisPhase): void }) {
+export function UiIrisTransition({ phase, label = "Loading world...", onPhaseComplete }: { phase: UiIrisPhase; label?: string; onPhaseComplete?(phase: UiIrisPhase): void }) {
   useEffect(() => {
     if (phase !== "closing" && phase !== "opening") return undefined;
     const delay = reduceMotion() ? 0 : defaultIrisTransition.durationMs;

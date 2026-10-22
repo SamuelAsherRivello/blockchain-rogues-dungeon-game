@@ -54,8 +54,8 @@ test("ability particles make Heal faster and larger while carrying Wand to its l
 
 test("each gained level creates one short-lived inward sparkle celebration", () => {
   const sparkles = createLevelUpSparkles({ x: 4, y: 5 }, 2, 100);
-  assert.equal(sparkles.length, 8);
-  assert.equal(new Set(sparkles.map((sparkle) => sparkle.id)).size, 8);
+  assert.equal(sparkles.length, 16);
+  assert.equal(new Set(sparkles.map((sparkle) => sparkle.id)).size, 16);
   assert.ok(sparkles.every((sparkle) => sparkle.kind === "wand" && sparkle.targetId === "player"));
   assert.ok(sparkles.every((sparkle) => particleExpired(sparkle, sparkle.startedAt + particleDurationMs(sparkle))));
 });

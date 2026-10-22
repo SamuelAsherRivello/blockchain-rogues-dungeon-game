@@ -1,9 +1,9 @@
 import type { CSSProperties, MouseEvent } from "react";
 import type { EngineContext, SurfaceContext, Texture2D, DynamicTexture2D, SpriteAtlas, SpriteRenderer, Sprite2DHandle, Sprite2DLayer } from "@babylonjs/lite";
-import type { Campaign, Direction, Enemy, Feedback, Position, Resources, SelectedCell } from "../../game/types.ts";
+import { detectedEnemyIds } from "../../game/enemy-detection.ts"; import { resolveWorldCursor } from "../../game/world-cursor.ts"; import { gameMode, REST_GOLD_COST } from "../procedural/world-procedural-system.ts"; import type { Campaign, Direction, Enemy, Feedback, Position, Resources, SelectedCell } from "../../game/types.ts";
 import type { ResourceChangeEffect } from "../../game/resource-change-effects.ts";
 interface SharedEngine { engine: EngineContext; primaryCanvas: HTMLCanvasElement; started: boolean }
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   addSprite2D, centerSprite2DView, createDynamicTexture, createEngine, createGridSpriteAtlas, createSprite2DCustomShader, createSpriteAtlasFromFrames, createSprite2DLayer,
   createSpriteRenderer, createSurface, disposeEngine, disposeSpriteAtlas, disposeSpriteRenderer, disposeSurface,
@@ -15,9 +15,9 @@ import { pixelPerfectOptions } from "../../content/babylon/config.ts";
 import { getInitializationMessage } from "../../content/babylon/initialization.ts";
 import { findWorldTooltipPosition } from "../../content/world/tooltip-placement.ts";
 import { CAMPFIRE_IDLE_FRAME_COUNT, CAMPFIRE_IDLE_FRAME_DURATION_MS, CAMPFIRE_IDLE_FRAME_SIZE_PX, campfireIdleSpriteSheetPath } from "../../content/world/campfire-idle-animation.ts";
-import { isBarrelAdjacentToWall, resourceNames } from "../procedural/world-procedural-system.ts";
+import { isBlockingPathCell, resourceNames } from "../procedural/world-procedural-system.ts";
 import { isWalkable } from "../procedural/level-grid-system.ts";
-import { createHeroWarriorAnimationEntity, heroWarriorIdleAnimationForHeading } from "../../content/characters/hero-warrior/hero-warrior-animation.ts";
+import { createHeroWarriorAnimationEntity, heroWarriorIdleAnimationForHeading, heroWarriorRunAnimationForHeading } from "../../content/characters/hero-warrior/hero-warrior-animation.ts";
 import { loadSpriteAtlasFrame } from "../../content/characters/hero-warrior/hero-warrior-atlas.ts";
 import { createEnemyIdleAnimationEntities, type EnemyIdleAnimationName } from "../../content/enemies/enemy-idle-animation.ts";
 import { createFloorTriggerAnimationEntity } from "../../content/world/floor-trigger-animation.ts";
@@ -33,6 +33,10 @@ import { CameraAnimationSystem, PLAYER_TAKE_DAMAGE_ANIMATION } from "../animatio
 import { trapFrameAt } from "../procedural/world-hazards-system.ts";
 import { createCharacterSprite, hideCharacterSprite, PLAYER_HOP_HEIGHT_PX, setCharacterSpriteOrder, updateCharacterSprite, type CharacterSprite } from "./character-sprite-system.ts";
 import { itemThrowExpired, itemThrowPosition, type ItemThrow } from "../animation/item-throw-animation-system.ts";
+import { INTERACTION_COLORS } from "../../ui/interaction-colors.ts";
+import { GameCard } from "../../game/cards/game-card.tsx";
+import { DUNGEON_CANONICAL_RULES } from "./tileset-dungeon-wang.generated.ts";
+import { ruleForMask } from "./tileset-wang-rules.ts";
 
 export function isPositionOffscreen(position: Position, center: Position, halfWidth: number, halfHeight: number) {
   return position.x < center.x - halfWidth || position.x > center.x + halfWidth || position.y < center.y - halfHeight || position.y > center.y + halfHeight;
@@ -62,6 +66,7 @@ const goldCoinFramePaths = Array.from({ length: 4 }, (_, index) => `${import.met
 const torchFramePaths = Array.from({ length: 3 }, (_, index) => `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/props/animated/frames/torch/${String(index).padStart(2, "0")}.png`);
 const trapFramePaths = Array.from({ length: 7 }, (_, index) => `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/props/animated/frames/trap1/${String(index).padStart(2, "0")}.png`);
 const smokePuffFramePaths = Array.from({ length: 9 }, (_, index) => `${import.meta.env.BASE_URL}assets/art/custom/particles/smoke-poff/smoke-poff-${index + 1}.png`);
+export const CAMPFIRE_REST_PHASE_DURATION_MS = 1500;
 const heroShadowPath = `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/characters/hero-warrior/shadow.png`;
 const chestFramePaths = [
   `${import.meta.env.BASE_URL}assets/art/vendors/dungeons-and-pixels-v1.4/props/static/bronze-chest-closed.png`,
@@ -189,7 +194,7 @@ function visibleTarget(selector: string) {
   });
 }
 
-export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, camera = "center", cameraAnimationToken = 0, stairDepartureStartedAt = null, mouseInteraction = false, mouseScreenEdgeTarget = null, mouseDirection = null, showPivotPoints = false, floatingFeedback = [], resourceChangeEffects = [], particleEffects = [], itemThrows = [], uiAnimations = [], selectedCell = null, selectedCellReachable = null, campfireMenu = null, campfireRestConfirming = false, campfireRestTransition = false, turnPresentation, onCampfireRestClosed, onSelectedCellChange, onMouseScreenEdgeAdvance, onWorldAliveChange, onStairDepartureComplete, onStairDescentStep, onWallAdjacentBarrelOffscreen, onUiAnimationComplete, onFpsChange, onZoom }: { campaign: Campaign; theme?: DungeonTheme; zoom?: number; minimap?: boolean; camera?: string; cameraAnimationToken?: number; stairDepartureStartedAt?: number | null; mouseInteraction?: boolean; mouseScreenEdgeTarget?: Position | null; mouseDirection?: Direction | null; showPivotPoints?: boolean; floatingFeedback?: Feedback[]; resourceChangeEffects?: ResourceChangeEffect[]; particleEffects?: ParticleEffect[]; itemThrows?: ItemThrow[]; uiAnimations?: GameViewToUiAnimation[]; selectedCell?: SelectedCell | null; selectedCellReachable?: boolean | null; campfireMenu?: Position | null; campfireRestConfirming?: boolean; campfireRestTransition?: boolean; turnPresentation?: TurnPresentationSystem; onCampfireRestClosed?(): void; onSelectedCellChange?(cell: SelectedCell | null): void; onMouseScreenEdgeAdvance?(direction: Direction): boolean; onWorldAliveChange?(alive: boolean): void; onStairDepartureComplete?(): void; onStairDescentStep?(): void; onWallAdjacentBarrelOffscreen?(setId: string): boolean; onUiAnimationComplete?(id: string): void; onFpsChange?(fps: number | null): void; onZoom?(step: number): void }) {
+export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, camera = "center", cameraAnimationToken = 0, stairDepartureStartedAt = null, mouseInteraction = false, mouseScreenEdgeTarget = null, mouseDirection = null, showPivotPoints = false, floatingFeedback = [], resourceChangeEffects = [], particleEffects = [], itemThrows = [], uiAnimations = [], selectedCell = null, selectedCellReachable = null, mousePath = null, campfireMenu = null, campfireRestConfirming = false, campfireRestTransition = false, turnPresentation, onCampfireRestClosed, onCampfireRestRequested, onSelectedCellChange, onMouseScreenEdgeAdvance, onWorldAliveChange, onStairDepartureComplete, onStairDescentStep, onWallAdjacentBarrelOffscreen, onUiAnimationRest, onUiAnimationComplete, onFpsChange, onZoom }: { campaign: Campaign; theme?: DungeonTheme; zoom?: number; minimap?: boolean; camera?: string; cameraAnimationToken?: number; stairDepartureStartedAt?: number | null; mouseInteraction?: boolean; mouseScreenEdgeTarget?: Position | null; mouseDirection?: Direction | null; showPivotPoints?: boolean; floatingFeedback?: Feedback[]; resourceChangeEffects?: ResourceChangeEffect[]; particleEffects?: ParticleEffect[]; itemThrows?: ItemThrow[]; uiAnimations?: GameViewToUiAnimation[]; selectedCell?: SelectedCell | null; selectedCellReachable?: boolean | null; mousePath?: readonly Position[] | null; campfireMenu?: Position | null; campfireRestConfirming?: boolean; campfireRestTransition?: boolean; turnPresentation?: TurnPresentationSystem; onCampfireRestClosed?(): void; onCampfireRestRequested?(): void; onSelectedCellChange?(cell: SelectedCell | null): void; onMouseScreenEdgeAdvance?(direction: Direction): boolean; onWorldAliveChange?(alive: boolean): void; onStairDepartureComplete?(): void; onStairDescentStep?(): void; onWallAdjacentBarrelOffscreen?(setId: string): boolean; onUiAnimationRest?(id: string): void; onUiAnimationComplete?(id: string): void; onFpsChange?(fps: number | null): void; onZoom?(step: number): void }) {
   const [presentedCampaign, setPresentedCampaign] = useState(campaign);
   const hostRef = useRef<HTMLDivElement>(null); const canvasRef = useRef<HTMLCanvasElement>(null); const sceneRef = useRef<{ draw(): void; activate(): void; beginStairClip(origin: Position): void; clearStairClip(): void; setTheme(theme: DungeonTheme): void } | null>(null); const latestRef = useRef({ campaign: presentedCampaign, zoom, minimap, camera, showPivotPoints, particleEffects, itemThrows, stairDescentStartedAt: null as number | null });
   const cameraCenterRef = useRef<(Position & { key: string }) | null>(null);
@@ -209,6 +214,8 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
   const [irisPhase, setIrisPhase] = useState<UiIrisPhase>("open");
   const [irisMounted, setIrisMounted] = useState(false);
   const [irisRequested, setIrisRequested] = useState(false);
+  const [campfireRestPhase, setCampfireRestPhase] = useState<"idle" | "resting">("idle");
+  const [campfireRestMessage, setCampfireRestMessage] = useState("Resting ...");
   const [cutscenePhase, setCutscenePhase] = useState<UiCutscenePhase>("open");
   const [cutsceneMounted, setCutsceneMounted] = useState(false);
   const [stairDescentStartedAt, setStairDescentStartedAt] = useState<number | null>(null);
@@ -217,6 +224,11 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
   const stairCutsceneActiveRef = useRef(false);
   const [rendererLoaded, setRendererLoaded] = useState(minimap);
   const [worldAlive, setWorldAlive] = useState(minimap);
+  // The DOM overlay is projected from the renderer's current camera. Keep a
+  // tiny revision counter so camera pans and viewport changes invalidate that
+  // projection without rebuilding the Babylon scene.
+  const [, refreshPathOverlay] = useState(0);
+  const pathOverlayProjectionKeyRef = useRef("");
   const [tooltipPosition, setTooltipPosition] = useState<{ left: number; top: number } | null>(null);
   const [tooltipEnemy, setTooltipEnemy] = useState<Enemy | null>(null);
   const [tooltipVisible, setTooltipVisible] = useState(false);
@@ -242,6 +254,14 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
   }, [irisPhase, irisRequested, minimap, rendererLoaded]);
   useEffect(() => {
     if (!minimap && irisPhase === "closed" && rendererLoaded) {
+      if (campfireRestPhase === "resting") {
+        let openingTimer: number | null = null;
+        const messageTimer = window.setTimeout(() => {
+          setCampfireRestMessage("Replenishing stats ...");
+          openingTimer = window.setTimeout(() => setIrisPhase("opening"), CAMPFIRE_REST_PHASE_DURATION_MS);
+        }, CAMPFIRE_REST_PHASE_DURATION_MS);
+        return () => { window.clearTimeout(messageTimer); if (openingTimer !== null) window.clearTimeout(openingTimer); };
+      }
       // A level is only installed after the iris covers the old scene. Resetting
       // this cache makes every camera policy start from the player's position.
       if (presentedCampaign.floor.seed !== campaign.floor.seed || presentedCampaign.floor.level !== campaign.floor.level) {
@@ -258,7 +278,7 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
       return () => cancelAnimationFrame(frame);
     }
     return undefined;
-  }, [campaign, irisPhase, minimap, presentedCampaign, rendererLoaded]);
+  }, [campaign, campfireRestPhase, irisPhase, minimap, presentedCampaign, rendererLoaded]);
   useLayoutEffect(() => {
     if (minimap || (campaign.floor.seed === presentedCampaign.floor.seed && campaign.floor.level === presentedCampaign.floor.level)) {
       if (campaign !== presentedCampaign) setPresentedCampaign(campaign);
@@ -271,8 +291,20 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
     setMessage(`Entering Level: ${campaign.floor.level}`);
     setIrisRequested(true);
   }, [campaign, minimap, presentedCampaign]);
-  useEffect(() => { if (!minimap && campfireRestTransition) { setWorldAlive(false); setIrisRequested(true); } }, [campfireRestTransition, minimap]);
+  useEffect(() => { if (!minimap && campfireRestTransition) { setCampfireRestMessage("Resting ..."); setCampfireRestPhase("resting"); setWorldAlive(false); setIrisRequested(true); } }, [campfireRestTransition, minimap]);
   useEffect(() => { onWorldAliveChange?.(worldAlive); if (worldAlive) sceneRef.current?.activate(); }, [onWorldAliveChange, worldAlive]);
+  useEffect(() => {
+    if (minimap) return undefined;
+    const invalidate = () => refreshPathOverlay((revision) => revision + 1);
+    window.addEventListener("resize", invalidate);
+    window.visualViewport?.addEventListener("resize", invalidate);
+    window.visualViewport?.addEventListener("scroll", invalidate);
+    return () => {
+      window.removeEventListener("resize", invalidate);
+      window.visualViewport?.removeEventListener("resize", invalidate);
+      window.visualViewport?.removeEventListener("scroll", invalidate);
+    };
+  }, [minimap]);
   useEffect(() => {
     if (!stairDepartureStartedAt || minimap) return undefined;
     stairCutsceneActiveRef.current = true;
@@ -337,7 +369,7 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
       const origin = { left: cellOrigin.left + flight.mainOffsetPx.x * pixelScale, top: cellOrigin.top + flight.mainOffsetPx.y * pixelScale };
       const target = visibleTarget(flight.target);
       const destinationLayer = target?.closest<HTMLElement>(flight.destination === "counter" ? ".game-screen" : ".game-screen__middle");
-      if (!target || !destinationLayer) { onUiAnimationComplete?.(flight.id); continue; }
+      if (!target || !destinationLayer) { onUiAnimationRest?.(flight.id); onUiAnimationComplete?.(flight.id); continue; }
       launchedFlightsRef.current.add(flight.id);
       const transfer = document.createElement("span"); transfer.className = "world-view__ui-animation"; transfer.setAttribute("aria-hidden", "true");
       const goldCoin = flight.kind === "gold";
@@ -348,10 +380,16 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
       requestAnimationFrame(() => {
         const targetRect = target.getBoundingClientRect();
         const counter = flight.destination === "counter";
-        Object.assign(transfer.style, counter ? { left: `${targetRect.left + targetRect.width / 2}px`, top: `${targetRect.top + targetRect.height / 2}px`, width: `${Math.min(targetRect.width, targetRect.height)}px`, height: `${Math.min(targetRect.width, targetRect.height)}px`, transform: "translate(-50%, -50%)" } : { left: `${targetRect.left}px`, top: `${targetRect.top + targetRect.height / 2}px`, transform: "translate(-50%, -50%)" });
+        const targetHeight = targetRect.height;
+        Object.assign(transfer.style, counter ? { left: `${targetRect.left + targetRect.width / 2}px`, top: `${targetRect.top + targetRect.height / 2}px`, width: `${Math.min(targetRect.width, targetHeight)}px`, height: `${Math.min(targetRect.width, targetHeight)}px`, transform: "translate(-50%, -50%)" } : { left: `${targetRect.left}px`, top: `${targetRect.top + targetHeight / 2}px`, width: `${targetHeight}px`, height: `${targetHeight}px`, transform: "translate(-50%, -50%)" });
       });
-      // The transfer reaches its target at 500ms, pauses for 500ms, then credits it.
-      window.setTimeout(() => { transfer.remove(); launchedFlightsRef.current.delete(flight.id); onUiAnimationComplete?.(flight.id); }, 1000);
+      // The transfer reaches its target at 500ms and holds at the slot's
+      // height briefly before the destination glimmer and in-place shrink.
+      window.setTimeout(() => {
+        onUiAnimationRest?.(flight.id);
+        window.setTimeout(() => transfer.classList.add("world-view__ui-animation--shrinking"), 100);
+      }, 500);
+      window.setTimeout(() => { transfer.remove(); launchedFlightsRef.current.delete(flight.id); onUiAnimationComplete?.(flight.id); }, 900);
     }
     return undefined;
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -376,15 +414,18 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
     cameraCenterRef.current = { key: resetKey, ...center };
     return center;
   };
-  const targetKindAt = (x: number | undefined, y: number | undefined) => {
-    const entity = campaign.floor.entities.find((entry) => entry.x === x && entry.y === y);
-    return entity?.kind === "enemy" ? "enemy" : entity && ["item", "potion", "key", "gold", "chest", "stairs"].includes(entity.kind) ? "item" : isWalkable(campaign.floor, x ?? NaN, y ?? NaN) ? "valid" : "invalid";
+  const detected = useMemo(() => detectedEnemyIds(campaign), [campaign]); const targetKindAt = (x: number | undefined, y: number | undefined) => {
+    if (campaign.player.x === x && campaign.player.y === y) return "invalid";
+    const entity = campaign.floor.entities.find((entry) => entry.x === x && entry.y === y && (entry.kind !== "enemy" || detected.has(entry.id)));
+    const barrel = campaign.floor.objectSets?.some((set) => set.barrel.x === x && set.barrel.y === y);
+    if (barrel) return "item";
+    return entity?.kind === "enemy" ? "enemy" : entity && ["item", "potion", "key", "gold", "chest", "campfire", "stairs"].includes(entity.kind) ? "item" : isWalkable(campaign.floor, x ?? NaN, y ?? NaN) ? "valid" : "invalid";
   };
   const targetAtScreenPosition = (point: Position, rect: DOMRect) => {
     const cellSize = cellSizeAt(rect);
     const center = getViewCenter(rect);
     const { x, y } = getWorldCellAtScreenPosition({ screenX: point.x, screenY: point.y, center, viewportWidth: rect.width, viewportHeight: rect.height, tileCssSize: cellSize });
-    return { x, y, kind: targetKindAt(x, y), ...getWorldCellScreenCenter({ x, y, center, viewportWidth: rect.width, viewportHeight: rect.height, tileCssSize: cellSize }), size: cellSize };
+    return { x, y, pixel: { x: Math.round((center.x + (point.x - rect.width / 2) / cellSize + .5) * 32), y: Math.round((center.y + (point.y - rect.height / 2) / cellSize + .5) * 32) }, kind: targetKindAt(x, y), ...getWorldCellScreenCenter({ x, y, center, viewportWidth: rect.width, viewportHeight: rect.height, tileCssSize: cellSize }), size: cellSize };
   };
   const targetAt = (event: MouseEvent<HTMLDivElement>) => {
     if (!mouseInteraction || !worldAlive) return null;
@@ -492,6 +533,8 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
         tileTexture = createDynamicTexture(engine, 384, 288, { minFilter: "nearest", magFilter: "nearest", mipMaps: false });
         updateDynamicTexture(engine, tileTexture, tileThemeImages.get(theme)!, { invertY: false });
         const tileAtlas = createGridSpriteAtlas(tileTexture, { cellWidthPx: 32, cellHeightPx: 32, columns: 12, rows: 9, pivot: [0.5, 0.5] });
+        const quarterAtlas = createGridSpriteAtlas(tileTexture, { cellWidthPx: 16, cellHeightPx: 16, columns: 24, rows: 18, pivot: [0.5, 0.5] });
+        const wallAtlas = { ...tileAtlas, frames: [...tileAtlas.frames, ...tileAtlas.frames.flatMap((_, source) => [0, 1, 2, 3].map(q => quarterAtlas.frames[(Math.floor(source / 12) * 2 + Math.floor(q / 2)) * 24 + source % 12 * 2 + q % 2]))] };
         const debugCanvas = document.createElement("canvas"); debugCanvas.width = 32; debugCanvas.height = 32;
         const contextGetter = "getContext"; const debugContext = debugCanvas[contextGetter]("2d")!; debugContext.strokeStyle = "#ff3b3b"; debugContext.lineWidth = 3; debugContext.strokeRect(1.5, 1.5, 29, 29);
         debugTexture = createDynamicTexture(engine, 32, 32, { minFilter: "nearest", magFilter: "nearest", mipMaps: false });
@@ -538,26 +581,46 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
         const heroFrameIndexes = new Map(heroAtlasPaths.map((path, index) => [path, index]));
         const enemyFrameIndexes = new Map(enemyAtlasPaths.map((path, index) => [path, index]));
         const model = WorldRender.Render({ cells: campaign.floor.cells, entities: campaign.floor.entities, decorations: campaign.floor.decorations, objectSets: campaign.floor.objectSets, player: campaign.player, start: campaign.floor.start, groundTiles: campaign.floor.tiledGrounds, wallTiles: campaign.floor.tiledWalls, view: minimap ? "minimap" : "game", detail: minimap ? "simplified" : "full" });
+        host.dataset.wangDiagnostics = String(model.diagnostics.length + model.wallDiagnostics.length);
+        host.dataset.wangWallTile5 = String(model.walls.filter((entry) => entry.frame === 5).length);
+        host.dataset.wangWallTile17 = String(model.walls.filter((entry) => entry.frame === 17).length);
+        host.dataset.wangRule112 = String(ruleForMask(DUNGEON_CANONICAL_RULES, "Generated wall boundary", 112)?.tileId ?? "");
+        host.dataset.wangRule64 = String(ruleForMask(DUNGEON_CANONICAL_RULES, "Generated wall boundary", 64)?.tileId ?? "");
+        host.dataset.wangCells = JSON.stringify(model.walls.map(({ x, y, frame, quarters }) => ({ x, y, frame, quarters })));
+        const diagnosticsEnabled = new URLSearchParams(window.location.search).get("debug-wang") === "1";
+        host.dataset.wangDebug = String(diagnosticsEnabled);
         // Static tiles are allocated once into fixed-size chunks.  A chunk is a
         // renderer-level culling boundary: hidden chunks have no draw work and
         // do not receive view updates while the camera is elsewhere.
         const staticChunkSize = 16;
-        const staticChunks = new Map<string, { minX: number; maxX: number; minY: number; maxY: number; terrain: Sprite2DLayer; walls: Sprite2DLayer }>();
+        const staticChunks = new Map<string, { minX: number; maxX: number; minY: number; maxY: number; terrain: Sprite2DLayer; walls: Map<number, Sprite2DLayer> }>();
         const chunkFor = (x: number, y: number) => {
           const chunkX = Math.floor(x / staticChunkSize); const chunkY = Math.floor(y / staticChunkSize); const key = `${chunkX},${chunkY}`;
           let chunk = staticChunks.get(key);
           if (!chunk) {
-            chunk = { minX: chunkX * staticChunkSize, maxX: chunkX * staticChunkSize + staticChunkSize - 1, minY: chunkY * staticChunkSize, maxY: chunkY * staticChunkSize + staticChunkSize - 1, terrain: createSprite2DLayer(tileAtlas, { pivot: [0.5, 0.5], order: TERRAIN_RENDER_ORDER }), walls: createSprite2DLayer(tileAtlas, { pivot: [0.5, 0.5] }) };
+            chunk = { minX: chunkX * staticChunkSize, maxX: chunkX * staticChunkSize + staticChunkSize - 1, minY: chunkY * staticChunkSize, maxY: chunkY * staticChunkSize + staticChunkSize - 1, terrain: createSprite2DLayer(tileAtlas, { pivot: [0.5, 0.5], order: TERRAIN_RENDER_ORDER }), walls: new Map() };
             staticChunks.set(key, chunk);
           }
           return chunk;
         };
         model.grounds.forEach((tile) => { const chunk = chunkFor(tile.x, tile.y); addSprite2D(chunk.terrain, { positionPx: tile.frame === null ? [-10000, -10000] : [tile.worldX, tile.worldY], sizePx: [32, 32], frame: tile.frame ?? 0 }); });
-        model.walls.forEach((tile) => { const chunk = chunkFor(tile.x, tile.y); addSprite2D(chunk.walls, { positionPx: tile.frame === null ? [-10000, -10000] : [tile.worldX, tile.worldY], sizePx: [32, 32], frame: tile.frame ?? 0 }); });
+        model.walls.forEach((tile) => {
+          const chunk = chunkFor(tile.x, tile.y);
+          const wallLayer = chunk.walls.get(tile.y) ?? createSprite2DLayer(wallAtlas, { pivot: [0.5, 0.5] });
+          chunk.walls.set(tile.y, wallLayer);
+          if (tile.frame !== null && !tile.quarters) addSprite2D(wallLayer, { positionPx: [tile.worldX, tile.worldY], sizePx: [32, 32], frame: tile.frame });
+          else if (tile.frame !== null) for (let q = 0; q < 4; q++) {
+            const source = tile.quarters?.[q]?.tileId ?? tile.frame;
+            const dx = q % 2; const dy = Math.floor(q / 2);
+            const frame = 108 + source * 4 + q;
+            addSprite2D(wallLayer, { positionPx: [tile.worldX + dx * 16 - 8, tile.worldY + dy * 16 - 8], sizePx: [16, 16], frame });
+          }
+        });
         const staticChunkList = [...staticChunks.values()];
         const debugLayer = createSprite2DLayer(debugAtlas, { pivot: [0.5, 0.5] });
         const pivotMarkerLayer = createSprite2DLayer(pivotAtlas, { pivot: [0.5, 0.5] });
         debugLayer.order = OVERLAY_RENDER_ORDER;
+        debugLayer.visible = diagnosticsEnabled;
         pivotMarkerLayer.order = OVERLAY_RENDER_ORDER + 1;
         const actorLayers = { rat: Array.from({ length: 40 }, () => ({ shadow: createSprite2DLayer(enemyAtlas, { pivot: [0.5, 0.5] }), main: createSprite2DLayer(enemyAtlas, { pivot: [0.5, 0.5] }) })), skeleton: Array.from({ length: 40 }, () => ({ shadow: createSprite2DLayer(enemyAtlas, { pivot: [0.5, 0.5] }), main: createSprite2DLayer(enemyAtlas, { pivot: [0.5, 1] }) })) };
         const itemLayers = Array.from({ length: 40 }, () => ({ shadow: createSprite2DLayer(pickupShadowAtlas, { pivot: [0.5, 0.5] }), main: createSprite2DLayer(itemAtlas, { pivot: [0.5, 0.5] }) }));
@@ -619,7 +682,7 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
         const particles = particleLayers.map((layer) => addSprite2D(layer, { positionPx: [-10000,-10000], sizePx: [32,32], frame: 0 }));
         const projectiles = projectileLayers.map((layer) => addSprite2D(layer, { positionPx: [-10000,-10000], sizePx: [16,16], frame: 1 }));
         const projectileStartedAt = new Map<string, number>();
-        const staticLayers = staticChunkList.flatMap((chunk) => [chunk.terrain, chunk.walls]);
+        const staticLayers = staticChunkList.flatMap((chunk) => [chunk.terrain, ...chunk.walls.values()]);
         const viewLayers = [...staticLayers, ...triggerLayers, debugLayer, ...itemLayers.flatMap((layers) => [layers.shadow, layers.main]), ...chestLayers.flatMap((layers) => [layers.shadow, layers.main]), ...closedCrateLayers, ...openCrateLayers, ...doorLayers, ...barrelLayers.flatMap((layers) => [layers.shadow, layers.main]), ...goldCoinLayers.flatMap((layers) => [layers.shadow, layers.main]), ...chestCoinLayers, ...torchLayers, ...trapLayers, ...campfireLayers, ...stairLayers, ...projectileLayers, ...particleLayers, ...actorLayers.rat.flatMap((layers) => [layers.shadow, layers.main]), ...actorLayers.skeleton.flatMap((layers) => [layers.shadow, layers.main]), ...(playerLayers ? [playerLayers.shadow, playerLayers.main] : []), pivotMarkerLayer];
         // Terrain and overlays use fixed passes. Every participating world layer
         // receives a shared order below, while its own sprites retain stable Y sort.
@@ -650,13 +713,22 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
           const mapScale = Math.min(renderWidth / mapWidth, renderHeight / mapHeight) * 0.92;
           const cameraTransform = cameraTransformRef.current;
           const viewScale = isMinimap ? mapScale : scale * cameraTransform.scale * (window.devicePixelRatio || 1);
-          const rect = host.getBoundingClientRect(); const cameraCenter = isMinimap ? state.player : getViewCenter(rect, state); if (!isMinimap) { renderedCameraCenterRef.current = cameraCenter; renderedProjectionRef.current = { rect, center: cameraCenter, tileCssSize: cellSizeAt(rect) }; }
+          const rect = host.getBoundingClientRect(); const cameraCenter = isMinimap ? state.player : getViewCenter(rect, state); if (!isMinimap) {
+            const tileCssSize = cellSizeAt(rect);
+            renderedCameraCenterRef.current = cameraCenter;
+            renderedProjectionRef.current = { rect, center: cameraCenter, tileCssSize };
+            const projectionKey = [rect.left, rect.top, rect.width, rect.height, cameraCenter.x, cameraCenter.y, tileCssSize].join("|");
+            if (pathOverlayProjectionKeyRef.current !== projectionKey) {
+              pathOverlayProjectionKeyRef.current = projectionKey;
+              refreshPathOverlay((revision) => revision + 1);
+            }
+          }
           if (!isMinimap && onWallAdjacentBarrelOffscreen) {
             const tileCss = cellSizeAt(rect); const halfWidth = rect.width / tileCss / 2; const halfHeight = rect.height / tileCss / 2;
             for (const set of state.floor.objectSets ?? []) {
               const barrelOffscreen = isPositionOffscreen(set.barrel, cameraCenter, halfWidth, halfHeight);
               const startOffscreen = Boolean(set.barrelStart && isPositionOffscreen(set.barrelStart, cameraCenter, halfWidth, halfHeight));
-              if (barrelOffscreen && startOffscreen && isBarrelAdjacentToWall(state.floor, set.barrel) && !recoveredBarrelIdsRef.current.has(set.id) && onWallAdjacentBarrelOffscreen(set.id)) recoveredBarrelIdsRef.current.add(set.id);
+              if (barrelOffscreen && startOffscreen && isBlockingPathCell(state.floor, set.barrel) && !recoveredBarrelIdsRef.current.has(set.id) && onWallAdjacentBarrelOffscreen(set.id)) recoveredBarrelIdsRef.current.add(set.id);
             }
           }
           const centerX = cameraCenter.x * 32 + 16;
@@ -678,8 +750,9 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
           const addPickupDepth = (id: string, y: number, pickup: CharacterSprite) => worldDepthEntries.push({ id, pass: GRID_RENDER_PASS.world, y, tieBreak: WORLD_TIE_BREAK.pickup, applyOrder: (order) => setCharacterSpriteOrder(pickup, order) });
           const basePlayerHeading = turnPresentation?.headingOf("player", state.player.heading ?? "e") ?? state.player.heading ?? "e";
           const playerHeading = latestRef.current.stairDescentStartedAt !== null ? stairDescentHeading(basePlayerHeading) : basePlayerHeading;
-          const desiredIdleAnimation = heroWarriorIdleAnimationForHeading(playerHeading);
-          if (activeHeroAnimation.getState().animation !== desiredIdleAnimation) activeHeroAnimation.selectAnimation(desiredIdleAnimation);
+          const desiredAnimation = latestRef.current.stairDescentStartedAt === null && turnPresentation?.isPlayerTraveling() ? heroWarriorRunAnimationForHeading(playerHeading) : heroWarriorIdleAnimationForHeading(playerHeading);
+          if (activeHeroAnimation.getState().animation !== desiredAnimation) activeHeroAnimation.selectAnimation(desiredAnimation);
+          if (!isMinimap && hostRef.current) hostRef.current.dataset.playerAnimation = activeHeroAnimation.getState().animation;
           const activeHeroFrame = activeHeroAnimation.getState().frame;
           const playerPosition = turnPresentation?.playerPositionOf(state.player) ?? state.player;
           const departureElapsed = latestRef.current.stairDescentStartedAt === null ? 0 : now - latestRef.current.stairDescentStartedAt - CHARACTER_MOVEMENT_DURATION_MS;
@@ -692,10 +765,13 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
           const dynamicVisible = (position: { x: number; y: number }) => isMinimap || isWorldCellVisible(position, visibleBounds);
           staticChunkList.forEach((chunk) => {
             const visible = isMinimap || isWorldChunkVisible(chunk, visibleBounds);
-            chunk.terrain.visible = visible; chunk.walls.visible = visible;
-            if (visible) addLayerDepth(`wall-chunk-${chunk.minX}-${chunk.minY}`, (chunk.maxY + 1) * 32, WORLD_TIE_BREAK.wall, chunk.walls);
+            chunk.terrain.visible = visible;
+            chunk.walls.forEach((wallLayer, wallY) => {
+              wallLayer.visible = visible;
+              if (visible) addLayerDepth(`wall-row-${chunk.minX}-${wallY}`, (wallY + 1) * 32, WORLD_TIE_BREAK.wall, wallLayer);
+            });
           });
-          const byKind: Record<string, typeof world.actors> = { rat: world.actors.filter((actor) => actor.kind === "rat" && dynamicVisible(actor)), skeleton: world.actors.filter((actor) => actor.kind === "skeleton" && dynamicVisible(actor)) };
+          const detectedNow = detectedEnemyIds(state); const byKind: Record<string, typeof world.actors> = { rat: world.actors.filter((actor) => detectedNow.has(actor.id) && actor.kind === "rat" && dynamicVisible(actor)), skeleton: world.actors.filter((actor) => detectedNow.has(actor.id) && actor.kind === "skeleton" && dynamicVisible(actor)) };
           visibleEnemyAnimationKeys = new Set((Object.keys(byKind) as EnemyIdleAnimationName[]).filter((key) => byKind[key].length > 0));
           for (const key of Object.keys(actors) as EnemyIdleAnimationName[]) { const frame = activeEnemyAnimations[key].getState().frame; actors[key].forEach((character, i) => { const actor = byKind[key][i]; const position = actor && turnPresentation?.positionOf(actor.id, actor); const visible = Boolean(position); actorLayers[key][i].main.visible = visible; actorLayers[key][i].shadow.visible = visible; if (!position) { hideCharacterSprite(character); updatePivotMarkers(actorPivotMarkers[key][i], character, [-10000, -10000], false); return; } const positionPx: [number, number] = [position.x * 32 + 16, position.y * 32 + 16]; const movementPulse = isMinimap ? 0 : turnPresentation?.movementPulseOf(actor.id, now) ?? 0; const damageScale = isMinimap ? 1 : turnPresentation?.damageScaleOf(actor.id, now) ?? 1; updateCharacterSprite(character, positionPx, 0, { sizePx: [frame.widthPx * damageScale, frame.heightPx * damageScale], frame: enemyFrameIndexes.get(frame.path) ?? 0, flipX: actor?.heading === "w" }, movementPulse); addCharacterDepth(actor.id, groundContactY(position), character, turnPresentation?.bumpDepthTieBreakOf(actor.id, now) ?? 0); updatePivotMarkers(actorPivotMarkers[key][i], character, positionPx, pivotsVisible); }); }
           const itemObjects = world.objects.filter((entity) => (entity.kind === "item" || entity.kind === "potion" || entity.kind === "key" || entity.kind === "discovery") && dynamicVisible(entity));
@@ -863,10 +939,13 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
     width: selectedCell.pressed ? reticleCellSize : selectedCell.size,
     height: selectedCell.pressed ? reticleCellSize : selectedCell.size,
   } : null;
+  const mousePathDots = mouseInteraction && worldAlive && selectedCell && mousePath && rect
+    ? mousePath.slice(1).filter((cell) => !(cell.x === selectedCell.x && cell.y === selectedCell.y && targetKindAt(cell.x, cell.y) === "item")).map((cell) => ({ cell, kind: targetKindAt(cell.x, cell.y), ...getWorldCellScreenCenter({ x: cell.x, y: cell.y, center: getViewCenter(rect), viewportWidth: rect.width, viewportHeight: rect.height, tileCssSize: reticleCellSize }) }))
+    : [];
   const feedbackRect = hostRef.current?.getBoundingClientRect();
   const feedbackCenter = feedbackRect && !minimap ? getViewCenter(feedbackRect) : null;
   const feedbackCellSize = feedbackRect ? cellSizeAt(feedbackRect) : 32;
-  const hoveredEnemy = mouseInteraction && selectedCell && !selectedCell.pressed ? campaign.floor.entities.find((entry): entry is Enemy => entry.kind === "enemy" && entry.x === selectedCell.x && entry.y === selectedCell.y) : null;
+  const hoveredEnemy = mouseInteraction && selectedCell && !selectedCell.pressed ? campaign.floor.entities.find((entry): entry is Enemy => entry.kind === "enemy" && detected.has(entry.id) && entry.x === selectedCell.x && entry.y === selectedCell.y) : null;
   useEffect(() => {
     if (hoveredEnemy) {
       setTooltipEnemy(hoveredEnemy);
@@ -903,7 +982,7 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
       if (!host || !panel) return;
       const rect = host.getBoundingClientRect(); const size = cellSizeAt(rect); const center = getViewCenter(rect);
       const cellRect = (x: number, y: number) => { const point = getWorldCellScreenCenter({ x, y, center, viewportWidth: rect.width, viewportHeight: rect.height, tileCssSize: size }); return { left: rect.left + point.left - size / 2, top: rect.top + point.top - size / 2, width: size, height: size }; };
-      setCampfireMenuPosition(findWorldTooltipPosition(rect, { width: panel.offsetWidth, height: panel.offsetHeight }, [cellRect(campfireMenu.x, campfireMenu.y), cellRect(campaign.player.x, campaign.player.y)], 2));
+      setCampfireMenuPosition(findWorldTooltipPosition(rect, { width: panel.offsetWidth, height: panel.offsetHeight }, [cellRect(campfireMenu.x, campfireMenu.y), cellRect(campaign.player.x, campaign.player.y)], size + 8));
     };
     update(); const observer = new ResizeObserver(update);
     if (hostRef.current) observer.observe(hostRef.current);
@@ -912,12 +991,14 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
     return () => { observer.disconnect(); window.removeEventListener("resize", update); };
   }, [campfireMenu, campaign.player.x, campaign.player.y, zoom, camera]);
   const offsets = new Map();
-  const chestSprites = null;
-  const reticleKind = selectedCellReachable === false ? "invalid" : targetKindAt(selectedCell?.x, selectedCell?.y);
+  const pathDotSize = reticleCellSize / 32 * 4;
+  const chestSprites = mousePathDots.map(({ cell, kind, left, top }) => <i key={`${cell.x},${cell.y}`} className={`world-view__path-dot${kind === "item" ? " world-view__path-dot--interactive" : ""}`} style={{ left, top, width: pathDotSize, height: pathDotSize }} aria-hidden="true" />);
+  const targetKind = targetKindAt(selectedCell?.x, selectedCell?.y);
+  const reticleKind = targetKind === "item" || targetKind === "enemy" ? targetKind : selectedCellReachable === false ? "invalid" : targetKind;
   const finishIrisPhase = (phase: UiIrisPhase) => {
     if (phase === "closing") {
       setIrisPhase("closed");
-      if (campfireRestTransition) onCampfireRestClosed?.();
+      if (campfireRestTransition) { setCampfireRestPhase("resting"); onCampfireRestClosed?.(); }
       if (stairDepartureAwaitingIrisRef.current) {
         // The iris is now fully closed, so the old player can be released
         // before the game installs the next floor.
@@ -928,7 +1009,7 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
       }
     }
     if (phase === "opening") {
-      setIrisPhase("open"); setIrisMounted(false); setIrisRequested(false);
+      setIrisPhase("open"); setIrisMounted(false); setIrisRequested(false); setCampfireRestPhase("idle");
       if (stairCutsceneActiveRef.current) {
         cutsceneOpeningTimerRef.current = window.setTimeout(() => {
           cutsceneOpeningTimerRef.current = null;
@@ -952,5 +1033,11 @@ export function BabylonWorld({ campaign, theme = 1, zoom = 1, minimap = false, c
   const passiveMounted = cutsceneMounted;
   const passivePhase = cutscenePhase;
   const finishPassivePhase = finishCutscenePhase;
-  return <div tabIndex={-1} className={minimap ? "minimap-view" : "world-view"} ref={hostRef} data-renderer="babylon-lite" data-content-style="2d" onMouseMove={mouseInteraction && worldAlive ? pointerMove : undefined} onMouseLeave={mouseInteraction && worldAlive ? pointerLeave : undefined} onMouseDown={mouseInteraction && worldAlive ? pointerDown : undefined} onMouseUp={mouseInteraction && worldAlive ? pointerUp : undefined} onWheel={mouseInteraction && worldAlive ? (event) => { event.preventDefault(); onZoom?.(event.deltaY < 0 ? 1 : -1); } : undefined} onContextMenu={mouseInteraction && worldAlive ? (event) => event.preventDefault() : undefined}><canvas tabIndex={-1} ref={canvasRef} className={minimap ? "minimap-view__canvas" : "world-view__canvas"} aria-label={minimap ? "Dungeon minimap" : "Pixel-perfect dungeon map"}/>{!minimap && resourceChangeEffects.map((effect) => <i key={effect.id} className={`world-view__resource-change-effect world-view__resource-change-effect--${effect.color}`} aria-hidden="true" />)}{chestSprites}{worldAlive && !minimap && feedbackCenter && floatingFeedback.map((effect) => { const key = `${effect.x},${effect.y}`; const index = offsets.get(key) ?? 0; offsets.set(key, index + 1); const position = getWorldScreenPosition({ x: effect.x, y: effect.y, center: feedbackCenter, viewportWidth: feedbackRect!.width, viewportHeight: feedbackRect!.height, tileCssSize: feedbackCellSize }); const zoomScale = typeof zoom === "number" ? zoom : 1; return <span key={effect.id} className={`world-view__floating-text world-view__floating-text--${effect.color} world-view__floating-text--${effect.kind}`} style={{ left: position.left, top: position.top - index * 12 * zoomScale, fontSize: `${14 * zoomScale}px`, "--world-floating-travel": `${11 * zoomScale}px` } as CSSProperties} aria-hidden="true">{effect.text}</span>; })}{tooltipEnemy && !minimap && <section ref={tooltipRef} className="world-view__enemy-tooltip" aria-label={`${tooltipEnemy.name} information`} style={{ left: tooltipPosition?.left ?? -10000, top: tooltipPosition?.top ?? -10000, visibility: tooltipPosition ? "visible" : "hidden", ...tooltipMotion }}><div className="world-view__enemy-tooltip-section world-view__enemy-tooltip-section--portrait"><h2>Enemy: {tooltipEnemy.name}</h2><div className={`world-view__enemy-tooltip-portrait-box world-view__enemy-tooltip-portrait-box--${tooltipEnemy.name.toLowerCase()}`}><img src={tooltipEnemy.name === "Skeleton" ? texturePaths.skeleton : texturePaths.rat} alt="" /></div></div><div className="world-view__enemy-tooltip-section world-view__enemy-tooltip-section--resource-panel"><h2>RESOURCES</h2><EnemyResourceRows resources={tooltipEnemy.resources} /></div></section>}{campfireMenu && !minimap && <section ref={campfireMenuRef} className="world-view__campfire-menu" aria-label="Campfire menu" style={{ left: campfireMenuPosition?.left ?? -10000, top: campfireMenuPosition?.top ?? -10000, visibility: campfireMenuPosition ? "visible" : "hidden" }} onMouseDown={(event) => event.stopPropagation()}><h2>Campfire</h2><p className={campfireRestConfirming ? "world-view__campfire-menu-rest--confirming" : "world-view__campfire-menu-rest"}>Bump again to rest<br /><i>Or walk away to cancel</i></p></section>}{mouseInteraction && worldAlive && selectedCell && reticleStyle && <i className={`world-view__grid-reticle world-view__grid-reticle--${reticleKind}`} style={reticleStyle}>{showPivotPoints && <span className="world-view__grid-reticle-code" aria-hidden="true">({String(selectedCell.y).padStart(2, "0")},{String(selectedCell.x).padStart(2, "0")})</span>}</i>}{!minimap && passiveMounted && <UiPassiveTransition phase={passivePhase} onPhaseComplete={finishPassivePhase} />}{!minimap && irisMounted && <UiIrisTransition phase={irisPhase} label={message} onPhaseComplete={finishIrisPhase} />}{!minimap && irisPhase === "open" && !rendererLoaded && message && <div role="status" className={minimap ? "minimap-view__message" : "world-view__message"}>{message}</div>}</div>;
+  const interactionColorStyle = {
+    "--interaction-valid-color": INTERACTION_COLORS.valid,
+    "--interaction-interactive-color": INTERACTION_COLORS.interactive,
+    "--interaction-enemy-color": INTERACTION_COLORS.enemy,
+    "--interaction-invalid-color": INTERACTION_COLORS.invalid,
+  } as CSSProperties;
+  return <div tabIndex={-1} className={minimap ? "minimap-view" : "world-view"} ref={hostRef} style={interactionColorStyle} data-player-pixel-x={campaign.player.pixel?.x} data-player-pixel-y={campaign.player.pixel?.y} data-game-mode={minimap ? undefined : gameMode(campaign)} data-cursor={mouseInteraction ? resolveWorldCursor(campaign, selectedCell, selectedCellReachable, detected, mousePath) : undefined} aria-label={minimap ? "Minimap" : `Game view, ${gameMode(campaign)} mode`} data-renderer="babylon-lite" data-content-style="2d" onMouseMove={mouseInteraction && worldAlive ? pointerMove : undefined} onMouseLeave={mouseInteraction && worldAlive ? pointerLeave : undefined} onMouseDown={mouseInteraction && worldAlive ? pointerDown : undefined} onMouseUp={mouseInteraction && worldAlive ? pointerUp : undefined} onWheel={mouseInteraction && worldAlive ? (event) => { event.preventDefault(); onZoom?.(event.deltaY < 0 ? 1 : -1); } : undefined} onContextMenu={mouseInteraction && worldAlive ? (event) => event.preventDefault() : undefined}><canvas tabIndex={-1} ref={canvasRef} className={minimap ? "minimap-view__canvas" : "world-view__canvas"} aria-label={minimap ? "Dungeon minimap" : "Pixel-perfect dungeon map"}/>{!minimap && resourceChangeEffects.map((effect) => <i key={effect.id} className={`world-view__resource-change-effect world-view__resource-change-effect--${effect.color}`} aria-hidden="true" />)}{chestSprites}{worldAlive && !minimap && feedbackCenter && floatingFeedback.map((effect) => { const key = `${effect.x},${effect.y}`; const index = offsets.get(key) ?? 0; offsets.set(key, index + 1); const position = getWorldScreenPosition({ x: effect.x, y: effect.y, center: feedbackCenter, viewportWidth: feedbackRect!.width, viewportHeight: feedbackRect!.height, tileCssSize: feedbackCellSize }); const zoomScale = typeof zoom === "number" ? zoom : 1; return <span key={effect.id} className={`world-view__floating-text world-view__floating-text--${effect.color} world-view__floating-text--${effect.kind}`} style={{ left: position.left, top: position.top - index * 12 * zoomScale, fontSize: `${14 * zoomScale}px`, "--world-floating-travel": `${11 * zoomScale}px` } as CSSProperties} aria-hidden="true">{effect.text}</span>; })}{tooltipEnemy && detected.has(tooltipEnemy.id) && !minimap && <section ref={tooltipRef} className="world-view__enemy-tooltip" aria-label={`${tooltipEnemy.name} information`} style={{ left: tooltipPosition?.left ?? -10000, top: tooltipPosition?.top ?? -10000, visibility: tooltipPosition ? "visible" : "hidden", ...tooltipMotion }}><div className="world-view__enemy-tooltip-section world-view__enemy-tooltip-section--portrait"><h2>Enemy: {tooltipEnemy.name}</h2><div className={`world-view__enemy-tooltip-portrait-box world-view__enemy-tooltip-portrait-box--${tooltipEnemy.name.toLowerCase()}`}><img src={tooltipEnemy.name === "Skeleton" ? texturePaths.skeleton : texturePaths.rat} alt="" /></div></div><div className="world-view__enemy-tooltip-section world-view__enemy-tooltip-section--resource-panel"><h2>RESOURCES</h2><EnemyResourceRows resources={tooltipEnemy.resources} /></div></section>}{campfireMenu && !minimap && <section ref={campfireMenuRef} className="world-view__campfire-menu item-comparison-panel" aria-label="Interact" style={{ left: campfireMenuPosition?.left ?? -10000, top: campfireMenuPosition?.top ?? -10000, visibility: campfireMenuPosition ? "visible" : "hidden" }} onMouseDown={(event) => event.stopPropagation()}><GameCard title="Interact" className="world-view__campfire-menu-panel"><h3>Campfire</h3><p className="world-view__campfire-menu-body"><i>Spend {REST_GOLD_COST} gold to rest</i></p><button type="button" className={`world-view__campfire-menu-rest${campfireRestConfirming ? " world-view__campfire-menu-rest--confirming" : ""}`} disabled={campaign.counters.gold < REST_GOLD_COST} aria-disabled="true" onClick={() => { if (campaign.counters.gold >= REST_GOLD_COST) { setCampfireMenuPosition(null); onCampfireRestRequested?.(); } }}>Bump to rest<br /><i>(walk to cancel)</i></button></GameCard></section>}{mouseInteraction && worldAlive && selectedCell && reticleStyle && <i className={`world-view__grid-reticle world-view__grid-reticle--${reticleKind}`} style={reticleStyle}>{showPivotPoints && <span className="world-view__grid-reticle-code" aria-hidden="true">({String(selectedCell.y).padStart(2, "0")},{String(selectedCell.x).padStart(2, "0")})</span>}</i>}{!minimap && passiveMounted && <UiPassiveTransition phase={passivePhase} onPhaseComplete={finishPassivePhase} />}{!minimap && irisMounted && <UiIrisTransition phase={irisPhase} label={campfireRestPhase === "resting" ? campfireRestMessage : undefined} onPhaseComplete={finishIrisPhase} />}{!minimap && irisPhase === "open" && !rendererLoaded && message && <div role="status" className={minimap ? "minimap-view__message" : "world-view__message"}>{message}</div>}</div>;
 }

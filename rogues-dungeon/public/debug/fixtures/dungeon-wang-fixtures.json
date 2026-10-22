@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "tileset": "../assets/art/vendors/dungeons-and-pixels-v1.4/tiled-examples/tilesets/tileset-dungeon.tsx",
+  "wangOrder": ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
+  "layerContract": ["Grounds", "Walls", "Pickups", "Decorations"],
+  "fixtures": [
+    { "id": "solid-room", "topology": "room-perimeter", "ruleFamily": "Room frame", "expected": { "outerCorners": [0, 5, 48, 53], "outerFaces": [1, 12, 17, 52], "interior": 13 } },
+    { "id": "room-diagonal-void", "topology": "room-inner-corner", "ruleFamily": "Void frame", "expected": { "localTiles": [6, 7, 8, 18, 19, 20, 30, 31, 32] } },
+    { "id": "corridor-widths", "topology": "corridor-width", "ruleFamily": "Generated wall boundary", "expected": { "widths": [1, 2, 3], "exactWallTiles": { "112": 5, "64": 17 } } },
+    { "id": "corridor-bends", "topology": "corridor-bend", "ruleFamily": "Generated wall boundary", "expected": { "requires": ["outer-corner", "inner-corner", "continuous-edge"] } },
+    { "id": "corridor-junctions", "topology": "corridor-junction", "ruleFamily": "Generated wall boundary", "expected": { "requires": ["t-junction", "plus-junction", "intentional-opening"] } },
+    { "id": "room-sockets", "topology": "room-corridor-socket", "ruleFamily": "Generated wall boundary", "expected": { "cornerClearance": 1, "requires": ["room-opening", "continuous-room-wall"] } },
+    { "id": "layered-joins", "topology": "layered-corridor-join", "ruleFamily": "Generated wall boundary", "expected": { "requires": ["bridge-join", "inner-core", "outer-room"] } },
+    { "id": "start-room", "topology": "start-room-boundary", "ruleFamily": "Room frame", "expected": { "interior": 13, "noObstacleCenterArt": true } },
+    { "id": "deep-void", "topology": "deep-void", "ruleFamily": "Void frame", "expected": { "deepCells": "empty-or-explicit-boundary" } },
+    { "id": "unsupported-probe", "topology": "unsupported", "ruleFamily": "Generated wall boundary", "expected": { "diagnostic": true, "nearestFallback": false } }
+  ]
+}

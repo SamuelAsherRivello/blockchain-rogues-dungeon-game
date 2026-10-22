@@ -101,7 +101,8 @@ test('mounts the dungeon and minimap in Babylon Lite from the same world compone
   assert.match(source, /const staticChunkSize = 16/);
   assert.match(source, /const staticChunks = new Map/);
   assert.match(source, /applyWorldDepth\(worldDepthEntries\)/);
-  assert.match(source, /addLayerDepth\(`wall-chunk-\$\{chunk\.minX\}-\$\{chunk\.minY\}`/);
+  assert.match(source, /chunk\.walls\.forEach\(\(wallLayer, wallY\) =>/);
+  assert.match(source, /addLayerDepth\(`wall-row-\$\{chunk\.minX\}-\$\{wallY\}`/);
   assert.match(source, /addCharacterDepth\("player", groundContactY\(playerDepthPosition\), playerSprite, turnPresentation\?\.bumpDepthTieBreakOf\("player", now\) \?\? 0\)/);
   assert.match(source, /addCharacterDepth\(actor\.id, groundContactY\(position\), character, turnPresentation\?\.bumpDepthTieBreakOf\(actor\.id, now\) \?\? 0\)/);
   assert.match(source, /addCharacterDepth\(entity\.id, groundContactY\(position\), barrel\)/);
@@ -127,7 +128,7 @@ test('mounts the dungeon and minimap in Babylon Lite from the same world compone
 test('uses controller-derived path availability to render an unreachable mouse reticle as black', async () => {
   const world = await readFile(new URL('../src/systems/rendering/babylon-render-system.tsx', import.meta.url), 'utf8');
   const game = await readFile(new URL('../src/game/game.tsx', import.meta.url), 'utf8');
-  assert.match(game, /getMousePathFromSelectedCell\(selectedGridSpot, campaign\)/);
+  assert.match(game, /getMousePathResult\(selectedGridSpot, campaign\)/);
   assert.match(game, /selectedCellReachable=\{selectedCellReachable\}/);
   assert.match(world, /selectedCellReachable === false \? "invalid"/);
   assert.match(world, /world-view__grid-reticle--\$\{reticleKind\}/);

@@ -1,6 +1,6 @@
 import type { AbilityId, Attributes, Campaign, Floor, Item, Position, Preferences, ResourceInput, ResourceName, StorageAccess, StorageCollection } from "../../game/types.ts";
 interface LegacyItem { id?: string; name?: string; slot?: string; defense?: number; attack?: number }
-type LegacyAttributes = Partial<Attributes> & { agility?: number };
+type LegacyAttributes = Partial<Attributes> & { agility?: number; vitality?: number };
 interface LegacyCampaign extends Omit<Campaign, "player" | "progression"> {
   time?: number; pending?: { sneaking?: boolean };
   player: Position & { hp?: number; maxHp?: number; resources?: ResourceInput; equipment: Record<string, LegacyItem | null>; sneaking?: boolean };
@@ -18,7 +18,7 @@ const BACKUP_PREFIX = "rogues-dungeon.slot.v1-backup.";
 const PREFERENCE_KEY = "rogues-dungeon.preferences.v1";
 const WORLD_SEED_KEY = "rogues-dungeon.world-seed.v1";
 export const SLOT_IDS = Object.freeze(["1", "2", "3"]);
-export const DEFAULT_PREFERENCES: Readonly<Preferences> = Object.freeze({ zoom: 1, camera: "center", fullscreenDesired: false, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
+export const DEFAULT_PREFERENCES: Readonly<Preferences> = Object.freeze({ movementMode: "grid-tween", zoom: 1, camera: "center", fullscreenDesired: false, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
 const DEFAULT_ABILITIES: readonly (AbilityId | null)[] = Object.freeze(["heal", "wand", null]);
 
 function normalizeAbilityBindings(value: { player?: { abilities?: (AbilityId | null)[] } }) {
@@ -90,7 +90,7 @@ function currentAttributesFromLegacy(attributes: LegacyAttributes = {}) {
   return {
     health: Math.max(1, Number(attributes.health ?? 1)), stamina: Math.max(1, Number(attributes.stamina ?? 1)),
     offense: Math.max(1, Number(attributes.offense ?? 1)), defense: Math.max(1, Number(attributes.defense ?? 1)), mana: Math.max(1, Number(attributes.mana ?? 1)),
-    vitality: Math.max(0, Number(attributes.vitality ?? 0)), strength: Math.max(0, Number(attributes.strength ?? 0)),
+    perception: Math.max(0, Number(attributes.perception ?? attributes.vitality ?? 0)), strength: Math.max(0, Number(attributes.strength ?? 0)),
     luck: Math.max(0, Number(attributes.luck ?? 0)), recovery: Math.max(0, Number(attributes.recovery ?? 0)),
     stealth: Math.max(1, Number(attributes.stealth ?? attributes.agility ?? 1)),
   };
@@ -141,7 +141,7 @@ export function migrateCampaign(value: unknown): Campaign {
   const stats = value.progression.stats;
   const oldHealth = stats.health ?? stats.vitality ?? value.player.maxHp ?? 25;
   const oldStamina = stats.stamina ?? 25;
-  next.progression = { attributes: { ...next.progression.attributes, ...currentAttributesFromLegacy(stats) }, level: value.progression.level ?? 1, xp: value.progression.xp ?? 0, nextXp: 100, totalKills: value.progression.totalKills ?? 0, difficulty: level, attributePoints: 0 };
+  next.progression = { attributes: { ...next.progression.attributes, ...currentAttributesFromLegacy({ ...stats, vitality: undefined }) }, level: value.progression.level ?? 1, xp: value.progression.xp ?? 0, nextXp: 100, totalKills: value.progression.totalKills ?? 0, difficulty: level, attributePoints: 0 };
   const legacyResources: ResourceInput = { health: value.player.resources?.health ?? value.player.hp ?? oldHealth, stamina: value.player.resources?.stamina ?? oldStamina, mana: value.player.resources?.mana ?? 20 }; next.player.resources = createResourcesModel(Object.fromEntries(Object.entries(legacyResources).map(([name, value]) => [name, typeof value === "number" ? { current: value } : value])));
   const legacy = legacyEquipmentItems(value.player.equipment);
   const armor = legacy.filter((item) => item.group === "armor"); const weapons = legacy.filter((item) => item.group === "weapons");
@@ -152,7 +152,7 @@ export function migrateCampaign(value: unknown): Campaign {
   next.objective = value.objective ?? next.objective;
   next.log = [];
   expandUndersizedFloor(next);
-  rebuildBalanceProfile(next, stats, value.player.resources);
+  rebuildBalanceProfile(next, { ...stats, vitality: undefined }, value.player.resources);
   next.quest = normalizeQuest(next.quest);
   return upgradeCampaignResources(next);
 }
@@ -209,6 +209,6 @@ export function formatSavedAgo(savedAt: number | undefined, now = Date.now()) {
 }
 export function readSlotSummary(storage: StorageAccess) { return SLOT_IDS.map((slot) => { try { const state = readSlot(storage, slot); return { slot, occupied: Boolean(state), level: state?.floor.level ?? state?.floor.depth ?? null, xpLevel: state?.progression.level ?? null, savedAt: state?.savedAt }; } catch (error) { return { slot, occupied: true, invalid: true, error: error instanceof Error ? error.message : String(error) }; } }); }
 function normalizeVolume(value: unknown, fallback: number) { return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 100 ? value : fallback; }
-export function normalizePreferences(input: unknown): Preferences { const value = typeof input === "object" && input !== null ? input as Record<string, unknown> : {}; return { zoom: typeof value.zoom === "number" && gameZoomPresets.includes(value.zoom) ? value.zoom : DEFAULT_PREFERENCES.zoom, camera: typeof value.camera === "string" && ["center", "deadzone", "screen"].includes(value.camera) ? value.camera as Preferences["camera"] : DEFAULT_PREFERENCES.camera, fullscreenDesired: value?.fullscreenDesired === true, sfxVolume: normalizeVolume(value?.sfxVolume, DEFAULT_PREFERENCES.sfxVolume), musicVolume: normalizeVolume(value?.musicVolume, DEFAULT_PREFERENCES.musicVolume), muteAll: value?.muteAll === true, urlArgs: value?.urlArgs === true }; }
+export function normalizePreferences(input: unknown): Preferences { const value = typeof input === "object" && input !== null ? input as Record<string, unknown> : {}; return { movementMode: ["grid-snap", "grid-tween", "gridless"].includes(String(value.movementMode)) ? value.movementMode as Preferences["movementMode"] : DEFAULT_PREFERENCES.movementMode, zoom: typeof value.zoom === "number" && gameZoomPresets.includes(value.zoom) ? value.zoom : DEFAULT_PREFERENCES.zoom, camera: typeof value.camera === "string" && ["center", "deadzone", "screen"].includes(value.camera) ? value.camera as Preferences["camera"] : DEFAULT_PREFERENCES.camera, fullscreenDesired: value?.fullscreenDesired === true, sfxVolume: normalizeVolume(value?.sfxVolume, DEFAULT_PREFERENCES.sfxVolume), musicVolume: normalizeVolume(value?.musicVolume, DEFAULT_PREFERENCES.musicVolume), muteAll: value?.muteAll === true, urlArgs: value?.urlArgs === true }; }
 export function readPreferences(storage: StorageAccess) { try { return normalizePreferences(JSON.parse(storage.getItem(PREFERENCE_KEY) ?? "null")); } catch { return { ...DEFAULT_PREFERENCES }; } }
 export function writePreferences(storage: StorageAccess, value: unknown) { const normalized = normalizePreferences(value); storage.setItem(PREFERENCE_KEY, JSON.stringify(normalized)); return normalized; }

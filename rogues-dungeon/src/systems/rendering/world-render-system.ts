@@ -1,6 +1,6 @@
 import type { Direction, Entity, FloorTriggerDoorBarrelSet, MassBearingPosition, Position, TerrainCell, WorldDecoration } from "../../game/types.ts";
 type RenderGrid = number[][] | TerrainCell[][];
-interface WangEntry extends Position { mask: number; worldX: number; worldY: number; frame: number | null; floorFrame?: number | null }
+interface WangEntry extends Position { mask: number; worldX: number; worldY: number; frame: number | null; floorFrame?: number | null; quarters?: import("./tileset-wang-rules.ts").WallQuarter[] }
 interface WangModel { tileSize: number; terrain: WangEntry[]; walls: WangEntry[]; diagnostics: Omit<WangEntry, "frame">[]; wallDiagnostics: Omit<WangEntry, "frame">[] }
 interface WorldOptions { map?: number[][] | null; cells?: TerrainCell[][] | null; entities?: Entity[]; decorations?: WorldDecoration[]; objectSets?: FloorTriggerDoorBarrelSet[]; player: MassBearingPosition; start?: Position; tileSize?: number; view?: string; detail?: string; groundTiles?: number[] | null; wallTiles?: number[] | null }
 interface Projection { center: Position; viewportWidth: number; viewportHeight: number; tileCssSize: number }
@@ -38,7 +38,7 @@ function applyTiledFrames(model: WangModel, grid: RenderGrid, groundTiles: numbe
       const walkable = legacyGrid ? grid[y]?.[x] === 0 : Boolean((grid as TerrainCell[][])[y]?.[x]?.walkable);
       if (gid <= 0 || (blocked && walkable) || (!blocked && !walkable)) continue;
       const prior = metadata.get(`${x},${y}`) ?? { x, y, mask: 0, worldX: x * tileSize + tileSize / 2, worldY: y * tileSize + tileSize / 2 };
-      entries.push({ ...prior, frame: gid - 1, floorFrame: gid - 1 });
+      entries.push({ ...prior, frame: gid - 1, floorFrame: gid - 1, quarters: "frame" in prior && prior.frame === gid - 1 ? prior.quarters : undefined });
     }
     return entries;
   };

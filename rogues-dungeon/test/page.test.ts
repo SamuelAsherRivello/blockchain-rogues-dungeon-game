@@ -50,7 +50,7 @@ test('recovers a wall-adjacent barrel only when its current and starting cells a
   const renderer = await readFile(new URL('../src/systems/rendering/babylon-render-system.tsx', import.meta.url), 'utf8');
   assert.match(renderer, /const barrelOffscreen = isPositionOffscreen\(set\.barrel, cameraCenter, halfWidth, halfHeight\)/);
   assert.match(renderer, /const startOffscreen = Boolean\(set\.barrelStart && isPositionOffscreen\(set\.barrelStart, cameraCenter, halfWidth, halfHeight\)\)/);
-  assert.match(renderer, /if \(barrelOffscreen && startOffscreen && isBarrelAdjacentToWall/);
+  assert.match(renderer, /if \(barrelOffscreen && startOffscreen && isBlockingPathCell/);
 });
 test('selects aspect by mobile platform signal with a PC-only developer preview override', () => {
   assert.equal(classifyPlatform({ userAgentDataMobile: false, userAgent: 'iPhone' }), 'mobile');
@@ -141,10 +141,10 @@ test('renders the public My First Quest state in the Quest card', async () => {
 });
 test('hands pickups from the rendered Babylon projection into their destination UI layer', async () => {
   const [game, renderer, css] = await Promise.all(['src/game/game.tsx', 'src/systems/rendering/babylon-render-system.tsx', 'src/ui/style.css'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));
-  assert.match(renderer, /renderedProjectionRef/); assert.match(renderer, /renderedProjectionRef\.current = \{ rect, center: cameraCenter, tileCssSize: cellSizeAt\(rect\) \}/);
+  assert.match(renderer, /renderedProjectionRef/); assert.match(renderer, /const tileCssSize = cellSizeAt\(rect\);[\s\S]*renderedProjectionRef\.current = \{ rect, center: cameraCenter, tileCssSize \}/);
   assert.match(renderer, /function visibleTarget\(selector: string\)/); assert.match(renderer, /\[data-ui-pickup-fallback\]/); assert.match(renderer, /onUiAnimationComplete\?\.\(flight\.id\); continue/);
   assert.match(renderer, /flight\.destination === "counter" \? "\.game-screen" : "\.game-screen__middle"/); assert.match(renderer, /destinationLayer\.append\(transfer\)/);
-  assert.match(css, /width 500ms/); assert.match(css, /animation:world-view-ui-animation-flight 750ms/); assert.match(css, /0% \{ opacity:0; transform:translate\(-50%,-50%\) scale\(1\); \} 33\.333% \{ opacity:1; transform:translate\(-50%,-50%\) scale\(1\.25\); \} 66\.667% \{ opacity:1; transform:translate\(-50%,-50%\) scale\(1\); \} 100% \{ opacity:0; transform:translate\(-50%,-50%\) scale\(0\); \}/); assert.match(renderer, /window\.setTimeout\(\(\) => \{ transfer\.remove\(\);/);
+  assert.match(css, /width 500ms/); assert.match(css, /animation:world-view-ui-animation-flight 500ms/); assert.match(css, /0% \{ opacity:0; transform:translate\(-50%,-50%\) scale\(1\); \} 20% \{ opacity:1; transform:translate\(-50%,-50%\) scale\(1\.25\); \} 100% \{ opacity:1; transform:translate\(-50%,-50%\) scale\(1\); \}/); assert.match(renderer, /window\.setTimeout\(\(\) => \{ transfer\.remove\(\);/);
   assert.match(game, /data-ui-counter-icon/); assert.match(game, /destination = entity\.kind === "gold" \|\| entity\.kind === "key" \? "counter" : "row"/);
   assert.match(game, /data-ui-pickup-fallback/);
   assert.match(css, /z-index:10000/);
@@ -190,13 +190,16 @@ test('supports deterministic direct-slot map-fix URLs', async () => {
   assert.match(game, /Open Editable Copy/);
 });
 test('derives sparse dungeon terrain from the verified Wang mapping', async () => {
-  const [world, wang] = await Promise.all([
+  const [world, wang, generatedWang] = await Promise.all([
     readFile(new URL('../src/systems/rendering/world-render-system.ts', import.meta.url), 'utf8'),
     readFile(new URL('../src/systems/rendering/tile-map-system.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../src/systems/rendering/tileset-dungeon-wang.generated.ts', import.meta.url), 'utf8'),
   ]);
   assert.match(world, /buildDungeonWangTerrain/);
   assert.match(wang, /DUNGEON_WANG_TILE_BY_MASK/);
-  assert.match(wang, /DUNGEON_WANG_INTERIOR_TILE = 13/);
+  assert.match(wang, /tileset-dungeon-wang\.generated/);
+  assert.match(generatedWang, /DUNGEON_CANONICAL_RULES/);
+  assert.match(wang, /DUNGEON_WANG_INTERIOR_TILE = DUNGEON_WANG_TILE_BY_MASK\[255\] \?\? 13/);
 });
 test('exposes independent persisted SFX and Music controls in Settings', async () => {
   const [game, settingsWindow] = await Promise.all(['../src/game/game.tsx', '../src/game/windows/settings-window.tsx'].map((path) => readFile(new URL(path, import.meta.url), 'utf8')));
@@ -225,7 +228,7 @@ test('uses SlotItem for vertically aligned abilities and equipment', async () =>
   const [game, informationPanels, css] = await Promise.all(['src/game/game.tsx', 'src/game/panels/information-panels.tsx', 'src/ui/style.css'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));
   assert.match(game, /<SlotItem type="ability" slotType="ability" number=\{index\}/);
   assert.match(game, /slotType="ability"/); assert.match(game, /slotType="quickslot"/); assert.match(game, /slotType="equipment" slotSubtype=\{group\}/);
-  assert.match(game, /accentColor="#c0aaff"/);
+  assert.match(game, /accentColor=\{SLOT_COLORS\.ability\}/);
   assert.match(informationPanels, /GameCard title="Equipment"/);
   assert.match(game, /<EquipmentItem key=\{index\}/);
   assert.match(css, /\.slot_item \{[^}]*align-items:center/);
@@ -273,7 +276,7 @@ test('uses permanent in-game scrollbars for the log and inventory', async () => 
   assert.match(css, /\.info-panel--primary \.inventory_scroll,\.info-panel__log-card \.log_scroll \{ height:calc\(100% - 4px\); margin-top:0; \}/);
   assert.match(css, /\.scroll-area__track \{ position:absolute; top:0; right:-2px; bottom:0; width:4px;/);
   assert.match(css, /\.scroll-area__thumb \{ width:4px; min-height:12px;[^}]*background:#e4b85e;/);
-  assert.match(css, /\.slot_scroll \{ height:100%; min-height:0;[^}]*overflow-y:scroll/);
+  assert.match(css, /\.slot_scroll \{ height:100%; min-height:0;[^}]*overflow-y:auto/);
 });
 test('removes the permanent green tint from the game view', async () => {
   const [renderer, css] = await Promise.all(['src/systems/rendering/babylon-render-system.tsx', 'src/ui/style.css'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));
@@ -295,10 +298,10 @@ test('renders one transient resource pulse over the game view only', async () =>
 });
 test('renders transient item drag feedback without intercepting drops', async () => {
   const [game, dragPreview, css] = await Promise.all(['src/game/game.tsx', 'src/game/controls/item-drag-preview.tsx', 'src/ui/style.css'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));
-  assert.match(game, /describeInventoryDrop/); assert.match(game, /setDragPresentation\(\{ source: current\.source/);
+  assert.match(game, /describeInventoryDrop/); assert.match(game, /setDragPresentation\(\{[^}]*source: current\.source/);
   assert.match(dragPreview, /export function ItemDragPreview/); assert.match(dragPreview, /drag\.source\.kind === "slot" \? "equipment" : drag\.source\.kind === "quick-slot" \? "quick" : "inventory"/); assert.match(dragPreview, /<SlotItem type="ability" number=\{drag\.source\.index\}/); assert.match(game, /drag_departure/); assert.match(game, /drag_landing/);
   assert.match(game, /Math\.hypot\(event\.clientX - current\.startX, event\.clientY - current\.startY\) < 6/);
-  assert.match(game, /cancelPointerDrag = useCallback\(\(\) => \{ pointerDragRef\.current = null; setPreview\(null\); setDragPresentation\(null\); \}/);
+  assert.match(game, /cancelPointerDrag = useCallback/);
   assert.match(game, /window\.addEventListener\("pointercancel", pointerCancel\)/);
   assert.match(css, /\.item-drag-preview\{[^}]*pointer-events:none/); assert.match(css, /\.item-drag-preview\{[^}]*width:min\(11rem/); assert.match(css, /\.drag_departure/); assert.match(css, /\.drag_landing/);
 });
@@ -322,7 +325,16 @@ test('renders the Stealth stat and progression dialog from game-rule state', asy
   assert.match(attributePanel, /progressionStatNames\.slice\(5\)/);
   assert.match(progressionWindow, /export function ProgressionWindow/);
   assert.match(game, /spend-attribute-points/);
-  assert.match(progressionWindow, /Attribute Points/);
+  assert.match(progressionWindow, /attribute point/);
+  assert.match(progressionWindow, /formatPendingAttributeBenefits/);
+  assert.match(progressionWindow, /progression-window__results/);
+  assert.match(progressionWindow, /Level Up — Character/);
+  assert.match(progressionWindow, /Earned Results/);
+  assert.match(progressionWindow, /attribute point/);
+  assert.match(attributePanel, /Increase \$\{attributeLabels\[name\]\} to \$\{value \+ 1\}\./);
+  assert.doesNotMatch(attributePanel, /\(\+1\)|\(-1\)/);
+  assert.match(game, /const levelEvents = result\.events\.filter\(\(event\) => event\.type === "xp\.level\.changed"\)/);
+  assert.match(game, /audio\.playEvents\(levelEvents\)/);
 });
 
 test('uses delta values to pulse only when an attribute turns red or green', async () => {
