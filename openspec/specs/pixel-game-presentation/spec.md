@@ -186,6 +186,24 @@ Game text selected by the Log system SHALL appear only in the scrollable Log, no
 - **WHEN** the player picks up an item and later completes a dungeon
 - **THEN** the Log system projects their domain events into retained text in order, and no standalone status message is displayed
 
+### Requirement: Share menu density across dialog windows
+The Start Game window SHALL define the generous and compact typography and spacing modes used by menu Settings, Create Character, Create World, and in-game Settings. Settings labels SHALL use the same size as Saved Game text at each mode and SHALL remain normal weight.
+
+#### Scenario: Render generous menu dialogs
+- **WHEN** the fitted landscape shell has enough space for the generous Start Game presentation
+- **THEN** menu Settings, Create Character, Create World, and in-game Settings use the corresponding generous text and spacing sizes
+
+#### Scenario: Render compact menu dialogs
+- **WHEN** the fitted landscape shell crosses the compact presentation threshold
+- **THEN** all four dialog types use the corresponding compact text and spacing sizes while keeping their controls readable and reachable
+
+### Requirement: Keep dialog content usable through density changes
+Menu Settings, Create Character, Create World, and in-game Settings SHALL preserve their complete primary actions and readable content when switching between generous and compact modes.
+
+#### Scenario: Resize while a dialog is open
+- **WHEN** the fitted shell changes between generous and compact density while one of these dialogs is open
+- **THEN** the dialog updates its typography and spacing without clipping its title, controls, or primary action
+
 #### Scenario: Legacy message path is removed
 - **WHEN** game state previously associated with text such as Iron Sword left behind is processed
 - **THEN** it does not render directly in the HUD, and relevant event text appears only if the Log policy selects that event
