@@ -2,6 +2,8 @@
 
 Rogue's Dungeon is a single-player medieval dungeon roguelite. Explore a procedural crypt one grid step at a time, fight between turns, gather equipment, and carry permanent character growth into each new descent.
 
+➡️ Bitcoin For Game Development — [https://bitcoingamedevelopment.com/](https://bitcoingamedevelopment.com/)
+
 ## Original AI Prompt
 
 <details>
