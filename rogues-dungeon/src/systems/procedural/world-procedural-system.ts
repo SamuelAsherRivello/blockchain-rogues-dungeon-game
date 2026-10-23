@@ -7,6 +7,7 @@ import { planEnemyActions } from "../../game/enemy-ai-system.ts";
 import { cellCenter, centerCrossings, normalizePlayerPosition, occupiedCell } from "../../game/player-position.ts";
 import type { WorldAttributes, FloorGenerationProfile } from '../../game/types.ts';
 import { DEFAULT_WORLD_ATTRIBUTES, normalizeWorldAttributes, WORLD_RULES_VERSION, worldRandom, worldTuning, growWorld } from './world-attributes.ts';
+import { WORLD_BALANCE_VERSION, eligibleWorldItemNames, worldBalanceProfile } from './world-balance.ts';
 import { enemyDefinitionForName, enemyDefinitionsForWorldLevel, type EnemyDefinition } from '../../content/enemies/enemy-catalog.ts';
 import { enemyCharacterForName } from '../../content/enemies/enemy-idle-animation.ts';
 
@@ -14,6 +15,7 @@ export const FLOOR_WIDTH = 100;
 export const FLOOR_HEIGHT = 100;
 export const FLOOR_CENTER = Object.freeze({ x: Math.floor(FLOOR_WIDTH / 2), y: Math.floor(FLOOR_HEIGHT / 2) });
 export const GENERATOR_VERSION = "rogues-dungeon-floor-v4";
+const WORLD_GENERATION_TUNING_VERSION = `${WORLD_RULES_VERSION}:${WORLD_BALANCE_VERSION}`;
 const ITEM_CAPACITY = 10;
 export const VISIBLE_LANDSCAPE_SCREEN = Object.freeze({ width: 30, height: 17 });
 export const PICKUP_DENSITY_DEFAULTS = Object.freeze({
@@ -48,6 +50,7 @@ export function normalizeObjectSets(floor: Floor) {
     .map((set) => ({ ...set, barrel: { ...set.barrel, hasMass: set.barrel.hasMass !== false }, barrelStart: validPosition(set.barrelStart) ? { ...set.barrelStart } : { ...set.barrel }, barrelReturnUsed: Boolean(set.barrelReturnUsed), trigger: { ...set.trigger }, door: { ...set.door } }));
   return floor;
 }
+export function keyedDoorCountForFloor(floor: Floor) { return floorTriggerDoorSets(floor).filter((set) => set.requiresKey === true).length; }
 function hasMassAt(position: Position, object: MassBearingPosition, defaultHasMass = false) { return (object.hasMass ?? defaultHasMass) === true && samePosition(position, object); }
 export function isObjectSetDoorOpen(set: FloorTriggerDoorBarrelSet, player: MassBearingPosition, entities: Entity[] = []) {
   return hasMassAt(set.trigger, player) || hasMassAt(set.trigger, set.barrel, true) || entities.some((entity) => hasMassAt(set.trigger, entity));
@@ -140,7 +143,7 @@ export function worldDroppableItemInstance(name: WorldDroppableItemName, id: str
   if (name === "Wand") return abilityItemInstance("wand", id);
   const definition = itemCatalog.find((item) => item.name === name);
   if (!definition) throw new Error(`Missing world droppable item definition: ${name}`);
-  return itemInstance(definition, id);
+  return { ...itemInstance(definition, id), category: definition.category ?? "equipment" };
 }
 function worldItemId(name: string) { return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); }
 export const consumableCatalog = Object.freeze({
@@ -170,12 +173,7 @@ function ensureStarterConsumables(campaign: Campaign) {
 }
 
 function rng(seed: number) { let value = seed >>> 0; return () => { value = (value * 1664525 + 1013904223) >>> 0; return value / 4294967296; }; }
-function stochasticCount(random: () => number, floorArea: number, range: { min: number; max: number }) {
-  const screens = floorArea / (VISIBLE_LANDSCAPE_SCREEN.width * VISIBLE_LANDSCAPE_SCREEN.height);
-  const expected = screens * (range.min + random() * (range.max - range.min));
-  const whole = Math.floor(expected);
-  return whole + (random() < expected - whole ? 1 : 0);
-}
+function budgetCount(random: () => number, range: { min: number; max: number }) { return range.min + Math.floor(random() * (range.max - range.min + 1)); }
 function seedNow() { return Math.floor(Math.random() * 0xffffffff) >>> 0; }
 function blankMap(width = FLOOR_WIDTH, height = FLOOR_HEIGHT) { return Array.from({ length: height }, () => Array.from({ length: width }, () => 1)); }
 function itemInstance(item: Omit<Item, "id">, id: string): Item { return { id, ...item, modifiers: { ...item.modifiers } }; }
@@ -511,6 +509,7 @@ export function upgradeCampaignResources(campaign: Campaign) {
 export function generateFloor(level: number, seed = seedNow(), difficulty = level, options: { corridorWidth?: number; pickupDensity?: Partial<Record<keyof typeof PICKUP_DENSITY_DEFAULTS, { min: number; max: number }>>; level1TestMode?: boolean; level1ObjectTestMode?: boolean; level1EnemyTestMode?: boolean; worldAttributes?: WorldAttributes; playerHouse?: boolean } = {}): Floor {
   const world = options.worldAttributes ? normalizeWorldAttributes(options.worldAttributes) : null;
   const tuning = world ? worldTuning(world) : null;
+  const balance = worldBalanceProfile(level, difficulty, world ?? DEFAULT_WORLD_ATTRIBUTES);
   const random = world ? worldRandom(seed, 'topology') : rng(seed);
   const encounterRandom = world ? worldRandom(seed, 'encounters') : random;
   const rewardRandom = world ? worldRandom(seed, 'rewards') : random;
@@ -540,12 +539,10 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
     }
   }
   const start = { ...FLOOR_CENTER };
-  const level1ObjectTestMode = level === 1 && (options.level1ObjectTestMode === true || options.level1TestMode === true);
-  // Enemy fixtures are controlled only by etest. The legacy level1TestMode
-  // still controls the level-one layout, but must never add start-area enemies.
+  const level1ObjectTestMode = level === 1 && options.level1ObjectTestMode === true;
   const level1EnemyTestMode = level === 1 && options.level1EnemyTestMode === true;
-  const level1TestMode = level1ObjectTestMode || level1EnemyTestMode;
-  const regionRole = level === 1 ? level1TestMode ? "exit" : world ? "optional-reward" : objectSetRoles[Math.floor(random() * objectSetRoles.length)] : null;
+  const level1TeleportTestMode = level === 1 && options.level1TestMode === true;
+  const regionRole = level === 1 ? world ? "optional-reward" : objectSetRoles[Math.floor(random() * objectSetRoles.length)] : null;
   const sealedDoor = { x: start.x + 4, y: start.y };
   const sealedGoal = { x: start.x + 6, y: start.y };
   if (level === 1) {
@@ -572,8 +569,8 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
   // Keep the nearby test-mode stair one clear tile away from the sealed door.
   // A stair beside a door makes its interaction hard to distinguish from opening
   // the door and violates the shared object-placement spacing rule.
-  const routeForward = level1TestMode ? { x: start.x + 2, y: start.y } : regionRole === "exit" ? sealedGoal : distantExit;
-  if (level === 1 && !level1TestMode && regionRole !== "exit") {
+  const routeForward = regionRole === "exit" ? sealedGoal : distantExit;
+  if (level === 1 && regionRole !== "exit") {
     const bypass = { x: start.x, y: start.y + 4 };
     connectRooms(map, start, bypass, corridorWidth);
     connectRooms(map, bypass, routeForward, corridorWidth);
@@ -616,11 +613,10 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
     const isLevelOneStartArea = (cell: Position) => level === 1 && Math.max(Math.abs(cell.x - start.x), Math.abs(cell.y - start.y)) <= Math.floor(VISIBLE_LANDSCAPE_SCREEN.width / 2);
     const nextEnemyCell = () => candidates.find((cell) => !isLevelOneStartArea(cell) && !route.has(`${cell.x},${cell.y}`) && isSolidObjectPlacementCell(generation.cells, cell) && isNonBlockingObjectPlacementCell(generation.cells, cell, blockingCells) && claim(cell)) ?? null;
     const add = (entity: Entity) => { generation.entities.push(entity); if (blocksMovement(entity)) blockingCells.push(entity); };
-    const teleportArrowCell = level1TestMode
+    const teleportArrowCell = level1TeleportTestMode
       ? candidates.find((cell) => Math.hypot(cell.x - start.x, cell.y - start.y) <= 50 && !route.has(`${cell.x},${cell.y}`) && claim(cell))
       : candidates.find((cell) => !route.has(`${cell.x},${cell.y}`) && claim(cell));
     if (teleportArrowCell) add({ id: `teleport-arrow-${level}`, kind: "teleport-arrow", destination: "player-home", name: "Home", ...teleportArrowCell });
-    let supplyBudget = world ? Math.min(240, Math.max(60, Math.round(generation.cells.flat().filter(cell => cell.walkable).length * .3))) : Infinity;
     const objectSets: FloorTriggerDoorBarrelSet[] = [];
     if (level === 1 && regionRole) {
       const layouts = [
@@ -637,40 +633,31 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
       }
     }
     const addPickup = (kind: ConsumableResource, index: number) => {
-      if (supplyBudget <= 0) return;
       const cell = nextCell(); if (!cell) return;
-      const quantity = Math.min(tuning?.supplyQuantity ?? 1, supplyBudget); supplyBudget -= quantity;
+      const quantity = tuning?.supplyQuantity ?? 1;
       add({ id: `${kind}-potion-${index}`, kind: "potion", resource: kind, ...(tuning ? { quantity } : {}), x: cell.x, y: cell.y });
     };
     const addCounterPickup = (kind: "key" | "gold", index: number) => {
-      if (kind === 'key' && supplyBudget <= 0) return;
       const cell = nextCell(); if (!cell) return;
-      const amount = kind === "gold" ? Math.round((5 + Math.floor(pickupRandom() * 16)) * (tuning?.rewardScale ?? 1)) : Math.min(tuning?.supplyQuantity ?? 1, supplyBudget);
-      if (kind === 'key') supplyBudget -= amount;
+      const amount = kind === "gold" ? Math.round((5 + Math.floor(pickupRandom() * 16)) * balance.rewardMultiplier) : tuning?.supplyQuantity ?? 1;
       add({ id: `${kind}-${index}`, kind, amount, x: cell.x, y: cell.y });
     };
-    // Test mode places introductory pickups, a chest, and a crate beside the level-one entrance.
-    // Normal floors use the seeded, object-specific distribution rules below.
+    // Item-test mode places only the approved inventory/world items near the
+    // level-one entrance. Other object and enemy distributions remain normal.
     const nearStart = (offsets: readonly Position[]) => offsets.map(({ x, y }) => ({ x: start.x + x, y: start.y + y })).find((cell) => !route.has(`${cell.x},${cell.y}`) && claim(cell));
     const nearStartBlocking = (offsets: readonly Position[]) => offsets.map(({ x, y }) => ({ x: start.x + x, y: start.y + y })).find((cell) => !route.has(`${cell.x},${cell.y}`) && isSolidObjectPlacementCell(generation.cells, cell) && isNonBlockingObjectPlacementCell(generation.cells, cell, blockingCells) && claim(cell));
     if (level1ObjectTestMode) {
-      const testChest = nearStartBlocking([{ x: -1, y: 0 }, { x: 0, y: -1 }, { x: -1, y: -1 }, { x: -2, y: 0 }]);
-      const testCrate = nearStartBlocking([{ x: 1, y: 0 }, { x: 1, y: -1 }, { x: 0, y: -2 }, { x: 2, y: -1 }]);
       const healthCell = nearStart([{ x: 0, y: 1 }, { x: -1, y: 1 }, { x: 1, y: 1 }, { x: 0, y: 2 }]);
       const manaCell = nearStart([{ x: 2, y: 0 }, { x: 2, y: 1 }, { x: 1, y: 2 }, { x: -1, y: 2 }]);
       const staminaCell = nearStart([{ x: -2, y: 0 }, { x: -2, y: 1 }, { x: -1, y: 2 }, { x: 0, y: 2 }]);
       const starterKey = nearStart([{ x: -2, y: 2 }, { x: -2, y: -2 }, { x: 2, y: 2 }]);
       const starterGold = nearStart([{ x: 2, y: -2 }, { x: 2, y: 2 }, { x: -2, y: -2 }]);
-      const testCampfire = nearStartBlocking([{ x: 1, y: 1 }, { x: -1, y: 1 }, { x: 1, y: -1 }, { x: -2, y: 1 }]);
       if (healthCell) add({ id: "health-potion", kind: "potion", resource: "health", ...healthCell });
       if (manaCell) add({ id: "mana-potion", kind: "potion", resource: "mana", ...manaCell });
       if (staminaCell) add({ id: "stamina-potion", kind: "potion", resource: "stamina", ...staminaCell });
       if (starterKey) add({ id: "starter-key", kind: "key", amount: 1, ...starterKey });
       if (starterGold) add({ id: "starter-gold", kind: "gold", amount: 10, ...starterGold });
-      if (testChest) add({ id: "test-chest", kind: "chest", opened: false, ...testChest });
-      if (testCrate) add({ id: "test-crate", kind: "crate", health: 100, ...testCrate });
-      if (testCampfire) add({ id: "test-campfire", kind: "campfire", name: "CampFire", ...testCampfire });
-      // Item-test mode puts one copy of every approved world representation
+      // Item-test mode puts one copy of every approved inventory representation
       // in the opening area. The fallback search follows the enemy-test rule:
       // it stays within 50 cells of the player while respecting reservations.
       const nearbyItemCells = Array.from({ length: 101 }, (_, dx) => dx - 50)
@@ -684,31 +671,42 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
       });
     }
     if (!level1ObjectTestMode) {
-      const name = WORLD_DROPPABLE_ITEM_NAMES[Math.floor(pickupRandom() * WORLD_DROPPABLE_ITEM_NAMES.length)];
-      const cell = nextCell();
-      if (cell) {
-        const id = `world-item-${level}-${worldItemId(name)}`;
-        add({ id, kind: "item", item: worldDroppableItemInstance(name, id), ...cell });
+      const eligibleItems = eligibleWorldItemNames(level, WORLD_DROPPABLE_ITEM_NAMES);
+      const worldItemCount = budgetCount(pickupRandom, balance.budgets.worldItems);
+      for (let index = 0; index < worldItemCount; index++) {
+        const name = eligibleItems[Math.floor(pickupRandom() * eligibleItems.length)] as WorldDroppableItemName;
+        const cell = nextCell();
+        if (cell && name) {
+          const id = `world-item-${level}-${index + 1}-${worldItemId(name)}`;
+          add({ id, kind: "item", item: worldDroppableItemInstance(name, id), ...cell });
+        }
       }
     }
     const availableEnemies = enemyDefinitionsForWorldLevel(level);
+    const enemyTargetCount = Math.max(1, Math.min(balance.budgets.enemies.max, Math.round(budgetCount(encounterRandom, balance.budgets.enemies) * (tuning?.enemyChance ?? .76))));
+    let enemyCount = 0;
+    let chestCount = 0;
+    let crateCount = 0;
+    const chestTargetCount = budgetCount(rewardRandom, balance.budgets.chests);
+    const crateTargetCount = budgetCount(rewardRandom, balance.budgets.crates);
     for (let i = 1; i < rooms.length; i++) {
       const room = rooms[i]; const preferred = { x: room.x + 2, y: room.y + 2 };
       const enemyCell = !isLevelOneStartArea(preferred) && !route.has(`${preferred.x},${preferred.y}`) && isSolidObjectPlacementCell(generation.cells, preferred) && isNonBlockingObjectPlacementCell(generation.cells, preferred, blockingCells) && claim(preferred) ? preferred : nextEnemyCell();
-      if (!level1EnemyTestMode && enemyCell && encounterRandom() < (tuning?.enemyChance ?? .76)) {
+      if (!level1EnemyTestMode && enemyCount < enemyTargetCount && enemyCell) {
         const definition = availableEnemies[Math.floor(encounterRandom() * availableEnemies.length)] ?? availableEnemies[0];
         const threatScale = tuning?.threatScale ?? 1;
         const enemy = enemyFromDefinition(`enemy-${i}`, definition, enemyCell, level, threatScale, tuning ? tuning.awareness + traitRandom() * .5 - definition.awareness : 0, tuning?.engagementDelay ?? 0);
         add({ ...enemy, resources: enemyResources(enemy, level) });
+        enemyCount++;
       }
-        if (!level1ObjectTestMode && rewardRandom() < (tuning?.rewardChance ?? .35)) {
-        const chestCell = nextBlockingCell(); if (chestCell) add({ id: `chest-${i}`, kind: "chest", x: chestCell.x, y: chestCell.y, opened: false });
+      if (!level1ObjectTestMode && chestCount < chestTargetCount) {
+        const chestCell = nextBlockingCell(); if (chestCell) { add({ id: `chest-${i}`, kind: "chest", x: chestCell.x, y: chestCell.y, opened: false }); chestCount++; }
       }
-        if (rewardRandom() < .25) {
-        const crateCell = nextBlockingCell(); if (crateCell) add({ id: `crate-${i}`, kind: "crate", x: crateCell.x, y: crateCell.y, health: 100 });
+      if (crateCount < crateTargetCount) {
+        const crateCell = nextBlockingCell(); if (crateCell) { add({ id: `crate-${i}`, kind: "crate", x: crateCell.x, y: crateCell.y, health: 100 }); crateCount++; }
       }
     }
-    const campfireCount = tuning ? Math.floor(tuning.campfires) : Math.max(1, Math.floor(context.cells.flat().filter((cell) => cell.walkable).length / 420));
+    const campfireCount = budgetCount(rewardRandom, balance.budgets.campfires);
     for (let index = 0; index < campfireCount; index++) {
       const cell = nextBlockingCell();
       if (cell) add({ id: `campfire-${index + 1}`, kind: "campfire", name: "CampFire", ...cell });
@@ -730,33 +728,17 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
       ];
       ENEMY_RANKS.forEach((definition, index) => testEnemy(`test-${definition.character}`, definition, testOffsets[index]));
     }
-    // Pickup counts are area-scaled from the visible 1x landscape screen and
-    // use seeded stochastic rounding. Object cells and pickup cells share the
-    // same reservation set, so density never creates overlaps.
-    const densities = options.pickupDensity ?? {};
-    const density = (kind: keyof typeof PICKUP_DENSITY_DEFAULTS) => ({ ...PICKUP_DENSITY_DEFAULTS[kind], ...(densities[kind] ?? {}) });
-    const supplyScale = tuning?.supplyScale ?? 1;
-    const lootScale = 1;
-    const scaled = (kind: keyof typeof PICKUP_DENSITY_DEFAULTS, scale: number) => { const base = density(kind); return { min: base.min * scale, max: base.max * scale }; };
-    const healthCount = Math.max(1, stochasticCount(pickupRandom, FLOOR_WIDTH * FLOOR_HEIGHT, scaled("health", supplyScale)));
-    const manaCount = Math.max(1, stochasticCount(pickupRandom, FLOOR_WIDTH * FLOOR_HEIGHT, scaled("mana", supplyScale)));
-    const staminaCount = Math.max(1, stochasticCount(pickupRandom, FLOOR_WIDTH * FLOOR_HEIGHT, scaled("stamina", supplyScale)));
-    const keyCount = stochasticCount(pickupRandom, FLOOR_WIDTH * FLOOR_HEIGHT, scaled("key", supplyScale));
-    const goldCount = stochasticCount(pickupRandom, FLOOR_WIDTH * FLOOR_HEIGHT, scaled("gold", lootScale));
-    if (tuning) {
-      // Share capacity across categories rather than exhausting it on Health first.
-      for (let index = 0; index < Math.max(healthCount, manaCount, staminaCount, keyCount); index++) {
-        if (index < healthCount) addPickup('health', index + 1);
-        if (index < manaCount) addPickup('mana', index + 1);
-        if (index < staminaCount) addPickup('stamina', index + 1);
-        if (index < keyCount) addCounterPickup('key', index + 1);
-      }
-    } else {
-      for (let index = 1; index < healthCount; index++) addPickup("health", index + 1);
-      for (let index = 1; index < manaCount; index++) addPickup("mana", index + 1);
-      for (let index = 1; index < staminaCount; index++) addPickup("stamina", index + 1);
-      for (let index = 0; index < keyCount; index++) addCounterPickup("key", index + 1);
-    }
+    // Ordinary content uses bounded floor budgets rather than full-map density.
+    const potionOverride = options.pickupDensity && Object.values(options.pickupDensity).every(range => range?.max === 0);
+    const potionCount = potionOverride ? 0 : budgetCount(pickupRandom, balance.budgets.potions);
+    const potionKinds: readonly ConsumableResource[] = ['health', 'mana', 'stamina'];
+    for (let index = 0; index < potionCount; index++) addPickup(potionKinds[index % potionKinds.length], index + 1);
+    const keyedDoorCount = objectSets.filter(set => set.requiresKey === true).length;
+    const baseKeyCount = budgetCount(pickupRandom, balance.budgets.keys);
+    const surplusKeyCount = pickupRandom() < balance.surplusKeyChance ? 1 : 0;
+    const keyCount = Math.max(keyedDoorCount, baseKeyCount) + surplusKeyCount;
+    for (let index = 0; index < keyCount; index++) addCounterPickup("key", index + 1);
+    const goldCount = budgetCount(pickupRandom, balance.budgets.gold);
     for (let index = 0; index < goldCount; index++) addCounterPickup("gold", index + 1);
     if (tuning) {
       const discoveryRandom = worldRandom(seed, 'discoveries');
@@ -772,7 +754,9 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
         rewardBudget -= entity.rewardAmount;
         entity.rewardQuality = tuning.rewardQuality;
         if (rewardRandom() < tuning.rewardChance) {
-          entity.rewardItem = itemInstance(itemCatalog[Math.floor(rewardRandom() * itemCatalog.length)], `${entity.id}-reward`);
+          const rewardPool = eligibleWorldItemNames(level, WORLD_DROPPABLE_ITEM_NAMES);
+          const rewardName = rewardPool[Math.floor(rewardRandom() * rewardPool.length)] as WorldDroppableItemName;
+          entity.rewardItem = worldDroppableItemInstance(rewardName, `${entity.id}-reward`);
           entity.rewardItem.modifiers = Object.fromEntries(Object.entries(entity.rewardItem.modifiers).map(([name, amount]) => [name, Math.max(1, Math.round(amount! * (1 + tuning.rewardQuality * .15)))]));
         }
       }
@@ -784,10 +768,9 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
   const torchCells = shuffledWallDecorationCells(map, hazardRandom);
   const protectedRoute = new Set(world ? structuralRoute(map, start, exit).map(cell => `${cell.x},${cell.y}`) : []);
   const trapCells = shuffledWalkableCells(context.cells, hazardRandom).filter((cell) => !protectedRoute.has(`${cell.x},${cell.y}`) && !context.occupiedCells.some((occupied) => occupied.x === cell.x && occupied.y === cell.y));
-  const entranceTrap = level1TestMode ? [{ x: 1, y: 1 }, { x: -1, y: 1 }, { x: 1, y: -1 }, { x: -2, y: 1 }, { x: 2, y: 1 }, { x: 1, y: 2 }, { x: -1, y: 2 }, { x: 2, y: -1 }, { x: -2, y: -1 }].map(({ x, y }) => ({ x: start.x + x, y: start.y + y })).find((cell) => isWalkable(context, cell.x, cell.y) && !context.occupiedCells.some((occupied) => occupied.x === cell.x && occupied.y === cell.y)) : null;
   const torchCount = Math.max(3, Math.floor(context.cells.flat().filter((cell) => cell.walkable).length / 180));
-  const trapCount = tuning ? Math.max(0, Math.floor(context.cells.flat().filter((cell) => cell.walkable).length / 280 * tuning.trapScale)) : Math.max(2, Math.floor(context.cells.flat().filter((cell) => cell.walkable).length / 280));
-  const placedTrapCells = entranceTrap ? [entranceTrap, ...trapCells.filter((cell) => cell.x !== entranceTrap.x || cell.y !== entranceTrap.y)].slice(0, trapCount + 1) : trapCells.slice(0, trapCount);
+  const trapCount = balance.budgets.traps.max;
+  const placedTrapCells = trapCells.slice(0, trapCount);
   const decorations: WorldDecoration[] = [
     ...torchCells.slice(0, torchCount).map((cell, index) => ({ id: `wall-torch-${index + 1}`, kind: "torch" as const, wallMounted: true, ...cell })),
     ...placedTrapCells.map((cell, index) => ({ id: `floor-trap-${index + 1}`, kind: "trap" as const, wallMounted: false, ...cell })),
@@ -796,8 +779,26 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
   if (world) {
     floor.generatorVersion = WORLD_RULES_VERSION;
     for (const cell of structuralRoute(map, start, exit)) floor.cells[cell.y][cell.x].protected = true;
-    floor.generationProfile = { seed, difficulty, attributes: world, generatorVersion: WORLD_RULES_VERSION, tuningVersion: WORLD_RULES_VERSION, level1ObjectTestMode, level1EnemyTestMode };
-    floor.worldDiagnostics = { repairs, shortfall: Math.max(0, Math.floor(tuning!.discoveries) - floor.entities.filter(e => e.kind === 'discovery').length), routeLength: structuralRoute(map, start, exit).length, rewardBudget: Math.min(200, floor.entities.reduce((sum, e) => sum + (e.kind === 'chest' || e.kind === 'crate' ? e.rewardAmount ?? 0 : 0), 0)) };
+    floor.generationProfile = { seed, difficulty, attributes: world, generatorVersion: WORLD_RULES_VERSION, tuningVersion: WORLD_GENERATION_TUNING_VERSION, level1TestMode: level1TeleportTestMode, level1ObjectTestMode, level1EnemyTestMode };
+    floor.worldDiagnostics = {
+      repairs,
+      shortfall: Math.max(0, Math.floor(tuning!.discoveries) - floor.entities.filter(e => e.kind === 'discovery').length),
+      routeLength: structuralRoute(map, start, exit).length,
+      rewardBudget: Math.min(200, floor.entities.reduce((sum, e) => sum + (e.kind === 'chest' || e.kind === 'crate' ? e.rewardAmount ?? 0 : 0), 0)),
+      balanceVersion: balance.version,
+      contentCounts: {
+        potions: floor.entities.filter(e => e.kind === 'potion').length,
+        gold: floor.entities.filter(e => e.kind === 'gold').length,
+        keys: floor.entities.filter(e => e.kind === 'key').length,
+        worldItems: floor.entities.filter(e => e.kind === 'item').length,
+        enemies: floor.entities.filter(e => e.kind === 'enemy').length,
+        traps: floor.decorations?.filter(e => e.kind === 'trap').length ?? 0,
+        chests: floor.entities.filter(e => e.kind === 'chest').length,
+        crates: floor.entities.filter(e => e.kind === 'crate').length,
+        campfires: floor.entities.filter(e => e.kind === 'campfire').length,
+        keyedDoors: keyedDoorCountForFloor(floor),
+      },
+    };
   }
   return normalizeObjectSets(ensureSemanticCells(floor));
 }
@@ -1036,7 +1037,7 @@ export function generatedFloorForCampaign(campaign: Pick<Campaign, "worldSeed" |
     generatorVersion: campaign.worldAttributes ? WORLD_RULES_VERSION : GENERATOR_VERSION,
     tuningVersion: campaign.worldAttributes ? WORLD_RULES_VERSION : undefined,
   };
-  if (![GENERATOR_VERSION, WORLD_RULES_VERSION].includes(profile.generatorVersion) || profile.tuningVersion && profile.tuningVersion !== WORLD_RULES_VERSION) throw new Error('Unsupported saved world generator. Saved data was left unchanged.');
+  if (![GENERATOR_VERSION, WORLD_RULES_VERSION].includes(profile.generatorVersion) || profile.tuningVersion && ![WORLD_RULES_VERSION, WORLD_GENERATION_TUNING_VERSION].includes(profile.tuningVersion)) throw new Error('Unsupported saved world generator. Saved data was left unchanged.');
   campaign.floorProfiles ??= {};
   campaign.floorProfiles[String(level)] ??= structuredClone(profile);
   const floor = generateFloor(level, profile.seed, profile.difficulty, { worldAttributes: profile.attributes, level1TestMode: profile.level1TestMode, level1ObjectTestMode: profile.level1ObjectTestMode, level1EnemyTestMode: profile.level1EnemyTestMode });
@@ -1100,7 +1101,7 @@ export function createRunCampaign(worldSeed: number, slot: number, run: number, 
   campaign.run = run;
   campaign.generatorVersion = GENERATOR_VERSION;
   if (options.worldAttributes) {
-    const profile: FloorGenerationProfile = { seed: campaign.floor.seed, difficulty, attributes: { ...campaign.worldAttributes! }, generatorVersion: WORLD_RULES_VERSION, tuningVersion: WORLD_RULES_VERSION, level1ObjectTestMode: options.level1ObjectTestMode ?? options.level1TestMode, level1EnemyTestMode: options.level1EnemyTestMode === true };
+    const profile: FloorGenerationProfile = { seed: campaign.floor.seed, difficulty, attributes: { ...campaign.worldAttributes! }, generatorVersion: WORLD_RULES_VERSION, tuningVersion: WORLD_GENERATION_TUNING_VERSION, level1TestMode: options.level1TestMode === true, level1ObjectTestMode: options.level1ObjectTestMode === true, level1EnemyTestMode: options.level1EnemyTestMode === true };
     campaign.generatorVersion = WORLD_RULES_VERSION;
     campaign.floorProfiles = { [String(level)]: profile };
     campaign.floor.generationProfile = structuredClone(profile);

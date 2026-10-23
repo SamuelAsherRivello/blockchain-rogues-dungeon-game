@@ -12,8 +12,10 @@ test("enemy difficulty stats increase with the agreed rank", () => {
 
 test("world levels unlock only the allowed enemy ranks", () => {
   assert.deepEqual(enemyDefinitionsForWorldLevel(1).map((enemy) => enemy.rank), [1, 2]);
-  assert.deepEqual(enemyDefinitionsForWorldLevel(2).map((enemy) => enemy.rank), [1, 2, 3]);
-  assert.deepEqual(enemyDefinitionsForWorldLevel(3).map((enemy) => enemy.rank), [1, 2, 3, 4]);
+  assert.deepEqual(enemyDefinitionsForWorldLevel(2).map((enemy) => enemy.rank), [1, 2, 3, 4]);
+  assert.deepEqual(enemyDefinitionsForWorldLevel(3).map((enemy) => enemy.rank), [1, 2, 3, 4, 5, 6]);
+  assert.deepEqual(enemyDefinitionsForWorldLevel(4).map((enemy) => enemy.rank), [1, 2, 3, 4, 5, 6, 7]);
+  assert.deepEqual(enemyDefinitionsForWorldLevel(5).map((enemy) => enemy.rank), [1, 2, 3, 4, 5, 6, 7, 8]);
 });
 
 test("enemy test mode places one of every ranked enemy near the entrance", () => {
@@ -38,4 +40,10 @@ test("disabled enemy test mode does not add enemies beside the entrance", () => 
   const floor = generateFloor(1, 17, 1, { level1EnemyTestMode: false });
   assert.equal(floor.entities.some((entity) => entity.kind === "enemy" && entity.id.startsWith("test-")), false);
   assert.ok(floor.entities.filter((entity) => entity.kind === "enemy").every((enemy) => Math.max(Math.abs(enemy.x - floor.start.x), Math.abs(enemy.y - floor.start.y)) > 15));
+});
+
+test("level-one showcases stay disabled on later levels", () => {
+  const floor = generateFloor(2, 17, 1, { level1ObjectTestMode: true, level1EnemyTestMode: true });
+  assert.equal(floor.entities.filter((entity) => entity.id.startsWith("test-item")).length, 0);
+  assert.equal(floor.entities.filter((entity) => entity.id.startsWith("test-") && entity.kind === "enemy").length, 0);
 });

@@ -1,5 +1,6 @@
 import type { Enemy } from "../../game/types.ts";
 import { ENEMY_CHARACTER_NAMES, type EnemyCharacterName } from "./enemy-idle-animation.ts";
+import { enemyUnlockCount } from "../../systems/procedural/world-balance.ts";
 
 export type EnemyDefinition = Readonly<Pick<Enemy, "name" | "hp" | "damage" | "awareness" | "actionCooldown" | "attackKind" | "attackRange" | "xp"> & { rank: number; character: EnemyCharacterName; graphic: EnemyCharacterName; idle: "idle" }>;
 
@@ -14,7 +15,7 @@ export const ENEMY_DEFINITIONS: readonly EnemyDefinition[] = Object.freeze([
   { rank: 8, character: "skeleton-mage", graphic: "skeleton-mage", idle: "idle", name: "Skeleton Mage", hp: 44, damage: 12, awareness: 7, actionCooldown: 3, attackKind: "ranged", attackRange: 6, xp: 48 },
 ]);
 
-export function enemyDefinitionsForWorldLevel(level: number) { return ENEMY_DEFINITIONS.slice(0, Math.min(ENEMY_DEFINITIONS.length, Math.max(2, Math.floor(level) + 1))); }
+export function enemyDefinitionsForWorldLevel(level: number) { return ENEMY_DEFINITIONS.slice(0, enemyUnlockCount(level, ENEMY_DEFINITIONS.length)); }
 export function enemyDefinitionForName(name: string) { return ENEMY_DEFINITIONS.find((definition) => definition.name === name) ?? ENEMY_DEFINITIONS[0]; }
 export function enemyDefinitionForCharacter(character: EnemyCharacterName) { return ENEMY_DEFINITIONS.find((definition) => definition.character === character) ?? ENEMY_DEFINITIONS[0]; }
 export function enemyCharacterNames() { return ENEMY_CHARACTER_NAMES; }

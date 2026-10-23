@@ -53,6 +53,7 @@ export type ObjectSetRegionRole = "optional-reward" | "exit";
 export interface FloorTriggerDoorBarrelSet {
   id: string; kind: "floor-trigger-door-barrel"; barrel: MassBearingPosition; trigger: Position; door: Position;
   barrelStart?: Position; barrelReturnUsed?: boolean;
+  requiresKey?: boolean;
   regionRole: ObjectSetRegionRole;
 }
 export type ObjectSet = FloorTriggerDoorBarrelSet;
@@ -62,7 +63,11 @@ export interface Floor {
   start: Position; entities: Entity[]; time: number; level: number; depth?: number; generatorVersion?: string;
   scenario?: string; progressionXpAwarded?: boolean;
   generationProfile?: FloorGenerationProfile;
-  worldDiagnostics?: { repairs: number; shortfall: number; routeLength: number; rewardBudget: number };
+  worldDiagnostics?: {
+    repairs: number; shortfall: number; routeLength: number; rewardBudget: number;
+    balanceVersion?: string;
+    contentCounts?: { potions: number; gold: number; keys: number; worldItems: number; enemies: number; traps: number; chests: number; crates: number; campfires: number; keyedDoors: number };
+  };
   generation?: { seed: number; generator: string | null; passes?: { id: string; diagnostics: number }[] };
   tiledGrounds?: number[]; tiledWalls?: number[];
   decorations?: WorldDecoration[];
