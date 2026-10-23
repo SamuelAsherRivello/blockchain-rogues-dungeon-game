@@ -2,6 +2,12 @@
 
 Verified on October 22, 2026.
 
+Commit checks repeated on October 23, 2026: all 11 focused tactical-area and audio tests pass, TypeScript checks pass, and strict OpenSpec validation passes. Browser checks below were completed during implementation. The latest browser fixture selects the highest available Zoom rather than assuming 4x.
+
+The October 23 full-suite run reports 302 tests, 288 passing and 14 failing in the shared working tree. Failures cover autosave, starter fixtures, directional and linked stairs, enemy generation and archers, sealed-door rewards, world-item seeding, pivot and seed source assertions, inventory slots and scrollbars, and How To Play styling. None of the focused tactical/audio tests fail. The historical run below is retained rather than presented as the current suite result. Other chats' changes remain outside this commit.
+
+Follow-up spatial focus: the minimum area is now 3x3 plus a row of artwork headroom. The nearest threatening enemy with clear line of sight contributes geometry even beyond Perception detection distance; walls still block this hint. Three focused tactical tests, typecheck and strict spec validation pass. Edge verifies that an enemy can remain undetected while its clear-line engagement area is highlighted. Desktop Edge and in-app browser each retain three canvases with no captured console errors. The fullscreen check requires bringing the CLI window to the foreground after opening other browser contexts.
+
 - Strict OpenSpec validation passes.
 - Typecheck and production build pass. Vite retains existing font/cursor resolution and bundle-size warnings.
 - Focused tactical-area and soundtrack tests pass, 10 of 10. Coverage includes Perception warning boundaries, unchanged enemy AI range, hidden-enemy filtering, disjoint rectangle unions, half-second fades, rapid reversal, retained playback positions, mute and cleanup.

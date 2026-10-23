@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Make automatic Battle Mode unmistakable while preserving a calm tactical stance during frequent encounters. The presentation must communicate movement-state changes without revealing undetected enemy locations.
+Make automatic Battle Mode unmistakable while preserving a calm tactical stance during frequent encounters. The presentation communicates movement-state changes with spatial focus while preserving Perception-based enemy identification.
 
 ## ADDED Requirements
 
@@ -59,12 +59,16 @@ General Mode SHALL play Spooky Dungeon, and Battle Mode SHALL play JRPG - End Du
 - **THEN** the action-oriented track crossfades to the existing General track position over 0.5 seconds
 
 ### Requirement: Avoid hidden-threat disclosure
-When Battle is active but no qualifying enemy is currently detected by the player, the game SHALL show the Battle icon without revealing an enemy position, direction, count, or exact distance.
+Battle SHALL retain a minimum player-centered 3x3 focus with an extra row above for artwork. The nearest clear-line threat SHALL shape the tactical area independently of Perception, without revealing its sprite or identifying information. Walls and closed doors SHALL prevent concealed enemies from shaping the area.
 
 #### Scenario: Nearby hidden enemy
-- **WHEN** an enemy triggers Battle through awareness but remains outside current detection conditions
+- **WHEN** an enemy triggers Battle through awareness but a wall blocks line of sight
 - **THEN** the Battle icon remains visible
 - **AND** no enemy-specific tactical area, portrait, marker, or direction cue is shown
+
+#### Scenario: Spatial warning before identification
+- **WHEN** a threatening enemy has clear line of sight but exceeds Perception detection distance
+- **THEN** the nearest such enemy can shape the tactical area while its sprite and identifying information remain hidden
 
 ### Requirement: Extend Battle warning with Perception
 Battle SHALL activate when any living active-floor enemy is within the greater of its effective awareness range and the player's detection range of max(1, twice Perception), using Chebyshev distance. Walls SHALL not prevent this warning. Enemy AI awareness SHALL retain its existing range and detection SHALL still require line of sight.

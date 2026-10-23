@@ -3,13 +3,13 @@
 ## ADDED Requirements
 
 ### Requirement: Show a binary tactical area for detected enemies
-During Battle, the game view SHALL divide visible world cells into exactly two presentation zones. The tactical area SHALL include the player cell and the union of filled inclusive rectangles from the player to each detected enemy within Battle warning range. Each rectangle SHALL extend one full grid row upward before union, with its sides and bottom unchanged. Overlap SHALL not increase brightness.
+During Battle, the game view SHALL have exactly two brightness zones. The tactical area SHALL union a player-centered 3x3 region with filled inclusive rectangles to detected threats and the nearest clear-line threat, regardless of Perception. All regions SHALL extend one row upward for artwork. Overlap SHALL not increase brightness. Walls and closed doors SHALL block enemy-specific spatial hints.
 
 #### Scenario: One detected enemy
 - **WHEN** Battle is active with one detected qualifying enemy
 - **THEN** the player cell, enemy cell, and rectilinear engagement area between them belong to the tactical area
 - **AND** one full row above the rectangle is included to protect character artwork
-- **AND** all other visible cells belong to the non-tactical area
+- **AND** cells outside the union with the minimum player focus belong to the non-tactical area
 
 #### Scenario: Multiple detected enemies
 - **WHEN** Battle is active with multiple detected qualifying enemies
@@ -17,9 +17,9 @@ During Battle, the game view SHALL divide visible world cells into exactly two p
 - **AND** overlapping areas are rendered as one combined tactical area
 
 #### Scenario: No detected enemy
-- **WHEN** Battle is active but no qualifying enemy is detected
+- **WHEN** Battle is active but all qualifying enemies are concealed by walls or closed doors
 - **THEN** no enemy-specific tactical area is shown
-- **AND** only the player cell and the cell directly above it belong to the tactical area
+- **AND** the player-centered 3x3 area plus one row above remains highlighted
 - **AND** the presentation does not reveal hidden enemy location information
 
 ### Requirement: Preserve world geometry and interaction

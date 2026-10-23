@@ -7,7 +7,7 @@ async page => {
       const c = m.createCampaign(4321);
       const enemy = c.floor.entities.find(e => e.kind === 'enemy');
       c.player.x = 50; c.player.y = 50; c.player.pixel = { x: 1616, y: 1616 };
-      c.progression.attributes.perception = 4;
+      c.progression.attributes.perception = 0;
       c.floor.entities = active ? [{ ...enemy, x: 53, y: 47, awareness: 6, nextActionAt: 9999 }] : [];
       c.floor.cells = Array.from({ length: 100 }, () => Array.from({ length: 100 }, () => ({ walkable: true, role: 'floor' })));
       c.floor.map = Array.from({ length: 100 }, () => Array(100).fill(0));
@@ -25,12 +25,23 @@ async page => {
   await page.locator('.battle-indicator[data-phase="settled"]').waitFor({ timeout: 30000 });
   const view = page.locator('.world-view');
   if (await view.getAttribute('data-game-mode') !== 'Battle') throw new Error('Expected Battle fixture');
+  const spatialFocus = await page.evaluate(async () => {
+    const { readSlot } = await import('/blockchain-rogues-dungeon-game/src/systems/persistence/save-system.ts');
+    const { detectedEnemyIds } = await import('/blockchain-rogues-dungeon-game/src/game/enemy-detection.ts');
+    const { tacticalRectangles, tacticalContains } = await import('/blockchain-rogues-dungeon-game/src/game/tactical-area.ts');
+    const campaign = readSlot(localStorage, '3');
+    const enemy = campaign.floor.entities.find(entity => entity.kind === 'enemy');
+    return { detected: detectedEnemyIds(campaign).size, reachesEnemy: tacticalContains(tacticalRectangles(campaign), enemy) };
+  });
+  if (spatialFocus.detected !== 0 || !spatialFocus.reachesEnemy) throw new Error('Spatial warning must extend before sprite detection');
   await page.getByRole('button', { name: /Battle visuals/ }).click();
   await page.locator('.tactical-area[data-variant="1"]').waitFor();
   await page.getByRole('button', { name: /Battle visuals/ }).click();
   await page.locator('.tactical-area[data-variant="2"]').waitFor();
   if (await page.locator('.battle-indicator').getAttribute('data-phase') !== 'settled') throw new Error('Variant replayed banner');
-  await page.getByRole('combobox', { name: 'Zoom', exact: true }).selectOption('4');
+  const zoomControl = page.getByRole('combobox', { name: 'Zoom', exact: true });
+  const highestZoom = await zoomControl.evaluate(select => String(Math.max(...Array.from(select.options, option => Number(option.value)))));
+  await zoomControl.selectOption(highestZoom);
   await page.waitForFunction(() => document.querySelector('.battle-indicator')?.getAttribute('data-phase') === 'settled');
   const bounds = await page.evaluate(() => {
     const view = document.querySelector('.world-view').getBoundingClientRect();
@@ -39,7 +50,7 @@ async page => {
   });
   if (bounds.icon.y + bounds.icon.height >= bounds.view.y + bounds.view.height / 2) throw new Error('Icon covers center');
   if (bounds.pointer !== 'none' || bounds.shading !== 'none') throw new Error('Overlay blocks pointers');
-  await page.screenshot({ path: '.playwright-cli/battle-feedback-4x.png' });
+  await page.screenshot({ path: '.playwright-cli/battle-feedback-max-zoom.png' });
   await page.setViewportSize({ width: 800, height: 600 });
   await page.screenshot({ path: '.playwright-cli/battle-feedback-compact.png' });
   await page.setViewportSize({ width: 1280, height: 800 });
@@ -56,10 +67,12 @@ async page => {
   });
   await page.screenshot({ path: '.playwright-cli/battle-feedback-banner.png' });
   await page.locator('.battle-indicator[data-phase="settled"]').waitFor();
+  await page.bringToFront();
   await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
   await page.waitForFunction(() => Boolean(document.fullscreenElement));
   if (!await page.locator('.battle-indicator__icon').isVisible()) throw new Error('Battle icon missing in fullscreen');
-  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Fullscreen', exact: true }).click();
+  await page.waitForFunction(() => !document.fullscreenElement);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   if (await page.locator('.battle-indicator__ribbon').isVisible()) throw new Error('Reduced motion still shows animated ribbon');
   await page.emulateMedia({ reducedMotion: 'no-preference' });

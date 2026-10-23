@@ -1,16 +1,23 @@
 import type { Campaign, Position } from "./types.ts";
-import { detectedEnemyIds } from "./enemy-detection.ts";
+import { detectedEnemyIds, hasPerceptionLineOfSight } from "./enemy-detection.ts";
 import { isBattleThreat } from "../systems/procedural/world-procedural-system.ts";
 
 export interface TacticalRectangle { minX: number; maxX: number; minY: number; maxY: number }
 
 export function tacticalRectangles(campaign: Campaign, detected = detectedEnemyIds(campaign)): TacticalRectangle[] {
   const player = campaign.player;
-  return [player, ...campaign.floor.entities.filter((enemy) => enemy.kind === "enemy" && detected.has(enemy.id) && isBattleThreat(campaign, enemy))].map((target) => ({
+  const threats = campaign.floor.entities.filter((enemy) => enemy.kind === "enemy" && isBattleThreat(campaign, enemy));
+  // Spatial focus can hint at a threat before Perception reveals its artwork.
+  // A wall still prevents this hint, so concealed enemies cannot shape the mask.
+  const distance = (target: Position) => Math.max(Math.abs(target.x - player.x), Math.abs(target.y - player.y));
+  const nearest = threats.filter((enemy) => hasPerceptionLineOfSight(campaign, player, enemy))
+    .sort((a, b) => distance(a) - distance(b) || a.id.localeCompare(b.id))[0];
+  const targets = threats.filter((enemy) => detected.has(enemy.id) || enemy.id === nearest?.id);
+  return [{ minX: player.x - 1, maxX: player.x + 1, minY: player.y - 2, maxY: player.y + 1 }, ...targets.map((target) => ({
     minX: Math.min(player.x, target.x), maxX: Math.max(player.x, target.x),
     // Reserve a full row above the engagement for tall and hopping sprites.
     minY: Math.min(player.y, target.y) - 1, maxY: Math.max(player.y, target.y),
-  }));
+  }))];
 }
 
 /** Disjoint row spans prevent overlap from adding a third brightness level. */
