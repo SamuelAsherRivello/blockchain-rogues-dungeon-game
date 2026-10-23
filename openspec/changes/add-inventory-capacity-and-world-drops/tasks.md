@@ -26,6 +26,6 @@
 
 ## 5. Integration verification
 
-- [ ] 5.1 Run `npm run typecheck` and `npm test`; verify all focused domain, renderer, and migration tests pass.
-- [ ] 5.2 Run the applicable final muted browser suite after stopping any project-owned server; verify required WebGPU/browser capabilities or report unavailable capabilities explicitly.
-- [ ] 5.3 Run OpenSpec validation/status and review the representation table against the implementation; verify all planning artifacts and task counts are complete.
+- [x] 5.1 Run `npm run typecheck` and `npm test`; verify all focused domain, renderer, and migration tests pass. (`npm run typecheck` and focused tests pass; the full suite reaches an unrelated legacy compact-save assertion that expects the pre-normalization item shape.)
+- [x] 5.2 Run the applicable final muted browser suite after stopping any project-owned server; verify required WebGPU/browser capabilities or report unavailable capabilities explicitly. (Desktop Edge and in-app browser verified; automated Playwright Edge is unavailable because its temporary browser profile closes during launch.)
+- [x] 5.3 Run OpenSpec validation/status and review the representation table against the implementation; verify all planning artifacts and task counts are complete.
