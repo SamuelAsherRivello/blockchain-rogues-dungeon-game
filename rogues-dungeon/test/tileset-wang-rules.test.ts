@@ -6,7 +6,7 @@ import test from "node:test";
 import { DUNGEON_CANONICAL_RULES } from "../src/systems/rendering/tileset-dungeon-wang.generated.ts";
 import { parseDungeonTilesetRules, ruleForMask, wangIdForMask, wallQuartersForMask } from "../src/systems/rendering/tileset-wang-rules.ts";
 import { buildDungeonWangTerrain, buildDungeonWangWalls, serializeFloorToTiled, validateTiledRepairMap } from "../src/systems/rendering/tile-map-system.ts";
-import { createCampaign, createRunCampaign, generateFloor, LEGACY_DUNGEON_TOPOLOGY_VERSION } from "../src/systems/procedural/world-procedural-system.ts";
+import { createCampaign, createRunCampaign, generateFloor, LEGACY_DUNGEON_TOPOLOGY_VERSION, LEGACY_PORTAL_LAYOUT_VERSION } from "../src/systems/procedural/world-procedural-system.ts";
 import { buildManualTileScenario } from "../src/systems/procedural/manual-tile-scenarios.ts";
 
 const tsxPath = new URL("../public/assets/art/game-view/tilesets/data/tileset-dungeon.tsx", import.meta.url);
@@ -113,7 +113,7 @@ test("legacy seed 3266798470 distinguishes inward joins from outward reference c
   const source = parseDungeonTilesetRules(await readFile(tsxPath, "utf8"));
   assert.equal(source.inwardCornerRules[80], 30);
   assert.equal(source.inwardCornerRules[20], 32);
-  const campaign = createRunCampaign(3266798470, 1, 1, 1, 1, { topologyVersion: LEGACY_DUNGEON_TOPOLOGY_VERSION });
+  const campaign = createRunCampaign(3266798470, 1, 1, 1, 1, { topologyVersion: LEGACY_DUNGEON_TOPOLOGY_VERSION, portalLayoutVersion: LEGACY_PORTAL_LAYOUT_VERSION });
   const { walls, wallDiagnostics } = buildDungeonWangWalls({ cells: campaign.floor.cells });
   assert.deepEqual(wallDiagnostics, []);
   for (const [x, y, expected] of [[40, 47, 30], [54, 53, 30], [40, 54, 30], [45, 57, 30], [38, 47, 32], [46, 47, 32], [46, 54, 48], [58, 52, 53]]) {
