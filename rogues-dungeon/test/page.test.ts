@@ -212,7 +212,7 @@ test('saves a running game before returning to the main menu', async () => {
 });
 
 test('saves and quits on Escape during play while Settings keeps Escape for closing the dialog', async () => {
-  const [game, dialog] = await Promise.all(['../src/game/game.tsx', '../src/ui/Dialog.tsx'].map((path) => readFile(new URL(path, import.meta.url), 'utf8')));
+  const [game, dialog] = await Promise.all(['../src/game/game.tsx', '../src/ui/dialog.tsx'].map((path) => readFile(new URL(path, import.meta.url), 'utf8')));
   assert.match(game, /event\.key !== "Escape" \|\| event\.repeat \|\| settings \|\| !campaign \|\| !slot/);
   assert.match(game, /saveAndQuit\(\);/);
   assert.match(dialog, /event\.key === "Escape"/);
@@ -222,7 +222,7 @@ test('uses randomSeed to seed only a newly selected save slot', async () => {
   const game = await readFile(new URL('../src/game/game.tsx', import.meta.url), 'utf8');
   assert.match(game, /parseGameUrlOptions\(window\.location\.search\)/);
   assert.match(game, /const worldSeed = unsavedUrlRun \? urlOptions.seed! : randomSeed \?\? readWorldSeed\(localStorage\)/);
-  assert.match(game, /if \(!unsavedUrlRun\) existing = readSlot\(localStorage, targetSlot\)/);
+  assert.match(game, /if \(!unsavedUrlRun && !override\) existing = readSlot\(localStorage, targetSlot\)/);
   const expression = game.match(/const initial = ([^;]+);/)?.[1];
   assert.ok(expression);
   const select = new Function('override', 'unsavedUrlRun', 'levelTest', 'objectTest', 'enemyTestMode', 'freshTestCampaign', 'existing', 'return ' + expression);
@@ -420,13 +420,13 @@ test('uses delta values to pulse only when an attribute turns red or green', asy
 });
 
 test('adds a nested How To Play reference dialog to Settings', async () => {
-  const [game, settingsWindow, helpWindow, dialog, css] = await Promise.all(['src/game/game.tsx', 'src/game/windows/settings-window.tsx', 'src/game/windows/how-to-play-window.tsx', 'src/ui/Dialog.tsx', 'src/ui/style.css'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));
+  const [game, settingsWindow, helpWindow, dialog, css] = await Promise.all(['src/game/game.tsx', 'src/game/windows/settings-window.tsx', 'src/game/windows/how-to-play-window.tsx', 'src/ui/dialog.tsx', 'src/ui/style.css'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));
   for (const topic of ['The Basics', 'Movement', 'Combat', 'Exploration', 'Quests', 'Items', 'Leveling Up', 'Saving Your Game', 'Tips']) assert.match(helpWindow, new RegExp(`\\["${topic}"`));
   assert.match(helpWindow, /title="How To Play"/); assert.match(helpWindow, /aria-haspopup="listbox"/); assert.match(helpWindow, /role="option"/); assert.match(helpWindow, /\{index \+ 1\}\. \{topic\}/); assert.match(helpWindow, /Left-click to walk or attack\. Right-click to run or attack\./);
   assert.match(helpWindow, /heading: "Keyboard"/); assert.match(helpWindow, /heading: "Mouse"/); assert.match(helpWindow, /heading: "Mobile"/); assert.match(helpWindow, /Mobile currently disabled\./);
   assert.match(helpWindow, /setSelectedTopic\(\(topic\) => topic - 1\)/); assert.match(helpWindow, /setSelectedTopic\(\(topic\) => topic \+ 1\)/); assert.match(helpWindow, /disabled=\{selectedTopic === 0\}/); assert.match(helpWindow, /disabled=\{selectedTopic === topics\.length - 1\}/);
   assert.match(settingsWindow, /How To Play/); assert.match(settingsWindow, /onOpenHowToPlay/); assert.match(settingsWindow, /dismissible=\{!helpOpen\}/);
-  assert.match(settingsWindow, /bounds=\{bounds\}/); assert.match(settingsWindow, /onOpenHowToPlay\(dialogBounds\(event\.currentTarget\.closest\("\.settings-window"\)!\)\)/); assert.match(helpWindow, /bounds=\{bounds\}/);
+  assert.match(settingsWindow, /bounds=\{bounds\}/); assert.match(settingsWindow, /onClick=\{\(event\) => openHowToPlay\(event\.currentTarget\)\}/); assert.match(settingsWindow, /onOpenHowToPlay\(bounds\)/); assert.match(helpWindow, /bounds=\{bounds\}/);
   assert.match(game, /const \[howToPlay, setHowToPlay\] = useState\(false\)/); assert.match(game, /<HowToPlayWindow origin="menu"/); assert.match(game, /<HowToPlayWindow origin="game"/);
   assert.match(dialog, /dismissible = true/); assert.match(dialog, /export interface DialogBounds/); assert.match(dialog, /function dialogBounds\(element: Element\)/); assert.match(dialog, /width: bounds\.width, height: bounds\.height/); assert.match(dialog, /if \(!dismissible\) return undefined/); assert.match(dialog, /onClick=\{dismissible \? requestClose : undefined\}/);
   assert.match(css, /\.dialog_backdrop:has\(\.how-to-play-window\) \{ z-index:4; \}/); assert.match(css, /\.dialog--bounded \{[^}]*box-sizing:border-box;[^}]*max-width:none;[^}]*max-height:none;/); assert.match(css, /\.how-to-play-window__topic-options \{ position:absolute;/); assert.match(css, /\.how-to-play-window__topic-trigger \{ display:flex;/); assert.match(css, /\.how-to-play-window__warning \{ padding:\.42rem/); assert.match(css, /\.how-to-play-window \.dialog_footer \{ justify-content:space-between; gap:\.5rem; \}/);

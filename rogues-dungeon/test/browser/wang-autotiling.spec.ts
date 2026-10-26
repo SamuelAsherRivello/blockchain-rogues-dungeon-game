@@ -1,21 +1,42 @@
 import { expect, test } from "@playwright/test";
 import { buildDungeonWangWalls } from "../../src/systems/rendering/tile-map-system.ts";
 import { buildManualTileScenario } from "../../src/systems/procedural/manual-tile-scenarios.ts";
-import { createRunCampaign } from "../../src/systems/procedural/world-procedural-system.ts";
+import { createRunCampaign, LEGACY_DUNGEON_TOPOLOGY_VERSION, LEGACY_PORTAL_LAYOUT_VERSION } from "../../src/systems/procedural/world-procedural-system.ts";
+import { openSavedGame } from "./start-saved-game.ts";
 
 for (const fixture of ["production-17", "production-914", "production-13579", "production-42-level-3", "production-404-level-8", "production-777-level-12", "production-3266798470", "corridor-joins", "wang-topology-matrix", "wang-focus-widths", "wang-focus-bend", "wang-focus-t", "wang-focus-plus", "wang-focus-hole", "wang-focus-socket"]) {
   test(`@smoke production Wang artwork ${fixture}`, async ({ page }, info) => {
+    // Multi-zoom GPU screenshots and context teardown can exceed 30 seconds.
+    test.setTimeout(90_000);
     await page.addInitScript(() => localStorage.setItem("rogues-dungeon.dev.zoom-test", "true"));
     const errors: string[] = [];
     page.on("pageerror", error => errors.push(error.message));
     page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
     const scenario = !fixture.startsWith("production-");
+    const legacyReference = fixture === "production-3266798470";
     const seed = scenario ? 13579 : Number(fixture.split("-")[1]);
     const level = Number(fixture.split("-level-")[1] ?? 1);
     if (level > 1) await page.setViewportSize(level === 3 ? { width: 960, height: 720 } : level === 8 ? { width: 1600, height: 900 } : { width: 1920, height: 1080 });
-    const floor = scenario ? buildManualTileScenario(fixture, seed, 1)! : createRunCampaign(seed, 1, 1, 1, level).floor;
+    const campaign = scenario ? null : createRunCampaign(seed, 1, 1, 1, level, legacyReference ? { topologyVersion: LEGACY_DUNGEON_TOPOLOGY_VERSION, portalLayoutVersion: LEGACY_PORTAL_LAYOUT_VERSION } : {});
+    const floor = scenario ? buildManualTileScenario(fixture, seed, 1)! : campaign!.floor;
     const expected = buildDungeonWangWalls({ cells: floor.cells }).walls;
-    await page.goto(`/blockchain-rogues-dungeon-game/?mute=1&world=1&level=${level}&slot=1&run=1&seed=${seed}${scenario ? `&debug-fix-map-autotiled=1&scenario=${fixture}` : ""}`);
+    if (legacyReference) {
+      // These exact reported coordinates belong to the legacy generator.
+      await page.setViewportSize({ width: 1920, height: 1080 });
+      await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
+      await page.evaluate(async saved => {
+        const modulePath = "/blockchain-rogues-dungeon-game/src/systems/persistence/save-system.ts";
+        const { writeSlot } = await import(modulePath);
+        writeSlot(localStorage, 1, saved);
+      }, campaign!);
+      await page.reload();
+      await openSavedGame(page);
+      // Atlas pixel equality measures artwork independently of fog and light.
+      await page.getByRole("button", { name: "RT:3", exact: true }).click();
+      await expect(page.locator(".world-view")).toHaveAttribute("data-render-test-mode", "0");
+    } else {
+      await page.goto(`/blockchain-rogues-dungeon-game/?mute=1&world=1&level=${level}&slot=1&run=1&seed=${seed}${scenario ? `&debug-fix-map-autotiled=1&scenario=${fixture}` : ""}`);
+    }
     await expect(page.locator(".game-screen")).toBeVisible();
     await expect(page.getByText(/requires WebGPU|WebGPU.*unavailable|WebGPU.*not supported/i)).toHaveCount(0);
     const world = page.locator(".world-view");

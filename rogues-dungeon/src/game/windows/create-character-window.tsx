@@ -1,7 +1,7 @@
 import { useAttributeRoll } from './use-attribute-roll.ts';
 import type { Attributes } from "../types.ts";
 import { progressionStatNames } from "../../systems/procedural/world-procedural-system.ts";
-import { Dialog, type DialogBounds } from "../../ui/Dialog.tsx";
+import { Dialog, type DialogBounds } from "../../ui/dialog.tsx";
 import { AttributesCard } from "../panels/attribute-panel.tsx";
 import { ImageTextRow } from "./image-text-row.tsx";
 

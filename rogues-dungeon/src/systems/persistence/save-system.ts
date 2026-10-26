@@ -1,5 +1,7 @@
 import { measurePerformance } from "../rendering/performance-system.ts";
 import { revealDiscovery } from "../procedural/map-discovery-system.ts";
+import { prepareBrowserDevelopmentStorage } from "./development-storage-system.ts";
+export { DEVELOPMENT_STORAGE_COMPATIBILITY_KEY, DEVELOPMENT_STORAGE_COMPATIBILITY_EPOCH, resetDevelopmentStorageCompatibility } from "./development-storage-system.ts";
 import type { AbilityId, Attributes, Campaign, Floor, Item, Position, Preferences, ResourceInput, ResourceName, StorageAccess, StorageCollection } from "../../game/types.ts";
 interface LegacyItem { id?: string; name?: string; slot?: string; defense?: number; attack?: number }
 type LegacyAttributes = Partial<Attributes> & { agility?: number; vitality?: number };
@@ -39,6 +41,7 @@ function legacyWorldSeed(storage: StorageAccess) {
   return null;
 }
 export function readWorldSeed(storage: StorageAccess, fallback: number | null = null) {
+  prepareBrowserDevelopmentStorage(storage);
   const raw = storage.getItem(WORLD_SEED_KEY);
   if (raw !== null && /^(0|[1-9]\d*)$/.test(raw)) {
     const value = Number(raw);
@@ -257,6 +260,7 @@ export interface SavedGameSummary { slot: string; occupied: boolean; level: numb
 const summaryCache = new WeakMap<StorageAccess, Map<string, { raw: string | null; summary: SavedGameSummary }>>();
 /** Current-format menu metadata needs neither playable terrain nor discovery decoding. */
 export function readSlotSummary(storage: StorageAccess): SavedGameSummary[] {
+  prepareBrowserDevelopmentStorage(storage);
   let cache = summaryCache.get(storage);
   if (!cache) { cache = new Map(); summaryCache.set(storage, cache); }
   return SLOT_IDS.map((slot): SavedGameSummary => {
@@ -283,5 +287,5 @@ export function readSlotSummary(storage: StorageAccess): SavedGameSummary[] {
 }
 function normalizeVolume(value: unknown, fallback: number) { return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 100 ? value : fallback; }
 export function normalizePreferences(input: unknown): Preferences { const value = typeof input === "object" && input !== null ? input as Record<string, unknown> : {}; return { movementMode: ["grid-snap", "grid-tween", "gridless"].includes(String(value.movementMode)) ? value.movementMode as Preferences["movementMode"] : DEFAULT_PREFERENCES.movementMode, zoom: typeof value.zoom === "number" && gameZoomPresets.includes(value.zoom) ? value.zoom : DEFAULT_PREFERENCES.zoom, camera: typeof value.camera === "string" && ["center", "deadzone", "screen"].includes(value.camera) ? value.camera as Preferences["camera"] : DEFAULT_PREFERENCES.camera, fullscreenDesired: value?.fullscreenDesired === true, sfxVolume: normalizeVolume(value?.sfxVolume, DEFAULT_PREFERENCES.sfxVolume), musicVolume: normalizeVolume(value?.musicVolume, DEFAULT_PREFERENCES.musicVolume), muteAll: value?.muteAll === true, urlArgs: value?.urlArgs === true }; }
-export function readPreferences(storage: StorageAccess) { try { return normalizePreferences(JSON.parse(storage.getItem(PREFERENCE_KEY) ?? "null")); } catch { return { ...DEFAULT_PREFERENCES }; } }
+export function readPreferences(storage: StorageAccess) { try { prepareBrowserDevelopmentStorage(storage); return normalizePreferences(JSON.parse(storage.getItem(PREFERENCE_KEY) ?? "null")); } catch { return { ...DEFAULT_PREFERENCES }; } }
 export function writePreferences(storage: StorageAccess, value: unknown) { const normalized = normalizePreferences(value); storage.setItem(PREFERENCE_KEY, JSON.stringify(normalized)); return normalized; }

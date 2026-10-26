@@ -61,6 +61,10 @@ test("@smoke synchronizes generated puzzle pixels in both views and retains them
     await openSavedGame(page);
     await expect(page.locator('.minimap-view[data-renderer-ready="true"]')).toBeVisible();
     await expect(page.getByRole("button", { name: "P: 0", exact: true })).toBeVisible();
+    // Compare puzzle artwork independently of player-position/heading light.
+    // The RT3 doorway and fog composition have their own browser cases.
+    await page.getByRole("button", { name: "RT:3", exact: true }).click();
+    await expect(page.locator(".world-view")).toHaveAttribute("data-render-test-mode", "0");
   };
   const state = async () => {
     const saved = await readSavedCampaign(page);

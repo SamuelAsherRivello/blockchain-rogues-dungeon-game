@@ -25,6 +25,15 @@ test-only fixture; it supplements, rather than replaces, normal world-pass
 distribution. In particular, crates retain their per-room spawn roll during
 test-mode generation, with one additional crate beside the level-one entrance.
 
+## Development save compatibility
+
+During early development, the user authorizes incompatible game changes together
+with clearing this game's local storage. When a change invalidates saved content,
+bump the compatibility epoch in `development-storage-system.ts` so the next app
+startup clears the game's `rogues-dungeon.` keys once. Preserve unrelated origin
+data and saves created after that reset. Fresh browser fixtures must declare the
+current epoch before seeding their data.
+
 ## Browser verification
 
 Test the live game in all three available browser contexts when a change affects

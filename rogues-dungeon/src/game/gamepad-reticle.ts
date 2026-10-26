@@ -1,10 +1,12 @@
 import { useEffect, useRef } from "react";
 import type { MovementGamepad } from "./gamepad-input.ts";
-import type { Position } from "./types.ts";
+import type { Direction, Position } from "./types.ts";
+import { movementDirection } from "./movement-prompt-controller.ts";
 
 const DEAD_ZONE = 0.2;
 const neutralInput = () => ({ x: 0, y: 0, left: false, right: false });
 export type GamepadReticleInput = ReturnType<typeof neutralInput> & { buttons?: readonly boolean[]; connected?: boolean };
+interface ReticleUpdate { offset: Position | null; click: 0 | 2 | null; prompt?: Direction }
 
 export function getGamepadReticleInput(gamepads: readonly (MovementGamepad | null)[]): GamepadReticleInput {
   for (const pad of gamepads) {
@@ -30,6 +32,7 @@ export class GamepadReticleController {
   private previous: GamepadReticleInput = neutralInput();
   private mouse: Position | null = null;
   private needsNeutral = true;
+  private promptRevision = 0;
   offset: Position | null = null;
 
   mouseMoved(point: Position) {
@@ -48,29 +51,37 @@ export class GamepadReticleController {
     this.source = "mouse";
   }
 
-  advance(input: GamepadReticleInput) {
+  advance(input: GamepadReticleInput, promptRevision = 0, promptActive = false): ReticleUpdate | null {
     if (input.connected === false) {
       const hidden = this.source === "gamepad";
       this.reset();
       return hidden ? { offset: null, click: null } : null;
     }
     const active = Boolean(input.x || input.y);
-    const buttonPressed = input.buttons?.some((pressed, index) => pressed && !this.previous.buttons?.[index]);
+    if (promptRevision !== this.promptRevision) {
+      this.promptRevision = promptRevision;
+      this.needsNeutral = true; this.offset = null; this.previous = input;
+      return { offset: null, click: null };
+    }
     const triggerPressed = input.left && !this.previous.left || input.right && !this.previous.right;
     if (this.needsNeutral) {
-      if (!active && !input.left && !input.right && !input.buttons?.some(Boolean)) this.needsNeutral = false;
+      if (!active && !input.left && !input.right) this.needsNeutral = false;
       this.previous = input;
       return null;
     }
     const stickChanged = Math.abs(input.x - this.previous.x) > .005 || Math.abs(input.y - this.previous.y) > .005;
     this.previous = input;
-    if (buttonPressed || triggerPressed) {
-      this.source = "gamepad";
-      this.offset = null;
-      return { offset: null, click: triggerPressed ? input.right ? 2 as const : 0 as const : null };
+    if (promptActive) {
+      if (!active) return null;
+      this.needsNeutral = true; this.offset = null;
+      return { offset: null, click: null, prompt: movementDirection({ x: 0, y: 0 }, input)! };
     }
-    if (this.source !== "gamepad") return null;
+    if (triggerPressed) {
+      this.offset = null;
+      return { offset: null, click: input.right ? 2 as const : 0 as const };
+    }
     if (!active || !stickChanged) return null;
+    this.source = "gamepad";
     this.offset = getReticleNeighbor(input.x, input.y);
     return { offset: this.offset, click: null };
   }

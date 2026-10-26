@@ -3,6 +3,8 @@ import { installCampaignFixture } from "./campaign-fixture.ts";
 import { openSavedGame } from "./start-saved-game.ts";
 
 test("shows the unarmed Battle Mode Tip after entry and dismisses it for the battle when closed or moved", async ({ page }) => {
+  // Four WebGPU reloads plus the two deliberate 3.5-second dismissal waits.
+  test.setTimeout(90_000);
   await installCampaignFixture(page, () => {
     const map = Array.from({ length: 100 }, () => Array(100).fill(1));
     for (let y = 48; y <= 52; y++) for (let x = 48; x <= 52; x++) map[y][x] = 0;

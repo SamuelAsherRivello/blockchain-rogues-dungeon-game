@@ -1,5 +1,5 @@
 import type { WorldGrowthEvent } from '../types.ts';
-import { Dialog, type DialogCenter } from '../../ui/Dialog.tsx';
+import { Dialog, type DialogCenter } from '../../ui/dialog.tsx';
 import { AttributePanel } from '../panels/attribute-panel.tsx';
 import { GameCard } from '../cards/game-card.tsx';
 import { worldAttributeHelp, worldAttributeLabels, worldAttributeNames } from '../../systems/procedural/world-attributes.ts';

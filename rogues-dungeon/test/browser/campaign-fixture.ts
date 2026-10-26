@@ -2,6 +2,7 @@ import type { Page } from "@playwright/test";
 import { runInNewContext } from "node:vm";
 import type { Campaign } from "../../src/game/types.ts";
 import { createCampaign, upgradeCampaignResources } from "../../src/systems/procedural/world-procedural-system.ts";
+import { fixtureCompatibilityMarker } from "./fixture-storage.ts";
 
 /** Build current campaigns before navigation, without exercising legacy-save migration. */
 export function campaignFixturesFrom<T>(describe: (argument: T) => void, argument?: T) {
@@ -30,9 +31,10 @@ export function campaignFixturesFrom<T>(describe: (argument: T) => void, argumen
 
 export async function installCampaignFixture<T>(page: Page, describe: (argument: T) => void, argument?: T) {
   const records = campaignFixturesFrom(describe, argument);
-  await page.addInitScript(saved => {
+  await page.addInitScript(({ saved, marker }) => {
+    localStorage.setItem(marker.name, marker.value);
     for (const [key, campaign] of Object.entries(saved)) localStorage.setItem(key, JSON.stringify(campaign));
-  }, records);
+  }, { saved: records, marker: fixtureCompatibilityMarker });
 }
 
 export async function readSavedCampaign(page: Page, slot: 1 | 2 | 3 = 1): Promise<Campaign> {

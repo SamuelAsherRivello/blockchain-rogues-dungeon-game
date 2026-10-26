@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { getGamepadDirection } from "../src/game/gamepad-input.ts";
 import { GamepadReticleController, getGamepadReticleInput, getReticleNeighbor } from "../src/game/gamepad-reticle.ts";
+import { claimMovement, getLatestMovement } from "../src/game/keyboard-input.ts";
+import { MovementPromptController, rightStickPromptResponse } from "../src/game/movement-prompt-controller.ts";
 
 function pad(x = 0, y = 0, pressed: number[] = []) {
   return { connected: true, mapping: "standard" as const, axes: [x, y], buttons: Array.from({ length: 16 }, (_, index) => ({ pressed: pressed.includes(index), touched: false, value: pressed.includes(index) ? 1 : 0 })) };
@@ -34,6 +36,66 @@ test("missing, neutral, disconnected and nonstandard controllers do not move", (
 });
 
 const neutral = { x: 0, y: 0, left: false, right: false };
+
+test("exclusive UI reset blocks held aiming and triggers until neutral and does not revive hidden targets", () => {
+  const controller = reticle();
+  controller.advance({ ...neutral, x: 1 }); controller.reset();
+  assert.equal(controller.offset, null);
+  for (let frame = 0; frame < 5; frame++) assert.equal(controller.advance({ ...neutral, x: 1, left: true }), null);
+  controller.advance(neutral);
+  assert.deepEqual(controller.advance({ ...neutral, y: -1 })!.offset, { x: 0, y: -1 });
+});
+
+test("prompt directions preserve confirmation and cancellation while blocking disabled and pending confirmations", () => {
+  assert.equal(rightStickPromptResponse("e", { direction: "e" }), "confirm");
+  assert.equal(rightStickPromptResponse("w", { direction: "e" }), "cancel");
+  assert.equal(rightStickPromptResponse("e", { direction: "e", disabled: true }), "blocked");
+  assert.equal(rightStickPromptResponse("e", { direction: "e", confirming: true }), "blocked");
+  assert.equal(rightStickPromptResponse("n"), "cancel");
+});
+
+test("right-stick prompt context requires neutral, consumes one gesture and cannot leak into aiming", () => {
+  const controller = reticle();
+  controller.advance({ ...neutral, x: 1 });
+  assert.deepEqual(controller.advance({ ...neutral, x: 1 }, 1, true), { offset: null, click: null });
+  assert.equal(controller.advance({ ...neutral, x: 1 }, 1, true), null);
+  controller.advance(neutral, 1, true);
+  assert.deepEqual(controller.advance({ ...neutral, x: -1 }, 1, true), { offset: null, click: null, prompt: "w" });
+  assert.equal(controller.advance({ ...neutral, x: -1 }, 1, true), null);
+  controller.advance({ ...neutral, x: -1 }, 2, false);
+  assert.equal(controller.advance({ ...neutral, x: -1 }, 2, false), null);
+  controller.advance(neutral, 2, false);
+  assert.deepEqual(controller.advance({ ...neutral, y: 1 }, 2, false)!.offset, { x: 0, y: 1 });
+});
+
+test("only the newest visible right-stick prompt responds and membership revisions are stable", () => {
+  const prompts = new MovementPromptController(); const calls: string[] = [];
+  assert.equal(prompts.respondToRightStick("e"), false);
+  const closeA = prompts.subscribeRightStick(direction => calls.push(`a:${direction}`));
+  const closeB = prompts.subscribeRightStick(direction => calls.push(`b:${direction}`));
+  const revision = prompts.revision;
+  assert.equal(prompts.respondToRightStick("e"), true);
+  assert.deepEqual(calls, ["b:e"]);
+  assert.equal(prompts.revision, revision);
+  closeB(); prompts.respondToRightStick("w"); closeA();
+  assert.deepEqual(calls, ["b:e", "a:w"]);
+  assert.equal(prompts.hasRightStickPrompt, false);
+});
+
+test("movement handoff removes incompatible held entries without stale fallback and keeps keyboard combinations", () => {
+  const held = new Map<string, { direction: "n" | "s" | "e" | "w" }>();
+  claimMovement(held, "gamepad", "e");
+  claimMovement(held, "KeyW", "n");
+  assert.deepEqual([...held.keys()], ["KeyW"]);
+  held.delete("KeyW");
+  assert.equal(getLatestMovement(held), null);
+  claimMovement(held, "KeyW", "n"); claimMovement(held, "KeyA", "w");
+  assert.equal(held.size, 2);
+  claimMovement(held, "gamepad", "s");
+  assert.deepEqual([...held.keys()], ["gamepad"]);
+  held.delete("gamepad");
+  assert.equal(getLatestMovement(held), null);
+});
 function reticle(gamepadMode = true) {
   const controller = new GamepadReticleController();
   controller.advance(neutral);
@@ -72,15 +134,13 @@ test("right stick selects exactly eight neighboring offsets regardless of intens
   assert.equal(getReticleNeighbor(0, 0), null);
 });
 
-test("mouse mode persists until a gamepad button press hides the reticle and fresh aiming reveals it", () => {
+test("right stick takes aiming immediately and unchanged held input cannot override a newer mouse move", () => {
   const controller = reticle();
   assert.deepEqual(controller.advance({ ...neutral, x: 1 })!.offset, { x: 1, y: 0 });
   controller.mouseMoved({ x: 100, y: 200 });
   assert.equal(controller.source, "mouse");
-  assert.equal(controller.advance({ ...neutral, y: -1 }), null);
-  assert.equal(controller.source, "mouse");
-  const hidden = controller.advance({ ...neutral, y: -1, buttons: [true] });
-  assert.deepEqual(hidden, { offset: null, click: null });
+  assert.equal(controller.advance({ ...neutral, x: 1 }), null);
+  assert.deepEqual(controller.advance({ ...neutral, y: -1 })!.offset, { x: 0, y: -1 });
   assert.equal(controller.source, "gamepad");
   assert.equal(controller.advance({ ...neutral, y: -1 }), null);
   assert.deepEqual(controller.advance({ ...neutral, x: 1, y: -1 })!.offset, { x: 1, y: -1 });
@@ -88,11 +148,12 @@ test("mouse mode persists until a gamepad button press hides the reticle and fre
   assert.equal(controller.source, "gamepad");
 });
 
-test("any gamepad button hides aiming; triggers click once before hiding", () => {
+test("movement and face buttons preserve mouse aiming; triggers click once before hiding", () => {
   for (let button = 0; button < 16; button++) {
     const controller = reticle();
-    controller.advance({ ...neutral, x: 1 });
-    controller.advance({ ...neutral, buttons: Array.from({ length: 16 }, (_, index) => index === button) });
+    controller.mouseMoved({ x: 100, y: 200 });
+    assert.equal(controller.advance({ ...neutral, buttons: Array.from({ length: 16 }, (_, index) => index === button) }), null);
+    assert.equal(controller.source, "mouse");
     assert.equal(controller.offset, null);
   }
   const controller = reticle();

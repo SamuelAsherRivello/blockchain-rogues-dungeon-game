@@ -12,6 +12,8 @@ New slots, worlds and levels start unknown apart from arrival. Returning to the 
 
 Before the first saved-record rewrite, retain its original bytes under `rogues-dungeon.slot.discovery-v2-backup.<slot>`, unless an identical legacy backup already preserves them. The discovery backup is not replaced on later saves, and this compatibility path does not replace an older v1 backup. Preserving the whole record also protects malformed discovery in an inactive realm.
 
+The separately authorized development compatibility reset runs before these save readers. A missing or older compatibility epoch clears `rogues-dungeon.*` once, including old slots and backups, while preserving unrelated origin data. New saves and preferences survive subsequent starts in the same epoch. Discovery migration protects supported records after that startup boundary; it does not bypass the development reset.
+
 ## Grid light
 
 The surrounding player radius is 3; the forward 180-degree radius is 6. Wall torches, authored home torches and campfires share `CAMPFIRE_LIGHT`: radius 5 and RGB (0.90, 0.58, 0.25). Change that definition to tune all three together. Ambient RGB is (0.30, 0.32, 0.36). Player RGB contributions are (0.58, 0.56, 0.50) around the player and (0.34, 0.33, 0.29) ahead. Linear radial falloff reaches zero at radius plus half a tile. Contributions add and clamp to [0, 1].
@@ -41,6 +43,18 @@ Fog and illumination do not reject reachable walking destinations or clip routes
 Composition is illuminated artwork, fog permission, optional S color treatment, then tactical SVG dimming. Membership, the extra artwork row, wall/door checks and overlap union retain their meaning. Both tactical attenuation classes can contain varying scene light. Bright non-tactical torches receive final dimming. Unknown cells cannot expose identifying tactical hints.
 
 The start-room decoration plan renders once in registered wall-row layers. Its cells replace matching canonical wall sprites instead of drawing a duplicate ring. These layers share wall depth, owning-cell fog permission, wall-face light tint and nearest texture sampling. The semantic minimap remains unchanged.
+
+## Tuning
+
+| Setting | Definition | Current value |
+| --- | --- | --- |
+| Exploration brush | `DISCOVERY_RADIUS` in [map-discovery-system.ts](../src/systems/procedural/map-discovery-system.ts) | 4 tiles |
+| Ambient color | `GRID_LIGHTING.ambient` in [grid-lighting-system.ts](../src/systems/rendering/grid-lighting-system.ts) | RGB 0.30, 0.32, 0.36 |
+| Surrounding player light | `GRID_LIGHTING.playerRadius` and `playerColor` | 3 tiles, RGB 0.58, 0.56, 0.50 |
+| Forward player light | `GRID_LIGHTING.forwardRadius` and `forwardColor` | 6 tiles, RGB 0.34, 0.33, 0.29 |
+| All fires and torches | `CAMPFIRE_LIGHT.radius` and `color` | 5 tiles, RGB 0.90, 0.58, 0.25 |
+
+The forward angle is currently a half-plane in `footprint`, selected by the heading dot product. Changing it to a narrower cone requires changing that predicate and its tests. Distance falloff is linear in the same function. The reveal brush has its own rounded-radius predicate and is independent of these lighting choices. Tactical attenuation remains in the Battle presentation and takes precedence over all light values.
 
 ## Measurements
 

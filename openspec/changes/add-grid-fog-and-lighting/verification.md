@@ -1,6 +1,18 @@
 # Apply verification
 
-Owner: `01a16a3c-f8f6-76e2-ab27-0216debd3630`, coordinated by `01a17384-49d7-78c2-ab8d-a242e90b3156` under `all-active-proposals`. Shared checkout on main; unrelated edits retained. No commits, branches or server lifecycle changes.
+Owner: `01a16a3c-f8f6-76e2-ab27-0216debd3630`, coordinated by `01a17384-49d7-78c2-ab8d-a242e90b3156` under `all-active-proposals`. Shared checkout on main; unrelated edits retained.
+
+## Finalization on 2026-10-26
+
+The human explicitly requested completing the remaining work and finalizing this feature. The coordinator was interrupted, so this owner resumed the integration gates directly. The sections below this checkpoint preserve historical evidence and release restrictions; their pending counts and earlier source hashes do not describe final acceptance.
+
+Fresh `npm test` passed 496/496 with zero skips or failures in 129.366 seconds (`output/fog-final-node.log`). `npm run build`, including both TypeScript projects, passed (`output/fog-final-build.log`). No production lighting, discovery, input or simulation source was changed during this finalization pass.
+
+The four routed browser failures required fixture corrections: fog samples now locate an actual generated wall and await its presented GPU pixels; the PC retarget check uses keyboard controls; the Perception fixture explicitly discovers its arena; and gridless saved-state observations use the canonical reader, a real generated barrel identity, and a horizontal center-line route. The latter retains the exact one-turn and once-only reward assertions. Its previous two-turn failure started off-center on both axes and legitimately crossed two center lines. Failure logs remain under `output/fog-final-*` rather than being represented as passes.
+
+The configured 154-case browser suite is in progress. The stop workflow verified and stopped preview PIDs 35444 and 39296 under the startup lock. The active RUN chat immediately restarted the 6080 preview as PID 98836. The suite therefore uses its supported `PLAYWRIGHT_PORT=6080` configuration override and reuses that single server. Port 4173 is not running alongside it. The stored three-minute preview automation is already PAUSED. An initial automatic review rejected the stop on a suspected stale PID; inspection confirmed no such PID in the script, and guarded execution was approved. IPv6 listener verification was then corrected before the second preview stop.
+
+Final browser results, stable-source RT samples and archive acceptance will be recorded here before completing the remaining tasks.
 
 ## Baseline
 
@@ -68,7 +80,15 @@ The coordinator changed gate order: release shared runtime files after this fina
 
 After the coordinator released pure navigation work, the existing focused navigation/discovery/movement checks passed 33/33 (`output/fog-walk-focused-baseline.log`). A new regression then reproduced an uncovered hidden-action defect: select an empty unknown destination, let an enemy arrive after the destination becomes revealed, and the retained walking click emits an eastward action step into that enemy. `output/fog-walk-intent-regression-before.log` records the failing assertion. The test also covers object/pickup/barrel arrivals and stale route entry; a control preserves fresh revealed interactive selections. An initial test-fixture syntax error was corrected before this behavioral failure was recorded.
 
-The coordinator has been notified in this chat before any runtime patch so integrated gates can be paused. Planned ownership is limited to mouse-selection walking intent and its focused regressions, preserving Game/gamepad/performance changes. No browser or FPS capture has been launched for this verification stage. Tasks 3.4 and 3.5 remain open.
+The coordinator was notified in this chat before any runtime patch and explicitly paused integrated gates and released the narrow patch window. The fix adds session-only `MouseTravelSelection.walkOnly` in `mouse-selection.ts`, retains that intent across route recomputation/reveal, and excludes later interactive occupants at that destination from both normal and stale routes. A fresh revealed interactive selection retains ordinary behavior. The existing Game destination spread preserves this ephemeral flag without changes to Game, shared campaign types, saves, A*, enemy detection, AI, gamepad controls, the HUD or renderer culling.
+
+Only runtime `rogues-dungeon/src/game/mouse-selection.ts` and regression `rogues-dungeon/test/fog-lighting-presentation.test.ts` changed in this patch. Focused navigation/discovery/movement checks pass 35/35 (`output/fog-walk-focused-after.log`); TypeScript passes (`output/fog-walk-typecheck.log`), and scoped whitespace checks pass. Runtime and CPU ownership were explicitly released after these checks. The newly authorized one-time startup/persistence reset is owned separately and has no file overlap with this patch.
+
+After the reset owner and coordinator released focused Edge correctness work, `output/fog-walk-focused-browser-result.log` passed Grid-snap, Grid-tween and Gridless at RT3. Each mode compares ordinary walk destinations two and six tiles away, verifies the same valid white reticle and white route dots (`rgb(245,241,230)`) plus the boot cursor, proves hover/preview preserve saved discovery, and confirms arrival at the originally unknown target (56,50). No application errors occurred. The disposable profile suppresses hardware gamepads only for this mouse fixture; it lets real clean startup establish the imported current compatibility epoch before writing empty test slots. It does not bypass or change the real-user reset. Screenshots are `output/fog-walk-final-grid-snap.png`, `output/fog-walk-final-grid-tween.png` and `output/fog-walk-final-gridless.png`.
+
+The focused Edge browser was closed and the window explicitly released. No FPS capture was launched. Desktop Edge through the required CUA surface remains unavailable, rather than passed; full integrated browser/context verification is still the coordinator's pending gate. Revised documentation agrees with the focused navigation, reveal, protected-action and presentation evidence. Tasks 3.4 and 3.5 can now be completed under their new criteria, without carrying over obsolete clipping checks.
+
+Released patch SHA256: mouse-selection `6b413fbf82670e77c21069ea375d882a2583b86816a6e5564127cf786b4cb023`; presentation regression `7ad49e1ae60e2e51fa6b002aebbbf2dfd52321aef51926ca4a8618da19a21fe4`. No runtime edits followed release. The final matrix remains deferred until the integrated Node/build/full-browser gates finish and the coordinator grants its last measurement window.
 
 The coordinator identified concurrent human-authorized gamepad/reticle work and completed portal, drag/swap and fog-walk changes, and is settling their source ownership before another capture. All browsers created by this owner are closed; rejected source/step captures remain rejected. No new CPU/browser tests or runtime edits are authorized until the coordinator releases the window.
 

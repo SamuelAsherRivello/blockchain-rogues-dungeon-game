@@ -429,9 +429,30 @@ export function cardinalAdjacentPosition(floor: Floor, anchor: Position): Positi
   return candidates[start]!;
 }
 function playerHomeFloor(campaign: Campaign): Floor {
+  const level = campaign.floor.level ?? campaign.floor.depth ?? 1;
   const cells = PLAYER_HOME_PREFAB.cells.map((row) => row.map((cell) => ({ walkable: Boolean(cell.walkable), role: cell.role ?? (cell.walkable ? "ground" : "wall") })));
   const arrows = PLAYER_HOME_PREFAB.teleportArrows!.map(({ x, y, direction }) => ({ id: `teleport-arrow-player-home-${x}`, kind: "teleport-arrow" as const, destination: "dungeon", direction, name: "Dungeon", x, y }));
-  return { seed: campaign.floor.seed, width: PLAYER_HOME_PREFAB.width, height: PLAYER_HOME_PREFAB.height, cells, start: { x: 4, y: 8 }, entities: arrows, time: campaign.floor.time, level: campaign.floor.level, generatorVersion: campaign.floor.generatorVersion, tiledGrounds: PLAYER_HOME_PREFAB.tiledGrounds?.slice(), tiledWalls: PLAYER_HOME_PREFAB.tiledWalls?.slice(), tiledDecorations: PLAYER_HOME_PREFAB.tiledDecorations?.map((decoration) => ({ ...decoration })), generation: { seed: campaign.floor.seed, generator: "player-home" } };
+  const context = createLevelContext({ levelId: level, seed: campaign.floor.seed, cells, entities: arrows, start: { x: 4, y: 8 } });
+  runLevelPasses(context, [{ id: "player-home", run(generation) {
+    for (const arrow of arrows) generation.reserveEntityCell(arrow.x, arrow.y);
+    generation.reserveEntityCell(4, 8);
+    const saved = campaign.playerHomeEntities?.[String(level)];
+    if (saved) { generation.entities = structuredClone(saved); return; }
+    const random = worldRandom(campaign.floor.seed, "player-home-rewards");
+    const choices: Entity[] = [
+      ...(["health", "stamina", "mana"] as const).map((resource) => ({ id: "", kind: "potion" as const, resource, x: 0, y: 0 })),
+      ...eligibleWorldItemNames(level, WORLD_DROPPABLE_ITEM_NAMES).map((name) => ({ id: "", kind: "item" as const, item: worldDroppableItemInstance(name as WorldDroppableItemName, ""), x: 0, y: 0 })),
+    ];
+    for (const x of [4, 5]) {
+      if (!generation.reserveEntityCell(x, 5)) throw new Error("Playroom reward space below a table is blocked.");
+      const reward = choices.splice(Math.floor(random() * choices.length), 1)[0]!;
+      reward.id = `player-home-reward-${level}-${x}`;
+      reward.x = x; reward.y = 5;
+      if (reward.kind === "item") reward.item.id = reward.id;
+      generation.entities.push(reward);
+    }
+  } }]);
+  return { seed: campaign.floor.seed, width: PLAYER_HOME_PREFAB.width, height: PLAYER_HOME_PREFAB.height, cells, start: { x: 4, y: 8 }, entities: context.entities, time: campaign.floor.time, level, generatorVersion: campaign.floor.generatorVersion, tiledGrounds: PLAYER_HOME_PREFAB.tiledGrounds?.slice(), tiledWalls: PLAYER_HOME_PREFAB.tiledWalls?.slice(), tiledDecorations: PLAYER_HOME_PREFAB.tiledDecorations?.map((decoration) => ({ ...decoration })), generation: { seed: campaign.floor.seed, generator: "player-home" } };
 }
 function emit(events: GameEvent[], type: string, facts: EventFacts, state: Campaign, source = type.split(".")[0]) { events.push({ type, facts, source, gameTime: state.floor.time, sequence: events.length + 1 }); }
 function carveRoom(map: number[][], room: Room) { for (let y = room.y; y < room.y + room.h; y++) for (let x = room.x; x < room.x + room.w; x++) map[y][x] = 0; }
@@ -1572,6 +1593,7 @@ export function createAdventureLevelBaseline(campaign: Campaign) {
   const level = campaign.floor.level ?? campaign.floor.depth ?? 1;
   const profile = campaign.floorProfiles?.[String(level)] ?? campaign.floor.generationProfile;
   const baseline = createRunCampaign(campaign.worldSeed ?? campaign.floor.seed, campaign.slot ?? 1, campaign.run ?? 1, campaign.progression.difficulty ?? level, level, { worldAttributes: campaign.worldAttributes, mode: campaign.mode, topologyVersion: profile ? profile.topologyVersion ?? LEGACY_DUNGEON_TOPOLOGY_VERSION : campaign.topologyVersion ?? LEGACY_DUNGEON_TOPOLOGY_VERSION, portalLayoutVersion: profile ? profile.portalLayoutVersion ?? LEGACY_PORTAL_LAYOUT_VERSION : campaign.portalLayoutVersion ?? LEGACY_PORTAL_LAYOUT_VERSION });
+  baseline.world = campaign.world;
   baseline.worldGrowth = structuredClone(campaign.worldGrowth);
   baseline.worldLegacyPoints = campaign.worldLegacyPoints;
   baseline.floor.time = 0;
@@ -1583,8 +1605,8 @@ export function normalizeCampaignRecovery(campaign: Campaign) {
   if (!(["classic", "adventure", "journey"] as const).includes(campaign.mode ?? "adventure")) campaign.mode = "adventure";
   campaign.mode ??= "adventure";
   normalizeDiscovery(campaign);
-  if (campaign.mode === "adventure" && !campaign.adventureBaseline) campaign.adventureBaseline = createAdventureLevelBaseline(campaign);
   if (campaign.adventureBaseline && !isRecoverySnapshot(campaign.adventureBaseline)) delete campaign.adventureBaseline;
+  if (campaign.mode === "adventure" && (!campaign.adventureBaseline || campaign.adventureBaseline.floor.level !== campaign.floor.level)) campaign.adventureBaseline = createAdventureLevelBaseline(campaign);
   if (campaign.journeyCheckpoint && !isRecoverySnapshot(campaign.journeyCheckpoint)) delete campaign.journeyCheckpoint;
   if (campaign.adventureBaseline) {
     campaign.adventureBaseline = recoverySnapshot(campaign.adventureBaseline);
@@ -1602,7 +1624,7 @@ export function buildDeathRecovery(campaign: Campaign): Campaign | null {
     return copy.floor.cells.length === 0 ? restoreCompactCampaign(copy) : copy;
   };
   if (campaign.mode === "journey" && campaign.journeyCheckpoint) return restoreSnapshot(campaign.journeyCheckpoint);
-  const baseline = campaign.adventureBaseline ? restoreSnapshot(campaign.adventureBaseline) : createAdventureLevelBaseline(campaign);
+  const baseline = campaign.adventureBaseline?.floor.level === campaign.floor.level ? restoreSnapshot(campaign.adventureBaseline) : createAdventureLevelBaseline(campaign);
   baseline.mode = campaign.mode;
   baseline.progression = structuredClone(campaign.progression);
   baseline.worldGrowth = structuredClone(campaign.worldGrowth);
@@ -1781,7 +1803,7 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
   }
   const state = cloneActionCampaign(campaign, !options.staticWorldReady);
   if (options.enemyLogicDisabled) enemyLogicDisabledStates.add(state);
-  const events: GameEvent[] = []; const reject = (reason: string, facts: EventFacts = {}, type = "action.rejected"): ActionResult => ({ state: campaign, events: [{ type, facts: { reason, ...facts, ...(type === "item.drop.rejected" ? { outcome: "rejected" } : {}) }, gameTime: campaign.floor.time, sequence: 1 }], accepted: false, ticks: 0 });
+  const events: GameEvent[] = []; const reject = (reason: string, facts: EventFacts = {}, type = "action.rejected"): ActionResult => ({ state: campaign, events: [{ type, facts: { reason, actionType: action.type, ...facts, ...(type === "item.drop.rejected" ? { outcome: "rejected" } : {}) }, gameTime: campaign.floor.time, sequence: 1 }], accepted: false, ticks: 0 });
   if (action.type === "center-player") {
     state.player.pixel = cellCenter(state.player);
     return { state, events, accepted: true, ticks: 0 };
@@ -1944,6 +1966,8 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
     const time = state.floor.time;
     if (state.activePrefab) {
       const returnLevel = state.activePrefab.returnLevel;
+      state.playerHomeEntities ??= {};
+      state.playerHomeEntities[String(returnLevel)] = structuredClone(state.floor.entities);
       const dungeonFloor = state.floors?.[String(returnLevel)] ? structuredClone(state.floors[String(returnLevel)]!) : rebuildCampaignFloor(state, returnLevel);
       state.floor = dungeonFloor;
       state.floor.time = time;
@@ -1992,6 +2016,7 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
     revealDiscovery(state, state.player);
     emit(events, "realm.entered", { realm: state.realm, level }, state);
     if (!state.floor.progressionXpAwarded) { state.floor.progressionXpAwarded = true; gainXp(state, events, GAME_TUNING.xpPerFloor, "floor-arrival"); }
+    if (state.mode === "adventure") state.adventureBaseline = createAdventureLevelBaseline(state);
     if (state.mode === "journey") state.journeyCheckpoint = prepareJourneyCheckpoint(state);
     return { state, events, accepted: true, ticks: 0 };
   }
@@ -2014,7 +2039,11 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
       revealDiscovery(state, state.player);
       tick(state, events); return { state, events, accepted: true, ticks: 1 };
     }
-    if ((!isWalkable(state.floor, x, y) || isObjectSetBlocked(state.floor, state.player, x, y)) && !entity) return reject("blocked");
+    if ((!isWalkable(state.floor, x, y) || isObjectSetBlocked(state.floor, state.player, x, y)) && !entity) {
+      const door = floorTriggerDoorSets(state.floor).some((set) => samePosition(set.door, { x, y }))
+        || encounterLockdownSets(state.floor).some((set) => set.doors.some((position) => samePosition(position, { x, y })));
+      return reject("blocked", door ? { obstacle: "door" } : {});
+    }
     if (entity?.kind === "campfire") return reject("blocked-campfire");
     if (entity?.kind === "enemy") {
       if (!hasAssignedWeapon(state)) return reject("unarmed");

@@ -1,9 +1,12 @@
 import type { GameEvent, GameMode, Preferences } from "../../game/types.ts";
+import { cuesForEvent } from "./audio-event-cues.ts";
 export interface AudioHandle {
   preload?: string;
   currentTime?: number;
   volume: number;
   loop: boolean;
+  playbackRate?: number;
+  preservesPitch?: boolean;
   play(): Promise<void> | void;
   pause?(): void;
   load?(): void;
@@ -19,14 +22,14 @@ export const AUDIO_ASSETS = Object.freeze({
     `${baseUrl}assets/audio/music/dungeon_04.ogg`,
   ]),
   sfx: Object.freeze({
-    footstep: `${baseUrl}assets/audio/sfx/footstep.ogg`,
+    footstep: `${baseUrl}assets/audio/sfx/game-footstep-soft-01.wav`,
     weaponHit: `${baseUrl}assets/audio/sfx/weapon_hit.ogg`,
     enemyHit: `${baseUrl}assets/audio/sfx/enemy_hit.ogg`,
     enemyFall: `${baseUrl}assets/audio/sfx/enemy_fall.ogg`,
     potion: `${baseUrl}assets/audio/sfx/potion.ogg`,
     chest: `${baseUrl}assets/audio/sfx/chest.ogg`,
     pickupClick: `${baseUrl}assets/audio/sfx/pickup-click.wav`,
-    collect: `${baseUrl}assets/audio/sfx/collect.ogg`,
+    collect: `${baseUrl}assets/audio/sfx/game-potion-pickup-02.wav`,
     key: `${baseUrl}assets/audio/sfx/key.ogg`,
     inventory: `${baseUrl}assets/audio/sfx/inventory.ogg`,
     stairs: `${baseUrl}assets/audio/sfx/stairs.ogg`,
@@ -41,32 +44,76 @@ export const AUDIO_ASSETS = Object.freeze({
     crateHit02: `${baseUrl}assets/audio/sfx/wood-hit-02.ogg`,
     crateHit03: `${baseUrl}assets/audio/sfx/wood-hit-03.ogg`,
     diceRoll: `${baseUrl}assets/audio/sfx/dice-roll.mp3`,
+    woodBreak: `${baseUrl}assets/audio/sfx/game-wood-break-01.wav`,
+    barrelReturn: `${baseUrl}assets/audio/sfx/game-barrel-return-01.wav`,
+    doorLocked: `${baseUrl}assets/audio/sfx/game-door-locked-01.wav`,
+    doorOpen: `${baseUrl}assets/audio/sfx/game-door-open-01.wav`,
+    experienceGain: `${baseUrl}assets/audio/sfx/game-experience-gain-01.wav`,
+    floorTrigger: `${baseUrl}assets/audio/sfx/game-trigger-pressure-01.wav`,
+    moveBlocked: `${baseUrl}assets/audio/sfx/game-move-blocked-01.wav`,
+    pickupRejected: `${baseUrl}assets/audio/sfx/game-pickup-rejected-01.wav`,
+    playerDeath: `${baseUrl}assets/audio/sfx/game-player-death-01.wav`,
+    playerSneak: `${baseUrl}assets/audio/sfx/game-player-sneak-01.wav`,
+    playerWait: `${baseUrl}assets/audio/sfx/game-player-wait-01.wav`,
+    stairsEnter: `${baseUrl}assets/audio/sfx/game-stairs-enter-01.wav`,
+    resourceRestore: `${baseUrl}assets/audio/sfx/game-resource-restore-01.wav`,
+    trapStrike: `${baseUrl}assets/audio/sfx/game-trap-strike-01.wav`,
+    abilityAssign: `${baseUrl}assets/audio/sfx/ui-ability-assign-01.wav`,
+    audioControl: `${baseUrl}assets/audio/sfx/ui-audio-control-01.wav`,
+    musicMode: `${baseUrl}assets/audio/sfx/ui-music-mode-01.wav`,
+    quickSlotAccepted: `${baseUrl}assets/audio/sfx/ui-quick-slot-affirmative-01.wav`,
+    quickSlotRejected: `${baseUrl}assets/audio/sfx/ui-quick-slot-rejected-01.wav`,
+    saveFailed: `${baseUrl}assets/audio/sfx/ui-save-failed-01.wav`,
+    saveSucceeded: `${baseUrl}assets/audio/sfx/ui-save-succeeded-01.wav`,
+    statUpgrade: `${baseUrl}assets/audio/sfx/ui-stat-upgrade-01.wav`,
+    panelExpand: `${baseUrl}assets/audio/sfx/ui-panel-expand-01.wav`,
+    panelCollapse: `${baseUrl}assets/audio/sfx/ui-panel-collapse-01.wav`,
+    positiveShimmer: `${baseUrl}assets/audio/sfx/ui-positive-shimmer-01.wav`,
   }),
 });
 
-const eventCues: Readonly<Partial<Record<string, keyof typeof AUDIO_ASSETS.sfx>>> = Object.freeze({
-  "player.moved": "footstep",
-  "player.waited": "footstep",
-  "enemy.defeated": "enemyFall",
-  "potion.consumed": "potion",
-  "item.collected": "pickupClick",
-  "chest.opened": "chest",
-  "realm.entered": "stairs",
-  "barrel.pushed": "barrelSlide",
-  "floor-trigger.changed": "barrelSlide",
-  "xp.level.changed": "accepted",
-});
-
 const SFX_VOLUME_MULTIPLIERS: Readonly<Partial<Record<keyof typeof AUDIO_ASSETS.sfx, number>>> = Object.freeze({
-  footstep: 0.25,
+  footstep: 0.1,
   key: 0.5,
+  collect: 0.55,
   inventory: 0.5,
   barrelSlide: 0.45,
   crateHit01: 0.5,
   crateHit02: 0.5,
   crateHit03: 0.5,
   diceRoll: 0.8,
+  woodBreak: 0.5,
+  barrelReturn: 0.4,
+  doorLocked: 0.4,
+  doorOpen: 0.4,
+  experienceGain: 0.18,
+  floorTrigger: 0.35,
+  moveBlocked: 0.2,
+  pickupRejected: 0.35,
+  playerDeath: 0.65,
+  playerSneak: 0.25,
+  playerWait: 0.2,
+  stairsEnter: 0.35,
+  resourceRestore: 0.4,
+  trapStrike: 0.5,
+  abilityAssign: 0.4,
+  audioControl: 0.35,
+  musicMode: 0.25,
+  quickSlotAccepted: 0.4,
+  quickSlotRejected: 0.35,
+  saveFailed: 0.5,
+  saveSucceeded: 0.12,
+  statUpgrade: 0.5,
+  panelExpand: 0.35,
+  panelCollapse: 0.35,
+  positiveShimmer: 0.4,
 });
+
+const CUE_INTERVALS: Partial<Record<keyof typeof AUDIO_ASSETS.sfx, number>> = {
+  moveBlocked: 180, doorLocked: 180, quickSlotRejected: 180,
+  saveSucceeded: 5000, saveFailed: 2000, audioControl: 90,
+};
+const VARIED_CUES = new Set<keyof typeof AUDIO_ASSETS.sfx>(["footstep", "weaponHit", "enemyHit", "enemyFall", "barrelSlide", "barrelReturn", "woodBreak", "trapStrike"]);
 
 function readVolume(value: unknown, fallback: number) { return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 100 ? value : fallback; }
 function muteFromSearch(search: string) { return new URLSearchParams(search).get("mute") === "1"; }
@@ -105,6 +152,7 @@ export function createAudioManager({ search = "", createAudio = (src) => new Aud
   const prewarmedMusic: AudioHandle[] = [];
   const prewarmedSfx = new Map<keyof typeof AUDIO_ASSETS.sfx, AudioHandle[]>();
   const nextSfxHandle = new Map<keyof typeof AUDIO_ASSETS.sfx, number>();
+  const lastCueTimes = new Map<keyof typeof AUDIO_ASSETS.sfx, number>();
   let warmupComplete = hardMuted;
   let warmup: Promise<void> | null = null;
 
@@ -157,6 +205,7 @@ export function createAudioManager({ search = "", createAudio = (src) => new Aud
     if (mode === musicMode) return;
     sampleFade();
     musicMode = mode;
+    playCue("musicMode");
     const target = mode === "Battle" ? [0, 1] : [1, 0];
     if (!musicStarted) { gains = target; return; }
     if (busMuted("music")) {
@@ -188,36 +237,42 @@ export function createAudioManager({ search = "", createAudio = (src) => new Aud
   const playCue = (cue: keyof typeof AUDIO_ASSETS.sfx, now = Date.now()) => {
     const src = AUDIO_ASSETS.sfx[cue];
     if (!src || busMuted("sfx")) return false;
+    const interval = CUE_INTERVALS[cue];
+    if (interval && now - (lastCueTimes.get(cue) ?? -Infinity) < interval) return false;
     // Calling play() while an element is still loading is supported by browsers and
     // preserves the user-gesture authorization that unlocked audio. Waiting for
     // canplay here loses that authorization on slower connections.
     prewarm();
     const handles = prewarmedSfx.get(cue);
     if (!handles?.length) return false;
+    lastCueTimes.set(cue, now);
     const index = nextSfxHandle.get(cue) ?? 0;
     const audio = handles[index];
     nextSfxHandle.set(cue, (index + 1) % handles.length);
     if (audio.currentTime !== undefined) audio.currentTime = 0;
     audio.volume = preferences.sfxVolume / 100 * (SFX_VOLUME_MULTIPLIERS[cue] ?? 1);
+    audio.preservesPitch = false;
+    audio.playbackRate = VARIED_CUES.has(cue) ? 0.97 + Math.min(1, Math.max(0, random())) * 0.06 : 1;
     ignoreRejectedPlay(audio.play());
     return true;
   };
 
   const playEvents = (events: (Pick<GameEvent, "type" | "facts"> & Partial<GameEvent>)[] = []) => {
+    const transactionCues = new Set<string>();
     for (const event of events) {
-      if (event.outcome === "rejected") continue;
-      let cue = eventCues[event.type];
       if (event.type === "crate.bumped") {
+        if (event.outcome === "rejected") continue;
         const crateHitCues = ["crateHit01", "crateHit02", "crateHit03"] as const;
-        cue = crateHitCues[Math.min(crateHitCues.length - 1, Math.floor(random() * crateHitCues.length))];
+        playCue(crateHitCues[Math.min(crateHitCues.length - 1, Math.floor(random() * crateHitCues.length))]);
+        continue;
       }
-      if (event.type === "ability.used") {
-        cue = event.facts?.abilityId === "heal" ? "magicHeal" : event.facts?.abilityId === "wand" ? "magicWand" : "magicAncient";
+      for (const cue of cuesForEvent(event)) {
+        if (["resourceRestore", "experienceGain", "trapStrike", "doorOpen", "doorLocked"].includes(cue)) {
+          if (transactionCues.has(cue)) continue;
+          transactionCues.add(cue);
+        }
+        if (cue in AUDIO_ASSETS.sfx) playCue(cue as keyof typeof AUDIO_ASSETS.sfx);
       }
-      if (event.type === "combat.hit" && !event.facts?.source) cue = "weaponHit";
-      if (event.type === "combat.hit" && typeof event.facts?.roll === "number") playCue("diceRoll");
-      if (event.type === "resource.changed" && event.facts?.cause === "enemy-attack") cue = "enemyHit";
-      if (cue) playCue(cue);
     }
   };
 
@@ -243,6 +298,7 @@ export function createAudioManager({ search = "", createAudio = (src) => new Aud
     if (fadeFrame !== null) cancelFrame(fadeFrame);
     fadeFrame = null; fade = null; musicStarted = false;
     prewarmedMusic.forEach((audio) => audio.pause?.());
+    stopSfxPlayback();
   };
 
   const playDropResult = (accepted: boolean) => playCue(accepted ? "accepted" : "rejected");
@@ -263,6 +319,7 @@ export function createAudioManager({ search = "", createAudio = (src) => new Aud
     dispose,
     playCue,
     playDropResult,
+    playPanelToggle: (expanded: boolean) => playCue(expanded ? "panelExpand" : "panelCollapse"),
     playEvents,
     isMuted: (bus: "sfx" | "music" | null = null) => bus ? busMuted(bus) : hardMuted || preferences.muteAll,
   });

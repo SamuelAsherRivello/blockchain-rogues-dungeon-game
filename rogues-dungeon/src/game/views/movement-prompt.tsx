@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, type CSSProperties, type ReactNode, type Ref } from "react";
 import type { Direction } from "../types.ts";
-import type { MovementPromptController } from "../movement-prompt-controller.ts";
+import { rightStickPromptResponse, type MovementPromptController } from "../movement-prompt-controller.ts";
 import { GameCard } from "../cards/game-card.tsx";
 
 export interface MovementPromptProps {
@@ -37,21 +37,35 @@ export function MovementPrompt({ movement, title, heading, body, affirmation, ne
     resolved.current = true;
     onNegate();
   };
-  useLayoutEffect(() => movement.subscribe((direction) => {
+  const rightStickResponse = useRef<(direction: Direction) => void>(() => {});
+  rightStickResponse.current = (direction) => {
+    const response = rightStickPromptResponse(direction, affirmation);
+    if (response === "confirm") affirm();
+    else if (response === "cancel") negate();
+  };
+  useLayoutEffect(() => {
+    if (!visible) return;
+    resolved.current = false;
+    return movement.subscribeRightStick((direction) => rightStickResponse.current(direction));
+  }, [movement, visible]);
+  useLayoutEffect(() => {
+    if (!visible) return;
+    return movement.subscribe((direction) => {
     if (affirmation && direction === affirmation.direction) {
       affirm();
       return true;
     }
     negate();
     return false;
-  }), [movement, affirmation, onNegate]);
+    });
+  }, [movement, affirmation, onNegate, visible]);
 
   return <section ref={panelRef} className={`movement-prompt item-comparison-panel${centered ? " movement-prompt--centered" : ""}`} aria-label={title} aria-live="polite" style={{ ...style, visibility: visible ? "visible" : "hidden" }} onMouseDown={(event) => event.stopPropagation()} onMouseUp={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
     <GameCard title={title} className="movement-prompt__panel">
       <h3>{heading}</h3>
       <p className="movement-prompt__body">{body}</p>
       <button type="button" className={`movement-prompt__action${affirmation?.confirming ? " movement-prompt__action--confirming" : ""}`} disabled={affirmation?.disabled || affirmation?.confirming} onClick={affirmation ? affirm : negate}>
-        {affirmation?.label ?? negationLabel}<br /><i>{negationHint}</i>
+        {affirmation?.label ?? negationLabel}<br /><i>{negationHint}</i><br /><i>{affirmation ? `Right stick ${affirmation.direction === "n" ? "up" : affirmation.direction === "s" ? "down" : affirmation.direction === "e" ? "right" : "left"} to confirm; another direction to cancel` : "Right stick to close"}</i>
       </button>
     </GameCard>
   </section>;

@@ -1,3 +1,4 @@
+import { itemSpriteFrame, worldPickupPresentation } from "../systems/rendering/world-object-sprite-system.ts";
 import { prepareCampaignSave } from "../systems/procedural/world-procedural-system.ts";
 import { MovementPromptController, movementDirection } from "./movement-prompt-controller.ts";
 import { GridlessInteractionController, planGridlessInteraction, resolveGridlessInteraction, type GridlessInteraction } from "./gridless-interaction.ts";
@@ -39,7 +40,7 @@ import { buildManualTileScenario, getManualTileScenario } from "../systems/proce
 import { createStoredZip } from "./zip.ts";
 import { projectFloatingFeedback, removeFloatingFeedback } from "./floating-feedback.ts";
 import { projectResourceChangeEffects, removeResourceChangeEffect, type ResourceChangeEffect } from "./resource-change-effects.ts";
-import { getLatestMovement, getMovementKey, getMoveRepeatDelay, getMoveScheduleDelay } from "./keyboard-input.ts";
+import { claimMovement, getLatestMovement, getMovementKey, getMoveRepeatDelay, getMoveScheduleDelay } from "./keyboard-input.ts";
 import { useGamepadMovement } from "./gamepad-input.ts";
 import { ControlsArea } from "../ui/ControlsArea.tsx";
 import { useUiMotion, type UiMotionStyle } from "../ui/ui-transition-system.tsx";
@@ -57,7 +58,7 @@ import { renderTestEffects } from "../systems/rendering/render-test-system.ts";
 import { effectiveRenderTestMode, nextRenderTestMode, RENDER_TEST_TOOLTIP, type RenderTestMode } from "../systems/rendering/render-test-system.ts";
 import { gameViewShaderSystem, type GameViewShaderId } from "../systems/rendering/game-view-shader-system.ts";
 import { LayoutContext } from "../ui/layout-context.ts";
-import { dialogBounds, type DialogBounds, type DialogCenter } from "../ui/Dialog.tsx";
+import { dialogBounds, type DialogBounds, type DialogCenter } from "../ui/dialog.tsx";
 import { ConfirmationDialog } from "../ui/confirmation-dialog.tsx";
 import { GameScreen } from "./screens/game-screen.tsx";
 import { MenuScreen } from "./screens/menu-screen.tsx";
@@ -271,7 +272,7 @@ function InputKey({ keyLabel, category = keyboardKeyCategory[keyLabel], mode = "
   const classes = ["input-key", category && `input-key--${category}`, unavailableKey && !colorAvailable && "input-key--unavailable", mode === "feedback" && pressed && "input-key--pressed", mode === "feedback" && pressed && "input-key--active", className].filter(Boolean).join(" ");
   return <kbd className={classes} aria-label={`Keyboard key ${keyLabel}`} aria-disabled={unavailableKey && !available} data-input-mode={mode} onClick={onActivate} onPointerDown={() => available && onPressStart?.(keyLabel)} onPointerUp={() => onPressEnd?.(keyLabel)} onPointerCancel={() => onPressEnd?.(keyLabel)} onPointerEnter={() => onHoverStart?.(keyLabel)} onPointerLeave={() => { onHoverEnd?.(keyLabel); onPressEnd?.(keyLabel); }}>{keyLabel}</kbd>;
 }
-function StatusControls({ campaign, performanceActive, onTogglePerformance, canOverride, orientation, onTogglePanels, onWait, fps, urlArgs, setUrlArgs, mapTest, setMapTest, itemTest, setItemTest, enemyTest, setEnemyTest, levelTest, setLevelTest, zoomTest, setZoomTest, gameViewShader, setGameViewShader, renderTestMode, setRenderTestMode, mobilePanel = "controls", setMobilePanel = () => {}, drag = null }: { campaign: Campaign; performanceActive: boolean; onTogglePerformance(): void; canOverride: boolean; orientation: Orientation; onTogglePanels(): void; onWait(): void; fps: ReturnType<typeof createFpsStore>; urlArgs: boolean; setUrlArgs(value: boolean): void; mapTest: boolean; setMapTest(value: boolean): void; itemTest: boolean; setItemTest(value: boolean): void; enemyTest: boolean; setEnemyTest(value: boolean): void; levelTest: boolean; setLevelTest(value: boolean): void; zoomTest: boolean; setZoomTest(value: boolean): void; gameViewShader: GameViewShaderId; setGameViewShader(value: GameViewShaderId): void; renderTestMode: RenderTestMode; setRenderTestMode(value: RenderTestMode): void; mobilePanel?: string; setMobilePanel?(value: string): void; drag?: DragPresentation | null }) {
+function StatusControls({ campaign, performanceActive, onTogglePerformance, canOverride, orientation, onTogglePanels, onPanelToggle, onWait, fps, urlArgs, setUrlArgs, mapTest, setMapTest, itemTest, setItemTest, enemyTest, setEnemyTest, levelTest, setLevelTest, zoomTest, setZoomTest, gameViewShader, setGameViewShader, renderTestMode, setRenderTestMode, mobilePanel = "controls", setMobilePanel = () => {}, drag = null }: { campaign: Campaign; performanceActive: boolean; onTogglePerformance(): void; canOverride: boolean; orientation: Orientation; onTogglePanels(): void; onPanelToggle(expanded: boolean): void; onWait(): void; fps: ReturnType<typeof createFpsStore>; urlArgs: boolean; setUrlArgs(value: boolean): void; mapTest: boolean; setMapTest(value: boolean): void; itemTest: boolean; setItemTest(value: boolean): void; enemyTest: boolean; setEnemyTest(value: boolean): void; levelTest: boolean; setLevelTest(value: boolean): void; zoomTest: boolean; setZoomTest(value: boolean): void; gameViewShader: GameViewShaderId; setGameViewShader(value: GameViewShaderId): void; renderTestMode: RenderTestMode; setRenderTestMode(value: RenderTestMode): void; mobilePanel?: string; setMobilePanel?(value: string): void; drag?: DragPresentation | null }) {
   const { showPivotPoints, setShowPivotPoints, setAspectRatio } = useContext(LayoutContext);
   const [expanded, setExpanded] = useState(false);
   const [trayRetained, setTrayRetained] = useState(false);
@@ -295,18 +296,18 @@ function StatusControls({ campaign, performanceActive, onTogglePerformance, canO
   };
   useEffect(() => {
     const normalize = (event: KeyboardEvent) => String(event.key ?? "").toUpperCase();
-    const down = (event: KeyboardEvent) => { const key = normalize(event); if (!feedbackKeys.has(key) || !keyAvailable(key)) return; if (key === "Z" && !event.repeat) { event.preventDefault(); setExpanded((value) => !value); } if (key === "C" && !event.repeat) { event.preventDefault(); onTogglePanels(); } if (expanded || trayRetained || key === "Z") setPressedKeys((current) => current.has(key) ? current : new Set(current).add(key)); };
+    const down = (event: KeyboardEvent) => { const key = normalize(event); if (!feedbackKeys.has(key) || !keyAvailable(key)) return; if (key === "Z" && !event.repeat) { event.preventDefault(); setExpanded(!expanded); onPanelToggle(!expanded); } if (key === "C" && !event.repeat) { event.preventDefault(); onTogglePanels(); } if (expanded || trayRetained || key === "Z") setPressedKeys((current) => current.has(key) ? current : new Set(current).add(key)); };
     const up = (event: KeyboardEvent) => { const key = normalize(event); if (!feedbackKeys.has(key)) return; setPressedKeys((current) => { if (!current.has(key)) return current; const next = new Set(current); next.delete(key); return next; }); };
     const clear = () => setPressedKeys(current => current.size ? new Set() : current);
     // Record feedback before an action can update the campaign and replace these listeners.
     // Game owns keyboard actions, including X; the tray only owns its Z/C presentation.
     window.addEventListener("keydown", down, true); window.addEventListener("keyup", up, true); window.addEventListener("blur", clear);
     return () => { window.removeEventListener("keydown", down, true); window.removeEventListener("keyup", up, true); window.removeEventListener("blur", clear); };
-  }, [campaign, drag, expanded, onTogglePanels, trayRetained]);
+  }, [campaign, drag, expanded, onTogglePanels, onPanelToggle, trayRetained]);
   const titleText = keyboardKeyHelp[hoveredKey] ?? "Controls";
   const titleVisible = Boolean(expanded || hoveredKey);
   const summaryMotion = useUiMotion("status-summary", { opacity: expanded ? 0 : 1, depth: 1 });
-  const toggleExpanded = () => setExpanded((value) => !value);
+  const toggleExpanded = () => { setExpanded(!expanded); onPanelToggle(!expanded); };
   const inputKeyHoverProps = { onHoverStart: setHoveredKey, onHoverEnd: (key: string) => setHoveredKey((current) => current === key ? "" : current) };
   const setPointerPressed = (key: string, pressed: boolean) => setPressedKeys((current) => {
     if (!keyAvailable(key)) return current;
@@ -347,7 +348,17 @@ export function Game() {
   const worldGrowthResult = campaign?.worldGrowth?.find(event => event.applied && !event.acknowledged);
   const progressionDialogOpen = progressionOpen || Boolean(worldGrowthResult);
   const [primaryInfoOpen, setPrimaryInfoOpen] = useState(true); const [secondaryInfoOpen, setSecondaryInfoOpen] = useState(true); const [expandedPanelOpen, setExpandedPanelOpen] = useState(false); const [uiAnimations, setUiAnimations] = useState<GameViewToUiAnimation[]>([]); const [pendingUiCredits, setPendingUiCredits] = useState<{ id: string; previous: Campaign; shineKeys: string[] }[]>([]); const [shineTokens, setShineTokens] = useState<Record<string, number>>({});
-  const worldInputEnabled = !deathSequence && !deathRecap && !expandedPanelOpen && !confirmingSaveAndExit;
+  const [worldTextFocus, setWorldTextFocus] = useState(false);
+  const worldInputEnabled = !deathSequence && !deathRecap && !expandedPanelOpen && !confirmingSaveAndExit && !dragPresentation && !worldTextFocus;
+  useEffect(() => {
+    const sync = () => {
+      const target = document.activeElement;
+      setWorldTextFocus(target instanceof HTMLElement && Boolean(target.isContentEditable || target.closest("input, textarea, select, [contenteditable='true']")));
+    };
+    const focusOut = () => queueMicrotask(sync);
+    document.addEventListener("focusin", sync); document.addEventListener("focusout", focusOut); sync();
+    return () => { document.removeEventListener("focusin", sync); document.removeEventListener("focusout", focusOut); };
+  }, []);
   useEffect(() => { setExpandedPanelOpen(false); }, [orientation]);
   const [selectedGridSpot, setSelectedGridSpot] = useState<SelectedCell | null>(null); const [campfireMenu, setCampfireMenu] = useState<Position | null>(null); const [campfireRestConfirming, setCampfireRestConfirming] = useState(false); const [campfireRestTransition, setCampfireRestTransition] = useState(false); const [interactionBumpActive, setInteractionBumpActive] = useState(false); const [statusReplenishProgress, setStatusReplenishProgress] = useState<number | null>(null); const [mobilePanel, setMobilePanel] = useState("controls"); const [mapTestState, setMapTestState] = useState(() => readDevBoolean(DEV_SETTINGS_STORAGE_KEYS.mapTest)); const [itemTest, setItemTestState] = useState(() => readDevBoolean(DEV_SETTINGS_STORAGE_KEYS.itemTest)); const [enemyTest, setEnemyTestState] = useState(() => readDevBoolean(DEV_SETTINGS_STORAGE_KEYS.enemyTest)); const [levelTest, setLevelTestState] = useState(() => readDevBoolean(DEV_SETTINGS_STORAGE_KEYS.leveltest)); const [zoomTest, setZoomTestState] = useState(() => readDevBoolean(DEV_SETTINGS_STORAGE_KEYS.zoomTest)); const [gameViewShader, setGameViewShaderState] = useState<GameViewShaderId>(() => gameViewShaderSystem.normalize(readDevGameViewShader()));
   const mapTest = mapTestState; const setMapTest = (value: boolean) => { writeDevBoolean(DEV_SETTINGS_STORAGE_KEYS.mapTest, value); setMapTestState(value); }; const setItemTest = (value: boolean) => { writeDevBoolean(DEV_SETTINGS_STORAGE_KEYS.itemTest, value); setItemTestState(value); }; const setEnemyTest = (value: boolean) => { writeDevBoolean(DEV_SETTINGS_STORAGE_KEYS.enemyTest, value); setEnemyTestState(value); }; const setLevelTest = (value: boolean) => { writeDevBoolean(DEV_SETTINGS_STORAGE_KEYS.leveltest, value); setLevelTestState(value); };
@@ -364,6 +375,21 @@ export function Game() {
   const randomSeed = urlOptions.seed;
   const [audio] = useState(() => createAudioManager({ search: window.location.search }));
   useEffect(() => {
+    const playLevelUpShimmer = (event: AnimationEvent) => {
+      if (event.animationName !== "level-up-reminder" && event.animationName !== "level-up-reminder-reduced") return;
+      if (document.hidden || !(event.target instanceof Element) || !event.target.closest(".game-card--level-up")) return;
+      audio.playCue("positiveShimmer");
+    };
+    // CSS owns the reminder cadence. Follow its real passes, including reduced
+    // motion, so hidden or dismissed panels do not leave an audio timer behind.
+    document.addEventListener("animationstart", playLevelUpShimmer);
+    document.addEventListener("animationiteration", playLevelUpShimmer);
+    return () => {
+      document.removeEventListener("animationstart", playLevelUpShimmer);
+      document.removeEventListener("animationiteration", playLevelUpShimmer);
+    };
+  }, [audio]);
+  useEffect(() => {
     if (campaign) return;
     const playMenuClick = (event: MouseEvent) => {
       const target = event.target;
@@ -374,7 +400,7 @@ export function Game() {
     document.addEventListener("click", playMenuClick);
     return () => document.removeEventListener("click", playMenuClick);
   }, [audio, campaign]);
-  const togglePanels = () => { if (primaryInfoOpen && secondaryInfoOpen) setSecondaryInfoOpen(false); else if (primaryInfoOpen) setPrimaryInfoOpen(false); else if (secondaryInfoOpen) setPrimaryInfoOpen(true); else setSecondaryInfoOpen(true); };
+  const togglePanels = () => { audio.playPanelToggle(!primaryInfoOpen); if (primaryInfoOpen && secondaryInfoOpen) setSecondaryInfoOpen(false); else if (primaryInfoOpen) setPrimaryInfoOpen(false); else if (secondaryInfoOpen) setPrimaryInfoOpen(true); else setSecondaryInfoOpen(true); };
   useEffect(() => {
     const next = runUrlForCampaign(window.location.href, preferences.urlArgs, campaign, slot);
     if (next !== window.location.href) window.history.replaceState(null, "", next);
@@ -442,11 +468,12 @@ export function Game() {
       const destination = entity.kind === "gold" || entity.kind === "key" ? "counter" : "row";
       const target = destination === "counter" ? `[data-ui-counter-icon="${entity.kind}"]` : quickSlot >= 0 ? `[data-drop-quick-slot="${quickSlot}"]` : existingInventoryTarget && resource ? `[data-inventory-resource="${resource}"]` : existingInventoryTarget && entity.kind === "item" ? `[data-inventory-item-id="${entity.item.id}"]` : "[data-drop-inventory-slot=\"0\"]";
       const shineKeys = quickSlot >= 0 ? [`quick:${quickSlot}`] : resource ? [`inventory-resource:${resource}`] : entity.kind === "item" ? [`inventory:${entity.item.id}`] : [];
-      const frame = entity.kind === "gold" ? 3 : entity.kind === "key" ? 5 : entity.kind === "potion" ? entity.resource === "health" ? 6 : 7 : 2;
+      const presentation = worldPickupPresentation(entity);
+      const frame = itemSpriteFrame(presentation.kind, presentation.resource);
       audio.playCue(entity.kind === "key" ? "key" : entity.kind === "potion" ? "collect" : "inventory");
       const mainSizePx = entity.kind === "key" ? 16 : 32;
-      const mainOffsetPx = { x: 0, y: entity.kind === "potion" ? -8 : 0 };
-      setUiAnimations((current) => [...current, { id, kind: entity.kind as GameViewToUiAnimation["kind"], itemName: entity.kind === "item" ? entity.item.name : undefined, x: entity.x, y: entity.y, frame, mainSizePx, mainOffsetPx, target, destination }]);
+      const mainOffsetPx = { x: 0, y: presentation.kind === "potion" ? -8 : 0 };
+      setUiAnimations((current) => [...current, { id, kind: presentation.kind as GameViewToUiAnimation["kind"], resource: presentation.resource, itemName: entity.kind === "item" ? entity.item.name : undefined, x: entity.x, y: entity.y, frame, mainSizePx, mainOffsetPx, target, destination }]);
       setPendingUiCredits((current) => [...current, { id, previous, shineKeys }]);
     }
     collectedItemIdsRef.current.clear();
@@ -464,6 +491,7 @@ export function Game() {
   }, [pendingUiCredits, shineSlots]);
   const moveTimer = useRef<ReturnType<typeof setTimeout> | null>(null); const stairDepartureActiveRef = useRef(false);
   const heldMovements = useRef(new Map<string, { direction: Direction }>());
+  const physicalMovementKeys = useRef(new Set<string>());
   const heldShift = useRef(new Set<string>());
   const mouseMovement = useRef<Movement | null>(null);
   const mouseScreenEdgeMove = useRef<{ target: Position; direction: Direction } | null>(null);
@@ -473,8 +501,8 @@ export function Game() {
   const warnedMouseHazard = useRef<Position | null>(null);
   const mouseTravelBudget = useRef(MAX_MOUSE_TRAVEL_STEPS);
   const confirmedMouseHazard = useRef<Position | null>(null);
-  const movementRuntime = useRef({ preferences, settings, confirmingSaveAndExit, progressionOpen: progressionDialogOpen, worldAlive });
-  movementRuntime.current = { preferences, settings, confirmingSaveAndExit, progressionOpen: progressionDialogOpen, worldAlive };
+  const movementRuntime = useRef({ preferences, settings, confirmingSaveAndExit, progressionOpen: progressionDialogOpen, worldAlive, worldInputEnabled });
+  movementRuntime.current = { preferences, settings, confirmingSaveAndExit, progressionOpen: progressionDialogOpen, worldAlive, worldInputEnabled };
   const effectiveMovementMode = preferences.movementMode === "gridless" && (interactionBumpActive || campaign && gameMode(campaign) === "Battle") ? "grid-tween" : preferences.movementMode;
   turnPresentation.setPlayerMode(effectiveMovementMode);
   const requestCampfireRest = useCallback(() => { if ((sessionRef.current?.getState().counters.gold ?? 0) < REST_GOLD_COST) return; setCampfireMenu(null); setStatusReplenishProgress(0); setCampfireRestTransition(true); }, []);
@@ -555,7 +583,7 @@ export function Game() {
     if (!after || (before.x === after.x && before.y === after.y)) return;
     mouseScreenEdgeMove.current = { target: { x: after.x, y: after.y }, direction };
   }, []);
-  const completeCampfireRest = useCallback((progress: number) => { setStatusReplenishProgress(progress); shineSlot("status"); if (progress < 1) return; const result = sessionRef.current?.dispatch({ type: "rest" }); setCampfireRestTransition(false); return result; }, [shineSlot]);
+  const completeCampfireRest = useCallback((progress: number) => { setStatusReplenishProgress(progress); shineSlot("status"); audio.playCue("positiveShimmer"); if (progress < 1) return; const result = sessionRef.current?.dispatch({ type: "rest" }); setCampfireRestTransition(false); return result; }, [audio, shineSlot]);
   useEffect(() => {
     const cancel = () => gridlessInteractions.cancel(sessionRef.current?.getState());
     window.addEventListener("blur", cancel);
@@ -648,18 +676,20 @@ export function Game() {
       if (pixelSaveTimer.current) { clearTimeout(pixelSaveTimer.current); pixelSaveTimer.current = null; }
       if (!urlOptions.hasCompleteRunIdentity) {
         writeSlot(localStorage, slot, currentCampaign);
+        audio.playEvents([{ type: "campaign.save.succeeded", facts: {} }]);
         setSummaries(readSlotSummary(localStorage));
       }
       setSaveError("");
     } catch {
       setSaveError("Saving is unavailable in this browser session.");
+      audio.playEvents([{ type: "campaign.save.failed", facts: {} }]);
     } finally {
       // Confirming Save & Exit always leaves the running game, even if the
       // browser rejects the storage write. The error remains visible in the
       // main menu so the player can continue or retry.
       returnToMainMenu();
     }
-  }, [campaign, returnToMainMenu, slot, urlOptions.hasCompleteRunIdentity]);
+  }, [audio, campaign, returnToMainMenu, slot, urlOptions.hasCompleteRunIdentity]);
   useEffect(() => {
     const saveAndQuitWithEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || event.repeat || settings || !campaign || !slot || event.defaultPrevented || pointerDragRef.current) return;
@@ -674,7 +704,7 @@ export function Game() {
     const keyboard = getLatestMovement(heldMovements.current, heldShift.current.size > 0);
     const next = keyboard ?? mouseMovement.current;
     const previous = activeMovement.current;
-    const source = keyboard ? "keyboard" : "pointer";
+    const source = keyboard ? heldMovements.current.has("gamepad") ? "gamepad" : "keyboard" : "pointer";
     if (previous?.direction === next?.direction && previous?.sprint === next?.sprint && previous?.source === source) return;
     activeMovement.current = next ? { ...next, source } : null;
     if (moveTimer.current) { clearTimeout(moveTimer.current); clearInterval(moveTimer.current); moveTimer.current = null; }
@@ -686,10 +716,10 @@ export function Game() {
       const before = sessionRef.current?.getState().player;
       const result = dispatch({ type: "move", direction: next.direction, hazardElapsedMs: performance.now() });
       if (source === "pointer" && before) noteMouseScreenEdgeMove(before, result, next.direction as Direction);
-      else if (source === "keyboard") mouseScreenEdgeMove.current = null;
+      else if (source !== "pointer") mouseScreenEdgeMove.current = null;
       return result;
     };
-    if (immediate && (previous?.direction !== next.direction || (!previous?.sprint && next.sprint))) move();
+    if (immediate && (previous?.direction !== next.direction || previous?.source !== source || (!previous?.sprint && next.sprint))) move();
     if (battle) return;
     const repeat = move;
     const scheduleRepeat = (delay: number) => { moveTimer.current = setTimeout(() => {
@@ -721,7 +751,7 @@ export function Game() {
     previousSelectedGridSpot.current = selectedGridSpot;
     if (freshPress) activateSelectedCell(selectedGridSpot);
   }, [selectedGridSpot, activateSelectedCell]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     clickedDestination.current = null; heldMovements.current.clear(); heldShift.current.clear(); activeMovement.current = null; mouseMovement.current = null; mouseScreenEdgeMove.current = null;
     warnedMouseHazard.current = null; confirmedMouseHazard.current = null;
     if (moveTimer.current) { clearTimeout(moveTimer.current); moveTimer.current = null; }
@@ -730,7 +760,7 @@ export function Game() {
       const center = cellCenter(current.player);
       if (current.player.pixel?.x !== center.x || current.player.pixel?.y !== center.y) dispatch({ type: "center-player" });
     }
-  }, [preferences.movementMode, campaign ? gameMode(campaign) : null, campaign?.floor.seed, campaign?.floor.level, campaign?.activePrefab?.id, worldAlive, settings, confirmingSaveAndExit, progressionDialogOpen]);
+  }, [preferences.movementMode, campaign ? gameMode(campaign) : null, campaign?.floor.seed, campaign?.floor.level, campaign?.activePrefab?.id, worldAlive, settings, confirmingSaveAndExit, progressionDialogOpen, worldInputEnabled]);
   useEffect(() => {
     let frame = 0; let last = performance.now(); let nextGridStep = 0;
     const integrator = new PixelMovementIntegrator();
@@ -740,7 +770,7 @@ export function Game() {
       gridlessInteractions.update(now);
       if (gridlessInteractions.active) { integrator.reset(); frame = requestAnimationFrame(animateMovement); return; }
       const runtime = movementRuntime.current; const current = sessionRef.current?.getState();
-      if (current && runtime.worldAlive && !runtime.settings && !runtime.confirmingSaveAndExit && !runtime.progressionOpen && !stairDepartureActiveRef.current && (gameMode(current) === "General" || performanceSession.current.active && performanceOptions().simulation === "frozen")) {
+      if (current && runtime.worldAlive && runtime.worldInputEnabled && !runtime.settings && !runtime.confirmingSaveAndExit && !runtime.progressionOpen && !stairDepartureActiveRef.current && (gameMode(current) === "General" || performanceSession.current.active && performanceOptions().simulation === "frozen")) {
         const held = [...heldMovements.current.values()]; const target = clickedDestination.current;
         if (target && mouseTravelBudget.current <= 0) {
           const center = cellCenter(current.player);
@@ -821,9 +851,10 @@ export function Game() {
       else url.searchParams.delete("mute");
       window.history.replaceState(window.history.state, "", url.href);
       audio.setMutedByUrl(change.muteAll);
-      audio.setPreferences({ ...preferences, ...change });
-      if (!change.muteAll) audio.startMusic();
     }
+    audio.setPreferences({ ...preferences, ...change });
+    if (change.muteAll === false || change.musicVolume !== undefined) audio.startMusic();
+    if (change.sfxVolume !== undefined || change.musicVolume !== undefined || change.muteAll !== undefined) audio.playCue("audioControl");
     setPreferences((current) => { const next = { ...current, ...change }; try { writePreferences(localStorage, next); } catch { /* session fallback */ } return next; });
   }, [audio, preferences]);
   const setZoomTest = (value: boolean) => { writeDevBoolean(DEV_SETTINGS_STORAGE_KEYS.zoomTest, value); setZoomTestState(value); if (!value) setPreference({ zoom: 1 }); };
@@ -861,7 +892,7 @@ export function Game() {
       if (current.active && event.type === "pointerup") {
         const target = document.elementFromPoint(event.clientX, event.clientY); const drop = itemDropTarget(target, campaign); const transfer = drop && describeInventoryDrop(campaign, current.source, drop.destination, drop.targetItem);
         const action = (transfer || null)?.action ?? null;
-         if (action) { const result = dispatch(action); audio.playDropResult(Boolean(result?.accepted)); if (result?.accepted) { const transferDestination = transfer && typeof transfer === "object" ? transfer.destination : null; if (transferDestination) shineSlots(shineKeysForDestination(transferDestination, current.source.kind === "ability" ? undefined : current.source.item)); else if (action.type === "assign-ability") shineSlot(`ability:${action.to}`); } }
+         if (action) { const result = dispatch(action); if (!result?.events.length) audio.playDropResult(Boolean(result?.accepted)); if (result?.accepted) { const transferDestination = transfer && typeof transfer === "object" ? transfer.destination : null; if (transferDestination) shineSlots(shineKeysForDestination(transferDestination, current.source.kind === "ability" ? undefined : current.source.item)); else if (action.type === "assign-ability") shineSlot(`ability:${action.to}`); } }
         else if (drop) audio.playDropResult(false);
       }
       cancelPointerDrag();
@@ -873,35 +904,39 @@ export function Game() {
   useEffect(() => {
     const editable = (target: EventTarget | null) => target instanceof HTMLElement && (target.isContentEditable || target.closest("input, textarea, select, [contenteditable='true']"));
     const clearHeldInput = () => { clickedDestination.current = null; heldMovements.current.clear(); heldShift.current.clear(); syncMovement(); };
+    const blur = () => { physicalMovementKeys.current.clear(); clearHeldInput(); };
     const down = (event: KeyboardEvent) => {
-      if (!worldAlive || settings || confirmingSaveAndExit || progressionDialogOpen || !worldInputEnabled || editable(event.target)) return;
       const movement = getMovementKey(event);
-      if (movement) { event.preventDefault(); if (event.repeat) return; clickedDestination.current = null; warnedMouseHazard.current = null; confirmedMouseHazard.current = null; if (!heldMovements.current.has(movement.code)) { heldMovements.current.set(movement.code, movement); syncMovement(); } return; }
+      const alreadyHeld = movement ? physicalMovementKeys.current.has(movement.code) : false;
+      if (movement) physicalMovementKeys.current.add(movement.code);
+      if (!worldAlive || settings || confirmingSaveAndExit || progressionDialogOpen || !worldInputEnabled || editable(event.target)) return;
+      if (movement) { event.preventDefault(); if (event.repeat || alreadyHeld) return; clickedDestination.current = null; warnedMouseHazard.current = null; confirmedMouseHazard.current = null; claimMovement(heldMovements.current, movement.code, movement.direction); syncMovement(); return; }
       if (event.code === "ShiftLeft" || event.code === "ShiftRight") { event.preventDefault(); const oldSprint = heldShift.current.size > 0; heldShift.current.add(event.code); if (!oldSprint) syncMovement(true, true); return; }
       if (!event.repeat && event.code === "KeyT") { event.preventDefault(); setDungeonTheme((theme) => theme === 1 ? 2 : theme === 2 ? 3 : 1); return; }
       if (!event.repeat && /^Digit[1-3]$/.test(event.code || "")) { event.preventDefault(); dispatch({ type: "ability", index: Number(event.code.slice(-1)) - 1 }); }
       else if (!event.repeat && /^[1-3]$/.test(event.key)) { event.preventDefault(); dispatch({ type: "ability", index: Number(event.key) - 1 }); }
       else if (!event.repeat && /^[QE]$/i.test(event.key)) { event.preventDefault(); dispatch({ type: "use-quick-slot", index: event.key.toUpperCase() === "Q" ? 0 : 1 }); }
       else if (!event.repeat && /^[X]$/i.test(event.key)) { event.preventDefault(); dispatch({ type: "wait" }); }
+      else if (!event.repeat && !event.ctrlKey && !event.metaKey && !event.altKey && (event.code === "KeyV" || /^v$/i.test(event.key))) { event.preventDefault(); dispatch({ type: "toggle-sneak" }); }
     };
     const up = (event: KeyboardEvent) => {
-      if (getMovementKey(event)) { const { code } = getMovementKey(event)!; if (heldMovements.current.delete(code)) syncMovement(false); }
+      if (getMovementKey(event)) { const { code } = getMovementKey(event)!; physicalMovementKeys.current.delete(code); if (heldMovements.current.delete(code)) syncMovement(false); }
       if (event.code === "ShiftLeft" || event.code === "ShiftRight") { const oldSprint = heldShift.current.size > 0; heldShift.current.delete(event.code); if (oldSprint !== (heldShift.current.size > 0)) syncMovement(false); }
     };
-    window.addEventListener("keydown", down); window.addEventListener("keyup", up); window.addEventListener("blur", clearHeldInput);
-    if (settings || confirmingSaveAndExit || progressionDialogOpen || expandedPanelOpen) clearHeldInput();
-    return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); window.removeEventListener("blur", clearHeldInput); };
+    window.addEventListener("keydown", down); window.addEventListener("keyup", up); window.addEventListener("blur", blur);
+    if (settings || confirmingSaveAndExit || progressionDialogOpen || !worldInputEnabled) clearHeldInput();
+    return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); window.removeEventListener("blur", blur); };
   }, [confirmingSaveAndExit, dispatch, progressionDialogOpen, settings, syncMovement, worldInputEnabled, worldAlive]);
   useGamepadMovement(
     worldAlive && worldInputEnabled && !settings && !progressionDialogOpen,
     `${preferences.movementMode}:${campaign?.floor.seed}:${campaign?.floor.level}:${campaign?.activePrefab?.id}:${campaign ? gameMode(campaign) : ""}`,
     (direction) => {
-      heldMovements.current.delete("gamepad");
+      const released = heldMovements.current.delete("gamepad");
       if (direction) {
         clickedDestination.current = null; warnedMouseHazard.current = null; confirmedMouseHazard.current = null;
-        heldMovements.current.set("gamepad", { direction });
+        claimMovement(heldMovements.current, "gamepad", direction);
       }
-      syncMovement(Boolean(direction));
+      if (direction || released) syncMovement(Boolean(direction));
     },
   );
   const begin = (id: string, repairedFloor: Floor | null = null, attributes?: Attributes, previewedWorld?: Campaign, override?: Campaign) => {
@@ -910,7 +945,7 @@ export function Game() {
     const unsavedUrlRun = urlOptions.hasCompleteRunIdentity || performanceSession.current.active;
     const targetSlot = urlOptions.hasCompleteRunIdentity ? urlOptions.slot! : id;
     let existing: Campaign | null = null;
-    try { if (!unsavedUrlRun) existing = readSlot(localStorage, targetSlot); }
+    try { if (!unsavedUrlRun && !override) existing = readSlot(localStorage, targetSlot); }
     catch { setSaveError("This saved game is unavailable. Its data was left unchanged."); setSummaries(readSlotSummary(localStorage)); return; }
     floatingTimers.current.forEach(clearTimeout); floatingTimers.current.clear();
     resourceChangeEffectTimers.current.forEach(clearTimeout); resourceChangeEffectTimers.current.clear();
@@ -941,8 +976,8 @@ export function Game() {
       }
     }
     if (!override && !unsavedUrlRun && !existing) {
-      try { writeSlot(localStorage, targetSlot, initial); setSummaries(readSlotSummary(localStorage)); }
-      catch { setSaveError("Saving is unavailable in this browser session."); return; }
+      try { writeSlot(localStorage, targetSlot, initial); setSummaries(readSlotSummary(localStorage)); audio.playEvents([{ type: "campaign.save.succeeded", facts: {} }]); }
+      catch { setSaveError("Saving is unavailable in this browser session."); audio.playEvents([{ type: "campaign.save.failed", facts: {} }]); return; }
     }
     if (!unsavedUrlRun) prepareCampaignSave(initial);
     const session = createGameSession(initial, {
@@ -952,7 +987,7 @@ export function Game() {
         if (performanceSession.current.active) return;
         if (pixelSaveTimer.current) { clearTimeout(pixelSaveTimer.current); pixelSaveTimer.current = null; }
         if (!unsavedUrlRun && result.ticks === 0 && result.events.some((event) => event.type === "action.committed" && event.facts.actionType === "move-pixels")) {
-          pixelSaveTimer.current = setTimeout(() => { if (sessionRef.current !== session) return; try { writeSlot(localStorage, targetSlot, session.getState()); } catch { setSaveError("Saving is unavailable in this browser session."); } }, 150);
+          pixelSaveTimer.current = setTimeout(() => { if (sessionRef.current !== session) return; try { writeSlot(localStorage, targetSlot, session.getState()); session.publish("campaign.save.succeeded"); } catch { setSaveError("Saving is unavailable in this browser session."); session.publish("campaign.save.failed"); } }, 150);
           return;
         }
         try {
@@ -960,6 +995,7 @@ export function Game() {
             if (result.recovery === null) deleteSlot(localStorage, targetSlot);
             else writeSlot(localStorage, targetSlot, result.recovery ?? result.state);
             setSummaries(readSlotSummary(localStorage));
+            session.publish("campaign.save.succeeded");
           }
           setSaveError("");
         }
@@ -968,9 +1004,9 @@ export function Game() {
     });
     campaignRef.current = null;
     session.subscribe((result) => {
+      audio.playEvents(result.events.filter((event) => event.type !== "xp.level.changed" && !(event.type === "resource.changed" && event.facts.cause === "campfire-rest")));
       if (!result.accepted && !result.system && !result.events.some((event) => event.type === "quick-slot.use.rejected")) return;
       const levelEvents = result.events.filter((event) => event.type === "xp.level.changed");
-      audio.playEvents(result.events.filter((event) => event.type !== "xp.level.changed"));
       const openedContainer = result.events.find((event) => (event.type === "chest.opened" || event.type === "crate.opened") && typeof event.facts.id === "string" && event.facts.position && typeof event.facts.position === "object")?.facts;
       if (openedContainer?.id && openedContainer.position && typeof openedContainer.position === "object") {
         const origin = openedContainer.position as { x: number; y: number };
@@ -995,7 +1031,7 @@ export function Game() {
         .map((event) => {
           const destination = event.facts.destination as { x: number; y: number };
           const entity = result.state.floor.entities.find((entry): entry is Extract<Entity, { kind: "item" }> => entry.kind === "item" && entry.item.id === event.facts.itemId);
-          return entity ? { id: entity.id, kind: "item" as const, itemName: entity.item.name, destination } : null;
+          return entity ? { id: entity.id, ...worldPickupPresentation(entity), itemName: entity.item.name, destination } : null;
         })
         .filter((item): item is NonNullable<typeof item> => item !== null);
       if (droppedItems.length) {
@@ -1074,6 +1110,16 @@ export function Game() {
     });
     turnPresentation.reset(initial);
     sessionRef.current = session; setSlot(targetSlot); setCampaign(initial);
+  };
+  const recoverFromDeath = () => {
+    if (!deathRecap?.recovery || !slot) return;
+    const recovery = deathRecap.recovery;
+    const targetSlot = slot;
+    returnToMainMenu();
+    // Restart the renderer even when the recovered map has the same identity.
+    // Its death animation, camera, fog field, and reveal transition start fresh.
+    setPerformanceEpoch(value => value + 1);
+    begin(targetSlot, null, undefined, undefined, recovery);
   };
   const installPerformanceCampaign = (next: Campaign) => {
     const targetSlot = slot ?? "1";
@@ -1211,8 +1257,8 @@ export function Game() {
     <TitleBar campaign={campaign} visibleCounters={pendingUiCredits[0]?.previous.counters} preferences={preferences} setPreference={setPreference} onFullscreen={toggleFullscreen} onSettings={openGameSettings} onSaveAndQuit={requestSaveAndQuit} fullscreenActual={fullscreenActual} zoomTest={zoomTest} />
     {urlOptions.mapFix && <MapFixControls campaign={campaign} slot={slot} onImport={importRepairMap} error={mapFixError} />}
     {canOverride && mapTest && <MapTestControls campaign={campaign} />}
-    <Profiler id="game-world" onRender={(_id, _phase, actualDuration) => timePerformance("React commit", actualDuration)}><section className="game-screen__middle" data-primary-open={primaryInfoOpen} data-secondary-open={secondaryInfoOpen}><WorldViewRegion primaryOpen={primaryInfoOpen} secondaryOpen={secondaryInfoOpen} dimmed={expandedPanelOpen}><BabylonWorld key={performanceEpoch} renderTestMode={renderTestMode} campaign={campaign} theme={dungeonTheme} gameViewShader={gameViewShader} zoom={preferences.zoom} camera={preferences.camera} cameraAnimationToken={cameraAnimationToken} playerDeathAnimation={Boolean(deathSequence)} stairDepartureStartedAt={stairDepartureStartedAt} teleportDepartureRequested={teleportDepartureRequested} onTeleportDepartureComplete={completeTeleportDeparture} mouseInteraction={worldInputEnabled && !settings && !progressionDialogOpen} mouseScreenEdgeTarget={worldInputEnabled ? mouseScreenEdgeMove.current?.target ?? null : null} mouseDirection={mouseDirection} showPivotPoints={showPivotPoints} floatingFeedback={floatingFeedback} resourceChangeEffects={resourceChangeEffects} particleEffects={particleEffects} itemThrows={itemThrows} uiAnimations={uiAnimations} selectedCell={selectedGridSpot} selectedCellReachable={selectedCellReachable} mousePath={selectedMousePath} campfireMenu={campfireMenu} campfireRestConfirming={campfireRestConfirming} campfireRestTransition={campfireRestTransition} turnPresentation={turnPresentation} onCampfireRestReplenish={completeCampfireRest} movementPrompts={movementPrompts} onCampfireMenuCancelled={() => setCampfireMenu(null)} onCampfireRestRequested={confirmCampfireRest} onSelectedCellChange={setSelectedGridSpot} onSelectedCellClick={activateSelectedCell} onMouseScreenEdgeAdvance={advanceMouseScreenEdge} onWorldAliveChange={handleWorldAliveChange} onPlayerDeathAnimationComplete={completePlayerDeathAnimation} onStairDepartureComplete={completeStairDeparture} onStairDescentStep={playStairDescentStep} onWallAdjacentBarrelOffscreen={(setId) => Boolean(dispatch({ type: "return-barrel", setId })?.accepted)} onUiAnimationRest={restUiAnimation} onUiAnimationComplete={completeUiAnimation} onFpsChange={canOverride ? fps.publish : undefined} onZoom={stepZoom} /><EquipmentComparison campaign={campaign} drag={dragPresentation} /></WorldViewRegion>{orientation === "landscape" && (<InformationPanels renderTestMode={renderTestMode} primaryOverlay={orientation === "landscape" ? performancePanel : null} key={performanceEpoch} campaign={activeUiCampaign} theme={dungeonTheme} dispatch={dispatch} drag={dragPresentation} preview={preview} gains={gains} cooldowns={abilityCooldowns} shineTokens={shineTokens} primaryOpen={primaryInfoOpen} secondaryOpen={secondaryInfoOpen} statusReplenishProgress={statusReplenishProgress} turnPresentation={turnPresentation} onTogglePrimary={() => setPrimaryInfoOpen((value) => !value)} onToggleSecondary={() => setSecondaryInfoOpen((value) => !value)} onFocusedPanelChange={setExpandedPanelOpen} onOpenProgression={() => { setGameSettingsCenter(measureGameSettingsCenter()); setProgressionOpen(true); }} />)}</section></Profiler>
-<StatusControls renderTestMode={renderTestMode} setRenderTestMode={setRenderTestMode} performanceActive={performanceSession.current.active} onTogglePerformance={togglePerformance} campaign={campaign} canOverride={canOverride} orientation={orientation} onTogglePanels={togglePanels} fps={fps} drag={dragPresentation} urlArgs={preferences.urlArgs} setUrlArgs={(urlArgs) => { writeDevBoolean(DEV_SETTINGS_STORAGE_KEYS.urlArgs, urlArgs); setPreference({ urlArgs }); }} mapTest={mapTest} setMapTest={setMapTest} itemTest={itemTest} setItemTest={setItemTest} enemyTest={enemyTest} setEnemyTest={setEnemyTest} levelTest={levelTest} setLevelTest={setLevelTest} zoomTest={zoomTest} setZoomTest={setZoomTest} gameViewShader={gameViewShader} setGameViewShader={(shader) => { writeDevGameViewShader(shader); setGameViewShaderState(shader); }} mobilePanel={mobilePanel} setMobilePanel={setMobilePanel} onWait={() => dispatch({ type: "wait" })} />
+    <Profiler id="game-world" onRender={(_id, _phase, actualDuration) => timePerformance("React commit", actualDuration)}><section className="game-screen__middle" data-primary-open={primaryInfoOpen} data-secondary-open={secondaryInfoOpen}><WorldViewRegion primaryOpen={primaryInfoOpen} secondaryOpen={secondaryInfoOpen} dimmed={expandedPanelOpen}><BabylonWorld key={performanceEpoch} renderTestMode={renderTestMode} campaign={campaign} theme={dungeonTheme} gameViewShader={gameViewShader} zoom={preferences.zoom} camera={preferences.camera} cameraAnimationToken={cameraAnimationToken} playerDeathAnimation={Boolean(deathSequence)} stairDepartureStartedAt={stairDepartureStartedAt} teleportDepartureRequested={teleportDepartureRequested} onTeleportDepartureComplete={completeTeleportDeparture} mouseInteraction={worldInputEnabled && !settings && !progressionDialogOpen} mouseScreenEdgeTarget={worldInputEnabled ? mouseScreenEdgeMove.current?.target ?? null : null} mouseDirection={mouseDirection} showPivotPoints={showPivotPoints} floatingFeedback={floatingFeedback} resourceChangeEffects={resourceChangeEffects} particleEffects={particleEffects} itemThrows={itemThrows} uiAnimations={uiAnimations} selectedCell={selectedGridSpot} selectedCellReachable={selectedCellReachable} mousePath={selectedMousePath} campfireMenu={campfireMenu} campfireRestConfirming={campfireRestConfirming} campfireRestTransition={campfireRestTransition} turnPresentation={turnPresentation} onCampfireRestReplenish={completeCampfireRest} movementPrompts={movementPrompts} onCampfireMenuCancelled={() => setCampfireMenu(null)} onCampfireRestRequested={confirmCampfireRest} onSelectedCellChange={setSelectedGridSpot} onSelectedCellClick={activateSelectedCell} onMouseScreenEdgeAdvance={advanceMouseScreenEdge} onWorldAliveChange={handleWorldAliveChange} onPlayerDeathAnimationComplete={completePlayerDeathAnimation} onStairDepartureComplete={completeStairDeparture} onStairDescentStep={playStairDescentStep} onWallAdjacentBarrelOffscreen={(setId) => Boolean(dispatch({ type: "return-barrel", setId })?.accepted)} onUiAnimationRest={restUiAnimation} onUiAnimationComplete={completeUiAnimation} onFpsChange={canOverride ? fps.publish : undefined} onZoom={stepZoom} /><EquipmentComparison campaign={campaign} drag={dragPresentation} /></WorldViewRegion>{orientation === "landscape" && (<InformationPanels renderTestMode={renderTestMode} primaryOverlay={orientation === "landscape" ? performancePanel : null} key={performanceEpoch} campaign={activeUiCampaign} theme={dungeonTheme} dispatch={dispatch} drag={dragPresentation} preview={preview} gains={gains} cooldowns={abilityCooldowns} shineTokens={shineTokens} primaryOpen={primaryInfoOpen} secondaryOpen={secondaryInfoOpen} statusReplenishProgress={statusReplenishProgress} turnPresentation={turnPresentation} onTogglePrimary={() => { audio.playPanelToggle(!primaryInfoOpen); setPrimaryInfoOpen(!primaryInfoOpen); }} onToggleSecondary={() => { audio.playPanelToggle(!secondaryInfoOpen); setSecondaryInfoOpen(!secondaryInfoOpen); }} onFocusedPanelChange={(focused) => { audio.playPanelToggle(focused); setExpandedPanelOpen(focused); }} onOpenProgression={() => { setGameSettingsCenter(measureGameSettingsCenter()); setProgressionOpen(true); }} />)}</section></Profiler>
+<StatusControls renderTestMode={renderTestMode} setRenderTestMode={setRenderTestMode} performanceActive={performanceSession.current.active} onTogglePerformance={togglePerformance} campaign={campaign} canOverride={canOverride} orientation={orientation} onTogglePanels={togglePanels} onPanelToggle={audio.playPanelToggle} fps={fps} drag={dragPresentation} urlArgs={preferences.urlArgs} setUrlArgs={(urlArgs) => { writeDevBoolean(DEV_SETTINGS_STORAGE_KEYS.urlArgs, urlArgs); setPreference({ urlArgs }); }} mapTest={mapTest} setMapTest={setMapTest} itemTest={itemTest} setItemTest={setItemTest} enemyTest={enemyTest} setEnemyTest={setEnemyTest} levelTest={levelTest} setLevelTest={setLevelTest} zoomTest={zoomTest} setZoomTest={setZoomTest} gameViewShader={gameViewShader} setGameViewShader={(shader) => { writeDevGameViewShader(shader); setGameViewShaderState(shader); }} mobilePanel={mobilePanel} setMobilePanel={(value) => { if (value !== mobilePanel) audio.playPanelToggle(value === "info"); setMobilePanel(value); }} onWait={() => dispatch({ type: "wait" })} />
 {orientation === "portrait" && (<section className="mobile_bottom"><MobileControls campaign={campaign} dispatch={dispatch} hidden={mobilePanel !== "controls"} />{mobilePanel === "info" && (<MobileInformationPanels renderTestMode={renderTestMode} primaryOverlay={orientation === "portrait" ? performancePanel : null} campaign={activeUiCampaign} theme={dungeonTheme} dispatch={dispatch} drag={dragPresentation} preview={preview} gains={gains} cooldowns={abilityCooldowns} shineTokens={shineTokens} hidden={mobilePanel !== "info"} statusReplenishProgress={statusReplenishProgress} onOpenProgression={() => { setGameSettingsCenter(measureGameSettingsCenter()); setProgressionOpen(true); }} turnPresentation={turnPresentation} />)}</section>)}
     <ItemDragPreview campaign={campaign} drag={dragPresentation} />
     {saveError && <div className="save_error">{saveError}</div>}
@@ -1221,6 +1267,6 @@ export function Game() {
     {settings && <SettingsWindow origin="game" center={gameSettingsCenter} onClose={() => setSettings(false)} onOpenHowToPlay={(bounds) => { helpBoundsRef.current = bounds; setHowToPlay(true); }} helpOpen={howToPlay} onSaveAndQuit={requestSaveAndQuit} onClearLocalStorage={clearLocalStorage} onFullscreen={toggleFullscreen} fullscreenActual={fullscreenActual} preferences={preferences} setPreference={setPreference} mutedByUrl={audio.hardMuted} />}
     {confirmingSaveAndExit && <ConfirmationDialog title="Are you sure?" message="Save your progress and exit." onConfirm={() => { setConfirmingSaveAndExit(false); saveAndQuit(); }} onCancel={() => setConfirmingSaveAndExit(false)} center={gameSettingsCenter} />}
     {howToPlay && <HowToPlayWindow origin="game" bounds={helpBoundsRef.current} onClose={() => setHowToPlay(false)} />}
-    {deathRecap && <DeathRecapWindow campaign={deathRecap.fatal} lines={deathRecap.lines} center={gameSettingsCenter} onAction={(action) => { if (action === "recover" && deathRecap.recovery && slot) { setDeathRecap(null); begin(slot); } else returnToMainMenu(); }} />}
+    {deathRecap && <DeathRecapWindow campaign={deathRecap.fatal} lines={deathRecap.lines} center={gameSettingsCenter} onAction={(action) => { if (action === "recover") recoverFromDeath(); else returnToMainMenu(); }} />}
   </GameScreen>;
 }

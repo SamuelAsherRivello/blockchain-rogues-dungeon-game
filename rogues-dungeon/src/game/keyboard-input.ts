@@ -30,3 +30,10 @@ export function getLatestMovement(heldMovements: ReadonlyMap<string, { direction
   const last = [...heldMovements.values()].at(-1);
   return last ? { direction: last.direction, sprint: sprintHeld } : null;
 }
+
+/** Different movement devices never contribute to the same displacement. */
+export function claimMovement(held: Map<string, { direction: Direction }>, key: string, direction: Direction) {
+  if (key === "gamepad") held.clear();
+  else held.delete("gamepad");
+  held.set(key, { direction });
+}

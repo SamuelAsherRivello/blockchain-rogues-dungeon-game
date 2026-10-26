@@ -7,6 +7,7 @@ async page => {
     await page.goto("http://127.0.0.1:6080/blockchain-rogues-dungeon-game/?mute=1");
     await page.evaluate(async ({ mode, battle }) => {
       const { createCampaign } = await import("/blockchain-rogues-dungeon-game/src/systems/procedural/world-procedural-system.ts");
+      const { revealDiscovery } = await import("/blockchain-rogues-dungeon-game/src/systems/procedural/map-discovery-system.ts");
       const campaign = createCampaign(90210);
       const enemy = campaign.floor.entities.find(entity => entity.kind === "enemy");
       campaign.floor.cells = Array.from({ length: 100 }, () => Array.from({ length: 100 }, () => ({ walkable: true, role: "ground" })));
@@ -16,6 +17,8 @@ async page => {
       campaign.progression.attributes.perception = battle ? 0 : 5;
       campaign.player.equipment.weapons[0] = { id: "fixture-stick", name: "Wooden Stick", group: "weapons", modifiers: { offense: 1 } };
       if (battle) { Object.assign(enemy, { x: 55, y: 50, awareness: 6, nextActionAt: 9999 }); campaign.floor.entities = [enemy]; }
+      // This fixture isolates Perception; fog walking has its own browser cases.
+      revealDiscovery(campaign, campaign.player, 10);
       localStorage.setItem("rogues-dungeon.slot.1", JSON.stringify(campaign));
       localStorage.setItem("rogues-dungeon.preferences.v1", JSON.stringify({ movementMode: mode, zoom: 1, camera: "center" }));
     }, { mode, battle });

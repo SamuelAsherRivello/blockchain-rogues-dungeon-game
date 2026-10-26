@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { applyAction, createCampaign } from "../src/systems/procedural/world-procedural-system.ts";
+import { worldPickupPresentation } from "../src/systems/rendering/world-object-sprite-system.ts";
+import { throwItems } from "../src/systems/animation/item-throw-animation-system.ts";
 import { WorldRender, compileStaticWorldPresentation, getVisibleWorldCellBounds, isWorldCellVisible, isWorldChunkVisible } from "../src/systems/rendering/world-render-system.ts";
 
 test("compiled static presentation is reused for unchanged floor layers", () => {
@@ -39,3 +42,29 @@ test("discovery does not remove static dungeon geometry", () => {
 
   assert.equal(model.grounds.length, 4);
 });
+
+for (const resource of ["health", "mana", "stamina"] as const) {
+  test(`dropped ${resource} potions use native potion art in both world views and flights`, () => {
+    for (const source of ["inventory", "quick-slot"] as const) {
+      const campaign = createCampaign(1901);
+      const item = { id: `${resource}-drop`, name: `${resource} potion`, group: "weapons" as const, modifiers: {}, category: "consumable" as const, consumableResource: resource, isStackable: true, quantity: 2 };
+      if (source === "inventory") campaign.player.inventory = [item];
+      else campaign.player.quickSlots = [{ item, quantity: 2 }, null];
+      const result = applyAction(campaign, { type: "drop-item", source: source === "inventory" ? { kind: source, itemId: item.id } : { kind: source, index: 0 } });
+      assert.equal(result.accepted, true);
+      const entity = result.state.floor.entities.find(entry => entry.kind === "item" && entry.item.id === item.id)!;
+      assert.ok(entity);
+      const presentation = worldPickupPresentation(entity);
+      assert.deepEqual(presentation, { kind: "potion", resource });
+      const [flight] = throwItems(campaign.player, [{ id: entity.id, ...presentation, destination: entity }], 0);
+      assert.equal(flight.kind, "potion");
+      assert.equal(flight.resource, resource);
+      for (const view of ["game", "minimap"]) {
+        const model = WorldRender.Render({ map: result.state.floor.map, cells: result.state.floor.cells, player: result.state.player, entities: [entity], view });
+        assert.equal(model.objects[0].kind, "potion");
+        assert.equal(model.objects[0].resource, resource);
+        assert.deepEqual(model.objects[0].item, item);
+      }
+    }
+  });
+}

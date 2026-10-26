@@ -20,10 +20,9 @@ test("@smoke retargets muted movement without delaying the next turn", async ({ 
   await openSavedGame(page);
   await expect(page.locator(".world-view")).toBeVisible();
   await expect(page.locator(".dev_settings output")).toHaveText(/FPS: [0-9]/);
-  const moveRight = page.locator(".mobile-controls__arrows button").filter({ hasText: "→" });
-  await moveRight.evaluate((button: HTMLButtonElement) => button.click());
+  await page.keyboard.press("ArrowRight");
   await page.waitForTimeout(80);
-  await moveRight.evaluate((button: HTMLButtonElement) => button.click());
+  await page.keyboard.press("ArrowRight");
   await expect.poll(() => page.evaluate(() => {
     const campaign = JSON.parse(localStorage.getItem("rogues-dungeon.slot.1")!);
     return { x: campaign.player.x, time: campaign.floor.time };

@@ -7,8 +7,98 @@ import { HERO_HOUSE_PREFAB, PLAYER_HOME_PREFAB, prefabPortalEntrance, prefabPort
 import { applyAction, compactCampaignForSave, createCampaign, createRunCampaign, generateFloor, PORTAL_LAYOUT_VERSION, restoreCompactCampaign, upgradeCampaignResources } from "../src/systems/procedural/world-procedural-system.ts";
 import { findCardinalPath } from "../src/game/a-star.ts";
 import { DUNGEON_TOPOLOGY_VERSION } from "../src/systems/procedural/dungeon-topology-system.ts";
+import type { Campaign, Entity } from "../src/game/types.ts";
+import { migrateCampaign } from "../src/systems/persistence/save-system.ts";
+import { eligibleWorldItemNames } from "../src/systems/procedural/world-balance.ts";
 
 const homeTmx = readFileSync(new URL("../public/assets/art/game-view/maps/prefabs/player-home.tmx", import.meta.url), "utf8");
+
+function visitTeleport(campaign: Campaign, index = 0) {
+  const arrow = campaign.floor.entities.filter((entity) => entity.kind === "teleport-arrow")[index];
+  campaign.player.x = arrow.x; campaign.player.y = arrow.y;
+  delete campaign.player.pixel;
+  const result = applyAction(campaign, { type: "enter-teleport" });
+  assert.ok(result.accepted);
+  return result.state;
+}
+
+function playroomRewards(campaign: Campaign) {
+  return campaign.floor.entities.filter((entity) => entity.id.startsWith("player-home-reward-"));
+}
+
+function rewardName(entity: Entity) {
+  return entity.kind === "potion" ? `${entity.resource} potion` : entity.kind === "item" ? entity.item.name : entity.kind;
+}
+
+function collectPlayroomReward(campaign: Campaign, x: number) {
+  campaign.player.x = x; campaign.player.y = 6;
+  delete campaign.player.pixel;
+  const result = applyAction(campaign, { type: "move", direction: "n" });
+  assert.ok(result.accepted);
+  assert.ok(result.events.some((event) => event.type === "item.collected"));
+  return result.state;
+}
+
+function savedRoundTrip(campaign: Campaign) {
+  return migrateCampaign(JSON.parse(JSON.stringify(compactCampaignForSave(campaign))));
+}
+
+test("playroom always offers two distinct level-eligible items below its tables", () => {
+  const seen = new Set<string>();
+  for (const level of [1, 2, 3, 10]) for (const seed of [17, 77, 611, 914]) {
+    const campaign = createRunCampaign(seed, 1, 1, level, level);
+    const home = visitTeleport(campaign);
+    const rewards = playroomRewards(home);
+    assert.deepEqual(rewards.map(({ x, y }) => ({ x, y })), [{ x: 4, y: 5 }, { x: 5, y: 5 }]);
+    assert.equal(new Set(rewards.map(rewardName)).size, 2);
+    for (const reward of rewards) {
+      assert.ok(home.floor.cells[reward.y][reward.x].walkable);
+      assert.ok(findCardinalPath(home.floor, home.player, reward));
+      if (reward.kind === "item") assert.ok(eligibleWorldItemNames(level).includes(reward.item.name));
+      seen.add(rewardName(reward));
+    }
+    assert.deepEqual(playroomRewards(visitTeleport(campaign)), rewards);
+  }
+  assert.ok(seen.size > 2, "different seeds and levels vary the reward offers");
+});
+
+test("playroom pickups stay collected across both exits, repeat visits, and saves inside or outside", () => {
+  let home = visitTeleport(createRunCampaign(613, 1, 1, 1, 1, { level1TestMode: true }));
+  const rightReward = structuredClone(playroomRewards(home)[1]);
+  home = savedRoundTrip(collectPlayroomReward(home, 4));
+  assert.deepEqual(playroomRewards(home), [rightReward]);
+  let dungeon = savedRoundTrip(visitTeleport(home, 1));
+  home = visitTeleport(dungeon, 1);
+  assert.deepEqual(playroomRewards(home), [rightReward]);
+  home = savedRoundTrip(collectPlayroomReward(home, 5));
+  assert.deepEqual(playroomRewards(home), []);
+  dungeon = savedRoundTrip(visitTeleport(home));
+  home = visitTeleport(dungeon);
+  assert.deepEqual(playroomRewards(home), []);
+});
+
+test("each dungeon level has its own playroom rewards and revisiting an earlier level does not refill them", () => {
+  let campaign = visitTeleport(createRunCampaign(613, 1, 1, 1, 1, { level1TestMode: true }));
+  campaign = visitTeleport(collectPlayroomReward(collectPlayroomReward(campaign, 4), 5));
+  const takeStairs = (state: Campaign, direction: "forward" | "back") => {
+    const stair = state.floor.entities.find((entity) => entity.kind === "stairs" && entity.direction === direction)!;
+    assert.ok(stair);
+    state.player.x = stair.x; state.player.y = stair.y;
+    delete state.player.pixel;
+    const result = applyAction(state, { type: "enter-stairs" });
+    assert.ok(result.accepted);
+    return result.state;
+  };
+  campaign = takeStairs(campaign, "forward");
+  assert.equal(campaign.floor.level, 2);
+  campaign = visitTeleport(campaign);
+  assert.equal(playroomRewards(campaign).length, 2);
+  campaign = visitTeleport(collectPlayroomReward(campaign, 4));
+  campaign = savedRoundTrip(takeStairs(campaign, "back"));
+  assert.deepEqual(playroomRewards(visitTeleport(campaign)), []);
+  campaign = visitTeleport(takeStairs(campaign, "forward"));
+  assert.equal(playroomRewards(campaign).length, 1);
+});
 
 test("prefab portal arrows point into the wall from their sole cardinal approach", () => {
   for (const [x, y, direction] of [[2, 3, "n"], [1, 2, "e"], [2, 1, "s"], [3, 2, "w"]] as const) {

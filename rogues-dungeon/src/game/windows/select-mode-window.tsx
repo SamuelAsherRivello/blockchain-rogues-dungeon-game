@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { CampaignMode } from "../types.ts";
-import { Dialog, type DialogBounds } from "../../ui/Dialog.tsx";
+import { Dialog, type DialogBounds } from "../../ui/dialog.tsx";
 
 const berlinTraits = [
   "ASCII",

@@ -125,6 +125,8 @@ export interface Campaign {
   discovery?: Record<string, string>;
   /** The currently presented standalone map, when the player is inside a teleport prefab. */
   activePrefab?: { id: "player-home"; returnLevel: number; returnPosition: Position; prefabPosition: Position };
+  /** Remaining playroom objects after leaving, keyed by dungeon level. */
+  playerHomeEntities?: Record<string, Entity[]>;
   /** Inputs used to regenerate this run's floors deterministically. */
   worldSeed?: number; slot?: number; run?: number; generatorVersion?: string; topologyVersion?: string; portalLayoutVersion?: string;
   /** Compact state for visited generated levels, keyed by level. */
@@ -184,7 +186,7 @@ export interface EventFacts {
   error?: string; message?: string; quantity?: number; quickSlot?: number;
   displacedItemIds?: string[]; displacedItems?: { id: string; name: string }[]; occupiedSlots?: number[]; slotSpan?: 1 | 2;
   hitChance?: number; critChance?: number; roll?: number; attackDirection?: Direction; mitigation?: number; projectileId?: string; outcome?: string;
-  sourceName?: string;
+  sourceName?: string; obstacle?: "door";
   childIds?: string[]; generation?: number;
 }
 export interface GameEvent { type: string; facts: EventFacts; source?: string; gameTime: number; sequence: number; eventId?: string; transactionId?: string | null; outcome?: string }

@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { compatibleFixtureStorageState } from "./rogues-dungeon/test/browser/fixture-storage.ts";
 
 const host = "127.0.0.1";
 const port = Number(process.env.PLAYWRIGHT_PORT ?? 4173);
@@ -17,6 +18,7 @@ export default defineConfig({
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {
     baseURL,
+    storageState: compatibleFixtureStorageState(baseURL),
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: process.env.PLAYWRIGHT_VIDEO === "1" ? "retain-on-failure" : "off",

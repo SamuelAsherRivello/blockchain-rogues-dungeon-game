@@ -1,10 +1,12 @@
 import { GENERATOR_VERSION } from '../../src/systems/procedural/world-procedural-system.ts';
 import { expect, test } from "@playwright/test";
+import { fixtureCompatibilityMarker } from "./fixture-storage.ts";
 import path from "node:path";
 import { openSavedGame } from "./start-saved-game.ts";
 import { installCampaignFixture, readSavedCampaign } from "./campaign-fixture.ts";
 import { buildManualTileScenario } from "../../src/systems/procedural/manual-tile-scenarios.ts";
 import { buildDungeonWangWalls } from "../../src/systems/rendering/tile-map-system.ts";
+import { sampleCanvasPixels } from "./canvas-pixel-sample.ts";
 
 test("@smoke opens the muted saved-game entry screen", async ({ page }) => {
   await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
@@ -32,6 +34,12 @@ test("waits for menu art before showing the main menu", async ({ page }) => {
 test("@smoke shows My First Quest in a new muted Saved Game", async ({ page }) => {
   await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
   await openSavedGame(page);
+  for (const selector of [".world-view canvas", ".minimap-view canvas"]) {
+    await expect.poll(async () => {
+      const pixels = await sampleCanvasPixels(page, await page.locator(selector).screenshot());
+      return pixels.nonBlackPixels;
+    }, { message: `${selector} must render after the Create World preview unmounts` }).toBeGreaterThan(selector === ".minimap-view canvas" ? 0 : 100);
+  }
   const information = page.locator(".information-panels");
   await expect(information.getByText("My First Quest", { exact: true })).toBeVisible();
   await expect(information.getByText("Walk through the stairs", { exact: true })).toBeVisible();
@@ -83,7 +91,7 @@ test("@smoke clears local storage from the main menu", async ({ page }) => {
   await page.getByRole("button", { name: "Clear Local Storage" }).click();
   await page.getByRole("button", { name: "Confirm" }).click();
   await expect(page.getByRole("heading", { name: "Start Game" })).toBeVisible();
-  await expect.poll(() => page.evaluate(() => localStorage.length)).toBe(0);
+  await expect.poll(() => page.evaluate(() => ({ ...localStorage }))).toEqual({ [fixtureCompatibilityMarker.name]: fixtureCompatibilityMarker.value });
 });
 
 test("@smoke keeps settings on the menu frame or centered over the live game view", async ({ page }) => {

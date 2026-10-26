@@ -13,9 +13,9 @@ import { AbilityViewItemList, InventoryViewItems, QuickSlotsView, ResourceList, 
 
 type Dispatch = (action: Action) => unknown;
 
-type FocusedPanel = "Minimap" | "Quest" | "Status" | "Attributes" | "Log" | "Abilities" | "Quick Slots" | "Equipment" | "Inventory";
+type FocusedPanel = "Minimap" | "Quest" | "Status" | "Attributes" | "Log" | "Abilities" | "Quick Slots" | "Equipment" | "Inventory" | "Performance";
 type FocusProps = { focusedPanel: FocusedPanel | null; onFocus(title: FocusedPanel): void; onCollapse(): void };
-const focusProps = (title: FocusedPanel, props: FocusProps) => ({ focused: props.focusedPanel === title, onTitleClick: () => props.onFocus(title), onCollapse: props.onCollapse });
+const focusProps = (title: FocusedPanel, props: FocusProps) => ({ isExpandable: true, focused: props.focusedPanel === title, onTitleClick: () => props.onFocus(title), onCollapse: props.onCollapse });
 
 function SecondaryInfoPanel({ campaign, renderTestMode = 3, theme, preview, gains, open, motion, minimapRendering, shineTokens = {}, onToggle, onOpenProgression, statusReplenishProgress, turnPresentation, focusedPanel, onFocus, onCollapse }: { campaign: Campaign; renderTestMode?: RenderTestMode; theme: DungeonTheme; preview: Attributes | null; gains: Gains; open: boolean; motion?: UiMotionStyle; minimapRendering: boolean; shineTokens?: SlotShineTokens; onToggle?(): void; onOpenProgression?(): void; statusReplenishProgress?: number | null; turnPresentation: TurnPresentationSystem } & FocusProps) {
   const quest = currentQuest(campaign);
@@ -23,7 +23,7 @@ function SecondaryInfoPanel({ campaign, renderTestMode = 3, theme, preview, gain
 }
 
 function PrimaryInfoPanel({ campaign, dispatch, drag, open, motion, inventory, cooldowns = {}, shineTokens = {}, onToggle, focusedPanel, onFocus, onCollapse, overlay }: { campaign: Campaign; dispatch: Dispatch; drag: DragPresentation | null; open: boolean; motion?: UiMotionStyle; inventory?: Item[] | null; cooldowns?: Partial<Record<AbilityId, number>>; shineTokens?: SlotShineTokens; onToggle?(): void; overlay?: ReactNode } & FocusProps) {
-  if (overlay) return <aside className="info-panel info-panel--primary info-panel--performance" hidden={!motion && !open} style={motion}><GameCard title="Performance" className="info-panel__performance-card" showTab={Boolean(onToggle)} tabExpanded={open} onTabClick={onToggle} tabAriaLabel={`${open ? "Collapse" : "Expand"} primary information panel tab`} contentHidden={!open}><div className="performance-panel-content" inert={!open} aria-hidden={!open}>{overlay}</div></GameCard></aside>;
+  if (overlay) return <aside className="info-panel info-panel--primary info-panel--performance" hidden={!motion && !open} style={motion}><GameCard title="Performance" {...focusProps("Performance", { focusedPanel, onFocus, onCollapse })} className="info-panel__performance-card" showTab={Boolean(onToggle)} tabExpanded={open} onTabClick={onToggle} tabAriaLabel={`${open ? "Collapse" : "Expand"} primary information panel tab`} contentHidden={!open}><div className="performance-panel-content" inert={!open} aria-hidden={!open}>{overlay}</div></GameCard></aside>;
   const displayedCampaign = inventory ? { ...campaign, player: { ...campaign.player, inventory } } : campaign;
   const inventorySlots = stackInventoryItems(displayedCampaign.player.inventory).reduce((total, { item }) => total + (item.slotSpan ?? 1), 0);
   return <aside className="info-panel info-panel--primary" hidden={!motion && !open} style={motion}><GameCard title="Abilities" {...focusProps("Abilities", { focusedPanel, onFocus, onCollapse })} showTab={Boolean(onToggle)} tabExpanded={open} onTabClick={onToggle} tabAriaLabel={`${open ? "Collapse" : "Expand"} primary information panel tab`} contentHidden={!open}><AbilityViewItemList drag={drag} campaign={campaign} dispatch={dispatch} cooldowns={cooldowns} shineTokens={shineTokens} /></GameCard><GameCard title="Quick Slots" {...focusProps("Quick Slots", { focusedPanel, onFocus, onCollapse })} contentHidden={!open}><QuickSlotsView campaign={campaign} dispatch={dispatch} drag={drag} shineTokens={shineTokens} /></GameCard><GameCard title="Equipment" {...focusProps("Equipment", { focusedPanel, onFocus, onCollapse })} className="info-panel__equipment-card" contentHidden={!open}><SlotList campaign={campaign} drag={drag} shineTokens={shineTokens} /></GameCard><GameCard title={`Inventory ${String(inventorySlots).padStart(2, "0")}/${String(effectiveInventoryCapacity(campaign)).padStart(2, "0")}`} {...focusProps("Inventory", { focusedPanel, onFocus, onCollapse })} className="info-panel__inventory-card" contentHidden={!open}><InventoryViewItems campaign={displayedCampaign} dispatch={dispatch} drag={drag} shineTokens={shineTokens} /></GameCard></aside>;
@@ -39,12 +39,12 @@ export function InformationPanels({ campaign, renderTestMode = 3, theme, dispatc
     if (!secondaryOpen) setMinimapRendering(true);
     onToggleSecondary();
   };
-  const focus = (title: FocusedPanel) => setFocusedPanel((current) => {
-    const next = current === title ? null : title;
+  const focus = (title: FocusedPanel) => {
+    const next = focusedPanel === title ? null : title;
+    setFocusedPanel(next);
     onFocusedPanelChange?.(next !== null);
-    return next;
-  });
-  const collapse = () => { setFocusedPanel(null); onFocusedPanelChange?.(false); };
+  };
+  const collapse = () => { if (focusedPanel === null) return; setFocusedPanel(null); onFocusedPanelChange?.(false); };
   const primaryMotion = useUiMotion("info-primary", { x: primaryOpen ? secondaryOpen ? 0 : 100 : 200, xOffsetRem: primaryOpen ? 0 : -.35, opacity: 1, depth: primaryOpen && secondaryOpen ? 1 : 0 });
   const secondaryMotion = useUiMotion("info-secondary", { x: secondaryOpen ? 100 : 200, xOffsetRem: secondaryOpen ? 0 : -.35, opacity: 1, depth: primaryOpen && secondaryOpen ? 2 : 1 }, undefined, undefined, () => { if (!secondaryOpen) setMinimapRendering(false); });
   return <div className="information-panels"><PrimaryInfoPanel overlay={primaryOverlay} campaign={campaign} dispatch={dispatch} drag={drag} open={primaryOpen} motion={primaryMotion} inventory={inventory} cooldowns={cooldowns} shineTokens={shineTokens} onToggle={onTogglePrimary} focusedPanel={focusedPanel} onFocus={focus} onCollapse={collapse} /><SecondaryInfoPanel renderTestMode={renderTestMode} campaign={campaign} theme={theme} preview={preview} gains={gains} open={secondaryOpen} motion={secondaryMotion} minimapRendering={minimapRendering} shineTokens={shineTokens} onToggle={toggleSecondary} onOpenProgression={onOpenProgression} statusReplenishProgress={statusReplenishProgress} turnPresentation={turnPresentation} focusedPanel={focusedPanel} onFocus={focus} onCollapse={collapse} /></div>;

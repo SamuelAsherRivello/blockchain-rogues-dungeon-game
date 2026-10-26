@@ -82,3 +82,49 @@ Task 2.6 remains unchecked. The coordinator owns the focused muted browser check
 and second human playtest for branches, loops, pacing, combat spaces and stairs.
 No browser/server operation was performed by this implementation owner, and no
 milestone-three implementation has begun.
+
+## Milestone two playtest route preparation
+
+`node --import tsx output/program-milestone-two-plan.ts` derives and verifies
+current routes instead of using the milestone-one barrel sequence. It produced
+`output/program-milestone-two-plan.json` and the browser callback
+`output/program-milestone-two-browser.js`. The generated browser function parses;
+this preparation did not launch a browser or server.
+
+The fixtures are complete unsaved URL runs with world 1, level 1, slot 2 and
+run 1, using seeds 4 and 55. Both have ten graph rooms, one loop, three hubs,
+all five room roles and the paired portal layout. Each route visits a non-start
+hub, returns to the start, pushes the actual barrel onto its trigger, crosses
+the opened door and reaches the forward stairs. All 38 seed-4 moves and 44
+seed-55 moves were accepted at their expected grid coordinates, without combat,
+death, traps, encounter locking or teleport entry. The separate `enter-stairs`
+action was accepted and reached level 2 at (49,50), outside a trap cell.
+
+The distinction between moving onto a stair and entering the next level is
+explicit in the trace. `applyAction(move)` emits `stairs.entered`; the UI later
+issues `enter-stairs` after its animation. The previous planner incorrectly
+expected the move alone to change levels and therefore found zero fixtures.
+
+The JSON contains exact URLs, per-key expected coordinates, stage-grouped human
+instructions, puzzle/hub coordinates and source hashes. The browser callback
+uses Grid-snap in its verification context, turns LT/I/E off, waits for each
+step, checks RT3 and zero Wang diagnostics, compares planned/registered start-room
+decoration counts, captures start/hub/level-two screenshots, checks normal slot
+bytes remain unchanged and confirms the expected arrival. Human feedback must
+still assess visible seams, branches, loops, pacing and combat spaces.
+
+Prepared source SHA256 values:
+
+- `world-procedural-system.ts`: `9f56ace4918444f975d71e7af079601a46142f908670f5de1b69fac147bd3d41`
+- `dungeon-graph-layout-system.ts`: `8be5030e0b6048babd2185af28f32291804160e4ac72898018e46a854c42cc04`
+- `prefab-system.ts`: `d8ba5a6f741f20bfb61198e1566adfb4b6465e47448fb1ae3e5a9baf519bf1c9`
+
+The historical fixed-coordinate Wang test separately needed both the legacy
+topology and legacy portal layout pinned after new-run portal defaults changed.
+Its expected coordinates and frames remain untouched; the focused
+seed-3266798470 case passes. Task 2.6 remains pending browser execution and the
+second human playtest. This route preparation is not either of those gates.
+
+## Current milestone-two browser check
+
+Coordinator's isolated Edge CLI check passed seeds4 and55 on the integrated graph/paired-portal source. Each has10rooms,1loop,3hubs and all current room roles. The scripted route visits a hub, returns, pushes the barrel onto its trigger, crosses the open door and completes the animated transition to Level2 at49,50. Both views were ready with two canvases, RT3 and zero Wang diagnostics; registered start-room sprites matched each plan, normal slot bytes stayed unchanged and no application errors occurred. Raw result: `output/program-milestone-two-browser.log`; reproducible plans and numbered instructions: `output/program-milestone-two-plan.json`. Screenshots were inspected for coherent start interiors and Level2 terrain. The full browser gate and human task2.6 assessment remain pending. No milestone3 implementation has started.

@@ -7,13 +7,13 @@ import { AUTHORED_OBJECT_IMAGES, authoredDecorationFrame, authoredDecorationPres
 import { countPerformance, gaugePerformance, performanceFrame, performanceOptions, timePerformance } from "./performance-system.ts";
 import { patchSprite, readSpritePatch, rememberSpritePatch } from "./sprite-patch-system.ts";
 import { createStaticLayerVisibility } from "./static-layer-visibility-system.ts";
+import { createSharedEngineLifecycle } from "./shared-engine-lifecycle.ts";
 import { BattleIndicator, TacticalAreaOverlay } from "../../game/views/battle-overlay.tsx";
 import { tacticalRectangles } from "../../game/tactical-area.ts";
 import type { CSSProperties, MouseEvent } from "react";
 import type { EngineContext, SurfaceContext, Texture2D, DynamicTexture2D, SpriteAtlas, SpriteRenderer, Sprite2DHandle, Sprite2DLayer } from "@babylonjs/lite";
 import { detectedEnemyIds } from "../../game/enemy-detection.ts"; import { resolveWorldCursor } from "../../game/world-cursor.ts"; import { gameMode, hasAssignedWeapon, REST_GOLD_COST } from "../procedural/world-procedural-system.ts"; import type { Campaign, Direction, EncounterLockdownSet, Enemy, Feedback, Position, Resources, SelectedCell } from "../../game/types.ts";
 import type { ResourceChangeEffect } from "../../game/resource-change-effects.ts";
-interface SharedEngine { engine: EngineContext; primaryCanvas: HTMLCanvasElement; started: boolean }
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   addSprite2D as allocateSprite2D, addSpriteRendererLayer, removeSpriteRendererLayer, centerSprite2DView, createDynamicTexture, createEngine, createGridSpriteAtlas, createSprite2DCustomShader, createSpriteAtlasFromFrames, createSprite2DLayer,
@@ -139,7 +139,6 @@ const OVERLAY_RENDER_ORDER = 1_000_000;
 const WORLD_TIE_BREAK = { wall: 0, decoration: 10, stair: 20, prop: 30, pickup: 40, entity: 50, effect: 60 } as const;
 const LANDED_DAMAGE_PARTICLE_RENDER_ORDER = FLOOR_TRAP_RENDER_ORDER + 1;
 const CUTSCENE_OPENING_DELAY_MS = 200;
-let sharedEnginePromise: Promise<SharedEngine> | null = null;
 
 interface WorldDepthEntry extends GridRenderEntry {
   applyOrder(order: number): void;
@@ -173,8 +172,11 @@ export function renderParticleAtTile(effect: ParticleEffect, request: Parameters
   const bounds = particleBoundsAtTile(request);
   return renderParticle(effect, bounds.x, bounds.y, bounds.width, bounds.height, zIndex);
 }
-let sharedEngineRecord: SharedEngine | null = null;
-let surfaceReferences = 0;
+const sharedEngineLifecycle = createSharedEngineLifecycle({
+  create: (canvas: HTMLCanvasElement) => createEngine(canvas, pixelPerfectOptions.engine),
+  start: async (engine) => { await startEngine(engine); },
+  dispose: disposeEngine,
+});
 const sharedTextures = new Map<string, { refs: number; promise: Promise<Texture2D> }>();
 const resourceIcons = { health: "♥", stamina: "◈", offense: "⚔", defense: "⛨", mana: "✦", xp: "★" };
 
@@ -186,24 +188,19 @@ function EnemyResourceRows({ resources }: { resources: Resources }) {
 }
 
 async function acquireSharedSurface(canvas: HTMLCanvasElement) {
-  if (!sharedEnginePromise) {
-    sharedEnginePromise = createEngine(canvas, pixelPerfectOptions.engine).then((engine) => {
-      sharedEngineRecord = { engine, primaryCanvas: canvas, started: false };
-      return sharedEngineRecord;
-    }).catch((error) => { sharedEnginePromise = null; throw error; });
-  }
-  const record = await sharedEnginePromise;
-  const surface = canvas === record.primaryCanvas ? record.engine : createSurface(record.engine, canvas);
-  surfaceReferences++;
-  return { ...record, surface, isPrimary: surface === record.engine };
-}
-
-function releaseSharedSurface(surface: SurfaceContext | null) {
-  if (surface && surface !== sharedEngineRecord?.engine) disposeSurface(surface);
-  surfaceReferences = Math.max(0, surfaceReferences - 1);
-  if (!surfaceReferences && sharedEngineRecord) {
-    disposeEngine(sharedEngineRecord.engine);
-    sharedEngineRecord = null; sharedEnginePromise = null;
+  const record = await sharedEngineLifecycle.acquire(canvas);
+  try {
+    const surface = canvas === record.primaryCanvas ? record.engine : createSurface(record.engine, canvas);
+    let released = false;
+    return { ...record, surface, release() {
+      if (released) return;
+      released = true;
+      try { if (surface !== record.engine) disposeSurface(surface); }
+      finally { record.release(); }
+    } };
+  } catch (error) {
+    record.release();
+    throw error;
   }
 }
 
@@ -226,6 +223,7 @@ export interface GameViewToUiAnimation extends Position {
   id: string;
   kind: "item" | "potion" | "key" | "gold" | "chest" | "discovery" | "enemy" | "stairs" | "teleport-arrow";
   itemName?: string;
+  resource?: "health" | "mana" | "stamina" | null;
   frame: number;
   mainSizePx: number;
   mainOffsetPx: Position;
@@ -473,9 +471,11 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
       const transfer = document.createElement("span"); transfer.className = "world-view__ui-animation"; transfer.setAttribute("aria-hidden", "true");
       const goldCoin = flight.kind === "gold";
       const droppableFrame = droppableItemSpriteFrame(flight.itemName);
+      const staminaPotion = flight.kind === "potion" && flight.resource === "stamina";
       const dedicatedItem = !goldCoin && droppableFrame !== null;
       const image = document.createElement("img"); image.className = `world-view__ui-animation-sprite${goldCoin ? " world-view__ui-animation-sprite--gold" : dedicatedItem ? " world-view__ui-animation-sprite--droppable" : ""}`; image.src = goldCoin ? texturePaths.itemsAnimated : dedicatedItem ? texturePaths.droppableItems : texturePaths.items; image.alt = "";
-      if (!goldCoin) {
+      if (staminaPotion) { image.src = `${import.meta.env.BASE_URL}assets/art/game-view/items/stamina-potion.png`; image.style.width = "100%"; image.style.height = "100%"; }
+      if (!goldCoin && !staminaPotion) {
         const columns = dedicatedItem ? 4 : 3;
         const rows = dedicatedItem ? 3 : 3;
         const frame = dedicatedItem ? droppableFrame : flight.frame;
@@ -574,17 +574,21 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
       const rect = hostRef.current?.getBoundingClientRect();
       if (!rect || !rect.width || !rect.height) return;
       const target = selectedCellRef.current;
-      const update = reticleInput.current.advance(input);
+      const update = reticleInput.current.advance(input, movementPrompts?.revision ?? 0, movementPrompts?.hasRightStickPrompt ?? false);
       if (!update) return;
       mouseDownRef.current = false;
       pointerRef.current = null;
+      if (update.prompt) { movementPrompts?.respondToRightStick(update.prompt); selectCell(null); return; }
       if (update.click !== null && target) onSelectedCellClick?.({ ...target, pressed: true, sprint: update.click === 2 });
       selectCell(update.offset ? targetAtNeighbor(update.offset, rect) : null);
     },
     () => {
       const wasGamepad = reticleInput.current.source === "gamepad";
       reticleInput.current.reset();
-      if (wasGamepad) { pointerRef.current = null; selectCell(null); }
+      if (wasGamepad || !mouseInteraction) {
+        pointerRef.current = null; mouseDownRef.current = false;
+        if (selectedCellRef.current) selectCell(null);
+      }
     },
   );
 
@@ -607,6 +611,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
   useEffect(() => {
     const host = hostRef.current!; const canvas = canvasRef.current!;
     let cancelled = false; let engine: EngineContext | null = null; let surface: SurfaceContext | null = null; let renderer: SpriteRenderer | null = null; let atlases: SpriteAtlas[] = []; let textures: Record<string, Texture2D> = {}; let acquiredTexturePaths: string[] = []; let observers: { disconnect(): void }[] = []; let tileTexture: DynamicTexture2D | null = null; const tileThemeImages = new Map<DungeonTheme, ImageBitmap>(); let debugTexture: DynamicTexture2D | null = null; let pivotTexture: DynamicTexture2D | null = null; let pickupShadowTexture: DynamicTexture2D | null = null; let animationFrameId = 0; let fpsSampleStartedAt = 0; let fpsFrameCount = 0; let heroAnimation: ReturnType<typeof createHeroWarriorAnimationEntity> | null = null; let enemyAnimations: ReturnType<typeof createEnemyAnimationEntities> | null = null; const triggerAnimations = new Map<string, ReturnType<typeof createFloorTriggerAnimationEntity>>();
+    let acquiredSurface: Awaited<ReturnType<typeof acquireSharedSurface>> | null = null;
     const readWorld = createWorldPresentationReader();
     const field = createWorldPresentationField();
     let fieldTexture: DynamicTexture2D | null = null;
@@ -626,7 +631,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
       Object.values(enemyAnimations ?? {}).forEach(animation => animation.dispose()); enemyAnimations = null;
       triggerAnimations.forEach(animation => animation.dispose()); triggerAnimations.clear();
       acquiredTexturePaths.forEach(releaseSharedTexture); acquiredTexturePaths = []; textures = {};
-      if (surface) { releaseSharedSurface(surface); surface = null; } engine = null;
+      acquiredSurface?.release(); acquiredSurface = null; surface = null; engine = null;
     };
     const loadFrames = async (paths: string[]) => {
       const frames = await Promise.all(paths.map(loadSpriteAtlasFrame));
@@ -636,8 +641,8 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
     const setup = async () => {
       try {
         if (!navigator.gpu) throw new Error("WebGPU is not available in this browser.");
-        const acquired = await acquireSharedSurface(canvas); engine = acquired.engine; surface = acquired.surface;
-        if (cancelled) { releaseSharedSurface(surface); surface = null; return; }
+        const acquired = await acquireSharedSurface(canvas); acquiredSurface = acquired; engine = acquired.engine; surface = acquired.surface;
+        if (cancelled) { acquired.release(); acquiredSurface = null; surface = null; return; }
         if (minimap) {
           const semanticCanvas = document.createElement("canvas"); semanticCanvas.width = campaign.floor.width; semanticCanvas.height = campaign.floor.height;
           const semanticContext = semanticCanvas.getContext("2d")!;
@@ -707,7 +712,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
           sceneRef.current = { draw, activate, beginStairClip: () => {}, clearStairClip: () => {}, setTheme: () => {} };
           const resizeAndDraw = () => { const rect = host.getBoundingClientRect(); if (rect.width <= 0 || rect.height <= 0) return; resizeSurface(surface!); draw(); };
           const observer = new ResizeObserver(resizeAndDraw); observer.observe(host); observers.push(observer); resizeAndDraw();
-          if (acquired.isPrimary && sharedEngineRecord && !sharedEngineRecord.started) { await startEngine(engine); sharedEngineRecord.started = true; }
+          await acquired.start();
           if (cancelled) { releaseSetup(); return; }
           window.addEventListener("resize", resizeAndDraw); observers.push({ disconnect: () => window.removeEventListener("resize", resizeAndDraw) });
           activate(); setRendererLoaded(true); setWorldAlive(true); setMessage("");
@@ -938,6 +943,10 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
         ));
         const chestCoinLayers = Array.from({ length: 3 }, () => createSprite2DLayer(goldCoinAtlas, { pivot: [0.5, 0.5] }));
         const chestCoins = chestCoinLayers.map((layer) => addSprite2D(layer, { positionPx: [-10000, -10000], sizePx: [32, 32], frame: 0 }));
+        const itemThrowLayers = Array.from({ length: 3 }, () => createSprite2DLayer(itemAtlas, { pivot: [0.5, 0.5] }));
+        const itemThrowSprites = itemThrowLayers.map((layer) => addSprite2D(layer, { positionPx: [-10000, -10000], sizePx: [32, 32], frame: 0 }));
+        const staminaPotionThrowLayers = Array.from({ length: 3 }, () => createSprite2DLayer(specialItemAtlas, { pivot: [0.5, 0.5] }));
+        const staminaPotionThrowSprites = staminaPotionThrowLayers.map((layer) => addSprite2D(layer, { positionPx: [-10000, -10000], sizePx: [32, 32], frame: 0 }));
         const droppableItemThrowLayers = Array.from({ length: 3 }, () => createSprite2DLayer(droppableItemAtlas, { pivot: [0.5, 0.5] }));
         const droppableItemThrowSprites = droppableItemThrowLayers.map((layer) => addSprite2D(layer, { positionPx: [-10000, -10000], sizePx: [32, 32], frame: 0 }));
         const torches = torchLayers.map((layer) => addSprite2D(layer, { positionPx: [-10000,-10000], sizePx: [32,32], frame: 0 }));
@@ -950,7 +959,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
         const projectiles = projectileLayers.map((layer) => addSprite2D(layer, { positionPx: [-10000,-10000], sizePx: [16,16], frame: 0 }));
         const projectileStartedAt = new Map<string, number>();
         const staticLayers = [...authoredDecorationLayers, ...startRoomDecorationLayers.values(), ...staticChunkList.flatMap((chunk) => [chunk.terrain, ...chunk.walls.values()])];
-        const viewLayers = [...staticLayers, ...triggerLayers, debugLayer, lockdownDoorMarkerLayer, ...itemLayers.flatMap((layers) => [layers.shadow, layers.main]), ...droppableItemLayers.flatMap((layers) => [layers.shadow, layers.main]), ...specialItemLayers.flatMap((layers) => [layers.shadow, layers.main]), ...chestLayers.flatMap((layers) => [layers.shadow, layers.main]), ...closedCrateLayers, ...openCrateLayers, ...doorLayers, ...barrelLayers.flatMap((layers) => [layers.shadow, layers.main]), ...goldCoinLayers.flatMap((layers) => [layers.shadow, layers.main]), ...chestCoinLayers, ...droppableItemThrowLayers, ...torchLayers, ...trapLayers, ...campfireLayers, ...stairLayers, ...teleportArrowLayers, ...projectileLayers, ...particleLayers, ...ENEMY_CHARACTER_NAMES.flatMap((key) => actorLayers[key].flatMap((layers) => [layers.shadow, layers.main])), ...(playerLayers ? [playerLayers.shadow, playerLayers.main] : []), pivotMarkerLayer];
+        const viewLayers = [...staticLayers, ...triggerLayers, debugLayer, lockdownDoorMarkerLayer, ...itemLayers.flatMap((layers) => [layers.shadow, layers.main]), ...droppableItemLayers.flatMap((layers) => [layers.shadow, layers.main]), ...specialItemLayers.flatMap((layers) => [layers.shadow, layers.main]), ...chestLayers.flatMap((layers) => [layers.shadow, layers.main]), ...closedCrateLayers, ...openCrateLayers, ...doorLayers, ...barrelLayers.flatMap((layers) => [layers.shadow, layers.main]), ...goldCoinLayers.flatMap((layers) => [layers.shadow, layers.main]), ...chestCoinLayers, ...itemThrowLayers, ...droppableItemThrowLayers, ...staminaPotionThrowLayers, ...torchLayers, ...trapLayers, ...campfireLayers, ...stairLayers, ...teleportArrowLayers, ...projectileLayers, ...particleLayers, ...ENEMY_CHARACTER_NAMES.flatMap((key) => actorLayers[key].flatMap((layers) => [layers.shadow, layers.main])), ...(playerLayers ? [playerLayers.shadow, playerLayers.main] : []), pivotMarkerLayer];
         // Terrain and overlays use fixed passes. Every participating world layer
         // receives a shared order below, while its own sprites retain stable Y sort.
         viewLayers.filter((layer) => !staticLayers.includes(layer) && layer !== debugLayer && layer !== lockdownDoorMarkerLayer && layer !== pivotMarkerLayer).forEach((layer) => enableSprite2DYSort(layer));
@@ -1194,7 +1203,9 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
           });
           const goldCoinFrame = Math.floor(now / 120) % 4;
           goldCoins.forEach((pickup, i) => { const entity = goldObjects[i]; goldCoinLayers[i].shadow.visible = Boolean(entity); goldCoinLayers[i].main.visible = Boolean(entity); if (!entity) { hideCharacterSprite(pickup); return; } updateCharacterSprite(pickup, [entity.worldX, entity.worldY - 10], 0, { frame: goldCoinFrame }, 0, 0); updateSprite2D(pickup.shadow.handle, { positionPx: [entity.worldX, entity.worldY], sizePx: [16, 16], color: [1, 1, 1, 0.5] }); addPickupDepth(entity.id, groundContactY(entity), pickup); });
-          chestCoins.forEach((sprite, i) => { const throwItem = activeItemThrows[i]; const position = throwItem ? itemThrowPosition(throwItem, performance.now()) : null; const droppableFrame = droppableItemSpriteFrame(throwItem?.itemName); const visible = Boolean(position && dynamicVisible(position) && droppableFrame === null); chestCoinLayers[i].visible = visible; if (!visible || !position || !throwItem) return; updateSprite2D(sprite, { frame: throwItem.kind === "gold" ? goldCoinFrame : itemSpriteFrame("item"), positionPx: [position.x * 32 + 16, position.y * 32 + 16] }); addLayerDepth(throwItem.id, groundContactY(position), WORLD_TIE_BREAK.effect, chestCoinLayers[i]); });
+          chestCoins.forEach((sprite, i) => { const throwItem = activeItemThrows[i]; const position = throwItem ? itemThrowPosition(throwItem, performance.now()) : null; const visible = Boolean(position && dynamicVisible(position) && throwItem?.kind === "gold"); chestCoinLayers[i].visible = visible; if (!visible || !position || !throwItem) return; updateSprite2D(sprite, { frame: goldCoinFrame, positionPx: [position.x * 32 + 16, position.y * 32 + 16] }); addLayerDepth(throwItem.id, groundContactY(position), WORLD_TIE_BREAK.effect, chestCoinLayers[i]); });
+          itemThrowSprites.forEach((sprite, i) => { const throwItem = activeItemThrows[i]; const position = throwItem ? itemThrowPosition(throwItem, performance.now()) : null; const visible = Boolean(position && dynamicVisible(position) && throwItem?.kind !== "gold" && throwItem?.resource !== "stamina" && droppableItemSpriteFrame(throwItem?.itemName) === null); itemThrowLayers[i].visible = visible; if (!visible || !position || !throwItem) return; updateSprite2D(sprite, { frame: itemSpriteFrame(throwItem.kind as "item" | "potion", throwItem.resource), positionPx: [position.x * 32 + 16, position.y * 32 + 16] }); addLayerDepth(throwItem.id, groundContactY(position), WORLD_TIE_BREAK.effect, itemThrowLayers[i]); });
+          staminaPotionThrowSprites.forEach((sprite, i) => { const throwItem = activeItemThrows[i]; const position = throwItem ? itemThrowPosition(throwItem, performance.now()) : null; const visible = Boolean(position && dynamicVisible(position) && throwItem?.resource === "stamina"); staminaPotionThrowLayers[i].visible = visible; if (!visible || !position || !throwItem) return; updateSprite2D(sprite, { frame: 0, positionPx: [position.x * 32 + 16, position.y * 32 + 16] }); addLayerDepth(throwItem.id, groundContactY(position), WORLD_TIE_BREAK.effect, staminaPotionThrowLayers[i]); });
           droppableItemThrowSprites.forEach((sprite, i) => { const throwItem = activeItemThrows[i]; const position = throwItem ? itemThrowPosition(throwItem, performance.now()) : null; const frame = droppableItemSpriteFrame(throwItem?.itemName); const visible = Boolean(position && dynamicVisible(position) && frame !== null); droppableItemThrowLayers[i].visible = visible; if (!visible || !position || frame === null || !throwItem) return; updateSprite2D(sprite, { frame, sizePx: [32, 32], positionPx: [position.x * 32 + 16, position.y * 32 + 16] }); addLayerDepth(throwItem.id, groundContactY(position), WORLD_TIE_BREAK.effect, droppableItemThrowLayers[i]); });
           const torchFrame = Math.floor(now / 200) % torchFramePaths.length;
           const wallTorches = world.wallDecorations.filter((decoration) => decoration.kind === "torch" && dynamicVisible(decoration));
@@ -1279,7 +1290,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
             lastAnimationTime = time;
             performanceFrame(time);
             if (animationsEnabledRef.current || latestRef.current.playerDeathAnimation || latestRef.current.stairDescentStartedAt) prepare();
-            if (acquired.isPrimary && onFpsChangeRef.current) {
+            if (!latestRef.current.minimap && onFpsChangeRef.current) {
               if (!fpsSampleStartedAt) fpsSampleStartedAt = time;
               fpsFrameCount++;
               const elapsedMs = time - fpsSampleStartedAt;
@@ -1301,7 +1312,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
         };
         sceneRef.current = { draw, activate, beginStairClip, clearStairClip, setTheme };
         resizeSurface(surface); draw();
-        if (acquired.isPrimary && sharedEngineRecord && !sharedEngineRecord.started) { await startEngine(engine); sharedEngineRecord.started = true; }
+        await acquired.start();
         if (cancelled) return;
         const observer = new ResizeObserver(() => { resizeSurface(surface!); draw(); }); observer.observe(host); observers.push(observer);
         window.addEventListener("resize", draw); observers.push({ disconnect: () => window.removeEventListener("resize", draw) });

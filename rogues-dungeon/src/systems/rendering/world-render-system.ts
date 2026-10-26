@@ -1,3 +1,4 @@
+import { worldPickupPresentation } from "./world-object-sprite-system.ts";
 import { countPerformance } from "./performance-system.ts";
 import type { Direction, Entity, FloorTriggerDoorBarrelSet, MassBearingPosition, ObjectSet, Position, TerrainCell, WorldDecoration } from "../../game/types.ts";
 import { enemyCharacterForName } from "../../content/enemies/enemy-idle-animation.ts";
@@ -85,7 +86,7 @@ export const WorldRender = Object.freeze({
     const terrain = rendered.terrain;
     const walls = rendered.walls;
     const actors = entities.filter((entry): entry is Extract<Entity, { kind: "enemy" }> => entry.kind === "enemy" && isDiscovered(entry)).map((entry) => ({ id: entry.id, kind: (entry.character ?? enemyCharacterForName(entry.name)) as ReturnType<typeof enemyCharacterForName>, character: (entry.character ?? enemyCharacterForName(entry.name)) as ReturnType<typeof enemyCharacterForName>, heading: entry.heading ?? "e", x: entry.x, y: entry.y, worldX: entry.x * tileSize + tileSize / 2, worldY: entry.y * tileSize + tileSize / 2 }));
-    const objects = entities.filter((entry) => isDiscovered(entry) && ["item", "potion", "key", "gold", "chest", "crate", "campfire", "stairs", "teleport-arrow", "discovery"].includes(entry.kind)).map((entry) => ({ id: entry.id, kind: entry.kind, item: entry.kind === "item" ? entry.item : undefined, direction: entry.kind === "stairs" || entry.kind === "teleport-arrow" ? entry.direction : undefined, resource: entry.kind === "potion" ? entry.resource : null, opened: entry.kind === "chest" || entry.kind === "crate" ? Boolean(entry.opened) : false, openFrame: entry.kind === "crate" ? entry.openFrame : undefined, x: entry.x, y: entry.y, worldX: entry.x * tileSize + tileSize / 2, worldY: entry.y * tileSize + tileSize / 2 }));
+    const objects = entities.filter((entry) => isDiscovered(entry) && ["item", "potion", "key", "gold", "chest", "crate", "campfire", "stairs", "teleport-arrow", "discovery"].includes(entry.kind)).map((entry) => ({ id: entry.id, ...worldPickupPresentation(entry), item: entry.kind === "item" ? entry.item : undefined, direction: entry.kind === "stairs" || entry.kind === "teleport-arrow" ? entry.direction : undefined, opened: entry.kind === "chest" || entry.kind === "crate" ? Boolean(entry.opened) : false, openFrame: entry.kind === "crate" ? entry.openFrame : undefined, x: entry.x, y: entry.y, worldX: entry.x * tileSize + tileSize / 2, worldY: entry.y * tileSize + tileSize / 2 }));
     const puzzleObjects = objectSets.flatMap((set) => {
       if (set.kind === "encounter-lockdown") {
         const doorsOpen = !set.activated || set.completed;

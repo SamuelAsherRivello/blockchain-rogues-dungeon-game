@@ -81,6 +81,42 @@ test("Adventure recovery keeps character growth and resets the current level run
   assert.equal(recovered.counters.gold, 0);
 });
 
+test("Adventure restart follows stair travel, including a return to an earlier level", () => {
+  let campaign = createRunCampaign(32, 1, 1, 1, 1, { mode: "adventure" });
+  campaign.adventureBaseline = createAdventureLevelBaseline(campaign);
+  for (const [direction, level] of [["forward", 2], ["forward", 3], ["back", 2]] as const) {
+    const stairs = campaign.floor.entities.find((entity) => entity.kind === "stairs" && (direction === "back" ? entity.direction === "back" : entity.direction !== "back"));
+    assert.ok(stairs);
+    campaign.player.x = stairs.x; campaign.player.y = stairs.y;
+    const arrival = applyAction(campaign, { type: "enter-stairs" });
+    assert.equal(arrival.accepted, true);
+    campaign = arrival.state;
+    assert.equal(campaign.adventureBaseline?.floor.level, level);
+    campaign.floor.time = 10;
+    campaign.player.resources.health.current = 0;
+    const result = createGameSession(campaign).dispatch({ type: "trap-strike", hazardElapsedMs: 0 });
+    assert.ok(result && !("queued" in result));
+    assert.equal(result.recovery?.floor.level, level);
+    assert.equal(result.recovery?.realm, `Underground ${level}`);
+    assert.equal(result.recovery?.floor.seed, campaign.floor.seed);
+    assert.deepEqual(result.recovery?.progression, campaign.progression);
+    assert.ok(result.recovery!.player.resources.health.current > 0);
+    campaign = result.recovery!;
+  }
+});
+
+test("Adventure repairs a stale earlier-level recovery snapshot on load and at death", () => {
+  const campaign = createRunCampaign(33, 1, 1, 3, 3, { mode: "adventure" });
+  campaign.adventureBaseline = createAdventureLevelBaseline(createRunCampaign(33, 1, 1));
+  assert.equal(buildDeathRecovery(campaign)?.floor.level, 3);
+  const storage = new MemoryStorage();
+  writeSlot(storage, "1", campaign);
+  const restored = readSlot(storage, "1")!;
+  assert.equal(restored.floor.level, 3);
+  assert.equal(restored.adventureBaseline?.floor.level, 3);
+  assert.equal(buildDeathRecovery(restored)?.floor.level, 3);
+});
+
 test("Journey restores the latest checkpoint and Classic has no recovery", () => {
   const journey = createRunCampaign(41, 1, 1, 2, 2, { mode: "journey" });
   journey.player.x += 1;

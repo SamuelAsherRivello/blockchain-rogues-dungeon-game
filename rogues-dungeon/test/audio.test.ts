@@ -2,6 +2,9 @@ import assert from 'node:assert/strict';
 import { access, readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { AUDIO_ASSETS, createAudioManager } from '../src/systems/audio/audio-system.ts';
+import { EVENT_CUES } from '../src/systems/audio/audio-event-cues.ts';
+import { createCampaign, createGameSession } from '../src/systems/procedural/world-procedural-system.ts';
+import type { Action, Campaign, GameEvent, Item } from '../src/game/types.ts';
 
 function recorder() {
   const made: { src: string; volume: number; loop: boolean; playCount: number; pauseCount: number; play(): Promise<void>; pause(): void }[] = [];
@@ -144,9 +147,9 @@ test('committed simulation events map to their expected cues and rejected events
     { type: 'xp.level.changed', outcome: 'committed', facts: { level: 3 } },
     { type: 'combat.hit', outcome: 'rejected', facts: {} },
   ]);
-  assert.deepEqual(new Set(fake.made.filter(({ playCount }) => playCount > 0).map(({ src }) => src)), new Set([AUDIO_ASSETS.sfx.footstep, AUDIO_ASSETS.sfx.weaponHit, AUDIO_ASSETS.sfx.enemyHit, AUDIO_ASSETS.sfx.enemyFall, AUDIO_ASSETS.sfx.pickupClick, AUDIO_ASSETS.sfx.potion, AUDIO_ASSETS.sfx.chest, AUDIO_ASSETS.sfx.stairs, AUDIO_ASSETS.sfx.magicHeal, AUDIO_ASSETS.sfx.magicWand, AUDIO_ASSETS.sfx.magicAncient, AUDIO_ASSETS.sfx.barrelSlide, AUDIO_ASSETS.sfx.crateHit01, AUDIO_ASSETS.sfx.accepted, AUDIO_ASSETS.sfx.diceRoll]));
+  assert.deepEqual(new Set(fake.made.filter(({ playCount }) => playCount > 0).map(({ src }) => src)), new Set([AUDIO_ASSETS.sfx.footstep, AUDIO_ASSETS.sfx.playerWait, AUDIO_ASSETS.sfx.weaponHit, AUDIO_ASSETS.sfx.enemyHit, AUDIO_ASSETS.sfx.enemyFall, AUDIO_ASSETS.sfx.pickupClick, AUDIO_ASSETS.sfx.potion, AUDIO_ASSETS.sfx.chest, AUDIO_ASSETS.sfx.stairs, AUDIO_ASSETS.sfx.magicHeal, AUDIO_ASSETS.sfx.magicWand, AUDIO_ASSETS.sfx.magicAncient, AUDIO_ASSETS.sfx.barrelSlide, AUDIO_ASSETS.sfx.floorTrigger, AUDIO_ASSETS.sfx.doorOpen, AUDIO_ASSETS.sfx.crateHit01, AUDIO_ASSETS.sfx.positiveShimmer, AUDIO_ASSETS.sfx.diceRoll]));
   assert.equal(fake.made.filter(({ src }) => src === AUDIO_ASSETS.sfx.crateHit01).reduce((total, audio) => total + audio.playCount, 0), 2);
-  assert.equal(fake.made.filter(({ src }) => src === AUDIO_ASSETS.sfx.accepted).reduce((total, audio) => total + audio.playCount, 0), 2);
+  assert.equal(fake.made.filter(({ src }) => src === AUDIO_ASSETS.sfx.positiveShimmer).reduce((total, audio) => total + audio.playCount, 0), 2);
 });
 
 test('equipment drop feedback distinguishes accepted and rejected drops', async () => {
@@ -161,13 +164,13 @@ test('equipment drop feedback distinguishes accepted and rejected drops', async 
 test('each movement plays a footstep and bundled audio assets exist', async () => {
   const fake = recorder(); const audio = createAudioManager({ createAudio: fake.createAudio });
   await audio.prewarm();
-  assert.equal(audio.playCue('footstep', 1000), true); assert.equal(fake.made.find(({ src }) => src === AUDIO_ASSETS.sfx.footstep)?.volume, 0.2); assert.equal(audio.playCue('footstep', 1050), true);
+  assert.equal(audio.playCue('footstep', 1000), true); assert.equal(fake.made.find(({ src }) => src === AUDIO_ASSETS.sfx.footstep)?.volume, 0.8 * 0.1); assert.equal(audio.playCue('footstep', 1050), true);
   assert.equal(fake.made.filter(({ src, playCount }) => src === AUDIO_ASSETS.sfx.footstep && playCount > 0).length, 2);
   audio.playCue('key'); assert.equal(fake.made.find(({ src }) => src === AUDIO_ASSETS.sfx.key)?.volume, 0.4);
   audio.playCue('inventory'); assert.equal(fake.made.find(({ src }) => src === AUDIO_ASSETS.sfx.inventory)?.volume, 0.4);
   const root = new URL('../public/assets/audio/', import.meta.url);
   const docs = await readFile(new URL('../documentation/audio.md', import.meta.url), 'utf8');
-  assert.equal(AUDIO_ASSETS.music.length, 3); assert.equal(Object.keys(AUDIO_ASSETS.sfx).length, 22);
+  assert.equal(AUDIO_ASSETS.music.length, 3); assert.equal(Object.keys(AUDIO_ASSETS.sfx).length, 47);
   for (const path of [...AUDIO_ASSETS.music, ...Object.values(AUDIO_ASSETS.sfx)]) {
     await access(new URL(path.replace(/^.*?assets\/audio\//, ''), root));
     assert.ok(docs.includes(path.split('/').at(-1)!), `missing provenance entry for ${path}`);
@@ -185,4 +188,144 @@ test('crate bumps randomly choose among the three wood hit variations', async ()
     { type: 'crate.bumped', outcome: 'committed', facts: {} },
   ]);
   assert.deepEqual(fake.made.filter(({ playCount }) => playCount > 0).map(({ src }) => src), [AUDIO_ASSETS.sfx.crateHit01, AUDIO_ASSETS.sfx.crateHit02, AUDIO_ASSETS.sfx.crateHit03]);
+});
+
+test('every added domain event plays its cue, including rejected transactions', async () => {
+  const events: Partial<Record<keyof typeof EVENT_CUES, GameEvent['facts']>> = {
+    'player.sneak.changed': { active: true }, 'player.died': {},
+    'item.collection.rejected': { reason: 'inventory-full' }, 'item.drop.rejected': {},
+    'crate.opened': {}, 'stairs.entered': {}, 'barrel.returned': {},
+    'encounter.locked': {}, 'encounter.cleared': {}, 'xp.gained': { amount: 5 },
+    'progression.points.spent': { amount: 1 }, 'equipment.changed': {},
+    'ability.assignment.changed': {}, 'quick-slot.changed': {},
+    'quick-slot.use.rejected': { reason: 'resource-full' },
+    'campaign.save.succeeded': {}, 'campaign.save.failed': {},
+  };
+  for (const [type, facts] of Object.entries(events)) {
+    const fake = recorder(); const audio = createAudioManager({ createAudio: fake.createAudio });
+    await audio.prewarm();
+    audio.playEvents([{ type, facts, outcome: type.endsWith('.rejected') ? 'rejected' : 'committed' }]);
+    const cue = EVENT_CUES[type as keyof typeof EVENT_CUES];
+    assert.deepEqual(fake.made.filter(a => a.playCount).map(a => a.src), [AUDIO_ASSETS.sfx[cue]], type);
+  }
+});
+
+test('real session actions reach audio for movement, crates, doors, restoration, assignments and death', async () => {
+  const base = createCampaign(90210);
+  const arena = () => {
+    const state = structuredClone(base);
+    state.floor.cells = Array.from({ length: 100 }, () => Array.from({ length: 100 }, () => ({ walkable: true, role: 'floor' })));
+    delete state.floor.map;
+    state.floor.entities = []; state.floor.objectSets = []; state.floor.decorations = [];
+    state.player.x = 20; state.player.y = 20; state.player.pixel = { x: 656, y: 656 };
+    state.player.hasMass = true; state.player.inventory = []; state.player.quickSlots = [null, null];
+    return state;
+  };
+  const check = async (prepare: (state: Campaign) => void, actions: Action[], expected: (keyof typeof AUDIO_ASSETS.sfx)[]) => {
+    const state = arena(); prepare(state);
+    const fake = recorder(); const audio = createAudioManager({ createAudio: fake.createAudio });
+    await audio.prewarm();
+    const session = createGameSession(state);
+    const events: GameEvent[] = [];
+    session.subscribe(result => { events.push(...result.events); audio.playEvents(result.events); });
+    actions.forEach(action => session.dispatch(action));
+    const played = new Set(fake.made.filter(a => a.playCount).map(a => a.src));
+    for (const cue of expected) assert.ok(played.has(AUDIO_ASSETS.sfx[cue]), `${cue} missing from ${JSON.stringify(events.map(e => [e.type, e.facts]))}`);
+  };
+  await check(s => { s.floor.cells[20][21].walkable = false; }, [{ type: 'toggle-sneak' }, { type: 'wait' }, { type: 'move', direction: 'e' }], ['playerSneak', 'playerWait', 'moveBlocked']);
+  await check(s => { s.floor.entities = [{ id: 'crate', kind: 'crate', x: 21, y: 20, health: 50, opened: false }]; }, [{ type: 'move', direction: 'e' }], ['woodBreak']);
+  await check(s => {
+    s.floor.objectSets = [{ id: 'switch', kind: 'floor-trigger-door-barrel', regionRole: 'optional-reward', trigger: { x: 21, y: 20 }, door: { x: 23, y: 20 }, barrel: { x: 25, y: 20, hasMass: true }, barrelStart: { x: 25, y: 20 } }];
+  }, [{ type: 'move', direction: 'e' }, { type: 'move', direction: 'w' }], ['floorTrigger', 'doorOpen', 'doorLocked']);
+  await check(s => {
+    s.floor.objectSets = [{ id: 'door', kind: 'floor-trigger-door-barrel', regionRole: 'optional-reward', trigger: { x: 24, y: 20 }, door: { x: 21, y: 20 }, barrel: { x: 25, y: 20, hasMass: true } }];
+  }, [{ type: 'move', direction: 'e' }], ['doorLocked']);
+  await check(s => {
+    s.floor.cells[20][26].walkable = false;
+    s.floor.objectSets = [{ id: 'return', kind: 'floor-trigger-door-barrel', regionRole: 'optional-reward', trigger: { x: 24, y: 22 }, door: { x: 27, y: 20 }, barrel: { x: 25, y: 20, hasMass: true }, barrelStart: { x: 24, y: 20 } }];
+  }, [{ type: 'return-barrel', setId: 'return' }], ['barrelReturn']);
+  await check(s => {
+    const target = structuredClone(base.floor.entities.find(e => e.kind === 'enemy')!);
+    assert.ok(target && target.kind === 'enemy');
+    target.x = 21; target.y = 20; target.nextActionAt = 99999;
+    s.floor.entities = [target]; s.progression.xp = 98;
+    s.player.equipment.weapons[0] = { id: 'stick', name: 'Wooden Stick', group: 'weapons', modifiers: { offense: 1 }, isStackable: false };
+  }, [{ type: 'move', direction: 'e' }], ['weaponHit', 'experienceGain', 'positiveShimmer']);
+  await check(s => { s.floor.entities = [{ id: 'stairs', kind: 'stairs', x: 21, y: 20 }]; }, [{ type: 'move', direction: 'e' }], ['stairsEnter']);
+  await check(s => {
+    s.player.inventory = Array.from({ length: 5 }, (_, i) => ({ id: `gear-${i}`, name: 'Wooden Stick', group: 'weapons', modifiers: {}, isStackable: false }));
+    s.floor.entities = [{ id: 'full-potion', kind: 'potion', resource: 'health', x: 21, y: 20 }];
+  }, [{ type: 'move', direction: 'e' }], ['pickupRejected']);
+  await check(s => { s.progression.attributePoints = 1; }, [{ type: 'spend-attribute-points', allocation: { health: 1 } }], ['statUpgrade']);
+  await check(s => { s.player.resources.health.current = 1; s.counters.gold = 100; }, [{ type: 'rest' }], ['resourceRestore']);
+  const potion: Item = { id: 'potion', name: 'Health Potion', group: 'weapons', modifiers: {}, category: 'consumable', consumableResource: 'health', quickSlotAction: 'restore-resource', isStackable: true, quantity: 1 };
+  await check(s => { s.player.inventory = [potion]; }, [{ type: 'assign-quick-slot', itemId: 'potion', index: 0 }, { type: 'use-quick-slot', index: 0 }], ['quickSlotAccepted', 'quickSlotRejected']);
+  await check(s => { s.player.abilities = ['heal', 'wand', null]; }, [{ type: 'assign-ability', from: 0, to: 1 }], ['abilityAssign']);
+  await check(s => {
+    const trap = base.floor.decorations!.find(d => d.kind === 'trap')!;
+    assert.ok(trap); s.floor.decorations = [{ ...trap, x: 21, y: 20 }]; s.player.resources.health.current = 1;
+  }, [{ type: 'move', direction: 'e', hazardElapsedMs: 150 }], ['trapStrike', 'playerDeath']);
+});
+
+test('compound transactions deduplicate restoration, XP, and trap cues; reject feedback stays specific', async () => {
+  const fake = recorder(); const audio = createAudioManager({ createAudio: fake.createAudio });
+  await audio.prewarm();
+  audio.playEvents([
+    ...['health', 'mana', 'stamina'].map(resource => ({ type: 'resource.changed', facts: { resource, cause: 'campfire-rest', previous: 1, current: 20 } } as GameEvent)),
+    { type: 'xp.gained', facts: {} }, { type: 'xp.gained', facts: {} },
+    { type: 'resource.changed', facts: { cause: 'trap' } }, { type: 'combat.hit', facts: { source: 'trap' } },
+    { type: 'action.rejected', outcome: 'rejected', facts: { actionType: 'equip' } },
+    { type: 'action.rejected', outcome: 'rejected', facts: { actionType: 'assign-quick-slot' } },
+    { type: 'action.rejected', outcome: 'rejected', facts: { obstacle: 'door' } },
+  ]);
+  for (const cue of ['resourceRestore', 'experienceGain', 'trapStrike', 'rejected', 'quickSlotRejected', 'doorLocked'] as const) {
+    assert.equal(fake.made.filter(a => a.src === AUDIO_ASSETS.sfx[cue]).reduce((sum, a) => sum + a.playCount, 0), 1, cue);
+  }
+});
+
+test('new cues obey every mute path and repetitive feedback is limited', async () => {
+  const fake = recorder(); const audio = createAudioManager({ createAudio: fake.createAudio });
+  await audio.prewarm();
+  assert.equal(audio.playCue('saveSucceeded', 100), true);
+  assert.equal(audio.playCue('saveSucceeded', 200), false);
+  assert.equal(audio.playCue('saveSucceeded', 5100), true);
+  assert.equal(audio.playCue('moveBlocked', 100), true);
+  assert.equal(audio.playCue('moveBlocked', 200), false);
+  assert.equal(audio.playCue('moveBlocked', 280), true);
+  for (const preference of [{ muteAll: true }, { sfxVolume: 0 }]) {
+    audio.setPreferences(preference);
+    const count = fake.made.reduce((sum, a) => sum + a.playCount, 0);
+    Object.keys(AUDIO_ASSETS.sfx).forEach(cue => assert.equal(audio.playCue(cue as keyof typeof AUDIO_ASSETS.sfx, 20000), false));
+    assert.equal(fake.made.reduce((sum, a) => sum + a.playCount, 0), count);
+  }
+});
+
+test('repeatable cues vary pitch within bounds while identity cues keep a fixed pitch', async () => {
+  const handles: { src: string; volume: number; loop: boolean; playbackRate: number; preservesPitch: boolean; play(): void }[] = [];
+  let random = 0;
+  const audio = createAudioManager({ random: () => random, createAudio(src) {
+    const handle = { src, volume: 0, loop: false, playbackRate: 1, preservesPitch: true, play() {} };
+    handles.push(handle); return handle;
+  } });
+  await audio.prewarm();
+  audio.playCue('trapStrike');
+  random = 1; audio.playCue('trapStrike');
+  const traps = handles.filter(a => a.src === AUDIO_ASSETS.sfx.trapStrike);
+  assert.deepEqual(traps.map(a => a.playbackRate), [.97, 1.03]);
+  assert.ok(traps.every(a => !a.preservesPitch));
+  for (const cue of ['playerDeath', 'statUpgrade', 'abilityAssign', 'audioControl'] as const) {
+    audio.playCue(cue);
+    assert.equal(handles.find(a => a.src === AUDIO_ASSETS.sfx[cue])!.playbackRate, 1);
+  }
+});
+
+test('panel clicks distinguish opening and closing and share the normal mute policy', async () => {
+  const fake = recorder(); const audio = createAudioManager({ createAudio: fake.createAudio });
+  await audio.prewarm();
+  audio.playPanelToggle(true); audio.playPanelToggle(false);
+  assert.deepEqual(fake.made.filter(a => a.playCount).map(a => a.src), [AUDIO_ASSETS.sfx.panelExpand, AUDIO_ASSETS.sfx.panelCollapse]);
+  audio.setMutedByUrl(true);
+  assert.equal(audio.playPanelToggle(true), false);
+  assert.equal(audio.playPanelToggle(false), false);
+  assert.equal(audio.playCue('positiveShimmer'), false);
 });

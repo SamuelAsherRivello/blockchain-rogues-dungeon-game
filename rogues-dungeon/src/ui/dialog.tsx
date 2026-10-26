@@ -11,7 +11,7 @@ export function dialogBounds(element: Element): DialogBounds {
   return { left: left - (viewport?.left ?? 0), top: top - (viewport?.top ?? 0), width, height };
 }
 
-export function Dialog({ title, onClose, children, footer = null, className = "", bounds, center, menuMotion = false, dismissible = true, showCloseButton = dismissible }: { title: ReactNode; onClose(): void; children?: ReactNode; footer?: ReactNode; className?: string; bounds?: DialogBounds | null; center?: DialogCenter | null; menuMotion?: boolean; dismissible?: boolean; showCloseButton?: boolean }) {
+export function Dialog({ title, onClose, children, headerTitle, headerActions = null, footer = null, className = "", bounds, center, menuMotion = false, dismissible = true, showCloseButton = dismissible }: { title: ReactNode; onClose(): void; children?: ReactNode; headerTitle?: ReactNode; headerActions?: ReactNode; footer?: ReactNode; className?: string; bounds?: DialogBounds | null; center?: DialogCenter | null; menuMotion?: boolean; dismissible?: boolean; showCloseButton?: boolean }) {
   const closeRef = useRef(onClose);
   const titleId = useId();
   const [visible, setVisible] = useState(!menuMotion);
@@ -40,7 +40,8 @@ export function Dialog({ title, onClose, children, footer = null, className = ""
     <div className={`dialog_backdrop${bounds ? " dialog_backdrop--bounded" : ""}${dismissible ? "" : " dialog_backdrop--dismiss-disabled"}`} role="presentation" onClick={dismissible ? requestClose : undefined}>
       <section className={`dialog${bounds ? " dialog--bounded" : ""}${center ? " dialog--centered" : ""} ${className}`.trim()} style={{ ...positionedStyle, ...(menuMotion ? motion : {}) }} role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={(event) => event.stopPropagation()}>
         <header className="dialog_header">
-          <h2 id={titleId}>{title}</h2>
+          <h2 id={titleId}>{headerTitle ?? title}</h2>
+          {headerActions}
           {showCloseButton && <button tabIndex={-1} className="dialog_close" type="button" onClick={requestClose} aria-label="Close dialog">×</button>}
         </header>
         <div className="dialog_body">{children}</div>

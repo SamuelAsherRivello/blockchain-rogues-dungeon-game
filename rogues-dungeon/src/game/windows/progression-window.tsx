@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { AttributeName, Campaign } from "../types.ts";
-import { Dialog, type DialogCenter } from "../../ui/Dialog.tsx";
+import { Dialog, type DialogCenter } from "../../ui/dialog.tsx";
 import { AttributesCard } from "../panels/attribute-panel.tsx";
 import { formatPendingAttributeBenefits, pendingAttributeBenefitLabel } from "../attribute-benefits.ts";
 

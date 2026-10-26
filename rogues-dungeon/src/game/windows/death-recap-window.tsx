@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { Campaign } from "../types.ts";
 import { discoveredCoverage } from "../../systems/procedural/world-procedural-system.ts";
 import { BabylonWorld } from "../../systems/rendering/babylon-render-system.tsx";
-import { Dialog, type DialogCenter } from "../../ui/Dialog.tsx";
+import { Dialog, type DialogCenter } from "../../ui/dialog.tsx";
 import { ScrollArea } from "../../ui/ScrollArea.tsx";
 import { GameCard } from "../cards/game-card.tsx";
 

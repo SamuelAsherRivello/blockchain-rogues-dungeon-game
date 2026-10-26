@@ -1,3 +1,5 @@
+import type { Entity } from "../../game/types.ts";
+
 export const DUNGEON_STAIR_UP_FRAME = 42;
 export const OBJECTS_OVERLAY_BARREL_FRAME = 0;
 // The authored door images are visually opposite their source-file names.
@@ -16,7 +18,7 @@ export function doorMainArtAnchorOffset(open: boolean) {
   return open ? DOOR_OPEN_MAIN_ART_ANCHOR_OFFSET_PX : DOOR_CLOSED_MAIN_ART_ANCHOR_OFFSET_PX;
 }
 
-type ItemKind = "item" | "potion" | "key" | "gold" | "chest" | "crate" | "discovery" | "enemy" | "stairs" | "teleport-arrow" | undefined;
+type ItemKind = Entity["kind"] | undefined;
 const WORLD_DROPPABLE_SPRITE_FRAMES = Object.freeze({
   "Extra Carrying Capacity +5": 0,
   Heal: 1,
@@ -63,4 +65,10 @@ export function itemSpriteFrame(kind: ItemKind, resource?: "health" | "stamina" 
 export function puzzleObjectSpriteFrame(kind: "barrel" | "door", active: boolean) {
   if (kind === "barrel") return OBJECTS_OVERLAY_BARREL_FRAME;
   return active ? OBJECTS_OVERLAY_DOOR_OPEN_FRAME : OBJECTS_OVERLAY_DOOR_CLOSED_FRAME;
+}
+
+/** Inventory drops retain their item data but share the native potion artwork. */
+export function worldPickupPresentation(entity: Entity) {
+  const resource = entity.kind === "potion" ? entity.resource : entity.kind === "item" ? entity.item.consumableResource ?? null : null;
+  return { kind: resource ? "potion" as const : entity.kind, resource };
 }

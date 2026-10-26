@@ -1,9 +1,10 @@
-import type { Position } from "../../game/types.ts";
+import type { ConsumableResource, Position } from "../../game/types.ts";
 
 export interface ThrownItem {
   id: string;
   kind: string;
   itemName?: string;
+  resource?: ConsumableResource | null;
   destination: Position;
 }
 

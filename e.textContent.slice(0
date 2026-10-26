@@ -1,0 +1,11 @@
+### Error
+SyntaxError: Unexpected token ','
+    at eval (eval at evaluate (:368:30), <anonymous>:2:38)
+    at UtilityScript.evaluate (<anonymous>:370:16)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)
+### Page
+- Page URL: http://127.0.0.1:6080/blockchain-rogues-dungeon-game/
+- Page Title: Rogue's Dungeon
+- Console: 0 errors, 1 warnings
+### Events
+- New console entries: .playwright-cli\console-2026-10-26T16-10-39-494Z.log#L1-L4

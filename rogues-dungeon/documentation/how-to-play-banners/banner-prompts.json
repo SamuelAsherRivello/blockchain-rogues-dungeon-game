@@ -1,0 +1,67 @@
+{
+  "generator": "built-in image_gen",
+  "reference": "C:/Users/srive/.codex/generated_images/01a17666-2177-7363-a7f2-1f09dc26b5b0/exec-64ac9ca8-eb66-468f-9664-7c4c476aea33.png",
+  "commonPrompt": "Use case: illustration-story. Asset: one How to Play banner in a coordinated twelve-image set for Rogue's Dungeon. The attached image is a STYLE AND CHARACTER REFERENCE ONLY. Match its approved artwork closely: crisp detailed retro pixel art with visible pixel clusters, restrained dithering, chunky charming comic proportions, cool blue-gray stone corridor walls and tiled floor, warm amber torchlight, dark slate outlines. SAME stocky knight throughout: rounded silver-blue helmet with narrow visor and visible lower face, silver-blue armor, brown gloves and boots. Use the same bone-white skeleton with brown straps, sword and round shield when the scene requires it. Keep the same camera height, pixel scale, lighting and finish as the reference. Setting always a dungeon corridor or a corner joining two corridors, never an unrelated environment. Draw ONE continuous wide shallow composition, aspect ratio exactly 3:1, target 2172x724 like reference. Full bodies and meaningful action in central 80% width and central 75% height, characters large enough to read at 384x128. Keep all limbs and props anatomically clear. Comic expressive body language, lighthearted fantasy, no gore. No text, letters, numbers, lettering, speech bubbles, captions, HUD, UI, framing border, watermark, logos. Do not copy the reference's potion-drinking scene unless explicitly requested below. Scene-specific subject: ",
+  "topics": [
+    {
+      "file": "01-the-basics.png",
+      "title": "The Basics",
+      "prompt": "The knight alone stands cautiously in a relatively empty gray-blue stone corridor, facing along the passage, slightly uncertain but curious posture. Simple introduction to the character and place. No items, no loot, no coins, no potions, no enemies, no backpack, no chests, no mechanisms, no campfire. Empty floor and plain masonry, with one wall torch as environmental lighting. The knight's armor is enough; no drawn weapon or other active concept. Preserve a gently comic pose without adding objects."
+    },
+    {
+      "file": "02-movement.png",
+      "title": "Movement",
+      "prompt": "A single knight has just sprinted along the stone corridor and skids to a comical stop before a wall at a corridor corner. Leaning back with boots forward, little dust puffs trace his motion across the floor. Make the path and blocking wall easy to read. One knight only, no ghost duplicates, no enemies, loot or potions. No impact injury."
+    },
+    {
+      "file": "03-combat.png",
+      "title": "Combat",
+      "prompt": "ONLY the knight and one skeleton actively fighting each other with swords in a plain stone corridor. Their swords cross at the center with a small bright spark, knight braced in an exaggerated determined lunge and skeleton leaning back with a startled comic posture, round shield held on its other arm. Both alive and intact, full bodies visible, clear readable action. No health potion, no potion bottles, no consumables, no loot, no bags, no extra characters, no other gameplay concepts. A corridor wall torch is fine."
+    },
+    {
+      "file": "04-exploration.png",
+      "title": "Exploration",
+      "prompt": "The knight strains comically to push a wooden barrel onto a recessed floor pressure switch. A nearby heavy dungeon door is beginning to open, revealing a treasure chest beyond. Stage a clear left-to-right relationship of knight pushing barrel, floor switch and opening doorway along a corridor, with the treasure chest visible inside the adjoining corridor beyond the doorway. Exaggerated effort, little sweat pixels, uncluttered composition. No enemies."
+    },
+    {
+      "file": "05-quests.png",
+      "title": "Quests",
+      "prompt": "The knight studies an absurdly long parchment checklist that unrolls and curls across the corridor floor. Show only simple pictograms and check marks on the parchment, absolutely no writing or letters. Nearby are the stairs he needs to find, one red health potion and a gold coin, all obvious to the viewer while he searches the scroll in comic puzzlement. Keep these three quest targets large and sparse, still a dungeon corridor."
+    },
+    {
+      "file": "06-items.png",
+      "title": "Items",
+      "prompt": "The knight tries on an oversized silver helmet that has slipped down completely over his eyes, fumbling with both hands to lift it. On the stone corridor floor nearby are a neatly spaced sword, armor breastplate, a key and a few coins, suggesting equippable items and pickups. Brown boots and gloves, same knight armor and proportions. Comic embarrassment, no enemies, no campfire, no bags."
+    },
+    {
+      "file": "07-inventory.png",
+      "title": "Inventory",
+      "prompt": "The knight sits on a bulging overstuffed brown backpack on the corridor floor, straining with both hands to pull it closed while red and blue potion bottles and a sword hilt poke out of its openings. The bag is visibly too full and the knight's squashed sitting posture is funny. One bag, no extra characters, no campfire, uncluttered gray-blue stone corridor background."
+    },
+    {
+      "file": "08-dropping-items.png",
+      "title": "Dropping Items",
+      "prompt": "The knight has just dropped his brown extra carrying bag onto the stone corridor floor. His arms fling up in comic horror as a handful of belongings, armor pieces and red and blue potion bottles, tumble out into a heap around his boots. Show the bag falling or landing beside him and items clearly falling to the floor, with small motion pixels. Same corridor and style. No extra characters, no campfire."
+    },
+    {
+      "file": "09-abilities-and-quick-slots.png",
+      "title": "Abilities and Quick Slots",
+      "prompt": "The knight confidently reaches toward a red potion in his belt quick-access pouch with one hand while his other outstretched hand casts a bright blue-purple magical bolt down a clear straight corridor. At the far end of that short line a skeleton recoils wide-eyed in comic surprise. One knight and one skeleton, coherent arms and hands, the potion stays in the belt pouch. Magic is clearly visibly cast, no UI or icons, no campfire."
+    },
+    {
+      "file": "10-leveling-up.png",
+      "title": "Leveling Up",
+      "prompt": "The knight proudly flexes his armored arms beneath a small celebratory burst of golden stars. A little gray rat on the corridor floor looks up skeptically at his unimpressive muscles, creating a gentle comic contrast. Same knight helmet and outfit; no oversized physique or new costume. Simple corridor backdrop, no potions, no campfire, no text or numeric level indicators."
+    },
+    {
+      "file": "11-saving-your-game.png",
+      "title": "Saving Your Game",
+      "prompt": "The knight sleeps peacefully beside a small campfire in a quiet dungeon corridor. He is comfortably seated on the stone floor, back resting against the corridor wall, helmet still on, legs relaxed, hands resting in his lap, eyes or visor calm, mouth gently smiling. Warm amber campfire light contrasts with cool blue-gray masonry. Gentle comic relaxation, no danger, no enemies, no items, no magical quill, no parchment, no letters or Z symbols. Only sleeping knight, campfire and corridor."
+    },
+    {
+      "file": "12-tips.png",
+      "title": "Tips",
+      "prompt": "The knight comically tiptoes around the corner between two stone corridors, crouching slightly and holding one gloved finger to the mouth opening of his helmet to signal quiet. Around the bend, an unaware skeleton faces the other way, oblivious, sword lowered. Show the corner wall clearly separating their sightlines; sneaking is the visual lesson. Large readable silhouettes, same knight and skeleton and gray-blue masonry. No campfire, no flames, no potions, no sleeping, no extra props."
+    }
+  ]
+}
