@@ -4,6 +4,15 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Published release tag to deploy, such as v0.0.9
+        type: string
+        required: false
+      release_sha:
+        description: Exact commit SHA expected for the release tag
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -21,8 +30,38 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
+      - name: Select deployment source
+        id: source
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_SHA: ${{ inputs.release_sha }}
+          WORKFLOW_REF: ${{ github.ref }}
+          WORKFLOW_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "$RELEASE_TAG" || -n "$RELEASE_SHA" ]]; then
+            [[ "$WORKFLOW_REF" == refs/heads/main ]]
+            [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+            [[ "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+            echo "ref=refs/tags/$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=$WORKFLOW_SHA" >> "$GITHUB_OUTPUT"
+          fi
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.source.outputs.ref }}
+      - name: Verify release source
+        if: inputs.release_tag != ''
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_SHA: ${{ inputs.release_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$RELEASE_SHA" ]]
+          [[ "$(cat version.txt)" == "version=${RELEASE_TAG#v}" ]]
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -40,6 +79,7 @@ jobs:
           mkdir -p _site
           cp -R rogues-dungeon/dist/. _site/
           cp version.txt _site/version.txt
+          printf '{"version":"%s","commit":"%s"}\n' "$(cut -d= -f2 version.txt)" "$(git rev-parse HEAD)" > _site/build-info.json
       - name: Upload demo
         uses: actions/upload-pages-artifact@v3
         with:

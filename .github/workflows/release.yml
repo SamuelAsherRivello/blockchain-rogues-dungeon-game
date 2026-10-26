@@ -5,6 +5,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: release
@@ -53,3 +54,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.value }}
         run: gh release create "v$VERSION" --generate-notes --title "v$VERSION"
+      - name: Publish release to GitHub Pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          gh workflow run deploy-pages.yml --repo "$GITHUB_REPOSITORY" --ref main \
+            -f release_tag="v$VERSION" -f release_sha="$(git rev-parse HEAD)"
