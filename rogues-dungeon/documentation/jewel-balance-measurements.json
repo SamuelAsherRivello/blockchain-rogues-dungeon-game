@@ -1,0 +1,74 @@
+{
+  "balanceVersion": "world-balance-2-jewels",
+  "selectorSeed": 157,
+  "draws": 10000,
+  "level": 7,
+  "jewelDraws": 2577,
+  "jewels": [
+    {
+      "name": "Copper Ring of Vigor",
+      "unlockLevel": 2,
+      "weight": 25,
+      "draws": 513
+    },
+    {
+      "name": "Silver Ring of Vigor",
+      "unlockLevel": 4,
+      "weight": 11,
+      "draws": 249
+    },
+    {
+      "name": "Gold Ring of Vigor",
+      "unlockLevel": 7,
+      "weight": 4,
+      "draws": 70
+    },
+    {
+      "name": "Copper Guard Bracelet",
+      "unlockLevel": 2,
+      "weight": 25,
+      "draws": 512
+    },
+    {
+      "name": "Silver Guard Bracelet",
+      "unlockLevel": 4,
+      "weight": 11,
+      "draws": 257
+    },
+    {
+      "name": "Gold Guard Bracelet",
+      "unlockLevel": 7,
+      "weight": 4,
+      "draws": 74
+    },
+    {
+      "name": "Quartz Amulet",
+      "unlockLevel": 2,
+      "weight": 25,
+      "draws": 512
+    },
+    {
+      "name": "Sapphire Amulet",
+      "unlockLevel": 4,
+      "weight": 11,
+      "draws": 230
+    },
+    {
+      "name": "Star Sapphire Amulet",
+      "unlockLevel": 7,
+      "weight": 4,
+      "draws": 75
+    },
+    {
+      "name": "Prismatic Amulet",
+      "unlockLevel": 6,
+      "weight": 4,
+      "draws": 85
+    }
+  ],
+  "maximumPairBonuses": {
+    "health": 30,
+    "mana": 30,
+    "defense": 6
+  }
+}

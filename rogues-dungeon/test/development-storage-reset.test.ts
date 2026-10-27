@@ -4,6 +4,7 @@ import type { StorageCollection } from "../src/game/types.ts";
 import { DEFAULT_PREFERENCES, DEVELOPMENT_STORAGE_COMPATIBILITY_EPOCH, DEVELOPMENT_STORAGE_COMPATIBILITY_KEY, readPreferences, readSlot, readSlotSummary, readWorldSeed, resetDevelopmentStorageCompatibility, writePreferences, writeSlot } from "../src/systems/persistence/save-system.ts";
 import { compactCampaignForSave, createRunCampaign, PORTAL_LAYOUT_VERSION } from "../src/systems/procedural/world-procedural-system.ts";
 import { DEFAULT_WORLD_ATTRIBUTES } from "../src/systems/procedural/world-attributes.ts";
+import { WORLD_BALANCE_VERSION } from '../src/systems/procedural/world-balance.ts';
 import { compatibleFixtureStorageState } from "./browser/fixture-storage.ts";
 
 class MemoryStorage implements StorageCollection {
@@ -17,6 +18,17 @@ class MemoryStorage implements StorageCollection {
   setItem(key: string, value: string) { this.written.push(key); this.values.set(key, value); }
   removeItem(key: string) { this.removed.push(key); this.values.delete(key); }
 }
+
+test('Jewel generation has its own epoch and refuses stale regenerated balance profiles', () => {
+  assert.ok(DEVELOPMENT_STORAGE_COMPATIBILITY_EPOCH.includes('flexible-jewels-1'));
+  assert.equal(WORLD_BALANCE_VERSION, 'world-balance-2-jewels');
+  const state = compactCampaignForSave(createRunCampaign(875, 1, 1, 1, 2, { worldAttributes: DEFAULT_WORLD_ATTRIBUTES }));
+  state.floor.generationProfile!.tuningVersion = 'world-attributes-1:world-balance-1';
+  const bytes = JSON.stringify(state);
+  const storage = new MemoryStorage([['rogues-dungeon.slot.1', bytes]]);
+  assert.equal(readSlot(storage, '1'), null);
+  assert.equal(storage.getItem('rogues-dungeon.slot.1'), bytes);
+});
 
 function browserStorage<T>(storage: StorageCollection, run: () => T): T {
   const descriptor = Object.getOwnPropertyDescriptor(globalThis, "window");

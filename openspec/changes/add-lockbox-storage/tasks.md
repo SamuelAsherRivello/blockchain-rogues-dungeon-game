@@ -2,8 +2,8 @@
 
 ## 1. Authored lockbox contract
 
-- [ ] 1.1 Re-run `tiled-ai-setup` as a read-only audit and inspect the player-home map, object layer, external tileset, tile-object anchor, classes/properties, bounds, and blocking geometry through live MCP; record the connected document and verified IDs 3 and 4, or the exact unavailable capability, before any authoring mutation.
-- [ ] 1.2 Add the smallest failing contract tests for reading the actual authored lockboxes, moving/removing them, duplicate/malformed identity rejection, grid-anchor conversion, and absence of independent/random/test-mode placement; run the focused tests and record the expected missing-behavior failure before production changes.
+- [x] 1.1 Re-run `tiled-ai-setup` as a read-only audit and inspect the player-home map, object layer, external tileset, tile-object anchor, classes/properties, bounds, and blocking geometry through live MCP; record the connected document and verified IDs 3 and 4, or the exact unavailable capability, before any authoring mutation.
+- [x] 1.2 Add the smallest failing contract tests for reading the actual authored lockboxes, moving/removing them, duplicate/malformed identity rejection, grid-anchor conversion, and absence of independent/random/test-mode placement; run the focused tests and record the expected missing-behavior failure before production changes.
 - [ ] 1.3 Implement the constrained authored-object reader and normalized prefab lockbox records, remove the duplicate lockbox decoration/blocker literals, and derive runtime visuals, collision, and interactions from those records; verify the focused authored contract tests pass and unchanged furniture remains blocked.
 - [ ] 1.4 Verify the reusable Tiled object contract and source attribution with the existing art, preserving both authored placements and 32-by-32 selection bounds; make only required metadata/collider edits through live MCP and explicitly save each changed map/tileset, then verify saved-file tests and document which map/tileset to reopen in Tiled. Add no new lockbox placement or art.
 

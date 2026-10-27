@@ -82,7 +82,7 @@ test('trigger-only doors do not consume keyed-door coverage', () => {
 
 test('world diagnostics record the balance version and generated counts', () => {
   const floor = generateFloor(3, 29, 2, { worldAttributes: DEFAULT_WORLD_ATTRIBUTES });
-  assert.equal(floor.worldDiagnostics?.balanceVersion, 'world-balance-1');
+  assert.equal(floor.worldDiagnostics?.balanceVersion, WORLD_BALANCE_VERSION);
   assert.equal(floor.worldDiagnostics?.contentCounts?.enemies, floor.entities.filter(entity => entity.kind === 'enemy').length);
   assert.equal(floor.worldDiagnostics?.contentCounts?.traps, floor.decorations?.filter(decoration => decoration.kind === 'trap').length);
 });

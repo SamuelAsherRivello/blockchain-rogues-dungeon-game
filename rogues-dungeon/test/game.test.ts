@@ -692,7 +692,7 @@ test('starts a current campaign with a valid rolled character and an empty loado
   assert.equal(Object.values(campaign.progression.attributes).reduce((total, value) => total + value, 0), 30);
   assert.ok(Object.values(campaign.progression.attributes).every((value) => value >= 1 && value <= 5));
   assert.deepEqual(campaign.player.abilities, [null, null, null]);
-  assert.deepEqual(campaign.player.equipment, { weapons: [null, null], armor: [null, null] });
+  assert.deepEqual(campaign.player.equipment, { weapons: [null, null], armor: [null, null], jewels: [null, null] });
   assert.equal(campaign.player.resources.health.current, campaign.player.resources.health.currentMax);
   assert.equal(campaign.player.resources.stamina.current, campaign.player.resources.stamina.currentMax);
   assert.equal(campaign.player.resources.mana.current, campaign.player.resources.mana.currentMax);
@@ -705,7 +705,7 @@ test('starts a current campaign with a valid rolled character and an empty loado
 test('new runs always start with empty inventory, equipment, abilities, and quick slots', () => {
   for (const campaign of [createRunCampaign(123, 1, 1), createRunCampaign(123, 1, 2), createRunCampaign(123, 1, 1, 1, 2)]) {
     assert.deepEqual(campaign.player.inventory, []);
-    assert.deepEqual(campaign.player.equipment, { weapons: [null, null], armor: [null, null] });
+    assert.deepEqual(campaign.player.equipment, { weapons: [null, null], armor: [null, null], jewels: [null, null] });
     assert.deepEqual(campaign.player.abilities, [null, null, null]);
     assert.deepEqual(campaign.player.quickSlots, [null, null]);
   }
@@ -1780,7 +1780,7 @@ test('selected grid cell follows only the next A* route step', () => {
   const path = present(getMousePathFromSelectedCell({ x: 4, y: 1, pressed: true }, campaign));
   const move = getMouseMovementFromSelectedCell({ x: 4, y: 1, pressed: true }, campaign, path);
   assert.ok(path.length > 2); assert.deepEqual(move, { direction: 'n', sprint: false });
-  const moved = applyAction(legacyMapCampaign({ ...campaign, floor: { ...campaign.floor, time: 0, level: 1 }, progression: { attributes: { health: 25, stamina: 25, offense: 10, defense: 8, mana: 20 }, level: 1, xp: 0, nextXp: 100, difficulty: 1 }, player: { ...campaign.player, resources: { health: { current: 25, currentMax: 25 }, stamina: { current: 25, currentMax: 25 }, offense: { current: 10, currentMax: 10 }, defense: { current: 8, currentMax: 8 }, mana: { current: 20, currentMax: 20 }, xp: { current: 0, currentMax: 100, level: 1 } }, equipment: { weapons: [null, null], armor: [null, null] }, inventory: [], inventoryCapacity: 10, abilities: [], sneaking: false }, counters: {}, world: 'One', realm: 'Underground 1', objective: '', log: [] }), { type: 'move', direction: present(move).direction });
+  const moved = applyAction(legacyMapCampaign({ ...campaign, floor: { ...campaign.floor, time: 0, level: 1 }, progression: { attributes: { health: 25, stamina: 25, offense: 10, defense: 8, mana: 20 }, level: 1, xp: 0, nextXp: 100, difficulty: 1 }, player: { ...campaign.player, resources: { health: { current: 25, currentMax: 25 }, stamina: { current: 25, currentMax: 25 }, offense: { current: 10, currentMax: 10 }, defense: { current: 8, currentMax: 8 }, mana: { current: 20, currentMax: 20 }, xp: { current: 0, currentMax: 100, level: 1 } }, equipment: { weapons: [null, null], armor: [null, null], jewels: [null, null] }, inventory: [], inventoryCapacity: 10, abilities: [], sneaking: false }, counters: {}, world: 'One', realm: 'Underground 1', objective: '', log: [] }), { type: 'move', direction: present(move).direction });
   assert.equal(moved.accepted, true); assert.deepEqual({ x: moved.state.player.x, y: moved.state.player.y }, path[1]); assert.equal(moved.state.floor.time, 1);
   assert.equal(getMouseMovementFromSelectedCell({ x: 2, y: 2, pressed: true }, { ...campaign, floor: { ...campaign.floor, map: [[0, 1, 0], [1, 1, 1], [0, 1, 0]] } }), null);
 });

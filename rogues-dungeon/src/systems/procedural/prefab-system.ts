@@ -1,4 +1,8 @@
 import type { Direction, Position, TerrainCell } from "../../game/types.ts";
+import playerHomeSource from "../../../public/assets/art/game-view/maps/prefabs/player-home.tmx?raw";
+import { readAuthoredLockboxes } from "./tiled-lockbox-system.ts";
+
+export const PLAYER_HOME_LOCKBOXES = readAuthoredLockboxes(playerHomeSource);
 
 /** A portal opens a wall from its sole walkable cardinal approach. */
 export function prefabPortalEntrance(cells: TerrainCell[][], position: Position): { approach: Position; direction: Direction } | null {
@@ -124,7 +128,7 @@ export const HERO_HOUSE_PREFAB: PrefabDefinition = {
 const playerHomeFurnitureCells = new Set([
   "2,1", "3,1", "6,1", "7,1", // Bookshelves and cabinets.
   "4,4", "5,4", // Tables.
-  "1,8", "8,8", // Lockboxes.
+  ...PLAYER_HOME_LOCKBOXES.map(({ x, y }) => `${x},${y}`),
 ]);
 
 /** Runtime footprint for the authored player-home.tmx teleport destination. */
@@ -171,8 +175,8 @@ export const PLAYER_HOME_PREFAB: PrefabDefinition = {
     [61, 4, 8], [63, 5, 8], [61, 4, 9], [63, 5, 9],
     [137, 1, 0], [181, 4, 0], [185, 5, 0], [137, 8, 0],
     [147, 2, 1], [150, 3, 1], [150, 6, 1], [146, 7, 1],
-    [162, 4, 4], [163, 5, 4], [153, 1, 8], [153, 8, 8],
-  ].map(([gid, x, y]) => ({ gid, x, y })),
+    [162, 4, 4], [163, 5, 4],
+  ].map(([gid, x, y]) => ({ gid, x, y })).concat(PLAYER_HOME_LOCKBOXES.map(({ gid, x, y }) => ({ gid, x, y }))),
   cells: Array.from({ length: 10 }, (_, y) => Array.from({ length: 10 }, (_, x) => ({
     walkable: (y > 0 && y < 9 && x > 0 && x < 9 || y === 9 && (x === 4 || x === 5)) && !playerHomeFurnitureCells.has(`${x},${y}`),
     role: y > 0 && y < 9 && x > 0 && x < 9 || y === 9 && (x === 4 || x === 5) ? "ground" : "wall",

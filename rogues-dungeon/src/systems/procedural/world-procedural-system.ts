@@ -5,16 +5,17 @@ import { hasPerceptionLineOfSight } from "../../game/enemy-detection.ts";
 import { planStartRoomDecoration } from "../../content/world/start-wall-autotile.ts";
 import { RESOURCE_WILL_REPLENISH, type AbilityId, type Action, type ActionResult, type Attributes, type AttributeName, type Campaign, type ConsumableResource, type Direction, type EncounterLockdownSet, type Enemy, type Entity, type Equipment, type EquipmentGroup, type EventFacts, type Floor, type FloorTriggerDoorBarrelSet, type GameEvent, type Item, type LevelStateDelta, type MassBearingPosition, type ObjectSet, type ObjectSetRegionRole, type Position, type QuickSlot, type Resource, type ResourceInput, type ResourceName, type Resources, type Room, type WorldDecoration } from "../../game/types.ts";
 import { createLevelContext, ensureSemanticCells, isWalkable, markRuntimeGridValid, runLevelPasses, setCell } from "./level-grid-system.ts";
-import { HERO_HOUSE_PREFAB, PLAYER_HOME_PREFAB, prefabPortalEntrances, stampPrefab, type PrefabPlacement } from "./prefab-system.ts";
+import { HERO_HOUSE_PREFAB, PLAYER_HOME_PREFAB, PLAYER_HOME_LOCKBOXES, prefabPortalEntrances, stampPrefab, type PrefabPlacement } from "./prefab-system.ts";
 import { isWallDecorationCell, TRAP_FRAME_DURATION_MS, trapFrameAt, trapIsDangerous, trapStrikeDamage } from "./world-hazards-system.ts";
 import { worldFloorSeed } from "./world-seed-system.ts";
 import { planEnemyActions } from "../../game/enemy-ai-system.ts";
 import { cellCenter, centerCrossings, normalizePlayerPosition, occupiedCell } from "../../game/player-position.ts";
 import type { WorldAttributes, FloorGenerationProfile } from '../../game/types.ts';
 import { DEFAULT_WORLD_ATTRIBUTES, normalizeWorldAttributes, WORLD_RULES_VERSION, worldRandom, worldTuning, growWorld } from './world-attributes.ts';
-import { WORLD_BALANCE_VERSION, eligibleWorldItemNames, worldBalanceProfile } from './world-balance.ts';
+import { WORLD_BALANCE_VERSION, eligibleWorldItemNames, selectWorldItemName, worldBalanceProfile } from './world-balance.ts';
 import { enemyDefinitionForName, enemyDefinitionsForWorldLevel, type EnemyDefinition } from '../../content/enemies/enemy-catalog.ts';
 import { enemyCharacterForName } from '../../content/enemies/enemy-idle-animation.ts';
+import { JEWEL_NAMES, jewelItemDefinitions } from '../../content/items/jewel-catalog.ts';
 
 import { countPerformance, measurePerformance } from "../rendering/performance-system.ts";
 import { generateDungeonGraphLayout } from "./dungeon-graph-layout-system.ts";
@@ -291,10 +292,12 @@ export const itemCatalog: readonly Omit<Item, "id">[] = Object.freeze([
   { name: "Oak Shield 03", group: "weapons", modifiers: { defense: 3 }, perks: ["Shield"], isStackable: false },
   { name: "Wooden Stick", group: "weapons", modifiers: { offense: 1 }, isStackable: false },
   { name: "Throwing Knives", group: "weapons", modifiers: {}, category: "consumable", abilityId: "throwing-knives", quickSlotAction: "throwing-knives", isStackable: true, quantity: 3 },
+  ...jewelItemDefinitions,
 ]);
 export const WORLD_DROPPABLE_ITEM_NAMES = Object.freeze([
   "Extra Carrying Capacity +5", "Heal", "Wand", "Dagger (Magic)", "Sword", "Two-Handed Sword",
   "Leg Armor (Magic)", "Chest Armor", "Suit of Armor", "Oak Shield 03", "Wooden Stick", "Wooden Vest",
+  ...JEWEL_NAMES,
 ] as const);
 export type WorldDroppableItemName = typeof WORLD_DROPPABLE_ITEM_NAMES[number];
 export function worldDroppableItemInstance(name: WorldDroppableItemName, id: string): Item {
@@ -360,13 +363,13 @@ export function normalizeStackableLocations(campaign: Campaign) {
     else inventory.push(item);
   }
   campaign.player.inventory = orderedInventory(inventory);
-  const normalizeGroup = (raw: (Item | null)[]) => {
+  const normalizeGroup = (raw: (Item | null)[] = []) => {
     const slots = raw.slice(0, 2).map((item) => item ? normalizeEquipmentItem(item) : null);
     while (slots.length < 2) slots.push(null);
     for (const item of uniqueItems(slots)) if (item.slotSpan === 2) { slots[0] = item; slots[1] = item; }
     return slots;
   };
-  campaign.player.equipment = { weapons: normalizeGroup(campaign.player.equipment.weapons), armor: normalizeGroup(campaign.player.equipment.armor) };
+  campaign.player.equipment = { weapons: normalizeGroup(campaign.player.equipment.weapons), armor: normalizeGroup(campaign.player.equipment.armor), jewels: normalizeGroup(campaign.player.equipment.jewels) };
   return campaign;
 }
 function entityAt(entities: Entity[], x: number, y: number) { return entities.find((entity) => entity.x === x && entity.y === y); }
@@ -452,7 +455,7 @@ function playerHomeFloor(campaign: Campaign): Floor {
       generation.entities.push(reward);
     }
   } }]);
-  return { seed: campaign.floor.seed, width: PLAYER_HOME_PREFAB.width, height: PLAYER_HOME_PREFAB.height, cells, start: { x: 4, y: 8 }, entities: context.entities, time: campaign.floor.time, level, generatorVersion: campaign.floor.generatorVersion, tiledGrounds: PLAYER_HOME_PREFAB.tiledGrounds?.slice(), tiledWalls: PLAYER_HOME_PREFAB.tiledWalls?.slice(), tiledDecorations: PLAYER_HOME_PREFAB.tiledDecorations?.map((decoration) => ({ ...decoration })), generation: { seed: campaign.floor.seed, generator: "player-home" } };
+  return { lockboxes: PLAYER_HOME_LOCKBOXES.map(box => ({ ...box })), seed: campaign.floor.seed, width: PLAYER_HOME_PREFAB.width, height: PLAYER_HOME_PREFAB.height, cells, start: { x: 4, y: 8 }, entities: context.entities, time: campaign.floor.time, level, generatorVersion: campaign.floor.generatorVersion, tiledGrounds: PLAYER_HOME_PREFAB.tiledGrounds?.slice(), tiledWalls: PLAYER_HOME_PREFAB.tiledWalls?.slice(), tiledDecorations: PLAYER_HOME_PREFAB.tiledDecorations?.map((decoration) => ({ ...decoration })), generation: { seed: campaign.floor.seed, generator: "player-home" } };
 }
 function emit(events: GameEvent[], type: string, facts: EventFacts, state: Campaign, source = type.split(".")[0]) { events.push({ type, facts, source, gameTime: state.floor.time, sequence: events.length + 1 }); }
 function carveRoom(map: number[][], room: Room) { for (let y = room.y; y < room.y + room.h; y++) for (let x = room.x; x < room.x + room.w; x++) map[y][x] = 0; }
@@ -633,6 +636,8 @@ export function upgradeCampaignResources(campaign: Campaign, { normalizeStatic =
   if (normalizeStatic) {
     ensureSemanticCells(campaign.floor);
     if (campaign.activePrefab?.id === "player-home") {
+      campaign.floor.lockboxes = PLAYER_HOME_LOCKBOXES.map(box => ({ ...box }));
+      campaign.floor.tiledDecorations = PLAYER_HOME_PREFAB.tiledDecorations?.map(tile => ({ ...tile }));
       for (let y = 0; y < PLAYER_HOME_PREFAB.height; y++) for (let x = 0; x < PLAYER_HOME_PREFAB.width; x++) {
         setCell(campaign.floor, x, y, PLAYER_HOME_PREFAB.cells[y][x]);
       }
@@ -1024,10 +1029,9 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
       });
     }
     if (!level1ObjectTestMode) {
-      const eligibleItems = eligibleWorldItemNames(level, WORLD_DROPPABLE_ITEM_NAMES);
       const worldItemCount = Math.max(0, budgetCount(pickupRandom, balance.budgets.worldItems) - (productionStarterPack ? 1 : 0));
       for (let index = 0; index < worldItemCount; index++) {
-        const name = eligibleItems[Math.floor(pickupRandom() * eligibleItems.length)] as WorldDroppableItemName;
+        const name = selectWorldItemName(level, WORLD_DROPPABLE_ITEM_NAMES, pickupRandom) as WorldDroppableItemName;
         const cell = nextOrdinaryPickupCell();
         if (cell && name) {
           const id = `world-item-${level}-${index + 1}-${worldItemId(name)}`;
@@ -1113,10 +1117,9 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
         rewardBudget -= entity.rewardAmount;
         entity.rewardQuality = tuning.rewardQuality;
         if (rewardRandom() < tuning.rewardChance) {
-          const rewardPool = eligibleWorldItemNames(level, WORLD_DROPPABLE_ITEM_NAMES);
-          const rewardName = rewardPool[Math.floor(rewardRandom() * rewardPool.length)] as WorldDroppableItemName;
+          const rewardName = selectWorldItemName(level, WORLD_DROPPABLE_ITEM_NAMES, rewardRandom) as WorldDroppableItemName;
           entity.rewardItem = worldDroppableItemInstance(rewardName, `${entity.id}-reward`);
-          entity.rewardItem.modifiers = Object.fromEntries(Object.entries(entity.rewardItem.modifiers).map(([name, amount]) => [name, Math.max(1, Math.round(amount! * (1 + tuning.rewardQuality * .15)))]));
+          if (entity.rewardItem.group !== 'jewels') entity.rewardItem.modifiers = Object.fromEntries(Object.entries(entity.rewardItem.modifiers).map(([name, amount]) => [name, Math.max(1, Math.round(amount! * (1 + tuning.rewardQuality * .15)))]));
         }
       }
     }
@@ -1214,7 +1217,7 @@ export function rollStartingAttributes(random = Math.random): Attributes {
 }
 export function createCampaign(seed = seedNow(), difficulty = 1, level = 1, options: { topologyVersion?: string; portalLayoutVersion?: string; level1TestMode?: boolean; level1ObjectTestMode?: boolean; level1EnemyTestMode?: boolean; attributes?: Attributes; worldAttributes?: WorldAttributes; mode?: Campaign["mode"] } = {}): Campaign {
   const floor = generateFloor(level, seed, difficulty, { level1TestMode: options.level1TestMode, level1ObjectTestMode: options.level1ObjectTestMode, level1EnemyTestMode: options.level1EnemyTestMode, worldAttributes: options.worldAttributes, topologyVersion: options.topologyVersion, portalLayoutVersion: options.portalLayoutVersion }); const attributes = options.attributes ? { ...options.attributes } : rollStartingAttributes(rng(seed));
-  const campaign: Campaign = { version: 6, mode: options.mode ?? "adventure", world: "One", realm: `Underground ${floor.level}`, floor, combatRollState: seed >>> 0, generatorVersion: GENERATOR_VERSION, levelStates: {}, floors: { [level]: structuredClone(floor) }, progression: { attributes, level: 1, xp: 0, nextXp: GAME_TUNING.xpThreshold, totalKills: 0, difficulty, attributePoints: 0 }, player: { x: floor.start.x, y: floor.start.y, hasMass: true, heading: "e", resources: createResourcesModel(), equipment: { weapons: [null, null], armor: [null, null] }, inventory: [], inventoryCapacity: ITEM_CAPACITY, abilities: [null, null, null], quickSlots: [null, null], sneaking: false, encumberedDirection: null }, counters: { keys: 0, gold: 0 }, objective: "Find the exit", quest: { id: "my-first-quest", title: "My First Quest", items: [{ id: "walk-through-stairs", title: "Walk through the stairs", complete: false }, { id: "collect-health-potion", title: "Collect a Health Potion", complete: false }, { id: "collect-coin", title: "Collect a coin", complete: false }], activeItemId: "walk-through-stairs" }, log: [] };
+  const campaign: Campaign = { version: 6, mode: options.mode ?? "adventure", world: "One", realm: `Underground ${floor.level}`, floor, combatRollState: seed >>> 0, generatorVersion: GENERATOR_VERSION, levelStates: {}, floors: { [level]: structuredClone(floor) }, progression: { attributes, level: 1, xp: 0, nextXp: GAME_TUNING.xpThreshold, totalKills: 0, difficulty, attributePoints: 0 }, player: { x: floor.start.x, y: floor.start.y, hasMass: true, heading: "e", resources: createResourcesModel(), equipment: { weapons: [null, null], armor: [null, null], jewels: [null, null] }, inventory: [], inventoryCapacity: ITEM_CAPACITY, abilities: [null, null, null], quickSlots: [null, null], sneaking: false, encumberedDirection: null }, counters: { keys: 0, gold: 0 }, objective: "Find the exit", quest: { id: "my-first-quest", title: "My First Quest", items: [{ id: "walk-through-stairs", title: "Walk through the stairs", complete: false }, { id: "collect-health-potion", title: "Collect a Health Potion", complete: false }, { id: "collect-coin", title: "Collect a coin", complete: false }], activeItemId: "walk-through-stairs" }, log: [] };
   if (options.topologyVersion !== undefined) campaign.topologyVersion = options.topologyVersion;
   if (options.portalLayoutVersion !== undefined) campaign.portalLayoutVersion = options.portalLayoutVersion;
   if (options.worldAttributes) { campaign.worldAttributes = normalizeWorldAttributes(options.worldAttributes); campaign.worldGrowth = []; campaign.worldSchemaVersion = 1; }
@@ -1696,7 +1699,7 @@ function releaseWorldReward(state: Campaign, container: Extract<Entity, { kind: 
   if (cell) {
     const item = structuredClone(container.rewardItem);
     const luckBonus = lootTier(state);
-    for (const name of Object.keys(item.modifiers) as AttributeName[]) item.modifiers[name] = (item.modifiers[name] ?? 0) + luckBonus;
+    if (item.group !== 'jewels') for (const name of Object.keys(item.modifiers) as AttributeName[]) item.modifiers[name] = (item.modifiers[name] ?? 0) + luckBonus;
     state.floor.entities.push({ id: `${container.id}-equipment`, kind: 'item', item, ...cell });
   }
 }
@@ -2022,6 +2025,11 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
   }
   if (action.type === "move") {
     const direction = directions[action.direction as Direction]; if (!direction) return reject("invalid-direction"); const [dx, dy] = direction; const x = state.player.x + dx; const y = state.player.y + dy; const entity = entityAt(state.floor.entities, x, y);
+    const lockbox = state.floor.lockboxes?.find(box => box.x === x && box.y === y);
+    if (lockbox) {
+      emit(events, "lockbox.opened", { id: lockbox.id, position: { x, y } }, state);
+      return { state, events, accepted: true, ticks: 0 };
+    }
     const barrelSet = barrelSetAt(state.floor, x, y);
     const isOrdinaryStep = !entity && !barrelSet && isWalkable(state.floor, x, y) && !isObjectSetBlocked(state.floor, state.player, x, y);
     if (!inventoryFitsCapacity(state) && isOrdinaryStep) {

@@ -1,10 +1,29 @@
 # Inventory and equipment
 
-New campaigns carry up to 10 unequipped items. Ordinary world loot is collected directly into Inventory, displayed alphabetically by name then stable item ID. Equipped items do not count toward the Inventory total. A full Inventory leaves ordinary loot in its world position while movement continues.
+New campaigns carry up to 5 unequipped items before carrying-capacity bonuses. Ordinary world loot is collected directly into Inventory, displayed alphabetically by name then stable item ID. Equipped items do not count toward the Inventory total. A full Inventory leaves ordinary loot in its world position while movement continues.
 
-Equipment has two Weapons and two Armor positions. Swords and shields share the Weapons group; armor items use Armor. Dropping compatible gear onto an occupied position swaps it with the Inventory item. Incompatible groups reject drops. Equipment changes are atomic and cost one game tick only when accepted. Unequipping requires an available Inventory position. Reordering within one group is cosmetic and does not change combined modifiers.
+Equipment has two Weapons, two Armor, and two Jewels positions, shown in that order. Swords and shields share Weapons; armor items use Armor. Any ring, bracelet, or amulet fits either Jewel position. Dropping compatible gear onto an occupied position swaps it with the Inventory item. Incompatible groups reject drops. Equipment changes are atomic and cost one game tick only when accepted. Unequipping requires an available Inventory position. Reordering within one group is cosmetic and does not change combined modifiers.
 
 Attribute preview is a pure projection shown only while a compatible item is over a usable equipment position. It clears on leaving the target, cancellation, invalid drop, or drag end. It never changes campaign or saved state before a valid drop commits.
+
+## Jewels
+
+Each Jewel uses one Inventory entry while carried and one Jewel position while worn. Instances never combine into quantity stacks. You may wear two rings, two bracelets, two amulets, or any mixed pair, including two separate copies of the same item. Their listed bonuses add once per instance. There are no pair bonuses, charges, activation keys, or Mana costs. Stored and dropped Jewels grant no buffs; Abilities and Quick Slots reject them.
+
+| Jewel | Family | Loot tier | Buff while equipped |
+| --- | --- | --- | --- |
+| Copper Ring of Vigor | Ring | Low | Maximum Health +5 |
+| Silver Ring of Vigor | Ring | Middle | Maximum Health +10 |
+| Gold Ring of Vigor | Ring | High | Maximum Health +15 |
+| Copper Guard Bracelet | Bracelet | Low | Defense +1 |
+| Silver Guard Bracelet | Bracelet | Middle | Defense +2 |
+| Gold Guard Bracelet | Bracelet | High | Defense +3 |
+| Quartz Amulet | Amulet | Low | Maximum Mana +5 |
+| Sapphire Amulet | Amulet | Middle | Maximum Mana +10 |
+| Star Sapphire Amulet | Amulet | High | Maximum Mana +15 |
+| Prismatic Amulet | Amulet | Special | Maximum Health +5 and maximum Mana +5 |
+
+These values are resource points, not progression ranks or percentages. Loot tier describes rarity and progression, not a vendor price. Equipping or removing Health/Mana capacity preserves resource fullness. For example, adding Health +5 at 10/20 Health produces 12.5/25 Health, rather than a potion refill. Defense uses the existing combat calculation and Stamina readiness. Two Gold Rings add maximum Health +30; two Star Sapphire Amulets add maximum Mana +30; two Gold Guard Bracelets add Defense +6.
 
 ## Ability and quick-slot swaps
 

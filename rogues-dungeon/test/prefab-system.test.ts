@@ -267,8 +267,9 @@ test("home furniture rejects movement and pathfinding, including in older home s
     home.player.x = x; home.player.y = y === 8 ? y - 1 : y + 1;
     delete home.player.pixel;
     const result = applyAction(home, { type: "move", direction: y === 8 ? "s" : "n" });
-    assert.equal(result.accepted, false, `${x},${y}`);
-    assert.equal(result.events[0].facts.reason, "blocked");
+    assert.equal(result.accepted, y === 8, `${x},${y}`);
+    assert.equal(result.events[0].type, y === 8 ? "lockbox.opened" : "action.rejected");
+    assert.equal(result.ticks, 0);
     assert.equal(findCardinalPath(home.floor, home.player, { x, y }), null);
   }
   // Simulate an older save with walkable furniture.

@@ -1,0 +1,68 @@
+{
+  "mode": "Built-in image_gen, one generated sprite per item",
+  "date": "2026-10-26",
+  "reference": "public/assets/art/game-view/items/droppable-item-sprite-sheet.png, existing twelve-item sheet used only as a style reference",
+  "commonPrompt": "One isolated medieval RPG jewelry pickup sprite, centered square composition with transparent padding. Match the existing atlas's crisp chunky pixel-art outlines, limited palette, upper-left highlights and simplified silhouette. Three-quarter inventory icon view, legible at 32 pixels. True transparent background and alpha, including inside ring/chain holes. No text, labels, checkerboard, pedestal, shadow plane, extra objects, or grid.",
+  "items": [
+    {
+      "name": "copper-ring-of-vigor",
+      "subject": "Simple warm copper ring with a small red inset stone, plain thin band.",
+      "source": "exec-5603aee2-85d3-4c10-9f2c-cc71ea91b8a7.png",
+      "asset": "public/assets/art/game-view/items/jewels/copper-ring-of-vigor.png"
+    },
+    {
+      "name": "silver-ring-of-vigor",
+      "subject": "Silver ring band with a larger red cabochon gemstone and clearly visible silver shoulders.",
+      "source": "exec-fdb6acf3-dbe2-4fc2-b47e-54e285f3c2b1.png",
+      "asset": "public/assets/art/game-view/items/jewels/silver-ring-of-vigor.png"
+    },
+    {
+      "name": "gold-ring-of-vigor",
+      "subject": "Ornate gold ring with prominent ruby setting and a thick engraved band.",
+      "source": "exec-619c3caa-20af-4d68-b8cb-0956da126b96.png",
+      "asset": "public/assets/art/game-view/items/jewels/gold-ring-of-vigor.png"
+    },
+    {
+      "name": "copper-guard-bracelet",
+      "subject": "Broad warm copper wrist cuff, visibly much thicker and wider than a finger ring, simple riveted protective band.",
+      "source": "exec-c767deec-5098-4a12-a11f-74815ed6886d.png",
+      "asset": "public/assets/art/game-view/items/jewels/copper-guard-bracelet.png"
+    },
+    {
+      "name": "silver-guard-bracelet",
+      "subject": "Reinforced wide silver wrist cuff with an engraved shield motif and angular edges.",
+      "source": "exec-e664c6b7-faad-4273-a254-503e18832486.png",
+      "asset": "public/assets/art/game-view/items/jewels/silver-guard-bracelet.png"
+    },
+    {
+      "name": "gold-guard-bracelet",
+      "subject": "Heavy ornate gold wrist cuff with layered protective plates and a central red gemstone.",
+      "source": "exec-3c9b5379-db03-4861-8fd8-3187386495f7.png",
+      "asset": "public/assets/art/game-view/items/jewels/gold-guard-bracelet.png"
+    },
+    {
+      "name": "quartz-amulet",
+      "subject": "Simple dark leather cord loop with a pale white quartz pendant, a readable complete necklace silhouette.",
+      "source": "exec-eda30b2c-4271-4bd6-8a6b-a04f5c01fe7d.png",
+      "asset": "public/assets/art/game-view/items/jewels/quartz-amulet.png"
+    },
+    {
+      "name": "sapphire-amulet",
+      "subject": "Silver necklace chain with a large deep blue sapphire pendant in a simple metal setting.",
+      "source": "exec-03ec3802-a879-40d7-8afe-d7746ec70c28.png",
+      "asset": "public/assets/art/game-view/items/jewels/sapphire-amulet.png"
+    },
+    {
+      "name": "star-sapphire-amulet",
+      "subject": "Elaborate silver and gold necklace with a star-shaped blue sapphire gemstone setting and clearly visible chain loop.",
+      "source": "exec-06600552-eb37-493b-afab-9f31229ab3e0.png",
+      "asset": "public/assets/art/game-view/items/jewels/star-sapphire-amulet.png"
+    },
+    {
+      "name": "prismatic-amulet",
+      "subject": "Ornate necklace with faceted pendant containing several distinct gemstone colors, red blue green and violet, a complete chain loop.",
+      "source": "exec-edf15ec5-fab6-46f5-a451-79200c661f7c.png",
+      "asset": "public/assets/art/game-view/items/jewels/prismatic-amulet.png"
+    }
+  ]
+}

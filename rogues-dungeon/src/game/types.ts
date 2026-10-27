@@ -21,12 +21,14 @@ export type CampaignMode = "classic" | "adventure" | "journey";
 export interface Resource { current: number; currentMax: number; level?: number }
 export type Resources = Record<ResourceName, Resource>;
 export type ResourceInput = Partial<Record<ResourceName, Partial<Resource> | number>>;
-export type EquipmentGroup = "weapons" | "armor";
+export type EquipmentGroup = "weapons" | "armor" | "jewels";
 export type ConsumableResource = "health" | "stamina" | "mana";
 export type AbilityId = "heal" | "wand" | "throwing-knives";
 export type ItemCategory = "equipment" | "consumable" | "ability" | "capacity";
 export interface Item { id: string; name: string; group: EquipmentGroup; modifiers: Partial<Attributes>; slotSpan?: 1 | 2; hitChance?: number; critChance?: number; perks?: readonly string[]; category?: ItemCategory; abilityId?: AbilityId; capacityBonus?: number; consumableResource?: ConsumableResource; quickSlotAction?: "restore-resource" | "throwing-knives"; isStackable?: boolean; quantity?: number }
 export interface QuickSlot { item: Item; quantity: number }
+export interface ItemLot { id: string; quantity: number; offset?: number }
+export interface LockboxStorage { version: 1; revision: number; containers: Record<string, Item[]>; provenance?: Record<string, ItemLot[]>; journal: { revision: number; direction: "deposit" | "withdraw"; lots: ItemLot[] }[] }
 export type Equipment = Record<EquipmentGroup, (Item | null)[]>;
 export interface TerrainCell { walkable: boolean; role: string; protected?: boolean }
 export type EnemyAiState = "idle" | "pursue" | "attack" | "blocked";
@@ -96,6 +98,8 @@ export interface Floor {
   generation?: { seed: number; generator: string | null; passes?: { id: string; diagnostics: number }[]; topology?: DungeonLayoutTopology & { exitAttachment: { position: Position; roomId: number; kind: "room" | "sealed-chamber" | "fixture"; path: Position[] } }; quality?: DungeonQualityResult; repairs?: number; qualityRepairs?: { issues: DungeonQualityResult["issues"]; changed: Position[]; passes: number }[] };
   tiledGrounds?: number[]; tiledWalls?: number[];
   tiledDecorations?: TiledDecoration[];
+  /** Blocking, human-authored tile objects; never populated by random placement. */
+  lockboxes?: (Position & { id: string; name: string; gid: number })[];
   decorations?: WorldDecoration[];
   objectSets?: ObjectSet[];
   prefabPlacements?: { prefabId: string; origin: Position }[];
@@ -114,6 +118,10 @@ export type QuestItemId = "walk-through-stairs" | "collect-health-potion" | "col
 export interface QuestItem { id: QuestItemId; title: string; complete: boolean }
 export interface Quest { id: "my-first-quest"; title: "My First Quest"; items: QuestItem[]; activeItemId: QuestItemId | null }
 export interface Campaign {
+  /** Run ownership bookkeeping only. Persistent containers live in the slot envelope. */
+  itemProvenance?: Record<string, ItemLot[]>;
+  storageRevision?: number;
+  storageExclusions?: ItemLot[];
   version: number; world: string; realm: string; floor: Floor; combatRollState?: number;
   /** Chosen once during creation; legacy saves migrate to Adventure. */
   mode?: CampaignMode;

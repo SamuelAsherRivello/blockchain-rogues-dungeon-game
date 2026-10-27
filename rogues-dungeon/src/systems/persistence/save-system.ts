@@ -1,6 +1,8 @@
 import { measurePerformance } from "../rendering/performance-system.ts";
 import { revealDiscovery } from "../procedural/map-discovery-system.ts";
 import { prepareBrowserDevelopmentStorage } from "./development-storage-system.ts";
+import { emptyLockboxState, reconcileLockboxRecovery, validateLockboxState } from "./lockbox-storage-system.ts";
+import type { LockboxStorage } from "../../game/types.ts";
 export { DEVELOPMENT_STORAGE_COMPATIBILITY_KEY, DEVELOPMENT_STORAGE_COMPATIBILITY_EPOCH, resetDevelopmentStorageCompatibility } from "./development-storage-system.ts";
 import type { AbilityId, Attributes, Campaign, Floor, Item, Position, Preferences, ResourceInput, ResourceName, StorageAccess, StorageCollection } from "../../game/types.ts";
 interface LegacyItem { id?: string; name?: string; slot?: string; defense?: number; attack?: number }
@@ -23,6 +25,18 @@ const BACKUP_PREFIX = "rogues-dungeon.slot.v1-backup.";
 const DISCOVERY_BACKUP_PREFIX = "rogues-dungeon.slot.discovery-v2-backup.";
 const PREFERENCE_KEY = "rogues-dungeon.preferences.v1";
 const WORLD_SEED_KEY = "rogues-dungeon.world-seed.v1";
+interface SavedGameEnvelope { savedGameVersion: 1; campaign: Campaign | null; storage: LockboxStorage }
+function slotEnvelope(value: unknown): SavedGameEnvelope | null {
+  if (!value || typeof value !== "object" || !("savedGameVersion" in value)) return null;
+  const envelope = value as SavedGameEnvelope;
+  if (envelope.savedGameVersion !== 1 || !("campaign" in envelope)) throw new Error("Unsupported Saved Game storage record.");
+  return { ...envelope, storage: validateLockboxState(envelope.storage) };
+}
+export function readLockboxState(storage: StorageAccess, slot: string | number): LockboxStorage {
+  if (!SLOT_IDS.includes(String(slot))) throw new Error("Unknown Saved Game.");
+  const raw = storage.getItem(PREFIX + slot);
+  return (raw ? slotEnvelope(JSON.parse(raw))?.storage : null) ?? emptyLockboxState();
+}
 export const SLOT_IDS = Object.freeze(["1", "2", "3"]);
 export const DEFAULT_PREFERENCES: Readonly<Preferences> = Object.freeze({ movementMode: "grid-tween", zoom: 1, camera: "center", fullscreenDesired: false, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
 const DEFAULT_ABILITIES: readonly (AbilityId | null)[] = Object.freeze([null, null, null]);
@@ -167,7 +181,7 @@ export function migrateCampaign(value: unknown): Campaign {
   const legacyResources: ResourceInput = { health: value.player.resources?.health ?? value.player.hp ?? oldHealth, stamina: value.player.resources?.stamina ?? oldStamina, mana: value.player.resources?.mana ?? 20 }; next.player.resources = createResourcesModel(Object.fromEntries(Object.entries(legacyResources).map(([name, value]) => [name, typeof value === "number" ? { current: value } : value])));
   const legacy = legacyEquipmentItems(value.player.equipment);
   const armor = legacy.filter((item) => item.group === "armor"); const weapons = legacy.filter((item) => item.group === "weapons");
-  next.player.equipment = { weapons: [weapons.shift() ?? null, weapons.shift() ?? null], armor: [armor.shift() ?? null, armor.shift() ?? null] };
+  next.player.equipment = { weapons: [weapons.shift() ?? null, weapons.shift() ?? null], armor: [armor.shift() ?? null, armor.shift() ?? null], jewels: [null, null] };
   next.player.inventory = [...weapons, ...armor].sort((a, b) => a.name.localeCompare(b.name));
   next.player.sneaking = Boolean(value.player.sneaking ?? value.pending?.sneaking ?? false);
   next.counters = { ...next.counters, ...(value.counters ?? {}) };
@@ -181,7 +195,10 @@ export function migrateCampaign(value: unknown): Campaign {
 export function readSlot(storage: StorageAccess, slot: string | number) {
   if (!SLOT_IDS.includes(String(slot))) throw new Error("Unknown Saved Game.");
   const raw = storage.getItem(PREFIX + slot); if (!raw) return null;
-  const original: unknown = JSON.parse(raw); const originalVersion = candidate(original)?.version;
+  const parsed: unknown = JSON.parse(raw), envelope = slotEnvelope(parsed);
+  const original: unknown = envelope ? envelope.campaign : parsed;
+  if (envelope && original === null) return null;
+  const originalVersion = candidate(original)?.version;
   if (isValidCampaign(original)) assertCampaignPortalLayoutsResolved(original);
   if (originalVersion !== 6) {
     const legacy = migrateCampaign(original);
@@ -201,18 +218,21 @@ export function readSlot(storage: StorageAccess, slot: string | number) {
   const campaign = migrateCampaign(original);
   if (campaign?.floor?.generatorVersion === GENERATOR_VERSION && !campaign.activePrefab) ensureNearbyStairs(campaign.floor);
   revealDiscovery(campaign, campaign.player);
-  return campaign;
+  return envelope ? reconcileLockboxRecovery(campaign, envelope.storage) : campaign;
 }
-export function writeSlot(storage: StorageAccess, slot: string | number, campaign: Campaign) {
-  return measurePerformance("save (inclusive)", () => writeSlotCore(storage, slot, campaign));
+export function writeSlot(storage: StorageAccess, slot: string | number, campaign: Campaign, lockboxes?: LockboxStorage) {
+  return measurePerformance("save (inclusive)", () => writeSlotCore(storage, slot, campaign, lockboxes));
 }
-function writeSlotCore(storage: StorageAccess, slot: string | number, campaign: Campaign) {
+function writeSlotCore(storage: StorageAccess, slot: string | number, campaign: Campaign, lockboxes?: LockboxStorage) {
   if (!SLOT_IDS.includes(String(slot))) throw new Error("Unknown Saved Game.");
   if (!isValidCampaign(campaign)) throw new Error("Cannot save an invalid campaign.");
   assertCampaignPortalLayoutsResolved(campaign);
   const existingRaw = storage.getItem(PREFIX + slot);
   let existing: unknown;
   try { existing = existingRaw ? JSON.parse(existingRaw) : null; } catch { existing = null; }
+  const envelope = slotEnvelope(existing);
+  if (envelope) existing = envelope.campaign;
+  const savedStorage = lockboxes ? validateLockboxState(lockboxes) : envelope?.storage;
   if (isValidCampaign(existing)) assertCampaignPortalLayoutsResolved(existing);
   // Preserve the first pre-rewrite record, including malformed inactive discovery.
   // An identical legacy backup already preserves those bytes; never replace it.
@@ -230,10 +250,16 @@ function writeSlotCore(storage: StorageAccess, slot: string | number, campaign: 
   campaign.worldSeed = Number.isInteger(campaign.worldSeed) && campaign.worldSeed! >= 0 ? campaign.worldSeed : campaign.floor.seed;
   normalizeCampaignRecovery(campaign);
   const compact = compactCampaignForSave(campaign);
-  const serialized = measurePerformance("save serialization", () => JSON.stringify({ ...compact, player: { ...compact.player, abilities: normalizeAbilityBindings(compact), quickSlots: compact.player.quickSlots }, savedAt: Date.now() }));
+  const savedCampaign = { ...compact, player: { ...compact.player, abilities: normalizeAbilityBindings(compact), quickSlots: compact.player.quickSlots }, savedAt: Date.now() };
+  const serialized = measurePerformance("save serialization", () => JSON.stringify(savedStorage ? { savedGameVersion: 1, campaign: savedCampaign, storage: savedStorage } : savedCampaign));
   measurePerformance("save storage", () => storage.setItem(PREFIX + slot, serialized));
 }
-export function deleteSlot(storage: StorageAccess, slot: string | number) { if (!SLOT_IDS.includes(String(slot))) throw new Error("Unknown Saved Game."); storage.removeItem(PREFIX + slot); }
+export function deleteSlot(storage: StorageAccess, slot: string | number) {
+  if (!SLOT_IDS.includes(String(slot))) throw new Error("Unknown Saved Game.");
+  const raw = storage.getItem(PREFIX + slot), envelope = raw ? slotEnvelope(JSON.parse(raw)) : null;
+  if (envelope) storage.setItem(PREFIX + slot, JSON.stringify({ ...envelope, campaign: null }));
+  else storage.removeItem(PREFIX + slot);
+}
 export function clearRoguesDungeonStorage(storage: StorageCollection) {
   const keys = [];
   for (let index = 0; index < storage.length; index++) {
@@ -269,9 +295,11 @@ export function readSlotSummary(storage: StorageAccess): SavedGameSummary[] {
       raw = storage.getItem(PREFIX + slot);
       const cached = cache.get(slot);
       if (cached?.raw === raw) return { ...cached.summary };
-      const parsed: unknown = raw ? JSON.parse(raw) : null;
+      const record: unknown = raw ? JSON.parse(raw) : null;
+      const envelope = slotEnvelope(record);
+      const parsed: unknown = envelope ? envelope.campaign : record;
       let state: Campaign | null;
-      if (!raw) state = null;
+      if (!raw || envelope && parsed === null) state = null;
       else if (isValidCampaign(parsed)) {
         assertCampaignPortalLayoutsResolved(parsed); validateCampaignGeneration(parsed); state = parsed;
       } else state = readSlot(storage, slot); // Preserve legacy migration and backups.

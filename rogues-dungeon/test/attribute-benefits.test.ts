@@ -3,7 +3,7 @@ import test from "node:test";
 import type { Attributes, Equipment } from "../src/game/types.ts";
 import { formatPendingAttributeBenefits, pendingAttributeBenefitLabel } from "../src/game/attribute-benefits.ts";
 
-const equipment: Equipment = { weapons: [{ id: "stick", name: "Stick", group: "weapons", modifiers: {}, hitChance: 90 }, null], armor: [null, null] };
+const equipment: Equipment = { weapons: [{ id: "stick", name: "Stick", group: "weapons", modifiers: {}, hitChance: 90 }, null], armor: [null, null], jewels: [null, null] };
 const attributes = (overrides: Partial<Attributes> = {}): Attributes => ({ health: 6, stamina: 5, offense: 2, defense: 3, mana: 3, perception: 3, strength: 3, luck: 3, recovery: 5, stealth: 1, ...overrides });
 
 test("formats aggregate capacity and combat benefits from one pending allocation", () => {

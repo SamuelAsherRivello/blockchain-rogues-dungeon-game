@@ -2,7 +2,7 @@ import type { StorageAccess, StorageCollection } from "../../game/types.ts";
 
 export const DEVELOPMENT_STORAGE_COMPATIBILITY_KEY = "rogues-dungeon.compatibility-epoch.v1";
 // Bump for an authorized development change that invalidates saved game content.
-export const DEVELOPMENT_STORAGE_COMPATIBILITY_EPOCH = "dungeon-graph-1:prefab-portal-paired-1";
+export const DEVELOPMENT_STORAGE_COMPATIBILITY_EPOCH = "dungeon-graph-1:prefab-portal-paired-1:flexible-jewels-1";
 
 /** One reset per compatibility epoch, limited to this game's storage namespace. */
 export function resetDevelopmentStorageCompatibility(storage: StorageCollection): boolean {

@@ -1,0 +1,92 @@
+[
+  {
+    "name": "Copper Guard Bracelet",
+    "level": 2,
+    "seed": 20,
+    "source": "item",
+    "id": "world-item-2-1-copper-guard-bracelet",
+    "x": 80,
+    "y": 28
+  },
+  {
+    "name": "Copper Ring of Vigor",
+    "level": 2,
+    "seed": 29,
+    "source": "crate",
+    "id": "crate-1",
+    "x": 62,
+    "y": 65
+  },
+  {
+    "name": "Quartz Amulet",
+    "level": 2,
+    "seed": 31,
+    "source": "chest",
+    "id": "chest-1",
+    "x": 50,
+    "y": 83
+  },
+  {
+    "name": "Silver Guard Bracelet",
+    "level": 4,
+    "seed": 1,
+    "source": "item",
+    "id": "world-item-4-1-silver-guard-bracelet",
+    "x": 26,
+    "y": 65
+  },
+  {
+    "name": "Silver Ring of Vigor",
+    "level": 4,
+    "seed": 10,
+    "source": "item",
+    "id": "world-item-4-2-silver-ring-of-vigor",
+    "x": 32,
+    "y": 91
+  },
+  {
+    "name": "Sapphire Amulet",
+    "level": 4,
+    "seed": 27,
+    "source": "item",
+    "id": "world-item-4-2-sapphire-amulet",
+    "x": 21,
+    "y": 46
+  },
+  {
+    "name": "Prismatic Amulet",
+    "level": 6,
+    "seed": 16,
+    "source": "item",
+    "id": "world-item-6-3-prismatic-amulet",
+    "x": 75,
+    "y": 76
+  },
+  {
+    "name": "Gold Guard Bracelet",
+    "level": 7,
+    "seed": 10,
+    "source": "crate",
+    "id": "crate-2",
+    "x": 20,
+    "y": 89
+  },
+  {
+    "name": "Star Sapphire Amulet",
+    "level": 7,
+    "seed": 27,
+    "source": "item",
+    "id": "world-item-7-2-star-sapphire-amulet",
+    "x": 21,
+    "y": 46
+  },
+  {
+    "name": "Gold Ring of Vigor",
+    "level": 7,
+    "seed": 77,
+    "source": "item",
+    "id": "world-item-7-1-gold-ring-of-vigor",
+    "x": 83,
+    "y": 18
+  }
+]

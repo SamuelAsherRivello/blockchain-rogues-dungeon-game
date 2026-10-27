@@ -1,7 +1,8 @@
 import type { WorldAttributes } from '../../game/types.ts';
 import { effectiveWorldRank } from './world-attributes.ts';
+import { JEWEL_CATALOG, jewelDefinition } from '../../content/items/jewel-catalog.ts';
 
-export const WORLD_BALANCE_VERSION = 'world-balance-1';
+export const WORLD_BALANCE_VERSION = 'world-balance-2-jewels';
 export const WORLD_BALANCE_LEVEL_MAX = 10;
 
 export type WorldBalanceRarity = 'common' | 'uncommon' | 'rare' | 'very-rare';
@@ -54,6 +55,7 @@ export const WORLD_ITEM_UNLOCK_LEVELS = Object.freeze({
   'Chest Armor': 3,
   'Leg Armor (Magic)': 3,
   'Suit of Armor': 3,
+  ...Object.fromEntries(JEWEL_CATALOG.map(jewel => [jewel.name, jewel.unlockLevel])),
 });
 
 export const WORLD_ITEM_RARITIES: Readonly<Record<string, WorldBalanceRarity>> = Object.freeze({
@@ -69,6 +71,7 @@ export const WORLD_ITEM_RARITIES: Readonly<Record<string, WorldBalanceRarity>> =
   'Chest Armor': 'rare',
   'Leg Armor (Magic)': 'rare',
   'Suit of Armor': 'very-rare',
+  ...Object.fromEntries(JEWEL_CATALOG.map(jewel => [jewel.name, jewel.rarity])),
 });
 
 export const ENEMY_UNLOCK_COUNTS = Object.freeze([2, 4, 6, 7, Number.MAX_SAFE_INTEGER]);
@@ -90,6 +93,21 @@ export function worldItemRarity(name: string) { return WORLD_ITEM_RARITIES[name]
 export function eligibleWorldItemNames(level: number, names: readonly string[] = Object.keys(WORLD_ITEM_UNLOCK_LEVELS)) {
   const normalizedLevel = worldBalanceLevel(level);
   return names.filter(name => worldItemUnlockLevel(name) <= normalizedLevel);
+}
+
+export const JEWEL_SELECTION_CHANCE = 0.25;
+
+/** Jewels share existing item budgets without diluting legacy loot by catalog size. */
+export function selectWorldItemName(level: number, names: readonly string[], random: () => number): string | undefined {
+  const eligible = eligibleWorldItemNames(level, names);
+  const jewels = eligible.flatMap(name => { const jewel = jewelDefinition(name); return jewel ? [jewel] : []; });
+  const ordinary = eligible.filter(name => !jewelDefinition(name));
+  if (jewels.length && (!ordinary.length || random() < JEWEL_SELECTION_CHANCE)) {
+    let roll = random() * jewels.reduce((total, jewel) => total + jewel.weight, 0);
+    for (const jewel of jewels) { roll -= jewel.weight; if (roll < 0) return jewel.name; }
+    return jewels.at(-1)!.name;
+  }
+  return ordinary.length ? ordinary[Math.floor(random() * ordinary.length)] : undefined;
 }
 
 export function worldBalanceProfile(level: number, difficulty = level, attributes?: WorldAttributes): WorldBalanceProfile {
