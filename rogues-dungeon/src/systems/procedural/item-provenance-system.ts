@@ -1,4 +1,4 @@
-import type { Campaign, Floor, Item, ItemLot } from "../../game/types.ts";
+import type { Campaign, Entity, Floor, Item, ItemLot } from "../../game/types.ts";
 
 export function runItemIdentity(campaign: Campaign, id: string) { return `${campaign.worldSeed ?? campaign.floor.seed}:${campaign.slot ?? 1}:${campaign.run ?? 1}:${id}`; }
 
@@ -65,7 +65,7 @@ export function applyStorageExclusions(campaign: Campaign) {
     return item ? { item, quantity: item.quantity ?? slot.quantity } : null;
   }) as Campaign["player"]["quickSlots"];
   const floors = new Set<Floor>([campaign.floor, ...Object.values(campaign.floors ?? {})]);
-  for (const floor of floors) floor.entities = floor.entities.flatMap(entity => {
+  for (const floor of floors) floor.entities = floor.entities.flatMap<Entity>(entity => {
     if (entity.kind === "item") { const item = filtered(entity.item); return item ? [{ ...entity, item }] : []; }
     if (entity.kind === "potion") {
       const item = filtered({ id: entity.id, name: "Potion", group: "weapons", modifiers: {}, quantity: entity.quantity ?? 1 });
