@@ -1,5 +1,10 @@
 # Mixed input verification
 
+For the 2026-10-29 shared-source recheck, see
+[current integration verification](integration-verification.md). Mixed-input
+checks pass. The subsequent finalization check also passes type checking and
+all 21 affected Jewel and Lockbox tests after their shared compiler fixes.
+
 ## Browser acceptance
 
 Verified on the existing project server at `http://127.0.0.1:6080/blockchain-rogues-dungeon-game/?mute=1` using Playwright CLI with Microsoft Edge and a simulated standard controller. No additional server was started or stopped.
