@@ -130,3 +130,13 @@ The final repository Node log records 571/571 with zero failures. The supporting
 `output/fog-oct29-combined-source-before.json`, captured at 16:10:19 UTC, covers 799 source, test, game-art and configuration files. SHA-256 is `e180038be8eb9aa18581be55384ecc233aa84e400a1c7818b22df2496b4fec3b`. Fog verified it unchanged across the gate; this owner independently ran its read-only verification at closeout and received the same digest with `verified: true`. The accepted snapshot includes the capacity correction, all ten 16-pixel Jewel sprites, and the -8-pixel main-art offset for Oak Shield 03 and Suit of Armor. Historical freeze manifests and pre-integration failures above remain historical evidence only.
 
 The requirement matrix, all-ten production witnesses, selector measurements, fixed item data, completed graphic/frame registrations and source-art preservation checks are reconciled with the final passing gate. The user's Jewel visual acceptance is recorded above. No temporary Jewel art, missing item source, pair bonus, lost/duplicated Jewel ownership, or unresolved Jewel acceptance failure remains. Shared Lockbox persistence edits and the other owners' renderer/animation work were preserved. Only this change's verification record and task checkboxes are edited for final closeout.
+
+## Finalization readiness, 2026-10-30
+
+The explicit finalize/sync/archive/commit/push request selected this change. The current CLI confirmed all 29 tasks complete, all artifacts complete, and strict change validation passing. All 19 delta requirements across the five selected capabilities already matched the main specs exactly, so sync was a verified no-op. Strict main-spec validation passed 60/60.
+
+Fresh repository validation passed 579/579 Node tests with zero failures in 110.292 seconds (`output/jewel-finalize-node.log`). `npm run build`, including both TypeScript configurations, passed (`output/jewel-finalize-build.log`). The completed browser and human visual evidence remains recorded above; this finalization changes planning records only and launched no browser or server. The Jewel implementation and synced main specs were already committed before this finalization began.
+
+The supported CLI archived the completed change to `openspec/changes/archive/2026-10-30-add-flexible-jewel-equipment/`, preserving all planning, test-seed and verification artifacts. No unrelated change or shared spec was staged as part of this archive operation.
+
+Strict archived-change validation passed 67/67 after this archive (`output/jewel-finalize-archive-validation.json`).
