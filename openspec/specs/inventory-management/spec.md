@@ -186,19 +186,23 @@ Inventory SHALL calculate effective capacity as the base capacity plus the modif
 - **THEN** effective capacity decreases by five and the transfer is rejected if removing it would leave the remaining contents over capacity
 
 ### Requirement: Provide a permanent Drop Item destination
-Inventory SHALL render a first Drop Item row above all capacity-counted rows regardless of current item count. The row SHALL accept incoming transferable objects, SHALL not be draggable, and SHALL not count toward capacity.
+The player's ordinary Inventory SHALL render a first Drop Item row above all capacity-counted rows regardless of current item count. The row SHALL accept incoming transferable objects, SHALL not be draggable, and SHALL not count toward capacity. A shared inventory presentation configured for lockbox storage SHALL omit this row and disable world-drop behavior.
 
 #### Scenario: Read Drop Item
-- **WHEN** Inventory is displayed with any number of items
+- **WHEN** ordinary player Inventory is displayed with any number of items outside a lockbox session
 - **THEN** a neutral empty-looking row labeled `[ Drop Item ]` appears above the first inventory row
 
 #### Scenario: Drop from Inventory
-- **WHEN** an Inventory item is released over Drop Item
+- **WHEN** an Inventory item is released over Drop Item outside a lockbox session
 - **THEN** the item is removed from Inventory only after the world drop commits
 
 #### Scenario: Drop Extra Space while over capacity
-- **WHEN** Extra Space is released over Drop Item and the remaining inventory exceeds base capacity
+- **WHEN** Extra Space is released over Drop Item outside a lockbox session and the remaining inventory exceeds base capacity
 - **THEN** the same action deterministically drops enough additional inventory stacks to restore base capacity, placing each dropped object in a distinct walkable cell found by expanding beyond the nearby ring when necessary
+
+#### Scenario: Display a lockbox
+- **WHEN** the shared inventory presentation displays lockbox contents
+- **THEN** no Drop Item row or world-drop action is available
 
 ### Requirement: Store abilities in Inventory
 Inventory SHALL accept an ability transferred from an occupied Ability position and SHALL display it as a draggable ability entry without applying its effect while stored there.
@@ -213,3 +217,18 @@ When Inventory entry count exceeds carrying capacity, the player SHALL need two 
 #### Scenario: Take an encumbered step
 - **WHEN** an encumbered player presses the same valid movement direction twice
 - **THEN** the second input moves one tile and advances one turn
+
+### Requirement: Configure the shared inventory presentation for a container
+The shared inventory presentation SHALL support configurable contents, capacity, container identity, and Drop Item visibility. Its defaults SHALL preserve the player Inventory's effective capacity, alphabetical placement of unpositioned items, category cues, and scrolling. Items positioned by storage dragging SHALL retain their chosen container slot. Lockbox mode SHALL display its own contents and ten fixed capacity positions without reading player-carried capacity bonuses.
+
+#### Scenario: Render player Inventory and lockbox together
+- **WHEN** both containers are visible during a lockbox session
+- **THEN** each displays its own contents and capacity and drag feedback identifies the correct source and destination
+
+#### Scenario: Preserve ordinary Inventory defaults
+- **WHEN** player Inventory is shown without lockbox mode
+- **THEN** its existing effective-capacity calculation, category cues, scrollbar, and Drop Item row are preserved, with unpositioned items filling available positions alphabetically
+
+#### Scenario: Choose a storage destination
+- **WHEN** the player drags an item over an available row in either the open lockbox or Inventory
+- **THEN** only the hovered valid row highlights and a completed transfer keeps the item in that selected position, including after reload
