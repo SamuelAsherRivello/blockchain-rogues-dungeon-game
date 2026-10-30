@@ -268,7 +268,7 @@ button:focus-visible { outline:2px solid #f6de92; outline-offset:2px; }
 .world-view__ui-animation { position:fixed; z-index:10000; overflow:hidden; pointer-events:none; transition:left 500ms cubic-bezier(.22,.61,.36,1),top 500ms cubic-bezier(.22,.61,.36,1),width 500ms cubic-bezier(.22,.61,.36,1),height 500ms cubic-bezier(.22,.61,.36,1); animation:world-view-ui-animation-flight 500ms cubic-bezier(.22,.61,.36,1) forwards; }
 .world-view__ui-animation--shrinking { animation:world-view-ui-animation-shrink 300ms ease-in forwards; }
 .world-view__ui-animation-sprite { display:block; width:300%; height:300%; max-width:none; image-rendering:pixelated; }
-.world-view__ui-animation-sprite--droppable { width:400%; height:300%; }
+.world-view__ui-animation-sprite--droppable { width:var(--droppable-atlas-width); height:var(--droppable-atlas-height); }
 .world-view__ui-animation-sprite--gold { width:400%; height:100%; animation:world-view-ui-animation-gold 480ms steps(4) infinite; }
 @keyframes world-view-ui-animation-flight { 0% { opacity:0; transform:translate(-50%,-50%) scale(1); } 20% { opacity:1; transform:translate(-50%,-50%) scale(1.25); } 100% { opacity:1; transform:translate(-50%,-50%) scale(1); } }
 @keyframes world-view-ui-animation-shrink { from { opacity:1; transform:translate(-50%,-50%) scale(1); } to { opacity:0; transform:translate(-50%,-50%) scale(0); } }
@@ -322,6 +322,15 @@ button:focus-visible { outline:2px solid #f6de92; outline-offset:2px; }
 .slot_item--occupied-secondary .slot_item_icon,.slot_item--occupied-secondary .slot_item_cost { color:var(--slot-disabled-color); }
 .inventory_drop_item { justify-content:center; color:var(--slot-disabled-color); text-align:center; }
 .inventory_drop_item_row { width:100%; margin-bottom:.18rem; padding-right:var(--slot-right-inset); box-sizing:border-box; }
+.inventory-container { display:flex; flex-direction:column; width:100%; height:100%; min-height:0; }
+.inventory-container > .inventory_scroll { flex:1; height:0; min-height:0; }
+.inventory-container > .inventory_drop_item_row { flex:none; }
+
+.lockbox-window { pointer-events:auto; }
+
+.game-screen[data-lockbox-open="true"] .inventory_drop_item { pointer-events:none; opacity:.5; }
+.game-screen[data-lockbox-open="true"] .info-panel--secondary { pointer-events:none; }
+.game-screen[data-lockbox-open="true"] .info-panel--primary button:not(.slot_item) { pointer-events:none; }
 .inventory_drop_item { width:100%; }
 .inventory_drop_item .slot_item_text { flex:0 0 auto; justify-content:center; color:var(--slot-disabled-color); }
 .inventory_drop_item.drag_landing .slot_item_text { color:#f0a1a1; }
@@ -1043,3 +1052,9 @@ button:focus-visible { outline:2px solid #f6de92; outline-offset:2px; }
 .game-screen[data-orientation="portrait"] .mobile-information-panels .info-panel--performance { height:100%; }
 
 #viewport[data-orientation] .how-to-play-window .dialog_body { overflow-x:hidden; overflow-y:scroll; }
+
+.dialog_backdrop:has(.lockbox-window.settings-window--game) { background:transparent; pointer-events:none; }
+.lockbox-window.settings-window--game .dialog_body { display:flex; min-height:0; overflow:hidden; }
+
+
+.game-screen[data-orientation="portrait"] .settings-window--game { height:40%; }

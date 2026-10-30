@@ -3,12 +3,21 @@ import { countPerformance } from "./performance-system.ts";
 import type { Direction, Entity, FloorTriggerDoorBarrelSet, MassBearingPosition, ObjectSet, Position, TerrainCell, WorldDecoration } from "../../game/types.ts";
 import { enemyCharacterForName } from "../../content/enemies/enemy-idle-animation.ts";
 type RenderGrid = number[][] | TerrainCell[][];
-interface WangEntry extends Position { mask: number; worldX: number; worldY: number; frame: number | null; floorFrame?: number | null; quarters?: import("./tileset-wang-rules.ts").WallQuarter[] }
+interface WangEntry extends Position { mask: number; worldX: number; worldY: number; frame: number | null; role?: string; floorFrame?: number | null; quarters?: import("./tileset-wang-rules.ts").WallQuarter[] }
 interface WangModel { tileSize: number; terrain: WangEntry[]; walls: WangEntry[]; diagnostics: Omit<WangEntry, "frame">[]; wallDiagnostics: Omit<WangEntry, "frame">[] }
 interface WorldOptions { map?: number[][] | null; cells?: TerrainCell[][] | null; entities?: Entity[]; decorations?: WorldDecoration[]; objectSets?: ObjectSet[]; player: MassBearingPosition; start?: Position; tileSize?: number; view?: string; detail?: string; groundTiles?: number[] | null; wallTiles?: number[] | null; isDiscovered?: (position: Position) => boolean }
 interface Projection { center: Position; viewportWidth: number; viewportHeight: number; tileCssSize: number }
+interface PuzzleObjectPresentationBase extends Position { id: string; active: boolean; worldX: number; worldY: number }
+export type PuzzleObjectPresentation =
+  | (PuzzleObjectPresentationBase & { kind: "trigger" })
+  | (PuzzleObjectPresentationBase & { kind: "barrel" })
+  | (PuzzleObjectPresentationBase & { kind: "door"; wallAxis: "horizontal" | "vertical" });
 export interface WorldCellBounds { minX: number; maxX: number; minY: number; maxY: number }
 function isLegacyGrid(grid: RenderGrid): grid is number[][] { return Array.isArray(grid) && (grid.length === 0 || typeof grid[0]?.[0] === "number"); }
+function doorWallAxis(grid: RenderGrid, door: Position): "horizontal" | "vertical" {
+  const walkable = (x: number, y: number) => isLegacyGrid(grid) ? grid[y]?.[x] === 0 : Boolean(grid[y]?.[x]?.walkable);
+  return walkable(door.x, door.y - 1) || walkable(door.x, door.y + 1) ? "horizontal" : "vertical";
+}
 import { buildDungeonWangTerrain, buildDungeonWangWalls } from "./tile-map-system.ts";
 
 const wangTerrainCache = new WeakMap<RenderGrid, WangModel>();
@@ -87,12 +96,12 @@ export const WorldRender = Object.freeze({
     const walls = rendered.walls;
     const actors = entities.filter((entry): entry is Extract<Entity, { kind: "enemy" }> => entry.kind === "enemy" && isDiscovered(entry)).map((entry) => ({ id: entry.id, kind: (entry.character ?? enemyCharacterForName(entry.name)) as ReturnType<typeof enemyCharacterForName>, character: (entry.character ?? enemyCharacterForName(entry.name)) as ReturnType<typeof enemyCharacterForName>, heading: entry.heading ?? "e", x: entry.x, y: entry.y, worldX: entry.x * tileSize + tileSize / 2, worldY: entry.y * tileSize + tileSize / 2 }));
     const objects = entities.filter((entry) => isDiscovered(entry) && ["item", "potion", "key", "gold", "chest", "crate", "campfire", "stairs", "teleport-arrow", "discovery"].includes(entry.kind)).map((entry) => ({ id: entry.id, ...worldPickupPresentation(entry), item: entry.kind === "item" ? entry.item : undefined, direction: entry.kind === "stairs" || entry.kind === "teleport-arrow" ? entry.direction : undefined, opened: entry.kind === "chest" || entry.kind === "crate" ? Boolean(entry.opened) : false, openFrame: entry.kind === "crate" ? entry.openFrame : undefined, x: entry.x, y: entry.y, worldX: entry.x * tileSize + tileSize / 2, worldY: entry.y * tileSize + tileSize / 2 }));
-    const puzzleObjects = objectSets.flatMap((set) => {
+    const puzzleObjects = objectSets.flatMap<PuzzleObjectPresentation>((set) => {
       if (set.kind === "encounter-lockdown") {
         const doorsOpen = !set.activated || set.completed;
         return [
           ...set.triggers.map((trigger, index) => ({ id: `${set.id}-trigger-${index}`, kind: "trigger" as const, active: set.activated && !set.completed, x: trigger.x, y: trigger.y, worldX: trigger.x * tileSize + tileSize / 2, worldY: trigger.y * tileSize + tileSize / 2 })),
-          ...set.doors.map((door, index) => ({ id: `${set.id}-door-${index}`, kind: "door" as const, active: doorsOpen, x: door.x, y: door.y, worldX: door.x * tileSize + tileSize / 2, worldY: door.y * tileSize + tileSize / 2 })),
+          ...set.doors.map((door, index) => ({ id: `${set.id}-door-${index}`, kind: "door" as const, active: doorsOpen, wallAxis: doorWallAxis(grid, door), x: door.x, y: door.y, worldX: door.x * tileSize + tileSize / 2, worldY: door.y * tileSize + tileSize / 2 })),
         ].filter(isDiscovered);
       }
       const active = [player, set.barrel, ...entities].some((object) => {
@@ -104,7 +113,7 @@ export const WorldRender = Object.freeze({
       return [
         { id: `${set.id}-trigger`, kind: "trigger" as const, active, x: set.trigger.x, y: set.trigger.y, worldX: set.trigger.x * tileSize + tileSize / 2, worldY: set.trigger.y * tileSize + tileSize / 2 },
         { id: `${set.id}-barrel`, kind: "barrel" as const, active: false, x: set.barrel.x, y: set.barrel.y, worldX: set.barrel.x * tileSize + tileSize / 2, worldY: set.barrel.y * tileSize + tileSize / 2 },
-        { id: `${set.id}-door`, kind: "door" as const, active, x: set.door.x, y: set.door.y, worldX: set.door.x * tileSize + tileSize / 2, worldY: set.door.y * tileSize + tileSize / 2 },
+        { id: `${set.id}-door`, kind: "door" as const, active, wallAxis: doorWallAxis(grid, set.door), x: set.door.x, y: set.door.y, worldX: set.door.x * tileSize + tileSize / 2, worldY: set.door.y * tileSize + tileSize / 2 },
       ].filter(isDiscovered);
     });
     const wallDecorations = decorations.filter(isDiscovered).filter((decoration) => view === "game" || decoration.kind !== "start-room-wall").map((decoration) => ({ ...decoration, worldX: decoration.x * tileSize + tileSize / 2, worldY: decoration.y * tileSize + tileSize / 2 }));

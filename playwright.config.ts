@@ -1,3 +1,4 @@
+import "./rogues-dungeon/test/tiled-raw-import.mjs";
 import { defineConfig, devices } from "@playwright/test";
 import { compatibleFixtureStorageState } from "./rogues-dungeon/test/browser/fixture-storage.ts";
 

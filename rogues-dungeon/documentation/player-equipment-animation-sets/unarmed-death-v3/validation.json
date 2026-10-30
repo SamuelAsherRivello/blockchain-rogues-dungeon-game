@@ -1,0 +1,38 @@
+{
+  "ok": true,
+  "errors": [],
+  "warnings": [
+    {
+      "id": "edge-contact",
+      "frame": "death-00",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "death-01",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "death-02",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "death-03",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "death-05",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    }
+  ],
+  "scope": "structural",
+  "visualStatus": "pending",
+  "manifestHash": "31b0a909327ffdd4a62f956a0f32982c7a243e119942cd7f9ffbf5a1d7dee8e7",
+  "sheetHashes": {
+    "sheet-000": "3d9f04c9affef9a7f4efe4ea8ba628e7a4a3f424ecc0d541c4a9d4a35378d76c",
+    "sheet-001": "2f3c8d2ba0de8b146ebc194f6d83d490fb93687226889c42a3c7ad0889b2c029"
+  }
+}

@@ -1,0 +1,3 @@
+# Implementation planning handoff
+
+This is the original game-repository planning copy. Implementation was carried into the maintained skills repository before source work. The canonical OpenSpec root is D:/Documents/Projects/VC/AI/ai-skills-tiled, nearest repo-local context, no store, change ai-skills-tiled-create-spritesheet-png, branch main. Its planning-handoff.md records setup and task 1.1 evidence. Read status/instructions in that exact root for current progress. This copy's unchecked tasks are not an implementation counter; they have not been checked from a different root's aggregate count. No game source is part of this skill implementation.

@@ -1,0 +1,58 @@
+{
+  "manifestHash": "31b0a909327ffdd4a62f956a0f32982c7a243e119942cd7f9ffbf5a1d7dee8e7",
+  "sheetHashes": {
+    "sheet-000": "3d9f04c9affef9a7f4efe4ea8ba628e7a4a3f424ecc0d541c4a9d4a35378d76c",
+    "sheet-001": "2f3c8d2ba0de8b146ebc194f6d83d490fb93687226889c42a3c7ad0889b2c029"
+  },
+  "contactSheet": "review/contact-sheet.png",
+  "sequences": [
+    {
+      "id": "death",
+      "apng": "review/animation-000.apng",
+      "gif": "review/animation-000.gif",
+      "durationsMs": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "gifDurationsMs": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "loop": false
+    }
+  ],
+  "artifacts": [
+    "review/frames/frame-000.png",
+    "review/frames/frame-001.png",
+    "review/frames/frame-002.png",
+    "review/frames/frame-003.png",
+    "review/frames/frame-004.png",
+    "review/frames/frame-005.png",
+    "review/contact-sheet.png",
+    "review/animation-000.apng",
+    "review/animation-000.gif"
+  ],
+  "items": [
+    {
+      "id": "identity",
+      "verdict": "pass",
+      "evidence": "Inspected every unarmed native frame and the enlarged contact sheet on light/dark backgrounds. Original palette, fixed original canvas/body registration, and binary alpha were also verified. Original worn armor, helmet, body and visible equipment retain source identity. Manual repairs use the user-approved bounded method.",
+      "check": "Inspect every frame at native size on light/dark: identity, scale, complete art, palette, handedness."
+    },
+    {
+      "id": "sequence:death",
+      "verdict": "pass",
+      "evidence": "Observed unarmed/death in the actual Edge gallery at runtime speed 0.5 and checked all current native crops/contact poses. Both carried and dropped equipment are absent. The six-pose fall and horizontal one-shot ending were inspected; reconstructed lower-body pixels do not shift the protected original pose.",
+      "check": "Inspect actual playback/timing, action progression and loop seam or one-shot ending."
+    }
+  ],
+  "playbackEvidence": "animation-review.html?mute=1 using current v3 manifests, Edge tab 550460381; original and three variants reviewed independently. This is agent inspection, not user approval of Hero Warrior artwork."
+}

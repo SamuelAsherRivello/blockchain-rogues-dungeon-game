@@ -55,13 +55,7 @@ export function ScrollArea({ autoScroll = false, children, className = "", onScr
   };
 
   return <div {...props} className={`scroll-area ${className}`}>
-    <div ref={viewportRef} className="scroll-area__viewport" onWheel={(event) => {
-      const viewport = event.currentTarget;
-      if (!viewport.scrollHeight || viewport.scrollHeight <= viewport.clientHeight) return;
-      viewport.scrollTop += event.deltaY;
-      event.preventDefault();
-      measure();
-    }} onScroll={(event) => {
+    <div ref={viewportRef} className="scroll-area__viewport" onScroll={(event) => {
       const viewport = event.currentTarget;
       if (autoScroll && viewport.clientHeight > 0) following.current = viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop <= 1;
       measure();

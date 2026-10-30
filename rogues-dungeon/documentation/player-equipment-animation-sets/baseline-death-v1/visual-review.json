@@ -1,0 +1,57 @@
+{
+  "manifestHash": "2e927e95d99d78b65a19787f7c66f7890c780945c2a77691b8e002fc786571c4",
+  "sheetHashes": {
+    "sheet-000": "3d9f04c9affef9a7f4efe4ea8ba628e7a4a3f424ecc0d541c4a9d4a35378d76c"
+  },
+  "contactSheet": "review/contact-sheet.png",
+  "sequences": [
+    {
+      "id": "death",
+      "apng": "review/animation-000.apng",
+      "gif": "review/animation-000.gif",
+      "durationsMs": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "gifDurationsMs": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "loop": false
+    }
+  ],
+  "artifacts": [
+    "review/frames/frame-000.png",
+    "review/frames/frame-001.png",
+    "review/frames/frame-002.png",
+    "review/frames/frame-003.png",
+    "review/frames/frame-004.png",
+    "review/frames/frame-005.png",
+    "review/contact-sheet.png",
+    "review/animation-000.apng",
+    "review/animation-000.gif"
+  ],
+  "items": [
+    {
+      "id": "identity",
+      "verdict": "pass",
+      "evidence": "All source frames inspected on the helper light/dark contact sheets; source overlays proved RGBA identity and zero translation. Helmet, face, worn armor, silhouette and equipment match supplied pixels.",
+      "check": "Inspect every frame at native size on light/dark: identity, scale, complete art, palette, handedness."
+    },
+    {
+      "id": "sequence:death",
+      "verdict": "pass",
+      "evidence": "Six poses progress from standing through a fall to a horizontal terminal body with dropped sword and shield. Edge shows frame 6/6 Complete and holds the ending.",
+      "check": "Inspect actual playback/timing, action progression and loop seam or one-shot ending."
+    }
+  ],
+  "runtimePlaybackEvidence": "animation-review.html?mute=1, Edge, native source crops with 4x display and base duration / 0.5; contact sheet inspection at native scale."
+}

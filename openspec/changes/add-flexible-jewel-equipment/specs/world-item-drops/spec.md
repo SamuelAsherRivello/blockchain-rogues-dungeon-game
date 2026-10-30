@@ -12,6 +12,8 @@ Each of the ten Jewels SHALL have its own finished world graphic, recognizable a
 ### Requirement: Keep Jewel art consistent across discovery and transfer
 A Jewel SHALL use the same item graphic when generated on the floor, released from a chest or crate, thrown by a player drop, settled on the ground, and transferred from the world to Inventory. Existing ground anchors, shadows, visibility, transfer timing, and category colors SHALL continue to apply.
 
+All ten Jewels SHALL render at 16 by 16 world pixels, 50% of the original item width and height, while settled and thrown. Ground shadows SHALL scale proportionately. Pickup transfers SHALL begin at that same world size and retain the existing receiving Inventory row size and transfer timing.
+
 #### Scenario: Follow a Jewel from discovery to Inventory
 - **WHEN** a generated Sapphire Amulet is collected
 - **THEN** its world sprite transfers to its receiving Inventory row without changing to another item's frame and the row credit follows existing transfer timing

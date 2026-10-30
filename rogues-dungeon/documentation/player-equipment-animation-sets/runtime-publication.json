@@ -1,0 +1,425 @@
+{
+  "sheets": [
+    {
+      "appearance": "sword-only",
+      "clip": "idle-down",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/sword-only/idle-down.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/sword-only-directional-v3/spritesheet-manifest.json",
+      "sha256": "d4e4e56fdd6b81ae893d0b45b037e3ab19bdc5a445ad710ff0927c3ba11bb27d",
+      "frameCount": 4,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "sword-only",
+      "clip": "idle-side",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/sword-only/idle-side.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/sword-only-directional-v3/spritesheet-manifest.json",
+      "sha256": "52ccab57f98405b8241410dfd1b7be410c34e7bcc6d37437da6390991d423e91",
+      "frameCount": 4,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "sword-only",
+      "clip": "idle-up",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/sword-only/idle-up.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/sword-only-directional-v3/spritesheet-manifest.json",
+      "sha256": "386a61b34e9ef02ef0a191168a8a8ac234c6613ad526b332a64e6ea202e1e3ce",
+      "frameCount": 4,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "sword-only",
+      "clip": "run-down",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/sword-only/run-down.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/sword-only-directional-v3/spritesheet-manifest.json",
+      "sha256": "7d4d7455e6aa310b9857de803f83b7cc56cef02652158055a5e6b8542a8dd276",
+      "frameCount": 6,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "sword-only",
+      "clip": "run-side",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/sword-only/run-side.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/sword-only-directional-v3/spritesheet-manifest.json",
+      "sha256": "eb7d01e1bb4b82f7fc2a50c04e40b1d14fc086437bf84a610273314f41c943dd",
+      "frameCount": 6,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "sword-only",
+      "clip": "run-up",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/sword-only/run-up.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/sword-only-directional-v3/spritesheet-manifest.json",
+      "sha256": "1a5f97d1043e323d208cc8e951df571889e49ac2949b568d69d277dcbe73926d",
+      "frameCount": 6,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "sword-only",
+      "clip": "attack-down",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/sword-only/attack-down.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/sword-only-directional-v3/spritesheet-manifest.json",
+      "sha256": "b8aba0e5cc259e1a4a8d1fe4231d6fe71f57db30a2af3db37f9b2a7d42baf7a8",
+      "frameCount": 4,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "sword-only",
+      "clip": "attack-side",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/sword-only/attack-side.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/sword-only-directional-v3/spritesheet-manifest.json",
+      "sha256": "611a6ade09bef4d60f36ae16ac3b62c3c5654643ea992d0e9dbac440caaf00e8",
+      "frameCount": 4,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "sword-only",
+      "clip": "attack-up",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/sword-only/attack-up.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/sword-only-directional-v3/spritesheet-manifest.json",
+      "sha256": "e280b0e44f061df3e608a10e2b2a5befb687886e126c6eb093617edbf91c961e",
+      "frameCount": 4,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "sword-only",
+      "clip": "death",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/sword-only/death.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/sword-only-death-v3/spritesheet-manifest.json",
+      "sha256": "aabb67ab7a622bb52644f0d3c776b1a42f14469b170f5ab9a40e68f0539d74af",
+      "frameCount": 6,
+      "cellSize": [
+        48,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "shield-only",
+      "clip": "idle-down",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/shield-only/idle-down.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/shield-only-directional-v3/spritesheet-manifest.json",
+      "sha256": "b1625bf18e0e598f09ec5bdf6400b6e73dcfbc73c31230e87ecf50e5a1e81bb4",
+      "frameCount": 4,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "shield-only",
+      "clip": "idle-side",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/shield-only/idle-side.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/shield-only-directional-v3/spritesheet-manifest.json",
+      "sha256": "a7f62aa41343638df45aeac8e0c5a655633f88df12d040e92a63b9e0c97399d3",
+      "frameCount": 4,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "shield-only",
+      "clip": "idle-up",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/shield-only/idle-up.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/shield-only-directional-v3/spritesheet-manifest.json",
+      "sha256": "9e8bc89f63d90d0a455c09e3c6be68bd3e9e62ad2bf9e1b6e29c05764b8d2009",
+      "frameCount": 4,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "shield-only",
+      "clip": "run-down",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/shield-only/run-down.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/shield-only-directional-v3/spritesheet-manifest.json",
+      "sha256": "2371205d58a579c57b6dca102e8289d1c7ed9f8069fa9c865b5d0722442b73d4",
+      "frameCount": 6,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "shield-only",
+      "clip": "run-side",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/shield-only/run-side.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/shield-only-directional-v3/spritesheet-manifest.json",
+      "sha256": "3c0bb27efecc158c002929b7960be780f7c7b7691290ffd2ab318d19b35ceb5d",
+      "frameCount": 6,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "shield-only",
+      "clip": "run-up",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/shield-only/run-up.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/shield-only-directional-v3/spritesheet-manifest.json",
+      "sha256": "1f26f85d18a000be9a3dff3eb0f100433204492764eba50d139d87a84658435a",
+      "frameCount": 6,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "shield-only",
+      "clip": "attack-down",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/shield-only/attack-down.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/shield-only-directional-v3/spritesheet-manifest.json",
+      "sha256": "ee2dedadad971b71adcfa1d80a06f9597f0ec936eaec6feea82f1acd3f5aed5e",
+      "frameCount": 4,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "shield-only",
+      "clip": "attack-side",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/shield-only/attack-side.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/shield-only-directional-v3/spritesheet-manifest.json",
+      "sha256": "c06eefeef4b330839a3244514f8cb429dcb4651d36fa179e6fafbb2358bf464c",
+      "frameCount": 4,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "shield-only",
+      "clip": "attack-up",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/shield-only/attack-up.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/shield-only-directional-v3/spritesheet-manifest.json",
+      "sha256": "56837b9655347c180b31ccdbb8456d94ed48c2e75775b44a4152c04aa3603282",
+      "frameCount": 4,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "shield-only",
+      "clip": "death",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/shield-only/death.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/shield-only-death-v3/spritesheet-manifest.json",
+      "sha256": "d50dc9a2e9d5f9e606944e488c325c73e930b56fc3c622c44605a3b91b588133",
+      "frameCount": 6,
+      "cellSize": [
+        48,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "unarmed",
+      "clip": "idle-down",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/unarmed/idle-down.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/unarmed-directional-v3/spritesheet-manifest.json",
+      "sha256": "e039d4b1bbdd1c27a7841b340a09c66f0179fb63e4d4ad8e9af2382e73102463",
+      "frameCount": 4,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "unarmed",
+      "clip": "idle-side",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/unarmed/idle-side.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/unarmed-directional-v3/spritesheet-manifest.json",
+      "sha256": "bebb5893ddb7f718308c362a127a44123863571ea0e74fe9279c261e46da4d95",
+      "frameCount": 4,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "unarmed",
+      "clip": "idle-up",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/unarmed/idle-up.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/unarmed-directional-v3/spritesheet-manifest.json",
+      "sha256": "c5423a8c5cee0cf5c773cbe68c870d521f6ebbc8c9b5974d755bb45a68791c2c",
+      "frameCount": 4,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "unarmed",
+      "clip": "run-down",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/unarmed/run-down.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/unarmed-directional-v3/spritesheet-manifest.json",
+      "sha256": "998cc6af99add8697069d4b7fdb3c5ef675a37db9b1edb6bdbabd1e207eea5b5",
+      "frameCount": 6,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "unarmed",
+      "clip": "run-side",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/unarmed/run-side.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/unarmed-directional-v3/spritesheet-manifest.json",
+      "sha256": "d918a063366ce5574c2ec6c755a2ca5e57aeee795b619228e4233d012d90faf4",
+      "frameCount": 6,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "unarmed",
+      "clip": "run-up",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/unarmed/run-up.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/unarmed-directional-v3/spritesheet-manifest.json",
+      "sha256": "0e26ebb79ad614d0b57401435d9569f104cdeae7dfab5b45b1da533e64452f44",
+      "frameCount": 6,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "unarmed",
+      "clip": "attack-down",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/unarmed/attack-down.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/unarmed-directional-v3/spritesheet-manifest.json",
+      "sha256": "e8327b95faf778ffbeb83037f47b0e345baa72c14d4822334a364f4211a1bbf3",
+      "frameCount": 4,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "unarmed",
+      "clip": "attack-side",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/unarmed/attack-side.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/unarmed-directional-v3/spritesheet-manifest.json",
+      "sha256": "7d52e9e5f4de9120b11c21d54b87e4aac3909e10c4edaa77726d944985ab4739",
+      "frameCount": 4,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "unarmed",
+      "clip": "attack-up",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/unarmed/attack-up.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/unarmed-directional-v3/spritesheet-manifest.json",
+      "sha256": "88164a27404cea04ef4d256d686b0043d2cba839c8b6a4d85acd09fdb070daff",
+      "frameCount": 4,
+      "cellSize": [
+        32,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    },
+    {
+      "appearance": "unarmed",
+      "clip": "death",
+      "file": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/variants/unarmed/death.png",
+      "sourceManifest": "rogues-dungeon/documentation/player-equipment-animation-sets/unarmed-death-v3/spritesheet-manifest.json",
+      "sha256": "2f3c8d2ba0de8b146ebc194f6d83d490fb93687226889c42a3c7ad0889b2c029",
+      "frameCount": 6,
+      "cellSize": [
+        48,
+        48
+      ],
+      "columns": 6,
+      "rows": 1
+    }
+  ],
+  "additionalFrames": 144
+}

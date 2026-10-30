@@ -6,6 +6,43 @@ import { classifyPlatform, layoutForPlatform } from "./layout.ts";
 import { LayoutContext } from "./layout-context.ts";
 import { DEV_SETTINGS_STORAGE_KEYS, readDevAspect, readDevBoolean, writeDevAspect, writeDevBoolean } from "./dev-settings.ts";
 const SEQUENTIALLY_FOCUSABLE_SELECTOR = "a[href], area[href], button, input, select, textarea, iframe, object, embed, [contenteditable]:not([contenteditable=\"false\"]), [tabindex]";
+function scrollStepHeight(scroller: HTMLElement) {
+  const candidates = scroller.querySelectorAll<HTMLElement>(".slot_item, p, li, button, [role=\"option\"]");
+  for (const candidate of candidates) {
+    const height = candidate.getBoundingClientRect().height;
+    if (height > 0) return height;
+  }
+  const styles = getComputedStyle(scroller);
+  const lineHeight = Number.parseFloat(styles.lineHeight);
+  const fontSize = Number.parseFloat(styles.fontSize);
+  return lineHeight || fontSize * 1.35 || 16;
+}
+
+function scrollableAncestor(target: Element, direction: number) {
+  let element: HTMLElement | null = target instanceof HTMLElement ? target : target.parentElement;
+  while (element) {
+    const overflowY = getComputedStyle(element).overflowY;
+    const maxScroll = element.scrollHeight - element.clientHeight;
+    const canScroll = maxScroll > 0 && (overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay");
+    const canMove = direction < 0 ? element.scrollTop > 0 : element.scrollTop < maxScroll;
+    if (canScroll && canMove) return element;
+    element = element.parentElement;
+  }
+  return null;
+}
+
+function handleWheelScroll(event: WheelEvent) {
+  if (event.ctrlKey || event.deltaY === 0) return;
+  const target = event.target;
+  if (!(target instanceof Element) || target.closest(".world-view, .minimap-view")) return;
+  const direction = Math.sign(event.deltaY);
+  const scroller = scrollableAncestor(target, direction);
+  if (!scroller) return;
+
+  scroller.scrollTop += direction * scrollStepHeight(scroller);
+  event.preventDefault();
+  event.stopPropagation();
+}
 
 function readShowPivotPoints() {
   return readDevBoolean(DEV_SETTINGS_STORAGE_KEYS.pivots);
@@ -43,9 +80,11 @@ export function App({ content = null, gutters = {} }: { content?: ReactNode; gut
       event.stopImmediatePropagation();
     };
     window.addEventListener("keydown", preventTabNavigation, true);
+    document.addEventListener("wheel", handleWheelScroll, { capture: true, passive: false });
     return () => {
       observer.disconnect();
       window.removeEventListener("keydown", preventTabNavigation, true);
+      document.removeEventListener("wheel", handleWheelScroll, true);
     };
   }, []);
   const platform = classifyPlatform({ userAgentDataMobile: navigator.userAgentData?.mobile, userAgent: navigator.userAgent });

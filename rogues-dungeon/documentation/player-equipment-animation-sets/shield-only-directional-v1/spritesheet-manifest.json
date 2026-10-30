@@ -1,0 +1,1537 @@
+{
+  "schemaVersion": 1,
+  "entity": {
+    "id": "hero-warrior-directional",
+    "kind": "character"
+  },
+  "mode": "animated",
+  "operation": "modify",
+  "cellSize": [
+    32,
+    48
+  ],
+  "anchor": [
+    16,
+    48
+  ],
+  "style": {
+    "name": "Dungeons-and-Pixels Hero Warrior",
+    "pixelArt": true
+  },
+  "background": "transparent",
+  "sheets": [
+    {
+      "id": "sheet-000",
+      "group": "idle-down",
+      "file": "inherited/sheet-000.png",
+      "size": [
+        192,
+        48
+      ],
+      "columns": 6,
+      "rows": 1,
+      "margin": 0,
+      "spacing": 0,
+      "unusedSlots": [
+        [
+          4,
+          0
+        ],
+        [
+          5,
+          0
+        ]
+      ],
+      "sha256": "1d23f1ad7bf47e76a74bcfd7fa4d7ee1f67292b8f29e3472f84806c7a0cea90a",
+      "archivedSlots": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "sheet-001",
+      "group": "idle-side",
+      "file": "inherited/sheet-001.png",
+      "size": [
+        192,
+        48
+      ],
+      "columns": 6,
+      "rows": 1,
+      "margin": 0,
+      "spacing": 0,
+      "unusedSlots": [
+        [
+          4,
+          0
+        ],
+        [
+          5,
+          0
+        ]
+      ],
+      "sha256": "9ef0746d68a6926f20e27cb91dc025c4506440322a69a698b6216b9c7ee5943b",
+      "archivedSlots": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "sheet-002",
+      "group": "idle-up",
+      "file": "inherited/sheet-002.png",
+      "size": [
+        192,
+        48
+      ],
+      "columns": 6,
+      "rows": 1,
+      "margin": 0,
+      "spacing": 0,
+      "unusedSlots": [
+        [
+          4,
+          0
+        ],
+        [
+          5,
+          0
+        ]
+      ],
+      "sha256": "bba29c2b7297e193c639005f990eb834f4842818aab4b8aefd8d1a9fa4fb2644",
+      "archivedSlots": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "sheet-003",
+      "group": "run-down",
+      "file": "inherited/sheet-003.png",
+      "size": [
+        192,
+        48
+      ],
+      "columns": 6,
+      "rows": 1,
+      "margin": 0,
+      "spacing": 0,
+      "unusedSlots": [],
+      "sha256": "33bbeb9133dfbb9a773e18395401e0e346031674db3fba457b2715418eca2ff4",
+      "archivedSlots": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          0
+        ],
+        [
+          4,
+          0
+        ],
+        [
+          5,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "sheet-004",
+      "group": "run-side",
+      "file": "inherited/sheet-004.png",
+      "size": [
+        192,
+        48
+      ],
+      "columns": 6,
+      "rows": 1,
+      "margin": 0,
+      "spacing": 0,
+      "unusedSlots": [],
+      "sha256": "4276979b6541a5623d1e0c990a7536c78843fd840bbb7097f7d8e54bbc84a3bb",
+      "archivedSlots": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          0
+        ],
+        [
+          4,
+          0
+        ],
+        [
+          5,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "sheet-005",
+      "group": "run-up",
+      "file": "inherited/sheet-005.png",
+      "size": [
+        192,
+        48
+      ],
+      "columns": 6,
+      "rows": 1,
+      "margin": 0,
+      "spacing": 0,
+      "unusedSlots": [],
+      "sha256": "955f9e9bc1940a6308de376dae13020850df9906a49444b0f4311b77c44be880",
+      "archivedSlots": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          0
+        ],
+        [
+          4,
+          0
+        ],
+        [
+          5,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "sheet-006",
+      "group": "attack-down",
+      "file": "inherited/sheet-006.png",
+      "size": [
+        192,
+        48
+      ],
+      "columns": 6,
+      "rows": 1,
+      "margin": 0,
+      "spacing": 0,
+      "unusedSlots": [
+        [
+          4,
+          0
+        ],
+        [
+          5,
+          0
+        ]
+      ],
+      "sha256": "524d318147e1322cdb10aa831e5b41cee3832f610c62e40f955e7efcc2303131",
+      "archivedSlots": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "sheet-007",
+      "group": "attack-side",
+      "file": "inherited/sheet-007.png",
+      "size": [
+        192,
+        48
+      ],
+      "columns": 6,
+      "rows": 1,
+      "margin": 0,
+      "spacing": 0,
+      "unusedSlots": [
+        [
+          4,
+          0
+        ],
+        [
+          5,
+          0
+        ]
+      ],
+      "sha256": "20b09760e7d9fd20d860d56ba8decc8713293fad998383b291ab47b90bcf3a15",
+      "archivedSlots": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "sheet-008",
+      "group": "attack-up",
+      "file": "inherited/sheet-008.png",
+      "size": [
+        192,
+        48
+      ],
+      "columns": 6,
+      "rows": 1,
+      "margin": 0,
+      "spacing": 0,
+      "unusedSlots": [
+        [
+          4,
+          0
+        ],
+        [
+          5,
+          0
+        ]
+      ],
+      "sha256": "f3675d2e13a0c30cea17e867ddf2c87df75406970bfaf55b7715e39bebbb3e42",
+      "archivedSlots": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "sheet-009",
+      "group": "idle-down",
+      "file": "sheet-009.png",
+      "size": [
+        192,
+        48
+      ],
+      "columns": 6,
+      "rows": 1,
+      "margin": 0,
+      "spacing": 0,
+      "unusedSlots": [
+        [
+          4,
+          0
+        ],
+        [
+          5,
+          0
+        ]
+      ],
+      "sha256": "8d22eb040c46e786cca591552213673988f519a50214c7bcef88b49dba6ac227"
+    },
+    {
+      "id": "sheet-010",
+      "group": "idle-side",
+      "file": "sheet-010.png",
+      "size": [
+        192,
+        48
+      ],
+      "columns": 6,
+      "rows": 1,
+      "margin": 0,
+      "spacing": 0,
+      "unusedSlots": [
+        [
+          4,
+          0
+        ],
+        [
+          5,
+          0
+        ]
+      ],
+      "sha256": "a5cc1ea2d6cdd6060dd45172c78d8119eccc7b8d4d2e4a1703a10fce0cd048b6"
+    },
+    {
+      "id": "sheet-011",
+      "group": "idle-up",
+      "file": "sheet-011.png",
+      "size": [
+        192,
+        48
+      ],
+      "columns": 6,
+      "rows": 1,
+      "margin": 0,
+      "spacing": 0,
+      "unusedSlots": [
+        [
+          4,
+          0
+        ],
+        [
+          5,
+          0
+        ]
+      ],
+      "sha256": "9e8bc89f63d90d0a455c09e3c6be68bd3e9e62ad2bf9e1b6e29c05764b8d2009"
+    },
+    {
+      "id": "sheet-012",
+      "group": "run-down",
+      "file": "sheet-012.png",
+      "size": [
+        192,
+        48
+      ],
+      "columns": 6,
+      "rows": 1,
+      "margin": 0,
+      "spacing": 0,
+      "unusedSlots": [],
+      "sha256": "e7a6021e08ab36d76579f17740b83234e820a537937cd6a883255cb1f8727b13"
+    },
+    {
+      "id": "sheet-013",
+      "group": "run-side",
+      "file": "sheet-013.png",
+      "size": [
+        192,
+        48
+      ],
+      "columns": 6,
+      "rows": 1,
+      "margin": 0,
+      "spacing": 0,
+      "unusedSlots": [],
+      "sha256": "4e2700ec1c341abadcfb10ad445ee2c359a8c85b2d9727c017697d1c1c2c3976"
+    },
+    {
+      "id": "sheet-014",
+      "group": "run-up",
+      "file": "sheet-014.png",
+      "size": [
+        192,
+        48
+      ],
+      "columns": 6,
+      "rows": 1,
+      "margin": 0,
+      "spacing": 0,
+      "unusedSlots": [],
+      "sha256": "1f26f85d18a000be9a3dff3eb0f100433204492764eba50d139d87a84658435a"
+    },
+    {
+      "id": "sheet-015",
+      "group": "attack-down",
+      "file": "sheet-015.png",
+      "size": [
+        192,
+        48
+      ],
+      "columns": 6,
+      "rows": 1,
+      "margin": 0,
+      "spacing": 0,
+      "unusedSlots": [
+        [
+          4,
+          0
+        ],
+        [
+          5,
+          0
+        ]
+      ],
+      "sha256": "ed36892ab162c3f4396e98ce971c6ea3ba78525bb6a0f7ca09a7a829ca21ba63"
+    },
+    {
+      "id": "sheet-016",
+      "group": "attack-side",
+      "file": "sheet-016.png",
+      "size": [
+        192,
+        48
+      ],
+      "columns": 6,
+      "rows": 1,
+      "margin": 0,
+      "spacing": 0,
+      "unusedSlots": [
+        [
+          4,
+          0
+        ],
+        [
+          5,
+          0
+        ]
+      ],
+      "sha256": "a95675dd8da9884f9223c80863d85501e37d8cf459c01c753d9966342ffcfc4d"
+    },
+    {
+      "id": "sheet-017",
+      "group": "attack-up",
+      "file": "sheet-017.png",
+      "size": [
+        192,
+        48
+      ],
+      "columns": 6,
+      "rows": 1,
+      "margin": 0,
+      "spacing": 0,
+      "unusedSlots": [
+        [
+          4,
+          0
+        ],
+        [
+          5,
+          0
+        ]
+      ],
+      "sha256": "0c4715827ae472ea7ff94708155e086348764054d82814d3018aece91fbd0e04"
+    }
+  ],
+  "frames": [
+    {
+      "id": "idle-down-00",
+      "sheet": "sheet-009",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "49cfbb8d7298c83f24cf5fbd49cb2cdc19367acd4f22f109517ce338d3abe0d7",
+      "direction": "down"
+    },
+    {
+      "id": "idle-down-01",
+      "sheet": "sheet-009",
+      "rect": [
+        32,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "7308727d24f1380e1589dd27221f18b67030790d40be386a76b735c4fff7796d",
+      "direction": "down"
+    },
+    {
+      "id": "idle-down-02",
+      "sheet": "sheet-009",
+      "rect": [
+        64,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "a9cd01298dcbf3cfbc5f28ab718b45d861ab36d8d55945a25a0411be3cdd2ed2",
+      "direction": "down"
+    },
+    {
+      "id": "idle-down-03",
+      "sheet": "sheet-009",
+      "rect": [
+        96,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "029bf036ce5c0dd479b1172d84688b4be1f47ca89bf83f13b3b15122f33d207a",
+      "direction": "down"
+    },
+    {
+      "id": "idle-side-00",
+      "sheet": "sheet-010",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "101204519e1e55a55a3ae7f8c867ae47de8b9f7448eed52e0df8285f4e7b71a3",
+      "direction": "side"
+    },
+    {
+      "id": "idle-side-01",
+      "sheet": "sheet-010",
+      "rect": [
+        32,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "9750c3af6ec96607ca106cbfba08e5b7bcec3fc386508f0aa9e26e0f71f940f2",
+      "direction": "side"
+    },
+    {
+      "id": "idle-side-02",
+      "sheet": "sheet-010",
+      "rect": [
+        64,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "f67c1ee2919cee9248e26247531b0f82ab5a0f1086ffcd4ab8b8da243e72f35c",
+      "direction": "side"
+    },
+    {
+      "id": "idle-side-03",
+      "sheet": "sheet-010",
+      "rect": [
+        96,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "5a8187014acb47d25caf44720f612a8aa279d99509142af8d76621880702651c",
+      "direction": "side"
+    },
+    {
+      "id": "idle-up-00",
+      "sheet": "sheet-011",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "647a74cadf8a42dcf2b677064390005044c2d0abc00c2e86f3cc8a8605d27e15",
+      "direction": "up"
+    },
+    {
+      "id": "idle-up-01",
+      "sheet": "sheet-011",
+      "rect": [
+        32,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "8f72016b673a81a723d5f125d011d407d38d80bb39d9aa36c74f3200a5545786",
+      "direction": "up"
+    },
+    {
+      "id": "idle-up-02",
+      "sheet": "sheet-011",
+      "rect": [
+        64,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "f54a5a8f9b11f3baff65760e26502e2635d31be99aa15bb790827de6cdb9b44c",
+      "direction": "up"
+    },
+    {
+      "id": "idle-up-03",
+      "sheet": "sheet-011",
+      "rect": [
+        96,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "4b6931c8080206ec682edbaa70b4e5b555dff94e84bc91b5ce5031575d0feacc",
+      "direction": "up"
+    },
+    {
+      "id": "run-down-00",
+      "sheet": "sheet-012",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "3e13308eba3a4f68fdb721bc5bd8a152ea0c5bf6d8138c19b239626cbc611398",
+      "direction": "down"
+    },
+    {
+      "id": "run-down-01",
+      "sheet": "sheet-012",
+      "rect": [
+        32,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "8ce842a22536f499ad784fff3eb9583156bbbfe0d853a3aaab9c1c163582aafa",
+      "direction": "down"
+    },
+    {
+      "id": "run-down-02",
+      "sheet": "sheet-012",
+      "rect": [
+        64,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "12d4b94c447cc981a887d89a4e7639cbe7efccc3a0e048f90b9872d4c04b8213",
+      "direction": "down"
+    },
+    {
+      "id": "run-down-03",
+      "sheet": "sheet-012",
+      "rect": [
+        96,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "6928afe6169c864bb9460fa1127ac46635d38f136a96cff30b060b81c4ecda05",
+      "direction": "down"
+    },
+    {
+      "id": "run-down-04",
+      "sheet": "sheet-012",
+      "rect": [
+        128,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "94cf65c81f7061a118db258e39290c339531fa3b0438a09bedf35ebf614a0553",
+      "direction": "down"
+    },
+    {
+      "id": "run-down-05",
+      "sheet": "sheet-012",
+      "rect": [
+        160,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "15c6cfe4d4d5d3c964db7a7cec4d69f2a478eca0afcb97b96cc18bddfa7c0d80",
+      "direction": "down"
+    },
+    {
+      "id": "run-side-00",
+      "sheet": "sheet-013",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "964675a54ab85e6220a4168b0a3a37f35efbc8d32941bce406da754aded40798",
+      "direction": "side"
+    },
+    {
+      "id": "run-side-01",
+      "sheet": "sheet-013",
+      "rect": [
+        32,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "eae62800f138472e9faf7308a9096a363e0773e8c38382f31b568b4d62b987c9",
+      "direction": "side"
+    },
+    {
+      "id": "run-side-02",
+      "sheet": "sheet-013",
+      "rect": [
+        64,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "b27ee2d1f7aaaaca7f0c789d2102fc081c1fa156219bcd1b85b1d7c4c9ad7fd3",
+      "direction": "side"
+    },
+    {
+      "id": "run-side-03",
+      "sheet": "sheet-013",
+      "rect": [
+        96,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "e233cbd97e114a1a12954e7a6ef7294c87a8640d4158e2c94d4243fffaa93f17",
+      "direction": "side"
+    },
+    {
+      "id": "run-side-04",
+      "sheet": "sheet-013",
+      "rect": [
+        128,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "28f1a635036dcecd42008e670801a55798c342f0c5c610e0465c7b01eda6f96e",
+      "direction": "side"
+    },
+    {
+      "id": "run-side-05",
+      "sheet": "sheet-013",
+      "rect": [
+        160,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "017673a556123bb622753dbdd42088b220ca3d2db07649fd14324b2b2037b504",
+      "direction": "side"
+    },
+    {
+      "id": "run-up-00",
+      "sheet": "sheet-014",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "27ad63cf21f8e1983349ecb842bfda81619420262a1eb9d2f05c31673ad2088a",
+      "direction": "up"
+    },
+    {
+      "id": "run-up-01",
+      "sheet": "sheet-014",
+      "rect": [
+        32,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "8aecf3e6875f5f21ec68942e49e01367aed5c0325e9ff8f78332223e73636502",
+      "direction": "up"
+    },
+    {
+      "id": "run-up-02",
+      "sheet": "sheet-014",
+      "rect": [
+        64,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "756e35855e94d2fb2bd5890a947836235a32a70684f95f3b5a20169868c7485a",
+      "direction": "up"
+    },
+    {
+      "id": "run-up-03",
+      "sheet": "sheet-014",
+      "rect": [
+        96,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "c68594080845e4189e5309ab7f8b81a6590c84e1073e9f2382de9f7ab52e32f9",
+      "direction": "up"
+    },
+    {
+      "id": "run-up-04",
+      "sheet": "sheet-014",
+      "rect": [
+        128,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "3f7dcc703c2dffb5d87199d0bef9f9501b6821c956a024b2fb9bb46a1fd413cb",
+      "direction": "up"
+    },
+    {
+      "id": "run-up-05",
+      "sheet": "sheet-014",
+      "rect": [
+        160,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "31d75a32a0e60923135e3515510151f56c90e23b1a9e56b22edd7e5b14d7a9d1",
+      "direction": "up"
+    },
+    {
+      "id": "attack-down-00",
+      "sheet": "sheet-015",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "49cfbb8d7298c83f24cf5fbd49cb2cdc19367acd4f22f109517ce338d3abe0d7",
+      "direction": "down"
+    },
+    {
+      "id": "attack-down-01",
+      "sheet": "sheet-015",
+      "rect": [
+        32,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "547131d55e31fff163065b507d1b126cc041e98a75520ab37bb4b036350ac40c",
+      "direction": "down"
+    },
+    {
+      "id": "attack-down-02",
+      "sheet": "sheet-015",
+      "rect": [
+        64,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "2c79ee74e41779dead33e3c7666640703d20541829fddb0cfa44a6f463e69cd5",
+      "direction": "down"
+    },
+    {
+      "id": "attack-down-03",
+      "sheet": "sheet-015",
+      "rect": [
+        96,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "dc9bf08b5f87fa5fddb2afccc66319aedcb8f9e38b0ce590ba89b203efd89079",
+      "direction": "down"
+    },
+    {
+      "id": "attack-side-00",
+      "sheet": "sheet-016",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "101204519e1e55a55a3ae7f8c867ae47de8b9f7448eed52e0df8285f4e7b71a3",
+      "direction": "side"
+    },
+    {
+      "id": "attack-side-01",
+      "sheet": "sheet-016",
+      "rect": [
+        32,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "fd28859c306fcf77209cbef5ef8d19a11919e1947e7f53718fe6e4bb17bf3df5",
+      "direction": "side"
+    },
+    {
+      "id": "attack-side-02",
+      "sheet": "sheet-016",
+      "rect": [
+        64,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "80a61981b9c9c8ac26805f3cbdc3891129649fc3a98443aeac0f8dadf4c1567d",
+      "direction": "side"
+    },
+    {
+      "id": "attack-side-03",
+      "sheet": "sheet-016",
+      "rect": [
+        96,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "a3ebdccc48b5d77913d5e7f664ceeb36c69ce646788c3e318376476d8725ddd1",
+      "direction": "side"
+    },
+    {
+      "id": "attack-up-00",
+      "sheet": "sheet-017",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "647a74cadf8a42dcf2b677064390005044c2d0abc00c2e86f3cc8a8605d27e15",
+      "direction": "up"
+    },
+    {
+      "id": "attack-up-01",
+      "sheet": "sheet-017",
+      "rect": [
+        32,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "2f3c127d5f2ff3399afbee31d467c913c568bfd02cf22c0797173b7cc6c44130",
+      "direction": "up"
+    },
+    {
+      "id": "attack-up-02",
+      "sheet": "sheet-017",
+      "rect": [
+        64,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "183654a4266203adef0f1576b479f92dac9c356962b3ff9b091f555da07786a1",
+      "direction": "up"
+    },
+    {
+      "id": "attack-up-03",
+      "sheet": "sheet-017",
+      "rect": [
+        96,
+        0,
+        32,
+        48
+      ],
+      "pixelHash": "6f44847386ebcda45a592bc0280c8bcbe2d5add24c4f38e20ea79b029c2ab5c9",
+      "direction": "up"
+    }
+  ],
+  "poses": [],
+  "sources": [
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\baseline-directional-v2\\spritesheet-manifest.json",
+      "sha256": "e67a9b5475be62cfebbd7a1da51e7c86faaa1d46beb7e2d24fa26d386cce2636",
+      "role": "parent"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\idle\\down\\frame-00.png",
+      "sha256": "a571c04b30d145928c7378a12a26ecfa7c264209d0d25ae62026e4ee8328554e",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\idle\\down\\frame-01.png",
+      "sha256": "76a94602ecb3137d59d2639aead6195b5321bca11e40911a9b28e4435f8e5ea6",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\idle\\down\\frame-02.png",
+      "sha256": "b3bf0af994402c5c8f8db870e05c38c8a28f151fe50cbe9f2ac911cfbffc3f8f",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\idle\\down\\frame-03.png",
+      "sha256": "d92c090fb34d8624baa19da22526ae4d293458d6c4d81ad3457509c7e43348f7",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\idle\\side\\frame-00.png",
+      "sha256": "6475869f19bd127c5e1d582a7abe529b5c2b465ef5ee8fd8144015e63e0a27cd",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\idle\\side\\frame-01.png",
+      "sha256": "f9f485e14c1b1d72339942049b0ff14413145ddf8856ec23e71c363ad4532407",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\idle\\side\\frame-02.png",
+      "sha256": "4a86e135070fb6817e1bf382ceb65cdd54e0c60de153b1f2298aac2fbe298b75",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\idle\\side\\frame-03.png",
+      "sha256": "3b4f0f9ccb9aaf6f933ab55decc3e6998f2e5297ac5f8c7a5c5103b34d40bd18",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\idle\\up\\frame-00.png",
+      "sha256": "c20b5a7f80293065a2ccc92a99baa5e7796eea18e75c6baed5b526c8f5293d50",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\idle\\up\\frame-01.png",
+      "sha256": "44a2302372418440f69cd4614999cbb432cb00c8c2ea2d68cd47af259b0f5cea",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\idle\\up\\frame-02.png",
+      "sha256": "d45dfce5d7bd022958dfbb3194662cba10c6f6d33ea077f4e56c3bc681c0fa5f",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\idle\\up\\frame-03.png",
+      "sha256": "568b416411291b84c8f68ae42c7d395d955c2c877e520ed6abe3c4fbc1db746f",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\run\\down\\frame-00.png",
+      "sha256": "ec76e306c6bb3478b1ed0e55b7e809ac30b641fb1184dc8a12a4f44921c275a6",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\run\\down\\frame-01.png",
+      "sha256": "86e95d83eaa92fac729a5dc2714a4c1a651cb01615920b27229f90325652d059",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\run\\down\\frame-02.png",
+      "sha256": "bcf71840fb8548af9c1d10ab32ec4148e82c39a3cea3ce68190fa8762bf99028",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\run\\down\\frame-03.png",
+      "sha256": "c0e0c38c8754999617ad54a11063648c125b3aae5e70d9adf8003a100b1a7305",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\run\\down\\frame-04.png",
+      "sha256": "7f040f84e88533ba30e5893f7fe81fbb5608b11acefb236030948db3878f4ee0",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\run\\down\\frame-05.png",
+      "sha256": "8b3224a3219aa12ae860106228142580719d87b9bb741345e66575cccce2dcfd",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\run\\side\\frame-00.png",
+      "sha256": "d966c3414e180ddb46c3986097e016d66a3f5a87e096ce467713da74a141b101",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\run\\side\\frame-01.png",
+      "sha256": "65647eeb6cddee91113b31eb4183e4d56d71a760c94984e2f2416983447885ea",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\run\\side\\frame-02.png",
+      "sha256": "0c8121399b8a704a3b4f26f7e38b373431755a3a9adbd7acf173d874f9e5e5c7",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\run\\side\\frame-03.png",
+      "sha256": "1c7d457730b6c8476c4c0b95e8c11b9a96fd6e640b574e3f6cbc7d0982624f32",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\run\\side\\frame-04.png",
+      "sha256": "6641c7c9253ac9acdbff82b608c483696ab07419d998b620352c5379089c3809",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\run\\side\\frame-05.png",
+      "sha256": "a2fbb49f6a24a2514855ad5925cd40f2a142e1ec7ddd12edcdb61329d633e0f8",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\run\\up\\frame-00.png",
+      "sha256": "cb25c229b785edd28ce427094b7e10bef78e0aa8cac226f0a3e4a3ea0f9eaac4",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\run\\up\\frame-01.png",
+      "sha256": "a424dd53b48c4d4b34874f54774ef3667ae87c54765e5e699d5ce45b0eab3450",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\run\\up\\frame-02.png",
+      "sha256": "653dac5ece7335902894c20fce18ec1d051522ca15de78a2ec7f3cb9a4ef1574",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\run\\up\\frame-03.png",
+      "sha256": "dd4f6437b8c865c7441940b3dc5d0e3ee62f11b2f76429eca229afee2c4889f9",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\run\\up\\frame-04.png",
+      "sha256": "65aa5920eb2db463403307432b2ddb4e6d0c5f1440f6bbda52d479725c624259",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\run\\up\\frame-05.png",
+      "sha256": "5149820d27ecdf5a4cca9d6fd11dfc9ce35c72c2634c6e1d3eb50603bdd44281",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\attack\\down\\frame-00.png",
+      "sha256": "a571c04b30d145928c7378a12a26ecfa7c264209d0d25ae62026e4ee8328554e",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\attack\\down\\frame-01.png",
+      "sha256": "4e2d68ceb947c638232c8651e69baafb6bf930fbffb1984ae3e4c19e3a7dc467",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\attack\\down\\frame-02.png",
+      "sha256": "0518e88b89a90161630faea1dc0a8cafc3713c9eebf2064f14913f4a13d78d8c",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\attack\\down\\frame-03.png",
+      "sha256": "4da97c400c496347ed0c4b6f8d73560c7727e3a66d762cae60b32b7cf3b5062f",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\attack\\side\\frame-00.png",
+      "sha256": "6475869f19bd127c5e1d582a7abe529b5c2b465ef5ee8fd8144015e63e0a27cd",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\attack\\side\\frame-01.png",
+      "sha256": "317f5b61f9adb174267ee6fe54d53fac57116e9dce5f4c30c59024acfe00dad8",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\attack\\side\\frame-02.png",
+      "sha256": "23e7b6a35edc655b96b7597245e8604a4535a38be428f1dc4691e49ce42acfbb",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\attack\\side\\frame-03.png",
+      "sha256": "ced10ab38053d33fac11a76a78ca678bedb62a140d70118cf34df6cb15a3dade",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\attack\\up\\frame-00.png",
+      "sha256": "c20b5a7f80293065a2ccc92a99baa5e7796eea18e75c6baed5b526c8f5293d50",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\attack\\up\\frame-01.png",
+      "sha256": "644705c3e6f9fb454be9e6488b9d9b4267745b23aac63a2dbc7232abb3c7c7e0",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\attack\\up\\frame-02.png",
+      "sha256": "d026511a3fec215b8f9f99327c1d5e0a35cd7226a989a09d4417732c29270e78",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\shield-only\\attack\\up\\frame-03.png",
+      "sha256": "e342ffaa68c7123447126df01c510a1d017336e1ef8ef111aa0e83d3951c6c5a",
+      "role": "art"
+    }
+  ],
+  "provenance": {
+    "artSource": "existing-with-user-authorized-manual-pixel-repairs",
+    "identityReference": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\public\\assets\\art\\game-view\\characters\\hero-warrior\\frames\\idle\\side\\00.png",
+    "notes": "Two imagegen shield-removal trials were retained as references and rejected for haze. User explicitly authorized targeted pixel repairs on 2026-10-29. Original palette, binary alpha, protected original pixels and coordinates retained. See manual-pixel-repair-validation.json and per-frame masks."
+  },
+  "changedFrameIds": [
+    "idle-down-00",
+    "idle-down-01",
+    "idle-down-02",
+    "idle-down-03",
+    "idle-side-00",
+    "idle-side-01",
+    "idle-side-02",
+    "idle-side-03",
+    "idle-up-00",
+    "idle-up-01",
+    "idle-up-02",
+    "idle-up-03",
+    "run-down-00",
+    "run-down-01",
+    "run-down-02",
+    "run-down-03",
+    "run-down-04",
+    "run-down-05",
+    "run-side-00",
+    "run-side-01",
+    "run-side-02",
+    "run-side-03",
+    "run-side-04",
+    "run-side-05",
+    "run-up-00",
+    "run-up-01",
+    "run-up-02",
+    "run-up-03",
+    "run-up-04",
+    "run-up-05",
+    "attack-down-00",
+    "attack-down-01",
+    "attack-down-02",
+    "attack-down-03",
+    "attack-side-00",
+    "attack-side-01",
+    "attack-side-02",
+    "attack-side-03",
+    "attack-up-00",
+    "attack-up-01",
+    "attack-up-02",
+    "attack-up-03"
+  ],
+  "retainedFrameIds": [],
+  "preservation": {
+    "frames": {},
+    "sequences": []
+  },
+  "sequences": [
+    {
+      "id": "idle-down",
+      "frames": [
+        "idle-down-00",
+        "idle-down-01",
+        "idle-down-02",
+        "idle-down-03"
+      ],
+      "durationsMs": [
+        140,
+        140,
+        140,
+        140
+      ],
+      "loop": true,
+      "direction": "down"
+    },
+    {
+      "id": "idle-side",
+      "frames": [
+        "idle-side-00",
+        "idle-side-01",
+        "idle-side-02",
+        "idle-side-03"
+      ],
+      "durationsMs": [
+        140,
+        140,
+        140,
+        140
+      ],
+      "loop": true,
+      "direction": "side"
+    },
+    {
+      "id": "idle-up",
+      "frames": [
+        "idle-up-00",
+        "idle-up-01",
+        "idle-up-02",
+        "idle-up-03"
+      ],
+      "durationsMs": [
+        140,
+        140,
+        140,
+        140
+      ],
+      "loop": true,
+      "direction": "up"
+    },
+    {
+      "id": "run-down",
+      "frames": [
+        "run-down-00",
+        "run-down-01",
+        "run-down-02",
+        "run-down-03",
+        "run-down-04",
+        "run-down-05"
+      ],
+      "durationsMs": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "loop": true,
+      "direction": "down"
+    },
+    {
+      "id": "run-side",
+      "frames": [
+        "run-side-00",
+        "run-side-01",
+        "run-side-02",
+        "run-side-03",
+        "run-side-04",
+        "run-side-05"
+      ],
+      "durationsMs": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "loop": true,
+      "direction": "side"
+    },
+    {
+      "id": "run-up",
+      "frames": [
+        "run-up-00",
+        "run-up-01",
+        "run-up-02",
+        "run-up-03",
+        "run-up-04",
+        "run-up-05"
+      ],
+      "durationsMs": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "loop": true,
+      "direction": "up"
+    },
+    {
+      "id": "attack-down",
+      "frames": [
+        "attack-down-00",
+        "attack-down-01",
+        "attack-down-02",
+        "attack-down-03"
+      ],
+      "durationsMs": [
+        90,
+        90,
+        90,
+        90
+      ],
+      "loop": false,
+      "direction": "down"
+    },
+    {
+      "id": "attack-side",
+      "frames": [
+        "attack-side-00",
+        "attack-side-01",
+        "attack-side-02",
+        "attack-side-03"
+      ],
+      "durationsMs": [
+        90,
+        90,
+        90,
+        90
+      ],
+      "loop": false,
+      "direction": "side"
+    },
+    {
+      "id": "attack-up",
+      "frames": [
+        "attack-up-00",
+        "attack-up-01",
+        "attack-up-02",
+        "attack-up-03"
+      ],
+      "durationsMs": [
+        90,
+        90,
+        90,
+        90
+      ],
+      "loop": false,
+      "direction": "up"
+    }
+  ],
+  "parent": {
+    "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\baseline-directional-v2\\spritesheet-manifest.json",
+    "sha256": "e67a9b5475be62cfebbd7a1da51e7c86faaa1d46beb7e2d24fa26d386cce2636"
+  }
+}

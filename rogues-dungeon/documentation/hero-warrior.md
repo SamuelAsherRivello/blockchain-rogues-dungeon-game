@@ -15,6 +15,47 @@ Hero Warrior artwork is authored facing right. The player character starts with 
 
 Hero Warrior playback uses animation speed `0.5`, so each frame remains visible twice as long as a generic animation at speed `1`.
 
+## Equipment appearances
+
+Every clip has four registered appearances. Occupancy of either position in
+Weapons enables the sword; occupancy of either position in Armor enables the
+shield. Item identity and statistics do not matter. Jewels, Inventory, Quick
+Slots, abilities, and uncommitted drag previews do not affect the appearance.
+
+| Weapons occupied | Armor occupied | Appearance |
+| --- | --- | --- |
+| Yes | Yes | Set 1, original sword and shield |
+| Yes | No | Set 2, same sword without shield |
+| No | Yes | Set 3, same shield without sword |
+| No | No | Set 4, neither |
+
+The original 48 PNGs and shadow remain unchanged. Thirty additional native
+strips under `variants/` supply 144 addressable frames with six columns per
+strip, retaining the original 32x48 or 48x48 canvases. Unused strip cells are
+transparent and are not animation frames.
+
+The renderer retains one animation clock and the existing main/shadow handles.
+Changing equipment selects the corresponding image without resetting fractional
+frame time, loops, speed, stopped state, or one-shot completion. It preserves
+the existing `[-1, 6]` main offset, `[0, -5]` shadow offset, tint/fog cache,
+mirroring, hops, damage scaling, depth, and stair clipping. Fatal equipment is
+held through death; an empty replacement run shows set 4. No appearance save
+field is required.
+
+Current gameplay selects directional idle, directional run during Gridless
+travel, and death. Grid movement retains its idle/hop presentation. Attack is
+still available through the actor catalog without a new gameplay trigger.
+
+The completed `ai-skills-tiled-create-spritesheet-png` skill built the original
+baselines and variant manifests and performed structural/review/acceptance
+checks. Two imagegen attempts were rejected for haze. The user then authorized
+bounded manual pixel repairs using the original palette. See
+[workflow evidence](player-equipment-animation-sets/workflow-evidence.md) for
+source hashes, actual helper commands, protected-pixel checks, per-frame masks,
+reconstructed-anatomy limits, and exact-hash visual records. The
+[synchronized comparison video](player-equipment-animation-sets/hero-equipment-comparison.mp4)
+plays all four sets through all ten clips at speed 0.5.
+
 The current generated Tiled map contains a `player` object at pixel `(1344, 1344)`, corresponding to cell `(42, 42)`. That object remains a logical placement marker; the Hero Warrior artwork is supplied by the runtime renderer.
 
 The supplied source is the user-provided `Dungeons-and-Pixels-v1.4` pack retained under `public/assets/`. No license or attribution file was found in the supplied pack during inspection, so the project does not assert a license and must confirm required credit before public release.

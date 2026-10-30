@@ -1,0 +1,57 @@
+{
+  "manifestHash": "dc5e981008c5d90a59770fa7c5806abb1c52f091d973f8ce3fcc0d9b2d00e9e2",
+  "sheetHashes": {
+    "sheet-000": "3d9f04c9affef9a7f4efe4ea8ba628e7a4a3f424ecc0d541c4a9d4a35378d76c",
+    "sheet-001": "2f3c8d2ba0de8b146ebc194f6d83d490fb93687226889c42a3c7ad0889b2c029"
+  },
+  "contactSheet": "review/contact-sheet.png",
+  "sequences": [
+    {
+      "id": "death",
+      "apng": "review/animation-000.apng",
+      "gif": "review/animation-000.gif",
+      "durationsMs": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "gifDurationsMs": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "loop": false
+    }
+  ],
+  "artifacts": [
+    "review/frames/frame-000.png",
+    "review/frames/frame-001.png",
+    "review/frames/frame-002.png",
+    "review/frames/frame-003.png",
+    "review/frames/frame-004.png",
+    "review/frames/frame-005.png",
+    "review/contact-sheet.png",
+    "review/animation-000.apng",
+    "review/animation-000.gif"
+  ],
+  "items": [
+    {
+      "id": "identity",
+      "verdict": "pending",
+      "evidence": "",
+      "check": "Inspect every frame at native size on light/dark: identity, scale, complete art, palette, handedness."
+    },
+    {
+      "id": "sequence:death",
+      "verdict": "pending",
+      "evidence": "",
+      "check": "Inspect actual playback/timing, action progression and loop seam or one-shot ending."
+    }
+  ]
+}

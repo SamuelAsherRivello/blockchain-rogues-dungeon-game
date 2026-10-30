@@ -3,6 +3,16 @@ async page => {
   page.on("pageerror", error => errors.push(error.message));
   page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
   const url = "http://127.0.0.1:6080/blockchain-rogues-dungeon-game/?mute=1";
+  const fixtureKey = "rogues-dungeon.test.gridless-next-fixture";
+  // Seed the next document before app startup. A departing realm can still
+  // autosave after an in-page fixture write but before reload begins.
+  await page.addInitScript(key => {
+    const pending = sessionStorage.getItem(key);
+    if (!pending) return;
+    localStorage.setItem("rogues-dungeon.slot.1", pending);
+    localStorage.setItem("rogues-dungeon.preferences.v1", JSON.stringify({ movementMode: "gridless", camera: "center", zoom: 1 }));
+    sessionStorage.removeItem(key);
+  }, fixtureKey);
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto(url);
   const report = [];
@@ -11,7 +21,7 @@ async page => {
     return readSlot(localStorage, "1");
   });
   for (const kind of ["campfire", "chest", "crate", "barrel", "gold", "stairs", "teleport-arrow", "wall"]) {
-    await page.evaluate(async kind => {
+    await page.evaluate(async ({ kind, fixtureKey }) => {
       const { createCampaign } = await import("/blockchain-rogues-dungeon-game/src/systems/procedural/world-procedural-system.ts");
       const { revealDiscovery } = await import("/blockchain-rogues-dungeon-game/src/systems/procedural/map-discovery-system.ts");
       const state = createCampaign(90210);
@@ -31,9 +41,8 @@ async page => {
       else if (kind === "wall") state.floor.cells[50][51].walkable = false;
       else state.floor.entities = [{ id: "fixture", kind, ...position, ...(kind === "crate" ? { health: 100 } : kind === "gold" ? { amount: 2 } : kind === "teleport-arrow" ? { destination: "player-home", direction: "n" } : {}) }];
       revealDiscovery(state, state.player);
-      localStorage.setItem("rogues-dungeon.slot.1", JSON.stringify(state));
-      localStorage.setItem("rogues-dungeon.preferences.v1", JSON.stringify({ movementMode: "gridless", camera: "center", zoom: 1 }));
-    }, kind);
+      sessionStorage.setItem(fixtureKey, JSON.stringify(state));
+    }, { kind, fixtureKey });
     await page.reload();
     await page.getByRole("button", { name: /Saved Game 1/ }).click();
     await page.locator('.world-view[data-renderer-ready="true"][data-world-alive="true"]').waitFor({ timeout: 30000 });
@@ -61,6 +70,11 @@ async page => {
       };
     });
     const before = await saved();
+    if (before.activePrefab || before.player.x !== 50 || before.player.y !== 50
+      || before.player.pixel.x !== 1630 || before.player.pixel.y !== 1616
+      || before.floor.cells[50][51].walkable !== (kind !== "wall")) {
+      throw Error(`Wrong ${kind} arena before input: ${JSON.stringify({ prefab: before.activePrefab?.id, player: before.player.pixel, time: before.floor.time })}`);
+    }
     await page.keyboard.down("d");
     try { await page.waitForFunction(() => window.interactionTrace.length > 0, undefined, { timeout: 10000 }); }
     finally { await page.keyboard.up("d"); }

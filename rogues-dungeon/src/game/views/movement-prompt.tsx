@@ -65,7 +65,7 @@ export function MovementPrompt({ movement, title, heading, body, affirmation, ne
       <h3>{heading}</h3>
       <p className="movement-prompt__body">{body}</p>
       <button type="button" className={`movement-prompt__action${affirmation?.confirming ? " movement-prompt__action--confirming" : ""}`} disabled={affirmation?.disabled || affirmation?.confirming} onClick={affirmation ? affirm : negate}>
-        {affirmation?.label ?? negationLabel}<br /><i>{negationHint}</i><br /><i>{affirmation ? `Right stick ${affirmation.direction === "n" ? "up" : affirmation.direction === "s" ? "down" : affirmation.direction === "e" ? "right" : "left"} to confirm; another direction to cancel` : "Right stick to close"}</i>
+        {affirmation?.label ?? negationLabel}<br /><i>{negationHint}</i>
       </button>
     </GameCard>
   </section>;

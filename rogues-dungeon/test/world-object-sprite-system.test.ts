@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { CHEST_MAIN_ART_ANCHOR_OFFSET_PX, DOOR_CLOSED_MAIN_ART_ANCHOR_OFFSET_PX, DOOR_OPEN_MAIN_ART_ANCHOR_OFFSET_PX, DUNGEON_STAIR_UP_FRAME, doorMainArtAnchorOffset, droppableItemSpriteFrame, itemSpriteFrame, OBJECTS_OVERLAY_BARREL_FRAME, OBJECTS_OVERLAY_DOOR_CLOSED_FRAME, OBJECTS_OVERLAY_DOOR_OPEN_FRAME, pickupMainArtPresentation, puzzleObjectSpriteFrame } from "../src/systems/rendering/world-object-sprite-system.ts";
+import { CHEST_MAIN_ART_ANCHOR_OFFSET_PX, DOOR_CLOSED_MAIN_ART_ANCHOR_OFFSET_PX, DOOR_OPEN_MAIN_ART_ANCHOR_OFFSET_PX, DUNGEON_STAIR_UP_FRAME, doorMainArtAnchorOffset, droppableItemSpriteFrame, itemSpriteFrame, OBJECTS_OVERLAY_BARREL_FRAME, OBJECTS_OVERLAY_DOOR_CLOSED_FRAME, OBJECTS_OVERLAY_DOOR_OPEN_FRAME, OBJECTS_OVERLAY_SIDE_DOOR_CLOSED_FRAME, OBJECTS_OVERLAY_SIDE_DOOR_OPEN_FRAME, pickupMainArtPresentation, puzzleObjectSpriteFrame } from "../src/systems/rendering/world-object-sprite-system.ts";
 
 test("maps the exit stair to the verified dungeon tileset stair frame", () => {
   assert.equal(DUNGEON_STAIR_UP_FRAME, 42);
@@ -31,6 +31,10 @@ test("maps barrel and door puzzle states to their dedicated static frames", () =
   assert.equal(puzzleObjectSpriteFrame("door", false), OBJECTS_OVERLAY_DOOR_CLOSED_FRAME);
   assert.equal(OBJECTS_OVERLAY_DOOR_OPEN_FRAME, 0);
   assert.equal(OBJECTS_OVERLAY_DOOR_CLOSED_FRAME, 1);
+  assert.equal(puzzleObjectSpriteFrame("door", true, "horizontal"), OBJECTS_OVERLAY_SIDE_DOOR_CLOSED_FRAME);
+  assert.equal(puzzleObjectSpriteFrame("door", false, "horizontal"), OBJECTS_OVERLAY_SIDE_DOOR_OPEN_FRAME);
+  assert.equal(OBJECTS_OVERLAY_SIDE_DOOR_OPEN_FRAME, 2);
+  assert.equal(OBJECTS_OVERLAY_SIDE_DOOR_CLOSED_FRAME, 3);
 });
 
 test("keeps chest and door main-art anchors distinct", () => {

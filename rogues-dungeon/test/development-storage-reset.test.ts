@@ -23,10 +23,10 @@ test('Jewel generation has its own epoch and refuses stale regenerated balance p
   assert.ok(DEVELOPMENT_STORAGE_COMPATIBILITY_EPOCH.includes('flexible-jewels-1'));
   assert.equal(WORLD_BALANCE_VERSION, 'world-balance-2-jewels');
   const state = compactCampaignForSave(createRunCampaign(875, 1, 1, 1, 2, { worldAttributes: DEFAULT_WORLD_ATTRIBUTES }));
-  state.floor.generationProfile!.tuningVersion = 'world-attributes-1:world-balance-1';
+  state.floorProfiles!['2'].tuningVersion = 'world-attributes-1:world-balance-1';
   const bytes = JSON.stringify(state);
   const storage = new MemoryStorage([['rogues-dungeon.slot.1', bytes]]);
-  assert.equal(readSlot(storage, '1'), null);
+  assert.throws(() => readSlot(storage, '1'), /Unsupported saved world generator/);
   assert.equal(storage.getItem('rogues-dungeon.slot.1'), bytes);
 });
 

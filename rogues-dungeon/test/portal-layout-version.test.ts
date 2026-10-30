@@ -14,7 +14,7 @@ const layout = (floor: Floor) => ({ cells: floor.cells, entities: floor.entities
 const reload = (campaign: Campaign) => restoreCompactCampaign(JSON.parse(JSON.stringify(compactCampaignForSave(campaign))) as Campaign);
 const knownSingle = (campaign: Campaign) => resolveCampaignPortalLayouts(campaign, Object.fromEntries(unresolvedPortalLayoutPaths(campaign).map((path) => [path, LEGACY_PORTAL_LAYOUT_VERSION])));
 
-test("preserved pre-portal graph fixtures retain original generation and exact compact replay", () => {
+test("pre-portal geometry stays exact and compact replay rejects retired balance profiles", () => {
   const fixture = JSON.parse(readFileSync(new URL("./fixtures/pre-portal-graph-generation.json", import.meta.url), "utf8")) as {
     sourceSha256: string;
     cases: { input: { name: string; worldSeed: number; slot: number; run: number; difficulty: number; level: number; options: Parameters<typeof createRunCampaign>[5] }; record: Campaign; expected: { geometryHash: string; placementHash: string } }[];
@@ -32,6 +32,19 @@ test("preserved pre-portal graph fixtures retain original generation and exact c
     const { worldSeed, slot, run, difficulty, level, options } = entry.input;
     const generated = createRunCampaign(worldSeed, slot, run, difficulty, level, { ...options, portalLayoutVersion: LEGACY_PORTAL_LAYOUT_VERSION });
     assert.throws(() => restoreCompactCampaign(structuredClone(entry.record)), /explicit resolution/);
+    if (Object.values(entry.record.floorProfiles ?? {}).some(profile => profile.tuningVersion === "world-attributes-1:world-balance-1")) {
+      const before = hash(entry.record);
+      assert.throws(() => knownSingle(entry.record), /Unsupported saved world generator/);
+      assert.equal(hash(entry.record), before);
+      // Its newly generated, current-balance counterpart still preserves the
+      // captured terrain and Level 1 placements, including compact replay.
+      for (const campaign of [generated, reload(generated)]) {
+        const { width, height, cells, start, startRoom, entities, objectSets, decorations, prefabPlacements } = campaign.floor;
+        assert.equal(hash({ width, height, cells, start, startRoom }), entry.expected.geometryHash, `${entry.input.name} terrain`);
+        assert.equal(hash({ entities, objectSets, decorations, prefabPlacements }), entry.expected.placementHash, `${entry.input.name} placements`);
+      }
+      continue;
+    }
     const restored = restoreCompactCampaign(knownSingle(entry.record));
     for (const campaign of [generated, restored, reload(restored)]) {
       const { width, height, cells, start, startRoom, entities, objectSets, decorations, prefabPlacements } = campaign.floor;

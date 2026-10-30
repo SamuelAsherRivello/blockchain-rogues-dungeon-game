@@ -1,4 +1,5 @@
 import { copyCampaignMutableState } from "./campaign-copy-system.ts";
+import { applyStorageExclusions, consumeItemProvenance, mergeItemProvenance } from "./item-provenance-system.ts";
 import { normalizeDiscovery, revealDiscovery } from "./map-discovery-system.ts";
 export { revealDiscovery, isCellDiscovered, discoveredCoverage } from "./map-discovery-system.ts";
 import { hasPerceptionLineOfSight } from "../../game/enemy-detection.ts";
@@ -21,6 +22,7 @@ import { countPerformance, measurePerformance } from "../rendering/performance-s
 import { generateDungeonGraphLayout } from "./dungeon-graph-layout-system.ts";
 import { DUNGEON_TOPOLOGY_VERSION, corridorOffsets, dungeonGraphRoute } from "./dungeon-topology-system.ts";
 import { repairDungeonRoutes, validateDungeonQuality, type DungeonQualityResult } from "./dungeon-quality-system.ts";
+import { generateOverworld } from "./overworld-generation-system.ts";
 export const LEGACY_DUNGEON_TOPOLOGY_VERSION = "dungeon-chain-1";
 export const LEGACY_PORTAL_LAYOUT_VERSION = "prefab-portal-single-1";
 export const PORTAL_LAYOUT_VERSION = "prefab-portal-paired-1";
@@ -234,6 +236,18 @@ function chooseEncounterLayout(map: number[][], rooms: readonly Room[], start: P
   const choice = choices[Math.floor(random() * choices.length)]!;
   return { room: { ...choice.room }, entrances: choice.entries.map((entry) => ({ door: { ...entry.door }, trigger: { ...entry.trigger } })) };
 }
+/** A Level One LT fixture is deliberately four cells from the start, rather
+ * than a random valid room elsewhere on the floor. Its only exit is the
+ * one-cell north corridor leading straight back to the opening room. */
+function carveNearbyLockdownFixture(map: number[][], start: Position): EncounterLayout {
+  const room = { x: start.x - 2, y: start.y - 8, w: 5, h: 4 };
+  const bounds = { x: start.x - 3, y: start.y - 9, w: 7, h: 6 };
+  for (let y = bounds.y; y < bounds.y + bounds.h; y++) for (let x = bounds.x; x < bounds.x + bounds.w; x++) map[y]![x] = 1;
+  carveRoom(map, room);
+  const door = { x: start.x, y: start.y - 4 }, trigger = { x: start.x, y: start.y - 5 };
+  map[door.y]![door.x] = 0;
+  return { room, entrances: [{ door, trigger }] };
+}
 export function isObjectSetBlocked(floor: Floor, player: MassBearingPosition, x: number, y: number) {
   return floorTriggerDoorSets(floor).some((set) => samePosition(set.barrel, { x, y }) || (samePosition(set.door, { x, y }) && !isObjectSetDoorOpen(set, player, floor.entities)))
     || encounterLockdownSets(floor).some((set) => !isEncounterLockdownDoorOpen(set) && set.doors.some((door) => samePosition(door, { x, y })));
@@ -256,6 +270,22 @@ export function ensureNearbyStairs(floor: Floor) {
   }
   floor.entities = [...(floor.entities ?? []).filter((entity) => entity.kind !== "stairs"), ...expected];
   return floor;
+}
+
+export function generateOverworldFloor(level: number, seed: number): Floor {
+  const width = 100;
+  const height = 100;
+  const start = { x: 50, y: 50 };
+  const exit = { x: 68, y: 62 };
+  const world = generateOverworld({ width, height, seed, mountainDensity: 0.24, scale: 18, start, exit,
+    protectedCells: level > 1 ? [{ x: start.x - 2, y: start.y }] : [] });
+  const entities: Entity[] = [
+    ...(level > 1 ? [{ id: "stairs-back", kind: "stairs" as const, direction: "back" as const, name: "Return stairs", x: start.x - 2, y: start.y }] : []),
+    { id: "stairs-forward", kind: "stairs", direction: "forward", name: "Forward stairs", ...exit },
+  ];
+  return { seed: seed >>> 0, width, height, cells: world.cells, start, entities, time: 0, level, family: "overworld",
+    generatorVersion: GENERATOR_VERSION, generation: { seed: seed >>> 0, generator: "organic-overworld", passes: world.passes },
+    generationProfile: { seed: seed >>> 0, difficulty: level, generatorVersion: GENERATOR_VERSION } };
 }
 const ATTACK_STAMINA_COST = GAME_TUNING.attackStaminaCost;
 
@@ -356,10 +386,10 @@ export function normalizeStackableLocations(campaign: Campaign) {
   for (const rawItem of campaign.player.inventory ?? []) {
     const item = normalizeItem(rawItem);
     if (!isQuickSlottableItem(item)) { inventory.push(item); continue; }
-    const quickIndex = slots.findIndex((slot) => slot && quickSlotKey(slot.item) === quickSlotKey(item));
-    if (quickIndex >= 0) { slots[quickIndex]!.quantity += item.quantity ?? 1; continue; }
+    const quickIndex = item.keepInInventory ? -1 : slots.findIndex((slot) => slot && quickSlotKey(slot.item) === quickSlotKey(item));
+    if (quickIndex >= 0) { mergeItemProvenance(campaign, slots[quickIndex]!.item, item, slots[quickIndex]!.quantity); slots[quickIndex]!.quantity += item.quantity ?? 1; continue; }
     const existing = inventory.find((entry) => isQuickSlottableItem(entry) && quickSlotKey(entry) === quickSlotKey(item));
-    if (existing) existing.quantity = (existing.quantity ?? 1) + (item.quantity ?? 1);
+    if (existing) { mergeItemProvenance(campaign, existing, item); existing.quantity = (existing.quantity ?? 1) + (item.quantity ?? 1); existing.keepInInventory ||= item.keepInInventory; }
     else inventory.push(item);
   }
   campaign.player.inventory = orderedInventory(inventory);
@@ -718,7 +748,7 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
   const graphLayout = options.topologyVersion === DUNGEON_TOPOLOGY_VERSION ? generateDungeonGraphLayout({
     width, height, seed, startRoom, roomCount: 1 + Math.max(2, Math.round((tuning?.roomCount ?? 9) * areaScale)),
     corridorWidth, extraLinks: tuning ? tuning.extraLinks + Math.floor(tuning.discoveries / 3) : 1,
-    levelOneChamber: level === 1, homeFootprint: level === 1 && options.playerHouse ? startRoom : undefined,
+    levelOneChamber: level === 1, levelOneLockdownFixture: level === 1 && options.level1TestMode === true && world !== null, homeFootprint: level === 1 && options.playerHouse ? startRoom : undefined,
   }) : null;
   if (graphLayout) { map.splice(0, map.length, ...graphLayout.map); rooms.push(...graphLayout.rooms); }
   else {
@@ -800,10 +830,17 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
   // These rooms stay part of the ordinary dungeon until an interior trigger is
   // crossed. The entrance cells are intentionally one tile wide.
   const encounterLayout = level1EnemyTestMode ? null : chooseEncounterLayout(map, rooms, start, encounterRandom);
-  // LT is a world-one level-one fixture: it supplements the ordinary encounter
-  // distribution with one deterministic, reachable lockdown example.
+  // Current graph layouts reserve a deterministic example four cells from
+  // the start. Unversioned saves keep the historical seeded fixture selection.
   const encounterFixtureLayout = world && level1TeleportTestMode
-    ? chooseEncounterLayout(map, rooms, start, worldRandom(seed, "level-one-encounter-fixture"), { maximumDistance: 100, excludedRooms: encounterLayout ? [encounterLayout.room] : [] })
+    ? options.topologyVersion === DUNGEON_TOPOLOGY_VERSION
+      ? graphLayout?.lockdownFixture
+        ? { room: { ...graphLayout.lockdownFixture.room }, entrances: [{ door: { ...graphLayout.lockdownFixture.door }, trigger: { ...graphLayout.lockdownFixture.trigger } }] }
+        : carveNearbyLockdownFixture(map, start)
+      : chooseEncounterLayout(map, rooms, start, worldRandom(seed, "level-one-encounter-fixture"), {
+        maximumDistance: 100,
+        excludedRooms: encounterLayout ? [encounterLayout.room] : [],
+      })
     : null;
   const encounterLayouts = [
     ...(encounterLayout ? [{ id: `encounter-lockdown-${level}`, layout: encounterLayout, random: encounterRandom }] : []),
@@ -1215,9 +1252,10 @@ export function rollStartingAttributes(random = Math.random): Attributes {
   }
   return attributes;
 }
-export function createCampaign(seed = seedNow(), difficulty = 1, level = 1, options: { topologyVersion?: string; portalLayoutVersion?: string; level1TestMode?: boolean; level1ObjectTestMode?: boolean; level1EnemyTestMode?: boolean; attributes?: Attributes; worldAttributes?: WorldAttributes; mode?: Campaign["mode"] } = {}): Campaign {
-  const floor = generateFloor(level, seed, difficulty, { level1TestMode: options.level1TestMode, level1ObjectTestMode: options.level1ObjectTestMode, level1EnemyTestMode: options.level1EnemyTestMode, worldAttributes: options.worldAttributes, topologyVersion: options.topologyVersion, portalLayoutVersion: options.portalLayoutVersion }); const attributes = options.attributes ? { ...options.attributes } : rollStartingAttributes(rng(seed));
-  const campaign: Campaign = { version: 6, mode: options.mode ?? "adventure", world: "One", realm: `Underground ${floor.level}`, floor, combatRollState: seed >>> 0, generatorVersion: GENERATOR_VERSION, levelStates: {}, floors: { [level]: structuredClone(floor) }, progression: { attributes, level: 1, xp: 0, nextXp: GAME_TUNING.xpThreshold, totalKills: 0, difficulty, attributePoints: 0 }, player: { x: floor.start.x, y: floor.start.y, hasMass: true, heading: "e", resources: createResourcesModel(), equipment: { weapons: [null, null], armor: [null, null], jewels: [null, null] }, inventory: [], inventoryCapacity: ITEM_CAPACITY, abilities: [null, null, null], quickSlots: [null, null], sneaking: false, encumberedDirection: null }, counters: { keys: 0, gold: 0 }, objective: "Find the exit", quest: { id: "my-first-quest", title: "My First Quest", items: [{ id: "walk-through-stairs", title: "Walk through the stairs", complete: false }, { id: "collect-health-potion", title: "Collect a Health Potion", complete: false }, { id: "collect-coin", title: "Collect a coin", complete: false }], activeItemId: "walk-through-stairs" }, log: [] };
+export function createCampaign(seed = seedNow(), difficulty = 1, level = 1, options: { topologyVersion?: string; portalLayoutVersion?: string; level1TestMode?: boolean; level1ObjectTestMode?: boolean; level1EnemyTestMode?: boolean; attributes?: Attributes; worldAttributes?: WorldAttributes; mode?: Campaign["mode"]; worldFamily?: Campaign["worldFamily"] } = {}): Campaign {
+  const floor = options.worldFamily === "overworld" ? generateOverworldFloor(level, seed) : generateFloor(level, seed, difficulty, { level1TestMode: options.level1TestMode, level1ObjectTestMode: options.level1ObjectTestMode, level1EnemyTestMode: options.level1EnemyTestMode, worldAttributes: options.worldAttributes, topologyVersion: options.topologyVersion, portalLayoutVersion: options.portalLayoutVersion }); const attributes = options.attributes ? { ...options.attributes } : rollStartingAttributes(rng(seed));
+  const family = options.worldFamily ?? "dungeon";
+  const campaign: Campaign = { version: 6, mode: options.mode ?? "adventure", world: "One", worldFamily: family, realm: `${family === "overworld" ? "Overworld" : "Underground"} ${floor.level}`, floor, combatRollState: seed >>> 0, generatorVersion: GENERATOR_VERSION, levelStates: {}, floors: { [level]: structuredClone(floor) }, progression: { attributes, level: 1, xp: 0, nextXp: GAME_TUNING.xpThreshold, totalKills: 0, difficulty, attributePoints: 0 }, player: { x: floor.start.x, y: floor.start.y, hasMass: true, heading: "e", resources: createResourcesModel(), equipment: { weapons: [null, null], armor: [null, null], jewels: [null, null] }, inventory: [], inventoryCapacity: ITEM_CAPACITY, abilities: [null, null, null], quickSlots: [null, null], sneaking: false, encumberedDirection: null }, counters: { keys: 0, gold: 0 }, objective: "Find the exit", quest: { id: "my-first-quest", title: "My First Quest", items: [{ id: "walk-through-stairs", title: "Walk through the stairs", complete: false }, { id: "collect-health-potion", title: "Collect a Health Potion", complete: false }, { id: "collect-coin", title: "Collect a coin", complete: false }], activeItemId: "walk-through-stairs" }, log: [] };
   if (options.topologyVersion !== undefined) campaign.topologyVersion = options.topologyVersion;
   if (options.portalLayoutVersion !== undefined) campaign.portalLayoutVersion = options.portalLayoutVersion;
   if (options.worldAttributes) { campaign.worldAttributes = normalizeWorldAttributes(options.worldAttributes); campaign.worldGrowth = []; campaign.worldSchemaVersion = 1; }
@@ -1357,7 +1395,7 @@ function enemyPhase(state: Campaign, events: GameEvent[]) {
   }
   const traps = (state.floor.decorations ?? []).filter(decoration => decoration.kind === "trap");
   const trapKeys = new Set(traps.map(key));
-  const intents = planEnemyActions({ floor: state.floor, player, time: state.floor.time, enemies, effectiveAwareness: (enemy) => effectiveAwareness(state, enemy), canAttack: (enemy, target) => enemyCanAttack(enemy, target) && (enemy.attackKind !== "ranged" || hasClearCardinalLine(state.floor, enemy, target)),
+  const intents = planEnemyActions({ floor: state.floor, player, time: state.floor.time, enemies, effectiveAwareness: (enemy) => effectiveAwareness(state, enemy), canSee: (enemy, target) => hasPerceptionLineOfSight(state, enemy, target), canAttack: (enemy, target) => enemyCanAttack(enemy, target) && (enemy.attackKind !== "ranged" || hasClearCardinalLine(state.floor, enemy, target)),
     canEnter: (enemy, position) => !blockedObjects.has(key(position)) && !(trapKeys.has(key(position)) && enemyAvoidsTrap(enemy, position, state.floor.time)),
     navigationGroup: enemy => traps.map(trap => enemyAvoidsTrap(enemy, trap, state.floor.time) ? "1" : "0").join(""),
   });
@@ -1433,7 +1471,7 @@ export function applyLevelStateDelta(base: Floor, delta: LevelStateDelta | undef
   return normalizeObjectSets(ensureSemanticCells({ ...structuredClone(base), time: delta.time, entities, objectSets }));
 }
 
-type GenerationCampaign = Pick<Campaign, "worldSeed" | "slot" | "run" | "progression" | "worldAttributes" | "floorProfiles" | "topologyVersion" | "portalLayoutVersion"> & { floor?: Pick<Floor, "seed"> };
+type GenerationCampaign = Pick<Campaign, "worldSeed" | "slot" | "run" | "progression" | "worldAttributes" | "floorProfiles" | "topologyVersion" | "portalLayoutVersion" | "worldFamily"> & { floor?: Pick<Floor, "seed"> };
 function validateGenerationProfile(profile: FloorGenerationProfile) {
   validateTopologyVersion(profile.topologyVersion);
   validatePortalLayoutVersion(profile.portalLayoutVersion);
@@ -1459,7 +1497,7 @@ function generationProfileForCampaign(campaign: GenerationCampaign, level: numbe
 export function generatedFloorForCampaign(campaign: GenerationCampaign, level: number) {
   const profile = generationProfileForCampaign(campaign, level);
   countPerformance("generated baseline floors");
-  const floor = generateFloor(level, profile.seed, profile.difficulty, { worldAttributes: profile.attributes, level1TestMode: profile.level1TestMode, level1ObjectTestMode: profile.level1ObjectTestMode, level1EnemyTestMode: profile.level1EnemyTestMode, topologyVersion: profile.topologyVersion, portalLayoutVersion: profile.portalLayoutVersion });
+  const floor = campaign.worldFamily === "overworld" ? generateOverworldFloor(level, profile.seed) : generateFloor(level, profile.seed, profile.difficulty, { worldAttributes: profile.attributes, level1TestMode: profile.level1TestMode, level1ObjectTestMode: profile.level1ObjectTestMode, level1EnemyTestMode: profile.level1EnemyTestMode, topologyVersion: profile.topologyVersion, portalLayoutVersion: profile.portalLayoutVersion });
   floor.generationProfile = structuredClone(profile);
   return floor;
 }
@@ -1564,11 +1602,12 @@ export function restoreCompactCampaign(campaign: Campaign) {
   return upgradeCampaignResources(campaign);
 }
 
-export function createRunCampaign(worldSeed: number, slot: number, run: number, difficulty = 1, level = 1, options: { topologyVersion?: string; portalLayoutVersion?: string; level1TestMode?: boolean; level1ObjectTestMode?: boolean; level1EnemyTestMode?: boolean; attributes?: Attributes; worldAttributes?: WorldAttributes; mode?: Campaign["mode"] } = {}) {
+export function createRunCampaign(worldSeed: number, slot: number, run: number, difficulty = 1, level = 1, options: { topologyVersion?: string; portalLayoutVersion?: string; level1TestMode?: boolean; level1ObjectTestMode?: boolean; level1EnemyTestMode?: boolean; attributes?: Attributes; worldAttributes?: WorldAttributes; mode?: Campaign["mode"]; worldFamily?: Campaign["worldFamily"] } = {}) {
   const topologyVersion = options.topologyVersion ?? DUNGEON_TOPOLOGY_VERSION;
   const portalLayoutVersion = options.portalLayoutVersion ?? PORTAL_LAYOUT_VERSION;
   const campaign = createCampaign(worldFloorSeed(worldSeed, slot, run, level), difficulty, level, { ...options, topologyVersion, portalLayoutVersion });
   campaign.worldSeed = worldSeed >>> 0;
+  campaign.worldFamily = options.worldFamily ?? "dungeon";
   campaign.slot = slot;
   campaign.run = run;
   campaign.generatorVersion = GENERATOR_VERSION;
@@ -1595,7 +1634,7 @@ function isRecoverySnapshot(value: unknown): value is Campaign {
 export function createAdventureLevelBaseline(campaign: Campaign) {
   const level = campaign.floor.level ?? campaign.floor.depth ?? 1;
   const profile = campaign.floorProfiles?.[String(level)] ?? campaign.floor.generationProfile;
-  const baseline = createRunCampaign(campaign.worldSeed ?? campaign.floor.seed, campaign.slot ?? 1, campaign.run ?? 1, campaign.progression.difficulty ?? level, level, { worldAttributes: campaign.worldAttributes, mode: campaign.mode, topologyVersion: profile ? profile.topologyVersion ?? LEGACY_DUNGEON_TOPOLOGY_VERSION : campaign.topologyVersion ?? LEGACY_DUNGEON_TOPOLOGY_VERSION, portalLayoutVersion: profile ? profile.portalLayoutVersion ?? LEGACY_PORTAL_LAYOUT_VERSION : campaign.portalLayoutVersion ?? LEGACY_PORTAL_LAYOUT_VERSION });
+  const baseline = createRunCampaign(campaign.worldSeed ?? campaign.floor.seed, campaign.slot ?? 1, campaign.run ?? 1, campaign.progression.difficulty ?? level, level, { worldAttributes: campaign.worldAttributes, mode: campaign.mode, worldFamily: campaign.worldFamily, topologyVersion: profile ? profile.topologyVersion ?? LEGACY_DUNGEON_TOPOLOGY_VERSION : campaign.topologyVersion ?? LEGACY_DUNGEON_TOPOLOGY_VERSION, portalLayoutVersion: profile ? profile.portalLayoutVersion ?? LEGACY_PORTAL_LAYOUT_VERSION : campaign.portalLayoutVersion ?? LEGACY_PORTAL_LAYOUT_VERSION });
   baseline.world = campaign.world;
   baseline.worldGrowth = structuredClone(campaign.worldGrowth);
   baseline.worldLegacyPoints = campaign.worldLegacyPoints;
@@ -1974,7 +2013,7 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
       const dungeonFloor = state.floors?.[String(returnLevel)] ? structuredClone(state.floors[String(returnLevel)]!) : rebuildCampaignFloor(state, returnLevel);
       state.floor = dungeonFloor;
       state.floor.time = time;
-      state.realm = `Underground ${returnLevel}`;
+      state.realm = `${state.worldFamily === "overworld" ? "Overworld" : "Underground"} ${returnLevel}`;
       const arrival = cardinalAdjacentPosition(state.floor, state.activePrefab.returnPosition);
       state.player.x = arrival.x;
       state.player.y = arrival.y;
@@ -2004,6 +2043,11 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
     if (!stair) return reject("not-on-stairs");
     const currentLevel = state.floor.level ?? state.floor.depth ?? 1;
     const level = stair.direction === "back" ? Math.max(1, currentLevel - 1) : currentLevel + 1;
+    const linkKey = `${Math.min(currentLevel, level)}:${Math.max(currentLevel, level)}`;
+    const priorLink = state.levelTransitions?.[linkKey];
+    const eastOfStair = { x: stair.x + 1, y: stair.y };
+    const fromPosition = stair.direction === "back" ? priorLink?.fromPosition
+      : (isAvailableEntranceCell(state.floor, eastOfStair) ? eastOfStair : cardinalAdjacentPosition(state.floor, stair));
     const time = state.floor.time;
     state.levelStates ??= {};
     if (state.floors) state.floors[String(currentLevel)] = structuredClone(state.floor);
@@ -2013,9 +2057,16 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
     state.floor = state.floors?.[String(level)] ? structuredClone(state.floors[String(level)]!) : rebuildCampaignFloor(state, level);
     state.floor.time = time;
     if (state.floors) state.floors[String(level)] = structuredClone(state.floor);
-    state.realm = `Underground ${level}`;
+    state.realm = `${state.worldFamily === "overworld" ? "Overworld" : "Underground"} ${level}`;
     const entrance = entrancePosition(state.floor);
-    state.player.x = entrance.x; state.player.y = entrance.y;
+    const toPosition = stair.direction === "back"
+      ? priorLink?.fromPosition ?? entrance
+      : priorLink?.toPosition ?? entrance;
+    if (!priorLink && stair.direction !== "back") {
+      state.levelTransitions ??= {};
+      state.levelTransitions[linkKey] = { fromLevel: currentLevel, toLevel: level, fromPosition: fromPosition!, toPosition };
+    }
+    state.player.x = toPosition.x; state.player.y = toPosition.y;
     revealDiscovery(state, state.player);
     emit(events, "realm.entered", { realm: state.realm, level }, state);
     if (!state.floor.progressionXpAwarded) { state.floor.progressionXpAwarded = true; gainXp(state, events, GAME_TUNING.xpPerFloor, "floor-arrival"); }
@@ -2027,7 +2078,8 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
     const direction = directions[action.direction as Direction]; if (!direction) return reject("invalid-direction"); const [dx, dy] = direction; const x = state.player.x + dx; const y = state.player.y + dy; const entity = entityAt(state.floor.entities, x, y);
     const lockbox = state.floor.lockboxes?.find(box => box.x === x && box.y === y);
     if (lockbox) {
-      emit(events, "lockbox.opened", { id: lockbox.id, position: { x, y } }, state);
+      if (dx && dy && (!isWalkable(state.floor, state.player.x + dx, state.player.y) || !isWalkable(state.floor, state.player.x, state.player.y + dy))) return reject("blocked");
+      emit(events, "lockbox.opened", { id: lockbox.storageId, position: { x, y } }, state);
       return { state, events, accepted: true, ticks: 0 };
     }
     const barrelSet = barrelSetAt(state.floor, x, y);
@@ -2080,8 +2132,8 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
       else if (entity?.kind === "teleport-arrow") {
         emit(events, "teleport-arrow.entered", { id: entity.id, destination: entity.destination, position: { x, y } }, state);
       }
-      else if (entity?.kind === "potion") { const item = consumableInstance(entity.resource, entity.id, entity.quantity ?? 1); const quickIndex = state.player.quickSlots!.findIndex((slot) => slot && quickSlotKey(slot.item) === quickSlotKey(item)); const inventoryItem = state.player.inventory.find((entry) => isQuickSlottableItem(entry) && quickSlotKey(entry) === quickSlotKey(item)); if (quickIndex >= 0) { state.player.quickSlots![quickIndex]!.quantity += entity.quantity ?? 1; state.floor.entities = state.floor.entities.filter((entry) => entry.id !== entity.id); emit(events, "item.collected", { itemId: item.id, item: item.name, name: item.name, resource: entity.resource, destination: { quickSlot: quickIndex }, quickSlot: quickIndex, quantity: state.player.quickSlots![quickIndex]!.quantity }, state); } else if (inventoryItem) { inventoryItem.quantity = (inventoryItem.quantity ?? 1) + (entity.quantity ?? 1); state.floor.entities = state.floor.entities.filter((entry) => entry.id !== entity.id); emit(events, "item.collected", { itemId: item.id, item: item.name, name: item.name, resource: entity.resource, destination: "inventory", quantity: inventoryItem.quantity }, state); } else if (inventoryFitsCapacity(state, [...state.player.inventory, item])) { state.player.inventory = orderedInventory([...state.player.inventory, item]); state.floor.entities = state.floor.entities.filter((entry) => entry.id !== entity.id); emit(events, "item.collected", { itemId: item.id, item: item.name, name: item.name, resource: entity.resource, destination: "inventory", quantity: entity.quantity ?? 1 }, state); } else emit(events, "item.collection.rejected", { itemId: entity.id, name: entity.name ?? `${entity.resource} potion`, resource: entity.resource, reason: "inventory-full" }, state); }
-      else if (entity?.kind === "item") { const item = normalizeItem(entity.item); const quickIndex = isQuickSlottableItem(item) ? state.player.quickSlots!.findIndex((slot) => slot && quickSlotKey(slot.item) === quickSlotKey(item)) : -1; const inventoryItem = isQuickSlottableItem(item) ? state.player.inventory.find((entry) => isQuickSlottableItem(entry) && quickSlotKey(entry) === quickSlotKey(item)) : null; if (quickIndex >= 0) { state.player.quickSlots![quickIndex]!.quantity += item.quantity ?? 1; state.floor.entities = state.floor.entities.filter((entry) => entry.id !== entity.id); emit(events, "item.collected", { itemId: item.id, name: item.name, destination: { quickSlot: quickIndex }, quickSlot: quickIndex, quantity: state.player.quickSlots![quickIndex]!.quantity }, state); } else if (inventoryItem) { inventoryItem.quantity = (inventoryItem.quantity ?? 1) + (item.quantity ?? 1); state.floor.entities = state.floor.entities.filter((entry) => entry.id !== entity.id); emit(events, "item.collected", { itemId: item.id, name: item.name, destination: "inventory", quantity: inventoryItem.quantity }, state); } else if (inventoryFitsCapacity(state, [...state.player.inventory, item])) { state.player.inventory = orderedInventory([...state.player.inventory, item]); state.floor.entities = state.floor.entities.filter((entry) => entry.id !== entity.id); emit(events, "item.collected", { itemId: item.id, name: item.name, destination: "inventory", quantity: item.quantity ?? 1 }, state); } else emit(events, "item.collection.rejected", { itemId: entity.id, name: item.name, reason: "inventory-full" }, state); }
+      else if (entity?.kind === "potion") { const item = consumableInstance(entity.resource, entity.id, entity.quantity ?? 1); const quickIndex = state.player.quickSlots!.findIndex((slot) => slot && quickSlotKey(slot.item) === quickSlotKey(item)); const inventoryItem = state.player.inventory.find((entry) => isQuickSlottableItem(entry) && quickSlotKey(entry) === quickSlotKey(item)); if (quickIndex >= 0) { mergeItemProvenance(state, state.player.quickSlots![quickIndex]!.item, item, state.player.quickSlots![quickIndex]!.quantity, entity.quantity ?? 1); state.player.quickSlots![quickIndex]!.quantity += entity.quantity ?? 1; state.floor.entities = state.floor.entities.filter((entry) => entry.id !== entity.id); emit(events, "item.collected", { itemId: item.id, item: item.name, name: item.name, resource: entity.resource, destination: { quickSlot: quickIndex }, quickSlot: quickIndex, quantity: state.player.quickSlots![quickIndex]!.quantity }, state); } else if (inventoryItem) { mergeItemProvenance(state, inventoryItem, item, inventoryItem.quantity ?? 1, entity.quantity ?? 1); inventoryItem.quantity = (inventoryItem.quantity ?? 1) + (entity.quantity ?? 1); state.floor.entities = state.floor.entities.filter((entry) => entry.id !== entity.id); emit(events, "item.collected", { itemId: item.id, item: item.name, name: item.name, resource: entity.resource, destination: "inventory", quantity: inventoryItem.quantity }, state); } else if (inventoryFitsCapacity(state, [...state.player.inventory, item])) { state.player.inventory = orderedInventory([...state.player.inventory, item]); state.floor.entities = state.floor.entities.filter((entry) => entry.id !== entity.id); emit(events, "item.collected", { itemId: item.id, item: item.name, name: item.name, resource: entity.resource, destination: "inventory", quantity: entity.quantity ?? 1 }, state); } else emit(events, "item.collection.rejected", { itemId: entity.id, name: entity.name ?? `${entity.resource} potion`, resource: entity.resource, reason: "inventory-full" }, state); }
+      else if (entity?.kind === "item") { const item = normalizeItem(entity.item); const quickIndex = isQuickSlottableItem(item) ? state.player.quickSlots!.findIndex((slot) => slot && quickSlotKey(slot.item) === quickSlotKey(item)) : -1; const inventoryItem = isQuickSlottableItem(item) ? state.player.inventory.find((entry) => isQuickSlottableItem(entry) && quickSlotKey(entry) === quickSlotKey(item)) : null; if (quickIndex >= 0) { mergeItemProvenance(state, state.player.quickSlots![quickIndex]!.item, item, state.player.quickSlots![quickIndex]!.quantity); state.player.quickSlots![quickIndex]!.quantity += item.quantity ?? 1; state.floor.entities = state.floor.entities.filter((entry) => entry.id !== entity.id); emit(events, "item.collected", { itemId: item.id, name: item.name, destination: { quickSlot: quickIndex }, quickSlot: quickIndex, quantity: state.player.quickSlots![quickIndex]!.quantity }, state); } else if (inventoryItem) { mergeItemProvenance(state, inventoryItem, item); inventoryItem.quantity = (inventoryItem.quantity ?? 1) + (item.quantity ?? 1); state.floor.entities = state.floor.entities.filter((entry) => entry.id !== entity.id); emit(events, "item.collected", { itemId: item.id, name: item.name, destination: "inventory", quantity: inventoryItem.quantity }, state); } else if (inventoryFitsCapacity(state, [...state.player.inventory, item])) { state.player.inventory = orderedInventory([...state.player.inventory, item]); state.floor.entities = state.floor.entities.filter((entry) => entry.id !== entity.id); emit(events, "item.collected", { itemId: item.id, name: item.name, destination: "inventory", quantity: item.quantity ?? 1 }, state); } else emit(events, "item.collection.rejected", { itemId: entity.id, name: item.name, reason: "inventory-full" }, state); }
       else if (entity?.kind === 'discovery') {
         state.floor.entities = state.floor.entities.filter(entry => entry.id !== entity.id);
         const value = Math.round(4 * (state.floor.generationProfile?.attributes ? worldTuning(state.floor.generationProfile.attributes).rewardScale : 1));
@@ -2145,12 +2197,12 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
     const inventory = state.player.inventory.filter((_, index) => index !== itemIndex);
     if (existing && !combining) {
       const stored = inventory.find(entry => isQuickSlottableItem(entry) && quickSlotKey(entry) === quickSlotKey(existing.item));
-      if (stored) stored.quantity = (stored.quantity ?? 1) + existing.quantity;
+      if (stored) { mergeItemProvenance(state, stored, existing.item, stored.quantity ?? 1, existing.quantity); stored.quantity = (stored.quantity ?? 1) + existing.quantity; }
       else inventory.push({ ...existing.item, quantity: existing.quantity });
     }
     if (!inventoryFitsCapacity(state, inventory)) return reject("inventory-full");
     state.player.inventory = orderedInventory(inventory);
-    slots[index] = combining ? { item: existing.item, quantity: existing.quantity + quantity } : { item, quantity };
+    if (combining) mergeItemProvenance(state, existing.item, item, existing.quantity, quantity); slots[index] = combining ? { item: existing.item, quantity: existing.quantity + quantity } : { item, quantity };
     emit(events, "quick-slot.changed", { action: combining ? "combined" : existing ? "swapped" : "assigned", itemId: item.id, item: item.name, source: "inventory", destination: { quickSlot: index }, quickSlot: index, quantity: slots[index]!.quantity }, state);
     tick(state, events); return { state, events, accepted: true, ticks: 1 };
   }
@@ -2160,7 +2212,7 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
     const source = slots[from]; const target = slots[to];
     if (!source) return reject("empty-quick-slot");
     const combining = target && quickSlotKey(target.item) === quickSlotKey(source.item);
-    slots[to] = combining ? { item: target.item, quantity: target.quantity + source.quantity } : source;
+    if (combining) mergeItemProvenance(state, target.item, source.item, target.quantity, source.quantity); slots[to] = combining ? { item: target.item, quantity: target.quantity + source.quantity } : source;
     slots[from] = combining ? null : target;
     emit(events, "quick-slot.changed", { action: combining ? "combined" : target ? "swapped" : "moved", itemId: source.item.id, item: source.item.name, source: { quickSlot: from }, destination: { quickSlot: to }, quickSlot: to, quantity: slots[to]!.quantity }, state);
     tick(state, events); return { state, events, accepted: true, ticks: 1 };
@@ -2170,7 +2222,7 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
     if (!Number.isInteger(index) || index < 0 || index > 1 || !slot) return reject("empty-quick-slot");
     const existing = state.player.inventory.find((item) => isQuickSlottableItem(item) && quickSlotKey(item) === quickSlotKey(slot.item));
     if (!existing && !inventoryFitsCapacity(state, [...state.player.inventory, { ...structuredClone(slot.item), quantity: slot.quantity }])) return reject("inventory-full");
-    if (existing) existing.quantity = (existing.quantity ?? 1) + slot.quantity;
+    if (existing) { mergeItemProvenance(state, existing, slot.item, existing.quantity ?? 1, slot.quantity); existing.quantity = (existing.quantity ?? 1) + slot.quantity; }
     else state.player.inventory = orderedInventory([...state.player.inventory, { ...structuredClone(slot.item), quantity: slot.quantity }]);
     slots[index] = null;
     emit(events, "quick-slot.changed", { action: "returned", itemId: slot.item.id, item: slot.item.name, source: { quickSlot: index }, destination: "inventory", quickSlot: index, quantity: slot.quantity }, state);
@@ -2185,7 +2237,7 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
       if (!enemy) return reject("no-valid-target", { itemId: slot.item.id, item: slot.item.name, quickSlot: index }, "quick-slot.use.rejected");
       const direction = cardinalDirection(state.player, enemy) ?? state.player.heading ?? "e";
       state.floor.projectiles = [...(state.floor.projectiles ?? []), { id: `projectile-${state.floor.time}-${slot.item.id}`, sourceId: "player", from: { x: state.player.x, y: state.player.y }, to: { x: enemy.x, y: enemy.y }, direction, createdAt: state.floor.time, kind: "throwing-knife" }];
-      slot.quantity -= 1; if (slot.quantity <= 0) state.player.quickSlots![index] = null;
+      consumeItemProvenance(state, slot.item, slot.quantity); slot.quantity -= 1; if (slot.quantity <= 0) state.player.quickSlots![index] = null;
       emit(events, "ability.used", { id: ability.id, abilityId: ability.id, title: ability.title, manaCost: 0, target: ability.target, targetId: enemy.id, position: { x: state.player.x, y: state.player.y }, quickSlot: index, quantity: Math.max(0, slot.quantity) }, state);
       return { state, events, accepted: true, ticks: 0 };
     }
@@ -2195,7 +2247,7 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
     if (current >= maximum) return reject("resource-full", { itemId: slot.item.id, item: slot.item.name, resource, current, currentMax: maximum, quickSlot: index }, "quick-slot.use.rejected");
     const previous = current; const restored = resource === "health" ? GAME_TUNING.healthPotionRestore : resource === "stamina" ? GAME_TUNING.staminaPotionRestore : GAME_TUNING.manaPotionRestore;
     changeResource(state, events, resource, current + restored, "quick-slot");
-    slot.quantity -= 1; if (slot.quantity <= 0) state.player.quickSlots![index] = null;
+    consumeItemProvenance(state, slot.item, slot.quantity); slot.quantity -= 1; if (slot.quantity <= 0) state.player.quickSlots![index] = null;
     emit(events, "potion.consumed", { itemId: slot.item.id, item: slot.item.name, resource, previous, current: state.player.resources[resource].current, quickSlot: index, quantity: Math.max(0, slot.quantity) }, state);
     tick(state, events); return { state, events, accepted: true, ticks: 1 };
   }
@@ -2219,7 +2271,7 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
 
 export function resolveTurn(state: Campaign, direction: string) { return applyAction(state, { type: "move", direction }).state; }
 export function previewEquipment(campaign: Campaign, item: Item, group: EquipmentGroup, index: number, mode = "equip") { const projected = copyCampaignMutableState(campaign); const slots = projected.player.equipment[group]; if (mode === "equip" && item.group === group) applyEquipmentItem(slots, item, targetIndexes(slots, item, index)); if (mode === "unequip") for (const slotIndex of occupiedIndexes(slots, item)) slots[slotIndex] = null; return effectiveAttributes(projected); }
-export function createGameSession(initial: Campaign, { onCommit, getSimulationFrozen, getEnemyLogicDisabled }: { onCommit?: (result: ActionResult) => void; getSimulationFrozen?: () => boolean; getEnemyLogicDisabled?: () => boolean } = {}) {
+export function createGameSession(initial: Campaign, { onCommit, getSimulationFrozen, getEnemyLogicDisabled, getInputPaused, reconcileRecovery }: { onCommit?: (result: ActionResult) => void; getSimulationFrozen?: () => boolean; getEnemyLogicDisabled?: () => boolean; getInputPaused?: () => boolean; reconcileRecovery?: (campaign: Campaign) => Campaign } = {}) {
   let state = initial; let transactionSequence = 0; let eventSequence = 0; let dispatching = false;
   let validatedCells: Floor["cells"] | null = null, validatedMap: Floor["map"] = undefined;
   const validateStaticBoundary = () => {
@@ -2233,6 +2285,16 @@ export function createGameSession(initial: Campaign, { onCommit, getSimulationFr
   const session = {
     getState: () => state,
     subscribe(listener: (result: ActionResult) => void) { listeners.add(listener); return () => listeners.delete(listener); },
+    /** Storage has already validated both owners. Durability precedes publication. */
+    commitStorage(expected: Campaign, next: Campaign, persist: () => void) {
+      if (state !== expected || dispatching) return false;
+      persist();
+      state = next;
+      const result: ActionResult = { state, events: [{ type: "storage.transferred", facts: {}, gameTime: state.floor.time, sequence: 1, eventId: `event-${++eventSequence}` }], accepted: true, ticks: 0, system: true };
+      for (const listener of [...listeners]) listener(result);
+      state = result.state;
+      return true;
+    },
     publish(type: string, facts: EventFacts = {}) {
       const event: GameEvent = { type, facts, eventId: `event-${++eventSequence}`, transactionId: null, gameTime: state.floor.time, sequence: 1, outcome: "system" };
       const result = { state, events: [event], accepted: false, ticks: 0, system: true };
@@ -2241,6 +2303,7 @@ export function createGameSession(initial: Campaign, { onCommit, getSimulationFr
       return event;
     },
     dispatch(action: Action): ActionResult | { queued: true; accepted: false; ticks: number; events: GameEvent[] } | null {
+      if (getInputPaused?.()) return { state, events: [], accepted: false, ticks: 0 };
       const request: { action: Action; result: ActionResult | null } = { action, result: null }; queue.push(request);
       if (dispatching) return { queued: true, accepted: false, ticks: 0, events: [] };
       dispatching = true;
@@ -2252,9 +2315,13 @@ export function createGameSession(initial: Campaign, { onCommit, getSimulationFr
           result.transactionId = `tx-${++transactionSequence}`;
           result.events = result.events.map((event, index) => ({ ...event, transactionId: result.transactionId, eventId: `event-${++eventSequence}`, sequence: index + 1, outcome: result.accepted ? "committed" : "rejected" }));
           if (result.accepted) {
+            applyStorageExclusions(result.state);
             const committed: GameEvent = { type: "action.committed", facts: { transactionId: result.transactionId, actionType: current.action.type, ticks: result.ticks }, transactionId: result.transactionId, eventId: `event-${++eventSequence}`, gameTime: result.state.floor.time, sequence: result.events.length + 1, outcome: "committed" };
             result.events.push(committed); state = result.state;
-            if (result.events.some((event) => event.type === "player.died")) result.recovery = buildDeathRecovery(result.state);
+            if (result.events.some((event) => event.type === "player.died")) {
+              const recovery = buildDeathRecovery(result.state);
+              result.recovery = recovery && reconcileRecovery ? reconcileRecovery(recovery) : recovery;
+            }
           }
           current.result = result;
           for (const listener of [...listeners]) listener(result);

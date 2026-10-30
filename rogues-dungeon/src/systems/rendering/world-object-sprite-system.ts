@@ -1,10 +1,16 @@
 import type { Entity } from "../../game/types.ts";
+import { jewelDefinition, type JewelName } from '../../content/items/jewel-catalog.ts';
+
+/** Shared by WebGPU sprites and DOM pickup-transfer cropping. */
+export const DROPPABLE_ITEM_ATLAS_LAYOUT = Object.freeze({ cellWidthPx: 362, cellHeightPx: 362, columns: 4, rows: 6 });
 
 export const DUNGEON_STAIR_UP_FRAME = 42;
 export const OBJECTS_OVERLAY_BARREL_FRAME = 0;
-// The authored door images are visually opposite their source-file names.
+// The horizontal atlas pair is visually opposite its source-file names.
 export const OBJECTS_OVERLAY_DOOR_OPEN_FRAME = 0;
 export const OBJECTS_OVERLAY_DOOR_CLOSED_FRAME = 1;
+export const OBJECTS_OVERLAY_SIDE_DOOR_OPEN_FRAME = 2;
+export const OBJECTS_OVERLAY_SIDE_DOOR_CLOSED_FRAME = 3;
 // objects-overlay is a 7 × 6 sheet; the crate is bottom row, second tile.
 export const OBJECTS_OVERLAY_CRATE_CLOSED_FRAME = 36;
 export const PROPS_STATIC_CRATE_OPEN_FRAMES = Object.freeze([1, 5] as const);
@@ -33,9 +39,21 @@ const WORLD_DROPPABLE_SPRITE_FRAMES = Object.freeze({
   "Wooden Stick": 10,
   "Wooden Vest": 11,
 } as const);
-export type WorldDroppableSpriteName = keyof typeof WORLD_DROPPABLE_SPRITE_FRAMES;
+export type WorldDroppableSpriteName = keyof typeof WORLD_DROPPABLE_SPRITE_FRAMES | JewelName;
 export function droppableItemSpriteFrame(name?: string | null) {
-  return name && name in WORLD_DROPPABLE_SPRITE_FRAMES ? WORLD_DROPPABLE_SPRITE_FRAMES[name as WorldDroppableSpriteName] : null;
+  if (!name) return null;
+  const jewel = jewelDefinition(name);
+  return jewel ? jewel.frame : Object.hasOwn(WORLD_DROPPABLE_SPRITE_FRAMES, name) ? WORLD_DROPPABLE_SPRITE_FRAMES[name as keyof typeof WORLD_DROPPABLE_SPRITE_FRAMES] : null;
+}
+
+/** Jewels use half-size world art for settled, thrown, and collected items. */
+export function droppableItemSpriteSizePx(name?: string | null) {
+  return name && jewelDefinition(name) ? 16 : 32;
+}
+
+/** Align the shield and full suit artwork within their world cells. */
+export function droppableItemMainOffsetXPx(name?: string | null) {
+  return name === "Oak Shield 03" || name === "Suit of Armor" ? -8 : 0;
 }
 
 export interface PickupMainArtPresentation {
@@ -62,8 +80,9 @@ export function itemSpriteFrame(kind: ItemKind, resource?: "health" | "stamina" 
   return 8;
 }
 
-export function puzzleObjectSpriteFrame(kind: "barrel" | "door", active: boolean) {
+export function puzzleObjectSpriteFrame(kind: "barrel" | "door", active: boolean, wallAxis: "horizontal" | "vertical" = "vertical") {
   if (kind === "barrel") return OBJECTS_OVERLAY_BARREL_FRAME;
+  if (wallAxis === "horizontal") return active ? OBJECTS_OVERLAY_SIDE_DOOR_CLOSED_FRAME : OBJECTS_OVERLAY_SIDE_DOOR_OPEN_FRAME;
   return active ? OBJECTS_OVERLAY_DOOR_OPEN_FRAME : OBJECTS_OVERLAY_DOOR_CLOSED_FRAME;
 }
 

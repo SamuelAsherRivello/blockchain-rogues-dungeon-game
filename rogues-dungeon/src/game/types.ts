@@ -25,10 +25,10 @@ export type EquipmentGroup = "weapons" | "armor" | "jewels";
 export type ConsumableResource = "health" | "stamina" | "mana";
 export type AbilityId = "heal" | "wand" | "throwing-knives";
 export type ItemCategory = "equipment" | "consumable" | "ability" | "capacity";
-export interface Item { id: string; name: string; group: EquipmentGroup; modifiers: Partial<Attributes>; slotSpan?: 1 | 2; hitChance?: number; critChance?: number; perks?: readonly string[]; category?: ItemCategory; abilityId?: AbilityId; capacityBonus?: number; consumableResource?: ConsumableResource; quickSlotAction?: "restore-resource" | "throwing-knives"; isStackable?: boolean; quantity?: number }
+export interface Item { id: string; name: string; group: EquipmentGroup; modifiers: Partial<Attributes>; slotSpan?: 1 | 2; hitChance?: number; critChance?: number; perks?: readonly string[]; category?: ItemCategory; abilityId?: AbilityId; capacityBonus?: number; consumableResource?: ConsumableResource; quickSlotAction?: "restore-resource" | "throwing-knives"; isStackable?: boolean; quantity?: number; keepInInventory?: boolean; containerSlot?: number }
 export interface QuickSlot { item: Item; quantity: number }
 export interface ItemLot { id: string; quantity: number; offset?: number }
-export interface LockboxStorage { version: 1; revision: number; containers: Record<string, Item[]>; provenance?: Record<string, ItemLot[]>; journal: { revision: number; direction: "deposit" | "withdraw"; lots: ItemLot[] }[] }
+export interface LockboxStorage { version: 1; legacyOverflow?: boolean; revision: number; containers: Record<string, Item[]>; provenance?: Record<string, ItemLot[]>; journal: { revision: number; direction: "deposit" | "withdraw"; lots: ItemLot[] }[] }
 export type Equipment = Record<EquipmentGroup, (Item | null)[]>;
 export interface TerrainCell { walkable: boolean; role: string; protected?: boolean }
 export type EnemyAiState = "idle" | "pursue" | "attack" | "blocked";
@@ -87,7 +87,7 @@ export interface WorldDecoration extends Position { id: string; kind: "torch" | 
 export interface TiledDecoration extends Position { gid: number }
 export interface Floor {
   seed: number; width: number; height: number; cells: TerrainCell[][]; map?: number[][];
-  start: Position; startRoom?: Room; entities: Entity[]; time: number; level: number; depth?: number; generatorVersion?: string;
+  start: Position; startRoom?: Room; entities: Entity[]; time: number; level: number; depth?: number; generatorVersion?: string; family?: "dungeon" | "overworld";
   scenario?: string; progressionXpAwarded?: boolean;
   generationProfile?: FloorGenerationProfile;
   worldDiagnostics?: {
@@ -99,7 +99,7 @@ export interface Floor {
   tiledGrounds?: number[]; tiledWalls?: number[];
   tiledDecorations?: TiledDecoration[];
   /** Blocking, human-authored tile objects; never populated by random placement. */
-  lockboxes?: (Position & { id: string; name: string; gid: number })[];
+  lockboxes?: (Position & { id: string; storageId: string; name: string; gid: number })[];
   decorations?: WorldDecoration[];
   objectSets?: ObjectSet[];
   prefabPlacements?: { prefabId: string; origin: Position }[];
@@ -137,6 +137,8 @@ export interface Campaign {
   playerHomeEntities?: Record<string, Entity[]>;
   /** Inputs used to regenerate this run's floors deterministically. */
   worldSeed?: number; slot?: number; run?: number; generatorVersion?: string; topologyVersion?: string; portalLayoutVersion?: string;
+  worldFamily?: "dungeon" | "overworld";
+  levelTransitions?: Record<string, { fromLevel: number; toLevel: number; fromPosition: Position; toPosition: Position }>;
   /** Compact state for visited generated levels, keyed by level. */
   levelStates?: Record<string, LevelStateDelta>;
   floorProfiles?: Record<string, FloorGenerationProfile>;
@@ -202,6 +204,6 @@ export interface ActionResult { state: Campaign; events: GameEvent[]; accepted: 
 export interface LogEntry { id?: string; text: string }
 export interface SelectedCell extends Position { pixel?: Position; pressed?: boolean; sprint?: boolean; left?: number; top?: number; size?: number; kind?: string }
 export interface Feedback extends Position { id?: string; kind: string; text: string; color: string; duration: number }
-export type DragSource = { kind: "inventory"; item: Item } | { kind: "slot"; item: Item; group: EquipmentGroup; index: number } | { kind: "quick-slot"; item: Item; index: number } | { kind: "ability"; item: Item; index: number };
-export type DropDestination = { kind: "inventory"; index?: number } | { kind: "slot"; group: EquipmentGroup; index: number } | { kind: "quick-slot"; index: number } | { kind: "ability"; index: number } | { kind: "drop-item" };
+export type DragSource = { kind: "inventory"; item: Item } | { kind: "lockbox"; item: Item; boxId: string } | { kind: "slot"; item: Item; group: EquipmentGroup; index: number } | { kind: "quick-slot"; item: Item; index: number } | { kind: "ability"; item: Item; index: number };
+export type DropDestination = { kind: "inventory"; index?: number } | { kind: "lockbox"; boxId: string; index?: number } | { kind: "slot"; group: EquipmentGroup; index: number } | { kind: "quick-slot"; index: number } | { kind: "ability"; index: number } | { kind: "drop-item" };
 export interface Rect extends Position { width: number; height: number }

@@ -2,12 +2,12 @@
 
 ## ADDED Requirements
 
-### Requirement: Persist independent lockboxes per Saved Game
-Each Saved Game SHALL persist the two home lockboxes independently in localStorage. Contents SHALL survive level travel, reload, every death mode, and replacement-character creation following Classic death. Missing lockbox data SHALL initialize empty. A missing or removed authored placement SHALL NOT erase stored contents. Different Saved Games SHALL NOT share storage.
+### Requirement: Persist shared lockbox storage per Saved Game
+Each Saved Game SHALL persist one shared lockbox inventory in localStorage, accessed through every authored lockbox using `shared-lockbox`. Contents SHALL survive level travel, reload, every death mode, and replacement-character creation following Classic death. Missing lockbox data SHALL initialize empty. A missing or removed authored placement SHALL NOT erase stored contents. Different Saved Games SHALL NOT share storage. Migration SHALL reset legacy placement-specific contents once, as selected by the user, and SHALL preserve already-canonical shared contents, transfer revision, and ownership history. Previously persisted canonical overflow SHALL remain withdrawable until within the ten-position capacity.
 
 #### Scenario: Reload stored items
 - **WHEN** the player deposits different items into the two lockboxes and reloads
-- **THEN** both lockboxes retain their own contents and the corresponding items remain absent from Inventory
+- **THEN** either lockbox shows both stored items in the same shared contents and those items remain absent from Inventory
 
 #### Scenario: Switch Saved Games
 - **WHEN** Saved Game 1 contains stored items and the player opens Saved Game 2

@@ -1,5 +1,5 @@
 import type { Position, SelectedCell } from "./types.ts";
-type MouseCampaign = { player: Position; floor: Parameters<typeof findCardinalPath>[0] };
+type MouseCampaign = { player: Position; floor: Parameters<typeof findCardinalPath>[0] & { lockboxes?: Position[] } };
 import { findCardinalApproachPath, findCardinalPath } from "./a-star.ts";
 import { ensureSemanticCells, isWalkable } from "../systems/procedural/level-grid-system.ts";
 
@@ -30,12 +30,15 @@ export function getMousePathResult(selectedCell: MouseTravelSelection | null, ca
   if (!selectedCell || !campaign?.player || !campaign?.floor) return { path: null, reachable: false };
   // A terrain wall is never a valid mouse destination. Do not show the
   // approach path that is useful for walkable occupied targets in this case.
-  if (!isWalkable(ensureSemanticCells(campaign.floor), selectedCell.x, selectedCell.y)) return { path: null, reachable: false };
+  const lockbox = !selectedCell.walkOnly && allowed(selectedCell) && campaign.floor.lockboxes?.some(box => box.x === selectedCell.x && box.y === selectedCell.y);
+  if (!lockbox && !isWalkable(ensureSemanticCells(campaign.floor), selectedCell.x, selectedCell.y)) return { path: null, reachable: false };
   const hidden = hiddenMouseInteractions(campaign, allowed, selectedCell.walkOnly ? selectedCell : undefined);
   const pathOptions = { respectObjectSets: true, avoidObjects: true, isBlocked: (cell: Position) => hidden.has(`${cell.x},${cell.y}`) };
   const path = findCardinalPath(campaign.floor, campaign.player, selectedCell, pathOptions);
   const preview = path ?? findCardinalApproachPath(campaign.floor, campaign.player, selectedCell, pathOptions);
-  return { path: preview ? Object.freeze(preview.slice(0, MAX_MOUSE_TRAVEL_STEPS + 1)) : null, reachable: Boolean(path && path.length <= MAX_MOUSE_TRAVEL_STEPS + 1) };
+  const approached = lockbox && preview?.at(-1);
+  const reachesBox = approached && Math.abs(approached.x - selectedCell.x) + Math.abs(approached.y - selectedCell.y) === 1;
+  return { path: preview ? Object.freeze(preview.slice(0, MAX_MOUSE_TRAVEL_STEPS + 1)) : null, reachable: Boolean((path || reachesBox) && preview && preview.length <= MAX_MOUSE_TRAVEL_STEPS + 1) };
 }
 
 /** The preview may cross hazards; one click stops before the first unconfirmed one. */
@@ -60,10 +63,11 @@ export function getMousePathFromSelectedCell(selectedCell: MouseTravelSelection 
 export function getMouseMovementFromSelectedCell(selectedCell: MouseTravelSelection | null, campaign: MouseCampaign | null, path: ReturnType<typeof findCardinalPath> | undefined = undefined, allowed: (position: Position) => boolean = () => true) {
   if (path === undefined) path = getMousePathFromSelectedCell(selectedCell, campaign, allowed);
   if (!campaign || !selectedCell?.pressed) return null;
-  if (!isWalkable(ensureSemanticCells(campaign.floor), selectedCell.x, selectedCell.y)) return null;
+  const lockbox = !selectedCell.walkOnly && allowed(selectedCell) && campaign.floor.lockboxes?.some(box => box.x === selectedCell.x && box.y === selectedCell.y);
+  if (!lockbox && !isWalkable(ensureSemanticCells(campaign.floor), selectedCell.x, selectedCell.y)) return null;
   const targetEntity = campaign.floor.entities?.find((entity) => entity.x === selectedCell.x && entity.y === selectedCell.y);
   const targetEntityState = targetEntity as (typeof targetEntity & { opened?: boolean }) | undefined;
-  const targetIsInteractive = targetEntity?.kind === "enemy"
+  const targetIsInteractive = lockbox || targetEntity?.kind === "enemy"
     || targetEntity?.kind === "campfire"
     || targetEntity?.kind === "chest" && !targetEntityState?.opened
     || targetEntity?.kind === "crate" && !targetEntityState?.opened

@@ -7,15 +7,41 @@ uses one active 100-by-100 dungeon level: its authoritative terrain is
 `floor.cells`, where each cell carries `walkable` and a semantic terrain
 `role` such as `ground` or `wall`. The structured dungeon pass writes the
 seeded rooms and corridors into that context, while entities, start/exit
-positions, diagnostics, and generator metadata remain level data.
+positions, diagnostics, and generator metadata remain level data. Overworld
+levels use the same coordinate grid and semantic-cell contract with `ground`
+and `mountain` roles.
 
 Movement, pathfinding, collision, combat targeting, rendering, Wang autotiling,
 Tiled repair import/export, and saves consume semantic cells. A compatibility
 `floor.map` view remains only at legacy save/test boundaries; new saved maps do
 not use it as gameplay authority. The pass runner also supports scoped writes
 and protected cells so later organic and structured passes can be composed
-without overwriting reserved landmarks. Overworld terrain and stairs are
-planned for later milestones and are not part of the current dungeon pass.
+without overwriting reserved landmarks.
+
+## Organic overworlds
+
+`generateOverworld` accepts dimensions, an unsigned seed, a mountain-density
+target, an organic noise scale, start/exit/landmark positions, protected cells,
+and reserved rectangles. Its mountain pass writes deterministic semantic
+mountain cells. Reserved rectangles are skipped by that pass; a later
+`applyOverworldScopedPass` can write a structured subarea only within its
+declared rectangle. A route-repair pass connects the start, exit, and required
+landmarks with a deterministic least-cost cardinal path while leaving the
+remaining mountain field intact.
+
+To start a non-persistent browser preview, open
+`?mute=1&family=overworld&randomSeed=60606`. `family=overworld` selects the
+organic family directly and `randomSeed` fixes its world seed. This preview
+does not read or write a Saved Game slot. Use WASD, arrow keys, or the on-screen
+direction buttons to move. Each generated level places forward stairs within
+30 cells of its start; levels 2 and above also have return stairs. Paired
+transition records preserve the exact source stair position across level
+changes and save/restore. Levels 2 and 3 are generated from the same family.
+
+The game view and minimap project the active semantic cells using the same
+grid coordinates. The world-render model carries the `mountain` role through
+the blocked-terrain projection while deriving art frames separately from
+walkability.
 
 Map repair links use the following query parameters:
 
@@ -23,7 +49,7 @@ Map repair links use the following query parameters:
 ?world=1&level=1&slot=1&seed=12345&mute=1&debug-fix-map-autotiled=1
 ```
 
-`slot` accepts only `1`, `2`, or `3`. A valid slot skips the Saved Games menu. Missing or invalid slots use the normal menu. `seed` is an unsigned 32-bit value and is used only when the selected slot is empty. `level` selects the generated dungeon level for a new campaign. `randomSeed` remains accepted as a compatibility alias for `seed`.
+`slot` accepts only `1`, `2`, or `3`. A valid slot skips the Saved Games menu. Missing or invalid slots use the normal menu. `seed` is an unsigned 32-bit value for complete run identities and `randomSeed` remains accepted as a compatibility alias. `level` selects the generated level for a new campaign.
 
 When `debug-fix-map-autotiled=1` is present, the active campaign shows Map Fix controls. **Open Editable Copy** downloads a self-contained ZIP bundle. At the archive root it contains the `.tmj` file with `Grounds`, `Walls`, `Pickups`, and `Decorations` layers beside an `assets/` folder containing temporary copies of the dungeon `.tsx` and PNG art. Extract the bundle anywhere, then open the root `.tmj` file in Tiled; the art resolves beside it even when the download was saved in Documents.
 

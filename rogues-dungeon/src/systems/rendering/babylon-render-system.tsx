@@ -20,7 +20,7 @@ import {
   createSpriteRenderer, createSurface, disposeEngine, disposeSpriteAtlas, disposeSpriteRenderer, disposeSurface,
   enableSprite2DYSort, loadTexture2D, registerSpriteRenderer, releaseTexture, resizeSurface, unregisterSpriteRenderer, setSprite2DShaderParams, startEngine, updateDynamicTexture,
 } from "@babylonjs/lite";
-import { createWorldPresentationReader, performanceCellBounds, getCameraCenter, getMouseScreenEdgeExit, getVisibleWorldCellBounds, getWorldCellAtScreenPosition, getWorldCellScreenCenter, getWorldScreenPosition, isWorldCellVisible, isWorldChunkVisible, WorldRender } from "./world-render-system.ts";
+import { createWorldPresentationReader, performanceCellBounds, getCameraCenter, getMouseScreenEdgeExit, getVisibleWorldCellBounds, getWorldCellAtScreenPosition, getWorldCellScreenCenter, getWorldScreenPosition, isWorldCellVisible, isWorldChunkVisible, WorldRender, type PuzzleObjectPresentation } from "./world-render-system.ts";
 import { getCutsceneBarHeightPx, getRenderedTileCssSize } from "../../content/world/zoom.ts";
 import { pixelPerfectOptions } from "../../content/babylon/config.ts";
 import { getInitializationMessage } from "../../content/babylon/initialization.ts";
@@ -29,14 +29,16 @@ import { CAMPFIRE_IDLE_FRAME_COUNT, CAMPFIRE_IDLE_FRAME_DURATION_MS, CAMPFIRE_ID
 import { isBlockingPathCell, resourceNames } from "../procedural/world-procedural-system.ts";
 import { isWalkable } from "../procedural/level-grid-system.ts";
 import { createHeroWarriorAnimationEntity, heroWarriorIdleAnimationForHeading, heroWarriorRunAnimationForHeading } from "../../content/characters/hero-warrior/hero-warrior-animation.ts";
-import { loadSpriteAtlasFrame } from "../../content/characters/hero-warrior/hero-warrior-atlas.ts";
+import { createHeroWarriorAppearanceSelection } from "../../content/characters/hero-warrior/hero-warrior-appearance.ts";
+import { createHeroWarriorVisualFrames } from "../../content/characters/hero-warrior/hero-warrior-visual-frames.ts";
+import { heroWarriorAtlasFrameKey, loadHeroWarriorAtlasFrames, loadSpriteAtlasFrame } from "../../content/characters/hero-warrior/hero-warrior-atlas.ts";
 import { createEnemyAnimationEntities, enemyCharacterDescriptor, enemyCharacterForName, enemyStaticIdleFramePath, ENEMY_CHARACTER_NAMES, type EnemyCharacterName } from "../../content/enemies/enemy-idle-animation.ts";
 import { createFloorTriggerAnimationEntity } from "../../content/world/floor-trigger-animation.ts";
 import { particleBoundsAt, particleBoundsAtTile, particleExpired, particleFrame, particleFrameUrl, particleOpacity, particlePosition, particleProgress, particleSizePx, type ParticleEffect } from "../animation/particle-effects-system.ts";
 import { UiCutsceneTransition, UiIrisTransition, UiPassiveTransition, useUiMotion, type UiCutscenePhase, type UiIrisPhase } from "../../ui/ui-transition-system.tsx";
 import { easeInCubic, easeOutCubic } from "../animation/tween-animation-system.ts";
 import { GRID_RENDER_PASS, orderWorldRenderEntries, type GridRenderEntry } from "./grid-render-order-system.ts";
-import { CHEST_MAIN_ART_ANCHOR_OFFSET_PX, DUNGEON_STAIR_UP_FRAME, doorMainArtAnchorOffset, droppableItemSpriteFrame, itemSpriteFrame, OBJECTS_OVERLAY_CRATE_CLOSED_FRAME, pickupMainArtPresentation, puzzleObjectSpriteFrame } from "./world-object-sprite-system.ts";
+import { CHEST_MAIN_ART_ANCHOR_OFFSET_PX, DROPPABLE_ITEM_ATLAS_LAYOUT, DUNGEON_STAIR_UP_FRAME, doorMainArtAnchorOffset, droppableItemMainOffsetXPx, droppableItemSpriteFrame, droppableItemSpriteSizePx, itemSpriteFrame, OBJECTS_OVERLAY_CRATE_CLOSED_FRAME, pickupMainArtPresentation, puzzleObjectSpriteFrame } from "./world-object-sprite-system.ts";
 import { pickupOscillationOffset, pickupShadowWidthScale } from "../animation/pickup-oscillation-system.ts";
 import { CHARACTER_MOVEMENT_DURATION_MS, TurnPresentationSystem } from "../animation/turn-presentation-system.ts";
 import { STAIR_DESCENT_DURATION_MS, STAIR_DESCENT_STEP_COUNT, STAIR_DESCENT_STEP_DURATION_MS, STAIR_DESCENT_STEP_INTERVAL_MS, stairDescentHeading, stairDescentIsMasked, stairDescentOffset } from "../animation/stair-descent-animation-system.ts";
@@ -115,6 +117,8 @@ const chestFramePaths = [
 const doorFramePaths = [
   `${import.meta.env.BASE_URL}assets/art/game-view/props/static/front-door-closed.png`,
   `${import.meta.env.BASE_URL}assets/art/game-view/props/static/front-door-open.png`,
+  `${import.meta.env.BASE_URL}assets/art/game-view/props/static/side-door-closed.png`,
+  `${import.meta.env.BASE_URL}assets/art/game-view/props/static/side-door-open.png`,
 ];
 const barrelFramePaths = [
   `${import.meta.env.BASE_URL}assets/art/game-view/props/static/barrel.png`,
@@ -240,7 +244,7 @@ function visibleTarget(selector: string) {
   });
 }
 
-export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTestMode = 3, zoom = 1, minimap = false, camera = "center", cameraAnimationToken = 0, playerDeathAnimation = false, stairDepartureStartedAt = null, teleportDepartureRequested = false, onTeleportDepartureComplete, mouseInteraction = false, mouseScreenEdgeTarget = null, mouseDirection = null, showPivotPoints = false, floatingFeedback = [], resourceChangeEffects = [], particleEffects = [], itemThrows = [], uiAnimations = [], selectedCell = null, selectedCellReachable = null, mousePath = null, campfireMenu = null, campfireRestConfirming = false, campfireRestTransition = false, turnPresentation, onCampfireRestReplenish, onCampfireRestRequested, onCampfireMenuCancelled, movementPrompts, onSelectedCellChange, onSelectedCellClick, onMouseScreenEdgeAdvance, onWorldAliveChange, onPlayerDeathAnimationComplete, onStairDepartureComplete, onStairDescentStep, onWallAdjacentBarrelOffscreen, onUiAnimationRest, onUiAnimationComplete, onFpsChange, onZoom }: { campaign: Campaign; theme?: DungeonTheme; gameViewShader?: GameViewShaderId; renderTestMode?: RenderTestMode; zoom?: number; minimap?: boolean; camera?: string; cameraAnimationToken?: number; playerDeathAnimation?: boolean; stairDepartureStartedAt?: number | null; teleportDepartureRequested?: boolean; onTeleportDepartureComplete?(): void; mouseInteraction?: boolean; mouseScreenEdgeTarget?: Position | null; mouseDirection?: Direction | null; showPivotPoints?: boolean; floatingFeedback?: Feedback[]; resourceChangeEffects?: ResourceChangeEffect[]; particleEffects?: ParticleEffect[]; itemThrows?: ItemThrow[]; uiAnimations?: GameViewToUiAnimation[]; selectedCell?: SelectedCell | null; selectedCellReachable?: boolean | null; mousePath?: readonly Position[] | null; campfireMenu?: Position | null; campfireRestConfirming?: boolean; campfireRestTransition?: boolean; turnPresentation?: TurnPresentationSystem; onCampfireRestReplenish?(progress: number): void; onCampfireRestRequested?(): void; onCampfireMenuCancelled?(): void; movementPrompts?: MovementPromptController; onSelectedCellChange?(cell: SelectedCell | null): void; onSelectedCellClick?(cell: SelectedCell): void; onMouseScreenEdgeAdvance?(direction: Direction): boolean; onWorldAliveChange?(alive: boolean): void; onPlayerDeathAnimationComplete?(): void; onStairDepartureComplete?(): void; onStairDescentStep?(): void; onWallAdjacentBarrelOffscreen?(setId: string): boolean; onUiAnimationRest?(id: string): void; onUiAnimationComplete?(id: string): void; onFpsChange?(fps: number | null): void; onZoom?(step: number): void }) {
+export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTestMode = 3, zoom = 1, minimap = false, camera = "center", cameraAnimationToken = 0, playerDeathAnimation = false, stairDepartureStartedAt = null, teleportDepartureRequested = false, onTeleportDepartureComplete, mouseInteraction = false, mouseScreenEdgeTarget = null, mouseDirection = null, showPivotPoints = false, floatingFeedback = [], resourceChangeEffects = [], particleEffects = [], itemThrows = [], uiAnimations = [], selectedCell = null, selectedCellReachable = null, mousePath = null, campfireMenu = null, campfireRestConfirming = false, campfireRestTransition = false, turnPresentation, onCampfireRestReplenish, onCampfireRestRequested, onCampfireMenuCancelled, movementPrompts, onSelectedCellChange, onSelectedCellClick, onMouseScreenEdgeAdvance, onWorldAliveChange, onPlayerDeathAnimationComplete, onStairDepartureComplete, onStairDescentStep, onWallAdjacentBarrelOffscreen, onUiAnimationRest, onUiAnimationComplete, onFpsChange, onZoom, onToggleZoom }: { campaign: Campaign; theme?: DungeonTheme; gameViewShader?: GameViewShaderId; renderTestMode?: RenderTestMode; zoom?: number; minimap?: boolean; camera?: string; cameraAnimationToken?: number; playerDeathAnimation?: boolean; stairDepartureStartedAt?: number | null; teleportDepartureRequested?: boolean; onTeleportDepartureComplete?(): void; mouseInteraction?: boolean; mouseScreenEdgeTarget?: Position | null; mouseDirection?: Direction | null; showPivotPoints?: boolean; floatingFeedback?: Feedback[]; resourceChangeEffects?: ResourceChangeEffect[]; particleEffects?: ParticleEffect[]; itemThrows?: ItemThrow[]; uiAnimations?: GameViewToUiAnimation[]; selectedCell?: SelectedCell | null; selectedCellReachable?: boolean | null; mousePath?: readonly Position[] | null; campfireMenu?: Position | null; campfireRestConfirming?: boolean; campfireRestTransition?: boolean; turnPresentation?: TurnPresentationSystem; onCampfireRestReplenish?(progress: number): void; onCampfireRestRequested?(): void; onCampfireMenuCancelled?(): void; movementPrompts?: MovementPromptController; onSelectedCellChange?(cell: SelectedCell | null): void; onSelectedCellClick?(cell: SelectedCell): void; onMouseScreenEdgeAdvance?(direction: Direction): boolean; onWorldAliveChange?(alive: boolean): void; onPlayerDeathAnimationComplete?(): void; onStairDepartureComplete?(): void; onStairDescentStep?(): void; onWallAdjacentBarrelOffscreen?(setId: string): boolean; onUiAnimationRest?(id: string): void; onUiAnimationComplete?(id: string): void; onFpsChange?(fps: number | null): void; onZoom?(step: number): void; onToggleZoom?(): void }) {
   const tooltipOwner = useId();
   const knownCell = useMemo(() => createDiscoveryReader(campaign), [campaign]);
   const presentationAllowed = (position: Position) => !renderTestEffects(renderTestMode).fog || knownCell(position);
@@ -258,6 +262,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
   const mouseDownRef = useRef(false);
   const pointerRef = useRef<Position | null>(null);
   const reticleInput = useRef(new GamepadReticleController());
+  const previousViewButtonPressed = useRef(false);
   const selectedCellRef = useRef(selectedCell);
   const onFpsChangeRef = useRef(onFpsChange);
   const onPlayerDeathAnimationCompleteRef = useRef(onPlayerDeathAnimationComplete);
@@ -463,7 +468,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
       const { rect, center, tileCssSize } = projection;
       const cellOrigin = getWorldCellScreenCenter({ ...flight, center, viewportWidth: rect.width, viewportHeight: rect.height, tileCssSize });
       const pixelScale = tileCssSize / 32;
-      const origin = { left: cellOrigin.left + flight.mainOffsetPx.x * pixelScale, top: cellOrigin.top + flight.mainOffsetPx.y * pixelScale };
+      const origin = { left: cellOrigin.left + (flight.mainOffsetPx.x + droppableItemMainOffsetXPx(flight.itemName)) * pixelScale, top: cellOrigin.top + flight.mainOffsetPx.y * pixelScale };
       const target = visibleTarget(flight.target);
       const destinationLayer = target?.closest<HTMLElement>(flight.destination === "counter" ? ".game-screen" : ".game-screen__middle");
       if (!target || !destinationLayer) { onUiAnimationRest?.(flight.id); onUiAnimationComplete?.(flight.id); continue; }
@@ -476,13 +481,14 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
       const image = document.createElement("img"); image.className = `world-view__ui-animation-sprite${goldCoin ? " world-view__ui-animation-sprite--gold" : dedicatedItem ? " world-view__ui-animation-sprite--droppable" : ""}`; image.src = goldCoin ? texturePaths.itemsAnimated : dedicatedItem ? texturePaths.droppableItems : texturePaths.items; image.alt = "";
       if (staminaPotion) { image.src = `${import.meta.env.BASE_URL}assets/art/game-view/items/stamina-potion.png`; image.style.width = "100%"; image.style.height = "100%"; }
       if (!goldCoin && !staminaPotion) {
-        const columns = dedicatedItem ? 4 : 3;
-        const rows = dedicatedItem ? 3 : 3;
+        const columns = dedicatedItem ? DROPPABLE_ITEM_ATLAS_LAYOUT.columns : 3;
+        const rows = dedicatedItem ? DROPPABLE_ITEM_ATLAS_LAYOUT.rows : 3;
+        if (dedicatedItem) { image.style.setProperty('--droppable-atlas-width', `${columns * 100}%`); image.style.setProperty('--droppable-atlas-height', `${rows * 100}%`); }
         const frame = dedicatedItem ? droppableFrame : flight.frame;
         image.style.transform = `translate(${-100 * (frame % columns) / columns}%, ${-100 * Math.floor(frame / columns) / rows}%)`;
       }
       transfer.append(image);
-      const mainSize = flight.mainSizePx * pixelScale;
+      const mainSize = flight.mainSizePx * pixelScale * (dedicatedItem ? droppableItemSpriteSizePx(flight.itemName) / 32 : 1);
       Object.assign(transfer.style, { left: `${rect.left + origin.left}px`, top: `${rect.top + origin.top}px`, width: `${mainSize}px`, height: `${mainSize}px`, transform: "translate(-50%, -50%)" });
       destinationLayer.append(transfer);
       requestAnimationFrame(() => {
@@ -571,6 +577,9 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
     !minimap && mouseInteraction && worldAlive,
     `${campaign.run}:${campaign.floor.seed}:${campaign.floor.level}:${campaign.activePrefab?.id}:${gameMode(campaign)}`,
     (input) => {
+      const viewButtonPressed = Boolean(input.buttons?.[8]);
+      if (viewButtonPressed && !previousViewButtonPressed.current) onToggleZoom?.();
+      previousViewButtonPressed.current = viewButtonPressed;
       const rect = hostRef.current?.getBoundingClientRect();
       if (!rect || !rect.width || !rect.height) return;
       const target = selectedCellRef.current;
@@ -583,6 +592,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
       selectCell(update.offset ? targetAtNeighbor(update.offset, rect) : null);
     },
     () => {
+      previousViewButtonPressed.current = false;
       const wasGamepad = reticleInput.current.source === "gamepad";
       reticleInput.current.reset();
       if (wasGamepad || !mouseInteraction) {
@@ -720,6 +730,8 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
         }
         heroAnimation = createHeroWarriorAnimationEntity(import.meta.env.BASE_URL);
         const activeHeroAnimation = heroAnimation;
+        const heroVisuals = createHeroWarriorVisualFrames(import.meta.env.BASE_URL);
+        const selectHeroAppearance = createHeroWarriorAppearanceSelection();
         let playerDeathCompletionNotified = false;
         enemyAnimations = createEnemyAnimationEntities(import.meta.env.BASE_URL);
         const activeEnemyAnimations = enemyAnimations;
@@ -771,7 +783,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
         atlases.push(enemyAtlas);
         const itemAtlas = createGridSpriteAtlas(textures.items, { cellWidthPx: 32, cellHeightPx: 32, columns: 3, rows: 3, pivot: [0.5, 0.5] });
         const teleportArrowAtlas = createGridSpriteAtlas(textures.teleportArrow, { cellWidthPx: 32, cellHeightPx: 32, columns: 4, rows: 1, pivot: [0.5, 0.5] });
-        const droppableItemAtlas = createGridSpriteAtlas(textures.droppableItems, { cellWidthPx: 362, cellHeightPx: 362, columns: 4, rows: 3, pivot: [0.5, 0.5] });
+        const droppableItemAtlas = createGridSpriteAtlas(textures.droppableItems, { ...DROPPABLE_ITEM_ATLAS_LAYOUT, pivot: [0.5, 0.5] });
         const specialItemFramePaths = [
           `${import.meta.env.BASE_URL}assets/art/game-view/items/stamina-potion.png`,
           `${import.meta.env.BASE_URL}assets/art/game-view/items/throwing-knives.png`,
@@ -781,9 +793,10 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
         const propsAnimatedAtlas = createGridSpriteAtlas(textures.propsAnimated, { cellWidthPx: 32, cellHeightPx: 32, columns: 7, rows: 5, pivot: [0.5, 1] });
         const propsStaticAtlas = createGridSpriteAtlas(textures.propsStatic, { cellWidthPx: 32, cellHeightPx: 32, columns: 4, rows: 2, pivot: [0.5, 1] });
         const objectsOverlayAtlas = createGridSpriteAtlas(textures.objectsOverlay, { cellWidthPx: 32, cellHeightPx: 32, columns: 7, rows: 6, pivot: [0.5, 1] });
-        const heroFramePaths = [...new Set(activeHeroAnimation.listAnimations().flatMap((animation) => animation.frames.map((frame) => frame.path)))];
-        const heroAtlasPaths = [...heroFramePaths, heroShadowPath];
-        const heroAtlas = minimap ? null : createSpriteAtlasFromFrames(engine, await loadFrames(heroAtlasPaths), { paddingPx: 1, sampling: "nearest" });
+        const heroAtlasFrames = [...heroVisuals.frames, { path: heroShadowPath, widthPx: 32, heightPx: 32 }];
+        const heroPixels = await loadHeroWarriorAtlasFrames(heroAtlasFrames);
+        if (cancelled) throw new Error("Renderer setup cancelled");
+        const heroAtlas = createSpriteAtlasFromFrames(engine, heroPixels, { paddingPx: 1, sampling: "nearest" });
         if (heroAtlas) atlases.push(heroAtlas);
         const goldCoinAtlas = createGridSpriteAtlas(textures.itemsAnimated, { cellWidthPx: 32, cellHeightPx: 32, columns: 4, rows: 2, pivot: [0.5, 0.5] });
         const authoredDecorations = campaign.floor.tiledDecorations ?? [];
@@ -816,7 +829,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
         const projectileAtlasPaths = Object.values(projectileFramePaths);
         const projectileAtlas = createSpriteAtlasFromFrames(engine, await loadFrames(projectileAtlasPaths), { paddingPx: 1, sampling: "nearest" });
         atlases.push(projectileAtlas);
-        const heroFrameIndexes = new Map(heroAtlasPaths.map((path, index) => [path, index]));
+        const heroFrameIndexes = new Map(heroAtlasFrames.map((frame, index) => [heroWarriorAtlasFrameKey(frame), index]));
         const enemyFrameIndexes = new Map(enemyAtlasPaths.map((path, index) => [path, index]));
         const model = WorldRender.Render({ cells: campaign.floor.cells, entities: campaign.floor.entities, decorations: campaign.floor.decorations, objectSets: campaign.floor.objectSets, player: campaign.player, start: campaign.floor.start, groundTiles: campaign.floor.tiledGrounds, wallTiles: campaign.floor.tiledWalls, isDiscovered: () => true, view: minimap ? "minimap" : "game", detail: minimap ? "simplified" : "full" });
         const startRoomDecorations = model.wallDecorations.filter((decoration) => decoration.kind === "start-room-wall");
@@ -1096,8 +1109,16 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
             activeHeroAnimation.start();
             playerDeathCompletionNotified = false;
           }
-          if (!isMinimap && hostRef.current) hostRef.current.dataset.playerAnimation = activeHeroAnimation.getState().animation;
-          const activeHeroFrame = activeHeroAnimation.getState().frame;
+          const heroState = activeHeroAnimation.getState();
+          const heroAppearance = selectHeroAppearance(state.player.equipment, playerDeathActive);
+          const activeHeroFrame = heroVisuals.resolve(heroAppearance, heroState.animation, heroState.frameIndex);
+          const activeHeroFrameIndex = heroFrameIndexes.get(heroWarriorAtlasFrameKey(activeHeroFrame));
+          if (activeHeroFrameIndex === undefined) throw new Error(`Missing packed Hero Warrior frame: ${heroAppearance}/${heroState.animation}/${heroState.frameIndex}`);
+          if (!isMinimap && hostRef.current) {
+            hostRef.current.dataset.playerAnimation = heroState.animation;
+            hostRef.current.dataset.playerAppearance = heroAppearance;
+            hostRef.current.dataset.playerFrame = String(heroState.frameIndex);
+          }
           if (playerDeathActive && activeHeroAnimation.getState().completed && !playerDeathCompletionNotified) {
             playerDeathCompletionNotified = true;
             onPlayerDeathAnimationCompleteRef.current?.();
@@ -1108,7 +1129,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
           const departureOffsetY = departureElapsed > 0 ? stairDescentOffset(departureElapsed) : 0;
           const playerDepthPosition = turnPresentation?.playerDepthPositionOf(state.player, now) ?? state.player;
           const playerMovementPulse = isMinimap || !performanceOptions().animated ? 0 : turnPresentation?.movementPulseOf("player", now) ?? 0;
-          if (playerSprite) { const positionPx: [number, number] = [playerPosition.x * 32 + 16, playerPosition.y * 32 + 16 + departureOffsetY]; const damageScale = (isMinimap ? 1 : turnPresentation?.damageScaleOf("player", now) ?? 1) * (1 - departureProgress * .15); updateCharacterSprite(playerSprite, positionPx, 0, { sizePx: [activeHeroFrame.widthPx * damageScale, activeHeroFrame.heightPx * damageScale], frame: heroFrameIndexes.get(activeHeroFrame.path) ?? 0, flipX: playerHeading === "w", color: [1, 1, 1, 1] }, playerMovementPulse, PLAYER_HOP_HEIGHT_PX, 1); addCharacterDepth("player", groundContactY(playerDepthPosition), playerSprite, turnPresentation?.bumpDepthTieBreakOf("player", now) ?? 0); updatePivotMarkers(playerPivotMarkers, playerSprite, positionPx, pivotsVisible); }
+          if (playerSprite) { const positionPx: [number, number] = [playerPosition.x * 32 + 16, playerPosition.y * 32 + 16 + departureOffsetY]; const damageScale = (isMinimap ? 1 : turnPresentation?.damageScaleOf("player", now) ?? 1) * (1 - departureProgress * .15); updateCharacterSprite(playerSprite, positionPx, 0, { sizePx: [activeHeroFrame.widthPx * damageScale, activeHeroFrame.heightPx * damageScale], frame: activeHeroFrameIndex, flipX: playerHeading === "w", color: [1, 1, 1, 1] }, playerMovementPulse, PLAYER_HOP_HEIGHT_PX, 1); addCharacterDepth("player", groundContactY(playerDepthPosition), playerSprite, turnPresentation?.bumpDepthTieBreakOf("player", now) ?? 0); updatePivotMarkers(playerPivotMarkers, playerSprite, positionPx, pivotsVisible); }
           const visibleBounds = bounds;
           const dynamicVisible = (position: { x: number; y: number }) => allowed(position) && performanceOptions().dynamic && (isMinimap || isWorldCellVisible(position, visibleBounds));
           const visibilityKey = [visibleBounds.minX, visibleBounds.minY, visibleBounds.maxX, visibleBounds.maxY, performanceOptions().local, performanceOptions().dynamic, selectedMode, effects.fog ? discoveryRevision(state) : "", effects.lighting ? field.revision : 0, state.player.x, state.player.y].join(":");
@@ -1174,12 +1195,13 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
           const stairObjects = world.objects.filter((entity) => entity.kind === "stairs");
           const teleportArrowObjects = world.objects.filter((entity) => entity.kind === "teleport-arrow" && dynamicVisible(entity));
           items.forEach((pickup, i) => { const entity = standardItemObjects[i]; itemLayers[i].shadow.visible = Boolean(entity); itemLayers[i].main.visible = Boolean(entity); if (!entity) { hideCharacterSprite(pickup); return; } const kind = entity.kind as "item" | "potion" | "key" | "discovery"; const presentation = pickupMainArtPresentation(kind, entity.resource); const oscillationPx = isMinimap ? 0 : pickupOscillationOffset(now, presentation.oscillationAmplitudePx); const shadowWidthScale = presentation.shadowWidthScale * (isMinimap ? 1 : pickupShadowWidthScale(oscillationPx, presentation.oscillationAmplitudePx)); updateCharacterSprite(pickup, [entity.worldX, entity.worldY], 0, { frame: itemSpriteFrame(kind, entity.resource), sizePx: kind === "key" ? [16, 16] : [32, 32], positionPx: [entity.worldX, entity.worldY + presentation.mainOffsetPx + oscillationPx] }, 0, 0, 1, [32 * shadowWidthScale, 32 * presentation.shadowHeightScale]); addPickupDepth(entity.id, groundContactY(entity), pickup); });
-          droppableItems.forEach((pickup, i) => { const entity = droppableItemObjects[i]; droppableItemLayers[i].shadow.visible = Boolean(entity); droppableItemLayers[i].main.visible = Boolean(entity); if (!entity) { hideCharacterSprite(pickup); return; } const frame = droppableItemSpriteFrame(entity.item?.name) ?? 0; const oscillationPx = isMinimap ? 0 : pickupOscillationOffset(now, 1.5); updateCharacterSprite(pickup, [entity.worldX, entity.worldY], 0, { frame, sizePx: [32, 32], positionPx: [entity.worldX, entity.worldY - 8 + oscillationPx] }, 0, 0, 1, [32 * pickupShadowWidthScale(oscillationPx, 1.5), 32]); addPickupDepth(entity.id, groundContactY(entity), pickup); });
+          droppableItems.forEach((pickup, i) => { const entity = droppableItemObjects[i]; droppableItemLayers[i].shadow.visible = Boolean(entity); droppableItemLayers[i].main.visible = Boolean(entity); if (!entity) { hideCharacterSprite(pickup); return; } const frame = droppableItemSpriteFrame(entity.item?.name) ?? 0; const sizePx = droppableItemSpriteSizePx(entity.item?.name); const oscillationPx = isMinimap ? 0 : pickupOscillationOffset(now, 1.5); updateCharacterSprite(pickup, [entity.worldX, entity.worldY], 0, { frame, sizePx: [sizePx, sizePx], positionPx: [entity.worldX + droppableItemMainOffsetXPx(entity.item?.name), entity.worldY - 8 + oscillationPx] }, 0, 0, 1, [sizePx * pickupShadowWidthScale(oscillationPx, 1.5), sizePx]); addPickupDepth(entity.id, groundContactY(entity), pickup); });
           specialItems.forEach((pickup, i) => { const entity = specialItemObjects[i]; specialItemLayers[i].shadow.visible = Boolean(entity); specialItemLayers[i].main.visible = Boolean(entity); if (!entity) { hideCharacterSprite(pickup); return; } const resource = entity.kind === "potion" ? entity.resource : null; const presentation = pickupMainArtPresentation(entity.kind as "potion" | "item", resource); const oscillationPx = isMinimap ? 0 : pickupOscillationOffset(now, presentation.oscillationAmplitudePx); const shadowWidthScale = presentation.shadowWidthScale * (isMinimap ? 1 : pickupShadowWidthScale(oscillationPx, presentation.oscillationAmplitudePx)); updateCharacterSprite(pickup, [entity.worldX, entity.worldY], 0, { frame: entity.kind === "potion" ? 0 : 1, sizePx: [32, 32], positionPx: [entity.worldX, entity.worldY + presentation.mainOffsetPx + oscillationPx] }, 0, 0, 1, [32 * shadowWidthScale, 32 * presentation.shadowHeightScale]); addPickupDepth(entity.id, groundContactY(entity), pickup); });
-          const doorObjects = world.puzzleObjects.filter((entity) => entity.kind === "door" && dynamicVisible(entity));
+          const doorObjects = world.puzzleObjects.filter((entity): entity is Extract<PuzzleObjectPresentation, { kind: "door" }> => entity.kind === "door" && dynamicVisible(entity));
           doors.forEach((sprite, i) => {
             const door = doorObjects[i]; doorLayers[i].visible = Boolean(door);
-            updateSprite2D(sprite, { frame: door ? puzzleObjectSpriteFrame("door", door.active) : 0, positionPx: door ? [door.x * 32 + 16, door.y * 32 + 16 + doorMainArtAnchorOffset(door.active)] : [-10000,-10000], sizePx: [32, door ? 48 : 32] });
+            const sideArt = door?.wallAxis === "horizontal";
+            updateSprite2D(sprite, { frame: door ? puzzleObjectSpriteFrame("door", door.active, door.wallAxis) : 0, positionPx: door ? sideArt ? [door.x * 32 + 32, door.y * 32 + 32] : [door.x * 32 + 16, door.y * 32 + 16 + doorMainArtAnchorOffset(door.active)] : [-10000,-10000], sizePx: sideArt ? [64, 64] : [32, door ? 48 : 32] });
             if (door) addLayerDepth(door.id, groundContactY(door), WORLD_TIE_BREAK.prop, doorLayers[i]);
           });
           const barrelObjects = world.puzzleObjects.filter((entity) => entity.kind === "barrel" && dynamicVisible(entity));
@@ -1206,7 +1228,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
           chestCoins.forEach((sprite, i) => { const throwItem = activeItemThrows[i]; const position = throwItem ? itemThrowPosition(throwItem, performance.now()) : null; const visible = Boolean(position && dynamicVisible(position) && throwItem?.kind === "gold"); chestCoinLayers[i].visible = visible; if (!visible || !position || !throwItem) return; updateSprite2D(sprite, { frame: goldCoinFrame, positionPx: [position.x * 32 + 16, position.y * 32 + 16] }); addLayerDepth(throwItem.id, groundContactY(position), WORLD_TIE_BREAK.effect, chestCoinLayers[i]); });
           itemThrowSprites.forEach((sprite, i) => { const throwItem = activeItemThrows[i]; const position = throwItem ? itemThrowPosition(throwItem, performance.now()) : null; const visible = Boolean(position && dynamicVisible(position) && throwItem?.kind !== "gold" && throwItem?.resource !== "stamina" && droppableItemSpriteFrame(throwItem?.itemName) === null); itemThrowLayers[i].visible = visible; if (!visible || !position || !throwItem) return; updateSprite2D(sprite, { frame: itemSpriteFrame(throwItem.kind as "item" | "potion", throwItem.resource), positionPx: [position.x * 32 + 16, position.y * 32 + 16] }); addLayerDepth(throwItem.id, groundContactY(position), WORLD_TIE_BREAK.effect, itemThrowLayers[i]); });
           staminaPotionThrowSprites.forEach((sprite, i) => { const throwItem = activeItemThrows[i]; const position = throwItem ? itemThrowPosition(throwItem, performance.now()) : null; const visible = Boolean(position && dynamicVisible(position) && throwItem?.resource === "stamina"); staminaPotionThrowLayers[i].visible = visible; if (!visible || !position || !throwItem) return; updateSprite2D(sprite, { frame: 0, positionPx: [position.x * 32 + 16, position.y * 32 + 16] }); addLayerDepth(throwItem.id, groundContactY(position), WORLD_TIE_BREAK.effect, staminaPotionThrowLayers[i]); });
-          droppableItemThrowSprites.forEach((sprite, i) => { const throwItem = activeItemThrows[i]; const position = throwItem ? itemThrowPosition(throwItem, performance.now()) : null; const frame = droppableItemSpriteFrame(throwItem?.itemName); const visible = Boolean(position && dynamicVisible(position) && frame !== null); droppableItemThrowLayers[i].visible = visible; if (!visible || !position || frame === null || !throwItem) return; updateSprite2D(sprite, { frame, sizePx: [32, 32], positionPx: [position.x * 32 + 16, position.y * 32 + 16] }); addLayerDepth(throwItem.id, groundContactY(position), WORLD_TIE_BREAK.effect, droppableItemThrowLayers[i]); });
+          droppableItemThrowSprites.forEach((sprite, i) => { const throwItem = activeItemThrows[i]; const position = throwItem ? itemThrowPosition(throwItem, performance.now()) : null; const frame = droppableItemSpriteFrame(throwItem?.itemName); const visible = Boolean(position && dynamicVisible(position) && frame !== null); droppableItemThrowLayers[i].visible = visible; if (!visible || !position || frame === null || !throwItem) return; const sizePx = droppableItemSpriteSizePx(throwItem.itemName); updateSprite2D(sprite, { frame, sizePx: [sizePx, sizePx], positionPx: [position.x * 32 + 16 + droppableItemMainOffsetXPx(throwItem.itemName), position.y * 32 + 16] }); addLayerDepth(throwItem.id, groundContactY(position), WORLD_TIE_BREAK.effect, droppableItemThrowLayers[i]); });
           const torchFrame = Math.floor(now / 200) % torchFramePaths.length;
           const wallTorches = world.wallDecorations.filter((decoration) => decoration.kind === "torch" && dynamicVisible(decoration));
           const wallTraps = world.wallDecorations.filter((decoration) => decoration.kind === "trap" && dynamicVisible(decoration));

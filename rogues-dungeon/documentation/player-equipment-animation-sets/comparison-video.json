@@ -1,0 +1,15 @@
+{
+  "file": "hero-equipment-comparison.mp4",
+  "fps": 50,
+  "durationMs": 21120,
+  "sourceSpeed": 0.5,
+  "timingQuantizationMs": 0,
+  "columns": [
+    "original",
+    "sword-only",
+    "shield-only",
+    "unarmed"
+  ],
+  "sourceFrames": "authored-frames-v6 and unchanged originals",
+  "extraPreviewHolds": true
+}

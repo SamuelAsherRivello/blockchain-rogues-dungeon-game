@@ -44,7 +44,7 @@ test('labels character meters as Status and exposes exact current values with th
   assert.match(game, /LVL \$\{String\(value\.level\)\.padStart\(2, "0"\)\}/);
 });
 test('renders equipment and Inventory details for combat properties and two-slot occupancy', async () => {
-  const game = await readFile(new URL('../src/game/game.tsx', import.meta.url), 'utf8');
+  const game = (await Promise.all(['../src/game/game.tsx', '../src/game/inventory-presentation.ts', '../src/game/controls/inventory-rows.tsx', '../src/game/controls/slot-item.tsx'].map(path => readFile(new URL(path, import.meta.url), 'utf8')))).join('\n');
   assert.match(game, /HIT \$\{item\.hitChance\}%/);
   assert.match(game, /CRIT \$\{item\.critChance\}%/);
   assert.match(game, /item\.perks\.join\(", "\)/);
@@ -219,9 +219,9 @@ test('saves and quits on Escape during play while Settings keeps Escape for clos
 });
 
 test('uses randomSeed to seed only a newly selected save slot', async () => {
-  const game = await readFile(new URL('../src/game/game.tsx', import.meta.url), 'utf8');
+  const game = (await Promise.all(['../src/game/game.tsx', '../src/game/inventory-presentation.ts', '../src/game/controls/inventory-rows.tsx', '../src/game/controls/slot-item.tsx'].map(path => readFile(new URL(path, import.meta.url), 'utf8')))).join('\n');
   assert.match(game, /parseGameUrlOptions\(window\.location\.search\)/);
-  assert.match(game, /const worldSeed = unsavedUrlRun \? urlOptions.seed! : randomSeed \?\? readWorldSeed\(localStorage\)/);
+  assert.match(game, /const worldSeed = urlOptions.hasCompleteRunIdentity \? urlOptions.seed! : urlOptions.seed \?\? randomSeed \?\? readWorldSeed\(localStorage\)/);
   assert.match(game, /if \(!unsavedUrlRun && !override\) existing = readSlot\(localStorage, targetSlot\)/);
   const expression = game.match(/const initial = ([^;]+);/)?.[1];
   assert.ok(expression);
@@ -239,7 +239,7 @@ test('uses randomSeed to seed only a newly selected save slot', async () => {
   assert.match(game, /New Game · Seed \$\{randomSeed\}/);
 });
 test('supports deterministic direct-slot map-fix URLs', async () => {
-  const game = await readFile(new URL('../src/game/game.tsx', import.meta.url), 'utf8');
+  const game = (await Promise.all(['../src/game/game.tsx', '../src/game/inventory-presentation.ts', '../src/game/controls/inventory-rows.tsx', '../src/game/controls/slot-item.tsx'].map(path => readFile(new URL(path, import.meta.url), 'utf8')))).join('\n');
   assert.match(game, /parseGameUrlOptions\(window\.location\.search\)/);
   assert.match(game, /urlOptions\.slot/);
   assert.match(game, /urlOptions\.mapFix/);
@@ -264,17 +264,17 @@ test('exposes independent persisted SFX and Music controls in Settings', async (
   assert.match(game, /mutedByUrl=\{audio\.hardMuted\}/); assert.match(saves, /sfxVolume/); assert.match(saves, /musicVolume/);
 });
 test('uses the inventory grabber as a cue while the whole row is draggable', async () => {
-  const game = await readFile(new URL('../src/game/game.tsx', import.meta.url), 'utf8');
+  const game = (await Promise.all(['../src/game/game.tsx', '../src/game/inventory-presentation.ts', '../src/game/controls/inventory-rows.tsx', '../src/game/controls/slot-item.tsx'].map(path => readFile(new URL(path, import.meta.url), 'utf8')))).join('\n');
   assert.match(game, /function SlotItem/);
-  assert.match(game, /key=\{`\$\{item\.id\}-\$\{slotIndex\}`\} type="inventory"/);
-  assert.match(game, /"data-drag-kind": "inventory", "data-drag-id": item\.id/);
-  assert.match(game, /"aria-label": `Drag \$\{displayName\}`/);
+  assert.match(game, /key=\{`\$\{item\.id\}-\$\{secondary \? 1 : 0\}`\} type="inventory"/);
+  assert.match(game, /"data-drag-kind": storage \? "lockbox" : "inventory"/);
+  assert.match(game, /"aria-label": `Drag \$\{name\}`/);
   assert.match(game, /\{\.\.\.dropTarget\} \{\.\.\.dragSource\}/);
   const css = await readFile(new URL('../src/ui/style.css', import.meta.url), 'utf8');
   assert.match(css, /\.slot_item\[data-drag-kind\]\{cursor:grab/);
 });
 test('makes equipment rows draggable and droppable everywhere', async () => {
-  const game = await readFile(new URL('../src/game/game.tsx', import.meta.url), 'utf8');
+  const game = (await Promise.all(['../src/game/game.tsx', '../src/game/inventory-presentation.ts', '../src/game/controls/inventory-rows.tsx', '../src/game/controls/slot-item.tsx'].map(path => readFile(new URL(path, import.meta.url), 'utf8')))).join('\n');
   assert.match(game, /function EquipmentItem/);
   assert.match(game, /"data-drag-kind": "slot", "data-drag-id": item\.id/);
   assert.match(game, /dropTarget=\{\{ "data-drop-group": group, "data-drop-index": index \}\}/);
@@ -301,7 +301,7 @@ test('limits ability presentation and mobile controls to three positions', async
   assert.match(css, /\.mobile-controls__abilities \{ display:grid; grid-template-columns:repeat\(3,1fr\)/);
 });
 test('centers plus markers for empty equipment and ability slots', async () => {
-  const [game, css] = await Promise.all(['src/game/game.tsx', 'src/ui/style.css'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));
+  const [game, css] = await Promise.all(['src/game/controls/slot-item.tsx', 'src/ui/style.css'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));
   assert.match(game, /aria-label=\{type === "ability" \? "Empty ability slot" : type === "quick" \? "Empty quick slot" : type === "inventory" \? "Empty inventory slot" : "Empty equipment slot"\}>\+<\/span>/);
   assert.match(css, /\.slot_item \{ position:relative;/);
   assert.match(css, /\.slot_item \.empty_slot\{position:absolute;left:50%;transform:translateX\(-50%\);display:grid;place-items:center/);
@@ -318,19 +318,13 @@ test('matches inventory row spacing to the abilities list', async () => {
   assert.match(css, /\.inventory_scroll \.scroll-area__viewport \{ display:grid; align-content:start; gap:\.18rem; \}/);
 });
 test('fills unused inventory capacity with empty plus slots', async () => {
+  const rows = await readFile(new URL('../src/game/controls/inventory-rows.tsx', import.meta.url), 'utf8');
   const game = await readFile(new URL('../src/game/game.tsx', import.meta.url), 'utf8');
-  assert.match(game, /const usedSlots = stacks\.reduce\(\(total, \{ item \}\) => total \+ \(item\.slotSpan \?\? 1\), 0\)/);
-  assert.match(game, /const emptySlots = Math\.max\(0, effectiveInventoryCapacity\(campaign\) - usedSlots\)/);
-  assert.match(game, /Array\.from\(\{ length: emptySlots \}/);
-  assert.match(game, /data-drop-inventory-slot/);
-  assert.match(game, /drag\?\.destination\?\.kind === "inventory" && \(\(drag\.source\.item as Item\)\.slotSpan === 2/);
-  assert.doesNotMatch(game, /data-drop-inventory>/);
-  assert.match(game, /text="\[ Drop Item \]"/);
-  assert.match(game, /data-drop-item/);
-  assert.match(game, /inventory_drop_item/);
-  assert.match(game, /effectiveInventoryCapacity\(campaign\)/);
-  assert.match(game, /const dropItemSlot = <SlotItem type="inventory"/);
-  assert.match(game, /<div className="inventory_drop_item_row">\{dropItemSlot\}<\/div><ScrollArea className="inventory_scroll">/);
+  assert.match(rows, /inventorySlotLayout\(stacks\.map/);
+  assert.match(rows, /data-drop-inventory-slot/);
+  assert.match(rows, /text="\[ Drop Item \]"/);
+  assert.match(rows, /showDropItem &&/);
+  assert.match(game, /capacity=\{effectiveInventoryCapacity\(campaign\)\}/);
 });
 test('uses permanent in-game scrollbars for the log and inventory', async () => {
   const css = await readFile(new URL('../src/ui/style.css', import.meta.url), 'utf8');

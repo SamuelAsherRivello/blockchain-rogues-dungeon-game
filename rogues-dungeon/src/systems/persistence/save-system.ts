@@ -37,6 +37,17 @@ export function readLockboxState(storage: StorageAccess, slot: string | number):
   const raw = storage.getItem(PREFIX + slot);
   return (raw ? slotEnvelope(JSON.parse(raw))?.storage : null) ?? emptyLockboxState();
 }
+/** A null adapter is a fully isolated deterministic inspection session. */
+export function createLockboxPersistence(storage: StorageAccess | null, slot: string | number) {
+  let state = storage ? readLockboxState(storage, slot) : emptyLockboxState();
+  return {
+    getState: () => state,
+    commit(campaign: Campaign, next: LockboxStorage) {
+      if (storage) writeSlot(storage, slot, campaign, next);
+      state = structuredClone(next);
+    },
+  };
+}
 export const SLOT_IDS = Object.freeze(["1", "2", "3"]);
 export const DEFAULT_PREFERENCES: Readonly<Preferences> = Object.freeze({ movementMode: "grid-tween", zoom: 1, camera: "center", fullscreenDesired: false, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
 const DEFAULT_ABILITIES: readonly (AbilityId | null)[] = Object.freeze([null, null, null]);

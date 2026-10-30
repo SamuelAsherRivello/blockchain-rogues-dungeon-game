@@ -56,7 +56,13 @@ for (const fixture of ["production-17", "production-914", "production-13579", "p
       await expect.poll(async () => (await world.boundingBox())?.width ?? 0).toBeGreaterThan(1200);
       await world.screenshot({ path: info.outputPath("reported-corners-full-width.png"), animations: "disabled" });
       const rect = (await world.boundingBox())!;
-      const samples = [[40, 47, 30], [54, 53, 30], [40, 54, 30], [45, 57, 30], [38, 47, 32], [46, 47, 32], [46, 54, 48], [58, 52, 53]];
+      // Registered start-room faces replace canonical corner artwork at these
+      // two ring cells. Keep the canonical Wang assertions above, and verify
+      // the actual visible room faces against their independently chosen art.
+      for (const [x, y, frame] of [[54, 53, 17], [46, 47, 12]]) {
+        expect(floor.decorations?.find(entry => entry.kind === "start-room-wall" && entry.x === x && entry.y === y)?.frame).toBe(frame);
+      }
+      const samples = [[40, 47, 30], [54, 53, 17], [40, 54, 30], [45, 57, 30], [38, 47, 32], [46, 47, 12], [46, 54, 48], [58, 52, 53]];
       for (const [x, y] of samples) {
         await page.screenshot({ path: info.outputPath(`corner-${x}-${y}.png`), clip: { x: rect.x + rect.width / 2 + (x - floor.start.x) * 32 - 64, y: rect.y + rect.height / 2 + (y - floor.start.y) * 32 - 64, width: 128, height: 128 } });
       }

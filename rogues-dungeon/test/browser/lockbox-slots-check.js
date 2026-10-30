@@ -1,0 +1,51 @@
+async page => {
+  const errors = [], checks = [];
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+  const check = (ok, label) => { if (!ok) throw new Error(label); checks.push(label); };
+  await page.setViewportSize({ width: 1600, height: 1000 });
+  await page.evaluate(async () => {
+    const root = '/blockchain-rogues-dungeon-game/src/systems/';
+    const world = await import(root + 'procedural/world-procedural-system.ts');
+    const save = await import(root + 'persistence/save-system.ts');
+    const state = world.createRunCampaign(42, 1, 1);
+    const arrow = state.floor.entities.find(entity => entity.kind === 'teleport-arrow');
+    state.player.x = arrow.x; state.player.y = arrow.y;
+    const home = world.applyAction(state, { type: 'enter-teleport' }).state;
+    home.player.x = 2; home.player.y = 8;
+    home.player.inventoryCapacity = 10;
+    home.player.inventory = [world.worldDroppableItemInstance('Sword', 'selected-sword')];
+    save.writeSlot(localStorage, 1, home, { version: 1, revision: 0, journal: [], containers: { 'shared-lockbox': [{ ...world.worldDroppableItemInstance('Sword', 'blocker'), containerSlot: 0 }] } });
+    save.writePreferences(localStorage, { ...save.readPreferences(localStorage), movementMode: 'grid-snap' });
+  });
+  const ready = async () => {
+    await page.reload(); await page.getByRole('button', { name: /Saved Game 1/ }).click();
+    await page.locator('.world-view[data-renderer-ready="true"]').waitFor({ timeout: 30000 });
+    await page.locator('.world-view .ui_iris_transition').waitFor({ state: 'hidden', timeout: 15000 });
+    await page.waitForFunction(() => /FPS: [0-9]/.test(document.querySelector('.dev_settings output')?.textContent ?? ''));
+  };
+  await ready(); await page.keyboard.press('a');
+  const box = page.locator('.lockbox-window'); await box.waitFor();
+  const move = async target => { const r = await target.boundingBox(); await page.mouse.move(r.x + r.width / 2, r.y + r.height / 2, { steps: 8 }); };
+  await move(page.locator('[data-drag-id="selected-sword"]')); await page.mouse.down();
+  await move(box.locator('[data-drop-index="0"]'));
+  check(await page.locator('.drag_landing').count() === 0, 'Occupied unrelated slot is not highlighted');
+  await move(box.locator('[data-drop-index="7"]'));
+  check(await page.locator('.drag_landing').count() === 1 && await box.locator('[data-drop-index="7"]').evaluate(el => el.classList.contains('drag_landing')), 'Only hovered lockbox slot 7 highlights');
+  await move(box.locator('[data-drop-index="8"]'));
+  check(await page.locator('.drag_landing').count() === 1 && await box.locator('[data-drop-index="8"]').evaluate(el => el.classList.contains('drag_landing')), 'Highlight follows the chosen lockbox slot');
+  await page.screenshot({ path: 'output/project-run/lockbox-slot-hover.png' });
+  await page.mouse.up();
+  await page.locator('.lockbox-window [data-drop-index="8"][data-drag-id="selected-sword"]').waitFor();
+  await ready(); await page.keyboard.press('a'); await box.waitFor();
+  check(await box.locator('[data-drop-index="8"]').getAttribute('data-drag-id') === 'selected-sword', 'Chosen lockbox position persists after reload');
+  await move(box.locator('[data-drag-id="selected-sword"]')); await page.mouse.down();
+  await move(page.locator('[data-drop-inventory-slot="6"]'));
+  check(await page.locator('.drag_landing').count() === 1 && await page.locator('[data-drop-inventory-slot="6"]').evaluate(el => el.classList.contains('drag_landing')), 'Only hovered Inventory slot 6 highlights');
+  await page.mouse.up();
+  await page.locator('[data-drop-inventory-slot="6"][data-drag-id="selected-sword"]').waitFor();
+  await ready();
+  check(await page.locator('[data-drop-inventory-slot="6"]').getAttribute('data-drag-id') === 'selected-sword', 'Chosen Inventory position persists after reload');
+  check(errors.length === 0, `No console errors: ${errors.join('|')}`);
+  return { checks, errors };
+}

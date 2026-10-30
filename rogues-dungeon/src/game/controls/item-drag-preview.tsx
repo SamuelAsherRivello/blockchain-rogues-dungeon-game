@@ -11,6 +11,6 @@ export function ItemDragPreview({ campaign, drag }: { campaign: Campaign; drag: 
   }
   const item = drag.source.item as Item;
   const effects = itemPresentation(item);
-  const quantity = drag.source.kind === "quick-slot" ? campaign.player.quickSlots?.[drag.source.index]?.quantity ?? 1 : drag.source.kind === "inventory" ? stackInventoryItems(campaign.player.inventory).find((stack) => stack.item.id === item.id)?.quantity ?? 1 : 1;
+  const quantity = drag.source.kind === "quick-slot" ? campaign.player.quickSlots?.[drag.source.index]?.quantity ?? 1 : drag.source.kind === "inventory" ? stackInventoryItems(campaign.player.inventory).find((stack) => stack.item.id === item.id)?.quantity ?? 1 : item.quantity ?? 1;
   return <div className="item-drag-preview" style={{ left: drag.x, top: drag.y }} aria-hidden="true"><SlotItem type={drag.source.kind === "slot" ? "equipment" : drag.source.kind === "quick-slot" ? "quick" : "inventory"} category={itemSlotCategory(item)} text={itemDisplayName(item, quantity)} effects={effects} /></div>;
 }

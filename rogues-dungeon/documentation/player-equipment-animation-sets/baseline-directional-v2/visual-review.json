@@ -1,0 +1,317 @@
+{
+  "manifestHash": "e67a9b5475be62cfebbd7a1da51e7c86faaa1d46beb7e2d24fa26d386cce2636",
+  "sheetHashes": {
+    "sheet-000": "1d23f1ad7bf47e76a74bcfd7fa4d7ee1f67292b8f29e3472f84806c7a0cea90a",
+    "sheet-001": "9ef0746d68a6926f20e27cb91dc025c4506440322a69a698b6216b9c7ee5943b",
+    "sheet-002": "bba29c2b7297e193c639005f990eb834f4842818aab4b8aefd8d1a9fa4fb2644",
+    "sheet-003": "33bbeb9133dfbb9a773e18395401e0e346031674db3fba457b2715418eca2ff4",
+    "sheet-004": "4276979b6541a5623d1e0c990a7536c78843fd840bbb7097f7d8e54bbc84a3bb",
+    "sheet-005": "955f9e9bc1940a6308de376dae13020850df9906a49444b0f4311b77c44be880",
+    "sheet-006": "524d318147e1322cdb10aa831e5b41cee3832f610c62e40f955e7efcc2303131",
+    "sheet-007": "20b09760e7d9fd20d860d56ba8decc8713293fad998383b291ab47b90bcf3a15",
+    "sheet-008": "f3675d2e13a0c30cea17e867ddf2c87df75406970bfaf55b7715e39bebbb3e42"
+  },
+  "contactSheet": "review/contact-sheet.png",
+  "sequences": [
+    {
+      "id": "idle-down",
+      "apng": "review/animation-000.apng",
+      "gif": "review/animation-000.gif",
+      "durationsMs": [
+        140,
+        140,
+        140,
+        140
+      ],
+      "gifDurationsMs": [
+        140,
+        140,
+        140,
+        140
+      ],
+      "loop": true
+    },
+    {
+      "id": "idle-side",
+      "apng": "review/animation-001.apng",
+      "gif": "review/animation-001.gif",
+      "durationsMs": [
+        140,
+        140,
+        140,
+        140
+      ],
+      "gifDurationsMs": [
+        140,
+        140,
+        140,
+        140
+      ],
+      "loop": true
+    },
+    {
+      "id": "idle-up",
+      "apng": "review/animation-002.apng",
+      "gif": "review/animation-002.gif",
+      "durationsMs": [
+        140,
+        140,
+        140,
+        140
+      ],
+      "gifDurationsMs": [
+        140,
+        140,
+        140,
+        140
+      ],
+      "loop": true
+    },
+    {
+      "id": "run-down",
+      "apng": "review/animation-003.apng",
+      "gif": "review/animation-003.gif",
+      "durationsMs": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "gifDurationsMs": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "loop": true
+    },
+    {
+      "id": "run-side",
+      "apng": "review/animation-004.apng",
+      "gif": "review/animation-004.gif",
+      "durationsMs": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "gifDurationsMs": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "loop": true
+    },
+    {
+      "id": "run-up",
+      "apng": "review/animation-005.apng",
+      "gif": "review/animation-005.gif",
+      "durationsMs": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "gifDurationsMs": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "loop": true
+    },
+    {
+      "id": "attack-down",
+      "apng": "review/animation-006.apng",
+      "gif": "review/animation-006.gif",
+      "durationsMs": [
+        90,
+        90,
+        90,
+        90
+      ],
+      "gifDurationsMs": [
+        90,
+        90,
+        90,
+        90
+      ],
+      "loop": false
+    },
+    {
+      "id": "attack-side",
+      "apng": "review/animation-007.apng",
+      "gif": "review/animation-007.gif",
+      "durationsMs": [
+        90,
+        90,
+        90,
+        90
+      ],
+      "gifDurationsMs": [
+        90,
+        90,
+        90,
+        90
+      ],
+      "loop": false
+    },
+    {
+      "id": "attack-up",
+      "apng": "review/animation-008.apng",
+      "gif": "review/animation-008.gif",
+      "durationsMs": [
+        90,
+        90,
+        90,
+        90
+      ],
+      "gifDurationsMs": [
+        90,
+        90,
+        90,
+        90
+      ],
+      "loop": false
+    }
+  ],
+  "artifacts": [
+    "review/frames/frame-000.png",
+    "review/frames/frame-001.png",
+    "review/frames/frame-002.png",
+    "review/frames/frame-003.png",
+    "review/frames/frame-004.png",
+    "review/frames/frame-005.png",
+    "review/frames/frame-006.png",
+    "review/frames/frame-007.png",
+    "review/frames/frame-008.png",
+    "review/frames/frame-009.png",
+    "review/frames/frame-010.png",
+    "review/frames/frame-011.png",
+    "review/frames/frame-012.png",
+    "review/frames/frame-013.png",
+    "review/frames/frame-014.png",
+    "review/frames/frame-015.png",
+    "review/frames/frame-016.png",
+    "review/frames/frame-017.png",
+    "review/frames/frame-018.png",
+    "review/frames/frame-019.png",
+    "review/frames/frame-020.png",
+    "review/frames/frame-021.png",
+    "review/frames/frame-022.png",
+    "review/frames/frame-023.png",
+    "review/frames/frame-024.png",
+    "review/frames/frame-025.png",
+    "review/frames/frame-026.png",
+    "review/frames/frame-027.png",
+    "review/frames/frame-028.png",
+    "review/frames/frame-029.png",
+    "review/frames/frame-030.png",
+    "review/frames/frame-031.png",
+    "review/frames/frame-032.png",
+    "review/frames/frame-033.png",
+    "review/frames/frame-034.png",
+    "review/frames/frame-035.png",
+    "review/frames/frame-036.png",
+    "review/frames/frame-037.png",
+    "review/frames/frame-038.png",
+    "review/frames/frame-039.png",
+    "review/frames/frame-040.png",
+    "review/frames/frame-041.png",
+    "review/contact-sheet.png",
+    "review/animation-000.apng",
+    "review/animation-000.gif",
+    "review/animation-001.apng",
+    "review/animation-001.gif",
+    "review/animation-002.apng",
+    "review/animation-002.gif",
+    "review/animation-003.apng",
+    "review/animation-003.gif",
+    "review/animation-004.apng",
+    "review/animation-004.gif",
+    "review/animation-005.apng",
+    "review/animation-005.gif",
+    "review/animation-006.apng",
+    "review/animation-006.gif",
+    "review/animation-007.apng",
+    "review/animation-007.gif",
+    "review/animation-008.apng",
+    "review/animation-008.gif"
+  ],
+  "items": [
+    {
+      "id": "identity",
+      "verdict": "pass",
+      "evidence": "All source frames inspected on the helper light/dark contact sheets; source overlays proved RGBA identity and zero translation. Helmet, face, worn armor, silhouette and equipment match supplied pixels.",
+      "check": "Inspect every frame at native size on light/dark: identity, scale, complete art, palette, handedness."
+    },
+    {
+      "id": "sequence:idle-down",
+      "verdict": "pass",
+      "evidence": "Four front breathing poses retain planted feet; sword stays on the right hand and shield on the left. Viewed looping in Edge at speed 0.5.",
+      "check": "Inspect actual playback/timing, action progression and loop seam or one-shot ending."
+    },
+    {
+      "id": "sequence:idle-side",
+      "verdict": "pass",
+      "evidence": "Four right-facing breathing poses retain scale and foot registration. Viewed looping in Edge at speed 0.5.",
+      "check": "Inspect actual playback/timing, action progression and loop seam or one-shot ending."
+    },
+    {
+      "id": "sequence:idle-up",
+      "verdict": "pass",
+      "evidence": "Four rear breathing poses retain the same outline and shield side. Viewed looping in Edge at speed 0.5.",
+      "check": "Inspect actual playback/timing, action progression and loop seam or one-shot ending."
+    },
+    {
+      "id": "sequence:run-down",
+      "verdict": "pass",
+      "evidence": "Six front gait poses progress with alternating legs and preserve the source movement. Viewed looping in Edge at speed 0.5.",
+      "check": "Inspect actual playback/timing, action progression and loop seam or one-shot ending."
+    },
+    {
+      "id": "sequence:run-side",
+      "verdict": "pass",
+      "evidence": "Six right-facing gait poses preserve motion without per-frame fitting. Viewed looping in Edge at speed 0.5.",
+      "check": "Inspect actual playback/timing, action progression and loop seam or one-shot ending."
+    },
+    {
+      "id": "sequence:run-up",
+      "verdict": "pass",
+      "evidence": "Six rear gait poses preserve original stride and shield side. Viewed looping in Edge at speed 0.5.",
+      "check": "Inspect actual playback/timing, action progression and loop seam or one-shot ending."
+    },
+    {
+      "id": "sequence:attack-down",
+      "verdict": "pass",
+      "evidence": "Four front poses include preparation, raised sword, swing and final trail; the final pose holds. Viewed in Edge at speed 0.5 and compared to all source crops.",
+      "check": "Inspect actual playback/timing, action progression and loop seam or one-shot ending."
+    },
+    {
+      "id": "sequence:attack-side",
+      "verdict": "pass",
+      "evidence": "Four side poses include windup and distinct swing arcs; the final pose holds. Viewed in Edge at speed 0.5 and compared to source contact sheet.",
+      "check": "Inspect actual playback/timing, action progression and loop seam or one-shot ending."
+    },
+    {
+      "id": "sequence:attack-up",
+      "verdict": "pass",
+      "evidence": "Four rear poses preserve overhead swing and its trail; the final pose holds. Viewed in Edge at speed 0.5 and compared to source contact sheet.",
+      "check": "Inspect actual playback/timing, action progression and loop seam or one-shot ending."
+    }
+  ],
+  "runtimePlaybackEvidence": "animation-review.html?mute=1, Edge, native source crops with 4x display and base duration / 0.5; contact sheet inspection at native scale."
+}

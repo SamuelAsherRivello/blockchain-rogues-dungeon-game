@@ -1,13 +1,21 @@
 import { itemSpriteFrame, worldPickupPresentation } from "../systems/rendering/world-object-sprite-system.ts";
+import { InventoryRows } from "./controls/inventory-rows.tsx";
+import { SlotItem, type SlotShineTokens } from "./controls/slot-item.tsx";
+export { SlotItem, type SlotShineTokens } from "./controls/slot-item.tsx";
+import { itemPresentation, stackInventoryItems, itemSlotCategory, itemDisplayName, modifierSummary } from "./inventory-presentation.ts";
+export { itemPresentation, stackInventoryItems, itemSlotCategory, itemDisplayName } from "./inventory-presentation.ts";
+import { LockboxWindow } from "./windows/lockbox-window.tsx";
+import { createLockboxPersistence } from "../systems/persistence/save-system.ts";
+import { reconcileLockboxRecovery, transferLockboxItem } from "../systems/persistence/lockbox-storage-system.ts";
 import { prepareCampaignSave } from "../systems/procedural/world-procedural-system.ts";
 import { MovementPromptController, movementDirection } from "./movement-prompt-controller.ts";
 import { GridlessInteractionController, planGridlessInteraction, resolveGridlessInteraction, type GridlessInteraction } from "./gridless-interaction.ts";
 import { PerformanceSession } from "./performance-session.ts";
 import { PerformanceControls } from "./views/performance-controls.tsx";
 import { performanceOptions, resetPerformanceOptions, setPerformanceOptions, timePerformance } from "../systems/rendering/performance-system.ts";
-import type { CSSProperties, PointerEvent as ReactPointerEvent, PointerEventHandler, ReactNode } from "react";
+import type { PointerEvent as ReactPointerEvent, PointerEventHandler, ReactNode } from "react";
 import type { Orientation } from "../ui/layout.ts";
-import { SLOT_COLORS, type SlotCategory } from "../ui/slot-colors.ts";
+import { SLOT_COLORS } from "../ui/slot-colors.ts";
 import { RESOURCE_WILL_REPLENISH, type AbilityId, type Action, type Attributes, type AttributeName, type Campaign, type CampaignMode, type Direction, type DragSource, type DropDestination, type Entity, type EquipmentGroup, type Feedback, type Floor, type Item, type Position, type Preferences, type QuickSlot, type Resource, type ResourceName, type SelectedCell } from "./types.ts";
 type Ability = typeof abilityCatalog[AbilityId];
 interface Gain { from: number; to: number; max: number }
@@ -19,10 +27,6 @@ export interface DragPresentation { source: PointerSource; item: PointerSource["
 interface PointerDrag { pointerId: number; source: PointerSource; startX: number; startY: number; active: boolean }
 interface Movement { direction: string; sprint: boolean; source?: string }
 const STAIR_CENTER_SETTLE_DELAY_MS = 100;
-interface SlotEffect { icon: string; cost: string }
-export type SlotShineTokens = Readonly<Record<string, number>>;
-interface SlotItemProps { type?: string; slotType?: "ability" | "quickslot" | "equipment" | "inventory"; slotSubtype?: EquipmentGroup; category?: SlotCategory; number?: number; hotkey?: string; text?: string; icon?: string; cost?: string | number; effects?: SlotEffect[]; details?: string; accentColor?: string; disabled?: boolean; unavailable?: boolean; onClick?: () => void; className?: string; shineKey?: string; shineTokens?: SlotShineTokens; dragSource?: Record<string, string | number>; dropTarget?: Record<string, string | number | boolean>; empty?: boolean; dragHandle?: boolean; tooltip?: string }
-interface InventoryStack { item: Item; quantity: number }
 import { memo, Profiler, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { abilityCatalog, abilityItemInstance, attributeLabels, createRunCampaign, directions, effectiveAttributes, effectiveInventoryCapacity, hasAssignedWeapon, isQuickSlottableItem, REST_GOLD_COST, resourceState, rollStartingAttributes } from "../systems/procedural/world-procedural-system.ts";
 import { isWalkable } from "../systems/procedural/level-grid-system.ts";
@@ -53,7 +57,7 @@ import { CHARACTER_MOVEMENT_DURATION_MS, INTERACTIVE_BUMP_APEX_MS, INTERACTIVE_B
 import { createQuestGameSession as createGameSession, currentQuest } from "../systems/quests/quest-progression-system.ts";
 import { dismissTooltips, Tooltip } from "../ui/Tooltip.tsx";
 import { DEV_SETTINGS_STORAGE_KEYS, readDevBoolean, readDevGameViewShader, writeDevBoolean, writeDevGameViewShader } from "../ui/dev-settings.ts";
-import { isCellDiscovered } from "../systems/procedural/map-discovery-system.ts";
+import { isCellDiscovered, revealDiscovery } from "../systems/procedural/map-discovery-system.ts";
 import { renderTestEffects } from "../systems/rendering/render-test-system.ts";
 import { effectiveRenderTestMode, nextRenderTestMode, RENDER_TEST_TOOLTIP, type RenderTestMode } from "../systems/rendering/render-test-system.ts";
 import { gameViewShaderSystem, type GameViewShaderId } from "../systems/rendering/game-view-shader-system.ts";
@@ -122,15 +126,11 @@ function ResourceListView({ campaign, gains = {}, statusReplenishProgress = null
 export const ResourceList = memoCampaignView(ResourceListView, campaign => [resourceState(campaign), campaign.progression.attributes]);
 /** Renders an attribute number that pulses only when its color changes to a delta. */
 export function AttributeViewItemList({ campaign, preview = null }: { campaign: Campaign; preview?: Attributes | null }) { return <AttributePanel attributes={campaign.progression.attributes} preview={preview} help={attributeHelp} />; }
-export function itemPresentation(item: Item | null) { return [...Object.entries(item?.modifiers ?? {}).flatMap(([attribute, amount]) => Number.isFinite(amount) ? [{ icon: icons[attribute] ?? "◆", cost: `${amount! >= 0 ? "+" : ""}${amount}` }] : []), ...(item?.category === "capacity" ? [{ icon: icons.capacity!, cost: "+5" }] : [])]; }
-export function SlotItem({ type = "equipment", slotType, slotSubtype, category = type === "inventory" ? undefined : type === "quick" ? "quick" : type === "ability" ? "ability" : "equipment", number, hotkey, text = "", icon = "", cost = "", effects = [], details = "", accentColor = "", disabled = false, unavailable = false, onClick, className = "", shineKey, shineTokens = {}, dragSource = {}, dropTarget = {}, empty = false, dragHandle = true, tooltip = "" }: SlotItemProps) { const shineToken = shineKey ? shineTokens[shineKey] : undefined; const classes = ["slot_item", `slot_item--${type}`, disabled && "disabled", unavailable && "unavailable", className, shineToken && "slot_item--shine"].filter(Boolean).join(" "); const displayedEffects = effects.length ? effects : icon || cost ? [{ icon, cost: String(cost) }] : []; const button = <button key={shineToken} tabIndex={-1} type="button" className={classes} data-slot-type={slotType ?? type} data-slot-subtype={slotSubtype} data-slot-category={category} data-slot-empty={empty} aria-disabled={unavailable || undefined} style={accentColor ? { "--slot-accent-color": accentColor } as CSSProperties : undefined} disabled={disabled} onClick={onClick} {...dropTarget} {...dragSource}>{type === "ability" && <strong className="slot_item_number">[{(number ?? 0) + 1}]</strong>}{type === "quick" && hotkey && <kbd className="slot_item_hotkey">[{hotkey}]</kbd>}{empty ? <span className="empty_slot" aria-label={type === "ability" ? "Empty ability slot" : type === "quick" ? "Empty quick slot" : type === "inventory" ? "Empty inventory slot" : "Empty equipment slot"}>+</span> : <><span className="slot_item_text">{text}</span>{displayedEffects.map((effect, index) => <span className="slot_item_effect" key={`${effect.icon}-${effect.cost}-${index}`}><i className="slot_item_icon">{effect.icon}</i><em className="slot_item_cost">{effect.cost}</em></span>)}{details && <small className="slot_item_details">{details}</small>}{dragHandle && <b className="drag_handle" aria-hidden="true">⠿</b>}</>}</button>; return tooltip ? <Tooltip content={tooltip}>{button}</Tooltip> : button; }
 function abilityHelp(ability: Ability | null | undefined) { if (!ability) return "Assign an ability to fill this slot."; return ability.kind === "heal" ? `Heal: +${ability.amount} Health; costs ${ability.manaCost} Mana.` : `Wand: ${ability.damage} damage within ${ability.range} tiles; ${ability.manaCost} Mana.`; }
 export function AbilityViewItem({ index, ability, disabled, onUse, shineTokens = {}, drag = null }: { index: number; ability?: Ability | null; disabled: boolean; onUse(): void; shineTokens?: SlotShineTokens; drag?: DragPresentation | null }) { const available = Boolean(ability && !disabled); return <SlotItem type="ability" slotType="ability" number={index} text={ability?.title} icon={ability?.icon} cost={ability?.manaCost} accentColor={SLOT_COLORS.ability} unavailable={!available} onClick={available ? onUse : undefined} className={["ability_row", drag?.source.kind === "ability" && drag.source.index === index && "drag_departure", drag?.destination?.kind === "ability" && drag.destination.index === index && "drag_landing"].filter(Boolean).join(" ")} shineKey={`ability:${index}`} shineTokens={shineTokens} dropTarget={{ "data-drop-ability": index }} dragSource={ability ? { "data-drag-kind": "ability", "data-drag-index": index, "aria-label": `Drag ${ability.title}` } : {}} empty={!ability} tooltip={abilityHelp(ability)} />; }
 function AbilityViewItemListView({ campaign, dispatch, cooldowns = {}, shineTokens = {}, drag = null }: WithDispatch & { cooldowns?: Partial<Record<AbilityId, number>>; shineTokens?: SlotShineTokens; drag?: DragPresentation | null }) { const mana = campaign.player.resources.mana.current; const health = campaign.player.resources.health; const now = performance.now(); return <div className="view_list">{campaign.player.abilities.slice(0, 3).map((id, index) => { const ability = id ? abilityCatalog[id] : null; const fullHealth = ability?.kind === "heal" && health.current >= health.currentMax; return <AbilityViewItem drag={drag} key={index} index={index} ability={ability} disabled={Boolean(ability && (mana < ability.manaCost || fullHealth || (cooldowns[ability.id] ?? 0) > now))} shineTokens={shineTokens} onUse={() => dispatch({ type: "ability", index })} />; })}</div>; }
 export const AbilityViewItemList = memoCampaignView(AbilityViewItemListView, campaign => [campaign.player.abilities, campaign.player.resources.health, campaign.player.resources.mana]);
-function modifierSummary(item: Item | null) { if (!item) return ""; const modifiers = Object.entries(item.modifiers ?? {}).map(([name, value]) => `${attributeLabels[name as AttributeName] ?? name} ${value >= 0 ? "+" : ""}${value}`); if (item.category === "capacity") modifiers.push("Carrying capacity +5"); if (Number.isFinite(item.hitChance)) modifiers.push(`HIT ${item.hitChance}%`); if (Number.isFinite(item.critChance)) modifiers.push(`CRIT ${item.critChance}%`); if (item.perks?.length) modifiers.push(item.perks.join(", ")); return modifiers.join(", "); }
 function equipmentSlotHelp(item: Item | null) { const effect = modifierSummary(item); return item ? `${effect || "No stat change"}${item.slotSpan === 2 ? ". Uses both positions." : ""} Drag to replace.` : "Drag an item here to equip it."; }
-function inventoryItemHelp(item: Item) { const effect = modifierSummary(item); return effect ? `${effect}${item.slotSpan === 2 ? ". Uses both positions." : ""} Drag to equip.` : "No stats · Drag to equip."; }
 function ItemComparisonItemPanel({ title, item, baseline }: { title: "Before" | "After"; item: Item | null; baseline: Item | null }) {
   const modifiers = itemComparisonStats(item, title === "After" ? baseline : null);
   const ability = item?.abilityId ? abilityCatalog[item.abilityId] : null;
@@ -153,30 +153,9 @@ function ItemComparisonPanel({ before, after, destination }: { before: Item | nu
     element.style.top = `${top - world.top}px`;
   }, [selector, before, after]);
   return <aside ref={panel} className="item-comparison-panel" aria-label="Equipment comparison"><GameCard title="Item Comparison"><ItemComparisonItemPanel title="Before" item={before} baseline={before} /><ItemComparisonItemPanel title="After" item={after} baseline={before} /></GameCard></aside>;
-}export function stackInventoryItems(inventory: Item[]): InventoryStack[] {
-  const stacks: InventoryStack[] = [];
-  const indexes = new Map<string, number>();
-  for (const item of inventory) {
-    const key = isQuickSlottableItem(item) ? `quick:${item.consumableResource}` : null;
-    if (key && indexes.has(key)) stacks[indexes.get(key)!].quantity += item.quantity ?? 1;
-    else {
-      if (key) indexes.set(key, stacks.length);
-      stacks.push({ item, quantity: isQuickSlottableItem(item) ? item.quantity ?? 1 : 1 });
-    }
-  }
-  return stacks;
-}
-
-export function itemSlotCategory(item: Item): SlotCategory {
-  if (item.category === "ability") return "ability";
-  return isQuickSlottableItem(item) ? "quick" : "equipment";
-}
-
-export function itemDisplayName(item: Item, quantity: number) {
-  return isQuickSlottableItem(item) ? `${item.name} x ${quantity}` : `${item.name}${quantity > 1 ? ` x ${quantity}` : ""}`;
 }
 function EquipmentItem({ item, group, index, drag, shineTokens = {} }: { item: Item | null; group: EquipmentGroup; index: number; drag: DragPresentation | null; shineTokens?: SlotShineTokens }) { const secondary = item?.slotSpan === 2 && index === 1; const departure = !secondary && drag?.source.kind === "slot" && drag.source.group === group && drag.source.index === index; const landing = drag?.destination?.kind === "slot" && drag.destination.group === group && ((drag.source.item as Item).slotSpan === 2 || drag.destination.index === index); const effects = itemPresentation(item); return <SlotItem slotType="equipment" slotSubtype={group} text={item ? `${item.name}${secondary ? " (2)" : ""}` : ""} effects={effects} shineKey={`equipment:${group}:${index}`} shineTokens={shineTokens} className={["equipment_item", secondary && "slot_item--occupied-secondary", departure && "drag_departure", landing && "drag_landing"].filter(Boolean).join(" ")} dropTarget={{ "data-drop-group": group, "data-drop-index": index }} dragSource={item && !secondary ? { "data-drag-kind": "slot", "data-drag-id": item.id, "data-drag-group": group, "data-drag-index": index, "aria-label": `Drag ${item.name}` } : {}} empty={!item} tooltip={secondary ? `${item.name} occupies this position.` : equipmentSlotHelp(item)} />; }
-function SlotListView({ campaign, drag = null, shineTokens = {} }: { campaign: Campaign; drag?: DragPresentation | null; shineTokens?: SlotShineTokens }) { return <div className="slot_scroll">{([["Weapons", "weapons"], ["Armor", "armor"]] as const).map(([label, group]) => <div className="slot_group" key={group}><h3>{label}</h3>{campaign.player.equipment[group].map((item, index) => <EquipmentItem key={index} item={item} group={group} index={index} drag={drag} shineTokens={shineTokens} />)}</div>)}</div>; }
+function SlotListView({ campaign, drag = null, shineTokens = {} }: { campaign: Campaign; drag?: DragPresentation | null; shineTokens?: SlotShineTokens }) { return <div className="slot_scroll">{([["Weapons", "weapons"], ["Armor", "armor"], ["Jewels", "jewels"]] as const).map(([label, group]) => <div className="slot_group" key={group}><h3>{label}</h3>{campaign.player.equipment[group].map((item, index) => <EquipmentItem key={index} item={item} group={group} index={index} drag={drag} shineTokens={shineTokens} />)}</div>)}</div>; }
 export const SlotList = memoCampaignView(SlotListView, campaign => campaign.player.equipment);
 export function EquipmentComparison({ campaign, drag }: { campaign: Campaign; drag: DragPresentation | null }) {
   const destination = drag?.destination;
@@ -190,7 +169,7 @@ function quickSlotAvailable(campaign: Campaign, slot: QuickSlot | null) { const 
 function QuickSlotItem({ campaign, slot, index, drag, dispatch, shineTokens = {} }: { campaign: Campaign; slot: QuickSlot | null; index: number; drag: DragPresentation | null; dispatch(action: Action): unknown; shineTokens?: SlotShineTokens }) { const actual = slot?.item && isQuickSlottableItem(slot.item) ? slot.item : null; const available = quickSlotAvailable(campaign, slot); const landing = drag?.destination?.kind === "quick-slot" && drag.destination.index === index; return <SlotItem type="quick" slotType="quickslot" hotkey={index === 0 ? "Q" : "E"} text={actual ? `${actual.name} x ${slot?.quantity ?? 0}` : ""} shineKey={`quick:${index}`} shineTokens={shineTokens} className={["quick_slot", landing && "drag_landing", drag?.source.kind === "quick-slot" && drag.source.index === index && "drag_departure"].filter(Boolean).join(" ")} dropTarget={{ "data-drop-quick-slot": index }} dragSource={actual ? { "data-drag-kind": "quick-slot", "data-drag-id": actual.id, "data-drag-index": index, "aria-label": `Drag ${actual.name}` } : {}} empty={!actual} unavailable={!available} onClick={available ? () => dispatch({ type: "use-quick-slot", index }) : undefined} tooltip={actual ? `${actual.name}; press ${index === 0 ? "Q" : "E"} to use.` : "Drag a Health Potion, Stamina Potion, Mana Potion, or Throwing Knives here."} />; }
 function QuickSlotsViewView({ campaign, dispatch, drag = null, shineTokens = {} }: WithDispatch & { drag?: DragPresentation | null; shineTokens?: SlotShineTokens }) { const slots = campaign.player.quickSlots ?? [null, null]; return <div className="quick_slots_list">{slots.map((slot, index) => <QuickSlotItem key={index} campaign={campaign} slot={slot} index={index} drag={drag} dispatch={dispatch} shineTokens={shineTokens} />)}</div>; }
 export const QuickSlotsView = memoCampaignView(QuickSlotsViewView, campaign => [campaign.player.quickSlots, resourceState(campaign)]);
-function InventoryViewItemsView({ campaign, dispatch, drag = null, shineTokens = {} }: WithDispatch & { drag?: DragPresentation | null; shineTokens?: SlotShineTokens }) { const stacks = stackInventoryItems(campaign.player.inventory); const usedSlots = stacks.reduce((total, { item }) => total + (item.slotSpan ?? 1), 0); const emptySlots = Math.max(0, effectiveInventoryCapacity(campaign) - usedSlots); const inventoryLanding = (index: number) => drag?.destination?.kind === "inventory" && ((drag.source.item as Item).slotSpan === 2 ? Math.abs((drag.destination.index ?? 0) - index) < 2 : drag.destination.index === index); const dropItemSlot = <SlotItem type="inventory" slotType="inventory" text="[ Drop Item ]" className={["inventory_drop_item", drag?.destination?.kind === "drop-item" && "drag_landing"].filter(Boolean).join(" ")} dragHandle={false} dropTarget={{ "data-drop-item": true }} tooltip="Drag an item here to drop it into the world." />; return <><div className="inventory_drop_item_row">{dropItemSlot}</div><ScrollArea className="inventory_scroll">{stacks.flatMap(({ item, quantity }) => Array.from({ length: item.slotSpan ?? 1 }, (_, slotIndex) => { const secondary = slotIndex === 1; const departure = !secondary && drag?.source.kind === "inventory" && drag.source.item.id === item.id; const displayName = `${itemDisplayName(item, quantity)}${secondary ? " (2)" : ""}`; return <SlotItem key={`${item.id}-${slotIndex}`} type="inventory" slotType="inventory" category={itemSlotCategory(item)} text={displayName} effects={itemPresentation(item)} shineKey={shineTokens[`inventory:${item.id}`] ? `inventory:${item.id}` : item.consumableResource ? `inventory-resource:${item.consumableResource}` : undefined} shineTokens={shineTokens} className={["inventory_item", secondary && "slot_item--occupied-secondary", departure && "drag_departure"].filter(Boolean).join(" ")} dragSource={!secondary ? { "data-drag-kind": "inventory", "data-drag-id": item.id, "data-inventory-item-id": item.id, "data-inventory-resource": item.consumableResource ?? "", "aria-label": `Drag ${displayName}` } : {}} tooltip={secondary ? `${item.name} occupies this position.` : inventoryItemHelp(item)} />; }))}{Array.from({ length: emptySlots }, (_, index) => <SlotItem key={`empty-inventory-${index}`} type="inventory" slotType="inventory" category={inventoryLanding(index) && drag ? itemSlotCategory(drag.source.item) : undefined} className={["inventory_item", inventoryLanding(index) && "drag_landing"].filter(Boolean).join(" ")} dropTarget={{ "data-drop-inventory-slot": index }} empty disabled tooltip="Empty inventory slot." />)}</ScrollArea></>; }
+function InventoryViewItemsView({ campaign, drag = null, shineTokens = {} }: WithDispatch & { drag?: DragPresentation | null; shineTokens?: SlotShineTokens }) { return <InventoryRows items={campaign.player.inventory} capacity={effectiveInventoryCapacity(campaign)} drag={drag} shineTokens={shineTokens} />; }
 export const InventoryViewItems = memoCampaignView(InventoryViewItemsView, campaign => [campaign.player.inventory, effectiveInventoryCapacity(campaign)]);
 async function downloadDungeonBundle(entries: Parameters<typeof createStoredZip>[0], name: string) {
   const bundle = createStoredZip(entries);
@@ -321,16 +300,17 @@ function StatusControls({ campaign, performanceActive, onTogglePerformance, canO
         <div className="keyboard_collapsed_controls" aria-hidden={expanded} style={summaryMotion}><div className="keyboard_collapsed_summary" aria-label="Move WASD | Abilities: 123 | Quick: Q E | More ZXC">{collapsedKeyboardGroups.map(({ label, keys }) => <span className="keyboard_collapsed_group" key={label}><span className="status_shortcut"><span>{label}</span>{keys.map((key) => { const role = statusKeyRole(key, label === "Quick:" ? "quick" : label === "Move:" ? "move" : "default"); const available = keyAvailable(key, role); return <InputKey key={key} keyLabel={key} category={role} available={available} colorAvailable={available} onActivate={key === "Z" ? toggleExpanded : key === "C" ? onTogglePanels : undefined} />; })}</span></span>)}</div></div>
         <ControlsArea expanded={expanded} titleVisible={titleVisible} titleText={titleText} onToggle={toggleExpanded}>{(expanded || trayRetained) && keyboardControlRows.map(({ label, keys }) => <div className="keyboard_tray_row" key={label}><div className="keyboard_tray_keys">{keys.map((key) => { const role = statusKeyRole(key, label === "Quick:" ? "quick" : label === "Move:" ? "move" : "default"); const available = keyAvailable(key, role); return <InputKey key={key} keyLabel={key} category={role} mode="feedback" available={available} colorAvailable={available} pressed={pressedKeys.has(key)} className="keyboard_tray_key" onActivate={key === "Z" ? toggleExpanded : key === "X" ? onWait : key === "C" ? onTogglePanels : undefined} onPressStart={(pressedKey) => setPointerPressed(pressedKey, true)} onPressEnd={(pressedKey) => setPointerPressed(pressedKey, false)} {...inputKeyHoverProps} />; })}</div></div>)}</ControlsArea>
       </div>
-      {canOverride && <div className="dev_settings"><span className="dev_settings_label">D Settings</span><Tooltip content="Switch the PC preview between landscape and portrait."><button tabIndex={-1} type="button" onClick={() => setAspectRatio(orientation === "landscape" ? "portrait" : "landscape")}>AR: {orientation === "landscape" ? "L" : "P"}</button></Tooltip><Tooltip content="Place one of each supported enemy near the World 1 Level 1 start."><button tabIndex={-1} type="button" aria-pressed={enemyTest} onClick={() => setEnemyTest(!enemyTest)}>E: {enemyTest ? 1 : 0}</button></Tooltip><Tooltip content="Place one of each supported item near the World 1 Level 1 start."><button tabIndex={-1} type="button" aria-pressed={itemTest} onClick={() => setItemTest(!itemTest)}>I: {itemTest ? 1 : 0}</button></Tooltip><Tooltip content="Place the home teleport arrow and one lockdown encounter within 100 cells of the World 1 Level 1 start."><button tabIndex={-1} type="button" aria-pressed={levelTest} onClick={() => setLevelTest(!levelTest)}>LT: {levelTest ? 1 : 0}</button></Tooltip><Tooltip content="Show the map-test controls for procedural map checks."><button tabIndex={-1} type="button" aria-pressed={mapTest} onClick={() => setMapTest(!mapTest)}>M: {mapTest ? 1 : 0}</button></Tooltip><Tooltip content="Show the temporary performance panel in the first information column. C moves or collapses it."><button tabIndex={-1} type="button" aria-pressed={performanceActive} onClick={onTogglePerformance}>P: {performanceActive ? 1 : 0}</button></Tooltip><Tooltip content="Show grid pivot coordinates on the selected cell."><button tabIndex={-1} type="button" aria-pressed={showPivotPoints} onClick={() => setShowPivotPoints((value) => !value)}>PV: {showPivotPoints ? 1 : 0}</button></Tooltip><Tooltip content={RENDER_TEST_TOOLTIP}><button tabIndex={-1} type="button" onClick={() => setRenderTestMode(nextRenderTestMode(renderTestMode))}>RT:{renderTestMode}</button></Tooltip><Tooltip content="Cycle the one active Game View shader. Shader 1 renders the game graphics in black and green."><button tabIndex={-1} type="button" aria-pressed={gameViewShader !== 0} onClick={() => setGameViewShader(gameViewShaderSystem.next(gameViewShader))}>S: {gameViewShader}</button></Tooltip><Tooltip content="Include run settings in generated share URLs."><button tabIndex={-1} type="button" aria-pressed={urlArgs} onClick={() => setUrlArgs(!urlArgs)}>URL: {urlArgs ? 1 : 0}</button></Tooltip><Tooltip content="Show all zoom presets; off keeps only 1x and 2x."><button tabIndex={-1} type="button" aria-pressed={zoomTest} onClick={() => setZoomTest(!zoomTest)}>Z: {zoomTest ? 1 : 0}</button></Tooltip><FpsReadout source={fps} /></div>}
+      {canOverride && <div className="dev_settings"><span className="dev_settings_label">D Settings</span><Tooltip content="Switch the PC preview between landscape and portrait."><button tabIndex={-1} type="button" onClick={() => setAspectRatio(orientation === "landscape" ? "portrait" : "landscape")}>AR: {orientation === "landscape" ? "L" : "P"}</button></Tooltip><Tooltip content="Place one of each supported enemy near the World 1 Level 1 start."><button tabIndex={-1} type="button" aria-pressed={enemyTest} onClick={() => setEnemyTest(!enemyTest)}>E: {enemyTest ? 1 : 0}</button></Tooltip><Tooltip content="Place one of each supported item near the World 1 Level 1 start."><button tabIndex={-1} type="button" aria-pressed={itemTest} onClick={() => setItemTest(!itemTest)}>I: {itemTest ? 1 : 0}</button></Tooltip><Tooltip content="Place the home teleport arrow and one lockdown encounter four cells north of the World 1 Level 1 start."><button tabIndex={-1} type="button" aria-pressed={levelTest} onClick={() => setLevelTest(!levelTest)}>LT: {levelTest ? 1 : 0}</button></Tooltip><Tooltip content="Show the map-test controls for procedural map checks."><button tabIndex={-1} type="button" aria-pressed={mapTest} onClick={() => setMapTest(!mapTest)}>M: {mapTest ? 1 : 0}</button></Tooltip><Tooltip content="Show the temporary performance panel in the first information column. C moves or collapses it."><button tabIndex={-1} type="button" aria-pressed={performanceActive} onClick={onTogglePerformance}>P: {performanceActive ? 1 : 0}</button></Tooltip><Tooltip content="Show grid pivot coordinates on the selected cell."><button tabIndex={-1} type="button" aria-pressed={showPivotPoints} onClick={() => setShowPivotPoints((value) => !value)}>PV: {showPivotPoints ? 1 : 0}</button></Tooltip><Tooltip content={RENDER_TEST_TOOLTIP}><button tabIndex={-1} type="button" onClick={() => setRenderTestMode(nextRenderTestMode(renderTestMode))}>RT:{renderTestMode}</button></Tooltip><Tooltip content="Cycle the one active Game View shader. Shader 1 renders the game graphics in black and green."><button tabIndex={-1} type="button" aria-pressed={gameViewShader !== 0} onClick={() => setGameViewShader(gameViewShaderSystem.next(gameViewShader))}>S: {gameViewShader}</button></Tooltip><Tooltip content="Include run settings in generated share URLs."><button tabIndex={-1} type="button" aria-pressed={urlArgs} onClick={() => setUrlArgs(!urlArgs)}>URL: {urlArgs ? 1 : 0}</button></Tooltip><Tooltip content="Show all zoom presets; off keeps only 1x and 2x."><button tabIndex={-1} type="button" aria-pressed={zoomTest} onClick={() => setZoomTest(!zoomTest)}>Z: {zoomTest ? 1 : 0}</button></Tooltip><FpsReadout source={fps} /></div>}
     </div>
     <div className="mobile_status" role="group" aria-label="Bottom panel">{canOverride && <Tooltip content={RENDER_TEST_TOOLTIP}><button tabIndex={-1} type="button" onClick={() => setRenderTestMode(nextRenderTestMode(renderTestMode))}>RT:{renderTestMode}</button></Tooltip>}<Tooltip content="Show movement and ability controls."><button tabIndex={-1} type="button" aria-pressed={mobilePanel === "controls"} onClick={() => setMobilePanel("controls")}>Control</button></Tooltip><Tooltip content="Show stats, gear, quest, and log."><button data-ui-pickup-fallback tabIndex={-1} type="button" aria-pressed={mobilePanel === "info"} onClick={() => setMobilePanel("info")}>Info</button></Tooltip>{canOverride && <Tooltip content="Switch the PC preview between landscape and portrait."><button tabIndex={-1} type="button" onClick={() => setAspectRatio(orientation === "landscape" ? "portrait" : "landscape")}>AR: {orientation === "landscape" ? "L" : "P"}</button></Tooltip>}<Tooltip content="Show or exit the temporary performance panel.">{canOverride && <button tabIndex={-1} type="button" aria-pressed={performanceActive} onClick={onTogglePerformance}>P: {performanceActive ? 1 : 0}</button>}</Tooltip></div>
   </StatusBar>;
 }
-function itemDropTarget(target: Element | null, campaign: Campaign | null): { destination: DropDestination; targetItem?: Item | null } | null { const dropItem = target?.closest<HTMLElement>("[data-drop-item]"); if (dropItem) return { destination: { kind: "drop-item" } }; const ability = target?.closest<HTMLElement>("[data-drop-ability]"); if (ability) return { destination: { kind: "ability", index: Number(ability.dataset.dropAbility) } }; const quick = target?.closest<HTMLElement>("[data-drop-quick-slot]"); if (quick) { const index = Number(quick.dataset.dropQuickSlot); return { destination: { kind: "quick-slot", index }, targetItem: campaign?.player.quickSlots?.[index]?.item ?? null }; } const slot = target?.closest<HTMLElement>("[data-drop-group]"); if (slot) { const group = slot.dataset.dropGroup as EquipmentGroup; const index = Number(slot.dataset.dropIndex); return { destination: { kind: "slot", group, index }, targetItem: campaign!.player.equipment[group]?.[index] }; } const inventorySlot = target?.closest<HTMLElement>("[data-drop-inventory-slot]"); if (inventorySlot) return { destination: { kind: "inventory", index: Number(inventorySlot.dataset.dropInventorySlot) } }; return null; }
+function itemDropTarget(target: Element | null, campaign: Campaign | null): { destination: DropDestination; targetItem?: Item | null } | null { const lockboxSlot = target?.closest<HTMLElement>("[data-drop-lockbox]"); if (lockboxSlot) return { destination: { kind: "lockbox", boxId: lockboxSlot.dataset.dropLockbox!, index: Number(lockboxSlot.dataset.dropIndex) } }; const dropItem = target?.closest<HTMLElement>("[data-drop-item]"); if (dropItem) return { destination: { kind: "drop-item" } }; const ability = target?.closest<HTMLElement>("[data-drop-ability]"); if (ability) return { destination: { kind: "ability", index: Number(ability.dataset.dropAbility) } }; const quick = target?.closest<HTMLElement>("[data-drop-quick-slot]"); if (quick) { const index = Number(quick.dataset.dropQuickSlot); return { destination: { kind: "quick-slot", index }, targetItem: campaign?.player.quickSlots?.[index]?.item ?? null }; } const slot = target?.closest<HTMLElement>("[data-drop-group]"); if (slot) { const group = slot.dataset.dropGroup as EquipmentGroup; const index = Number(slot.dataset.dropIndex); return { destination: { kind: "slot", group, index }, targetItem: campaign!.player.equipment[group]?.[index] }; } const inventorySlot = target?.closest<HTMLElement>("[data-drop-inventory-slot]"); if (inventorySlot) return { destination: { kind: "inventory", index: Number(inventorySlot.dataset.dropInventorySlot) } }; return null; }
 function shineKeysForDestination(destination: DropDestination, item?: Item): string[] { if (destination.kind === "drop-item") return []; if (destination.kind === "ability") return [`ability:${destination.index}`]; if (destination.kind === "quick-slot") return [`quick:${destination.index}`]; if (destination.kind === "slot") return item?.slotSpan === 2 ? [0, 1].map((index) => `equipment:${destination.group}:${index}`) : [`equipment:${destination.group}:${destination.index}`]; return [item?.consumableResource ? `inventory-resource:${item.consumableResource}` : item ? `inventory:${item.id}` : "inventory"]; }
 
 export function Game() {
   const [urlOptions] = useState(() => parseGameUrlOptions(window.location.search));
+  const overworldPreview = urlOptions.worldFamily === "overworld";
   const [movementPrompts] = useState(() => new MovementPromptController());
   const [menuAssetsReady, setMenuAssetsReady] = useState(false);
   const { orientation, canOverride, showPivotPoints } = useContext(LayoutContext);
@@ -346,10 +326,17 @@ export function Game() {
   const [slot, setSlot] = useState<string | null>(null); const [campaign, setCampaign] = useState<Campaign | null>(null); const [deathRecap, setDeathRecap] = useState<{ fatal: Campaign; recovery: Campaign | null; lines: string[] } | null>(null); const [deathSequence, setDeathSequence] = useState<{ fatal: Campaign; recovery: Campaign | null; lines: string[] } | null>(null); const [worldAlive, setWorldAlive] = useState(false); const [stairDepartureStartedAt, setStairDepartureStartedAt] = useState<number | null>(null); const [teleportDepartureRequested, setTeleportDepartureRequested] = useState(false); const [settings, setSettings] = useState(false); const [confirmingSaveAndExit, setConfirmingSaveAndExit] = useState(false); const [howToPlay, setHowToPlay] = useState(false); const [gameSettingsCenter, setGameSettingsCenter] = useState<DialogCenter | null>(null); const [menuDialogBounds, setMenuDialogBounds] = useState<DialogBounds | null>(null); const [progressionOpen, setProgressionOpen] = useState(false); const [modeSelectionSlot, setModeSelectionSlot] = useState<string | null>(null); const [creationMode, setCreationMode] = useState<CampaignMode | null>(null); const [creationSlot, setCreationSlot] = useState<string | null>(null); const [creationAttributes, setCreationAttributes] = useState<Attributes | null>(null); const [menuExiting, setMenuExiting] = useState(false); const [saveError, setSaveError] = useState(""); const [preview, setPreview] = useState<Attributes | null>(null); const [dragPresentation, setDragPresentation] = useState<DragPresentation | null>(null); const [gains, setGains] = useState<Gains>({}); const [floatingFeedback, setFloatingFeedback] = useState<Feedback[]>([]); const [resourceChangeEffects, setResourceChangeEffects] = useState<ResourceChangeEffect[]>([]); const [particleEffects, setParticleEffects] = useState<ParticleEffect[]>([]); const [itemThrows, setItemThrows] = useState<ItemThrow[]>([]); const [abilityCooldowns, setAbilityCooldowns] = useState<Partial<Record<AbilityId, number>>>({}); const [cameraAnimationToken, setCameraAnimationToken] = useState(0); const [fps] = useState(createFpsStore);
   const [worldCreation, setWorldCreation] = useState<{ identity: WorldIdentity; character: Attributes; mode: CampaignMode; attributes: WorldAttributes | null; preview: Campaign | null } | null>(null);
   const worldGrowthResult = campaign?.worldGrowth?.find(event => event.applied && !event.acknowledged);
+  const [openLockbox, setOpenLockbox] = useState<string | null>(null);
+  const openLockboxRef = useRef<string | null>(null);
+  const lockboxPersistence = useRef<ReturnType<typeof createLockboxPersistence> | null>(null);
+  const storagePanelState = useRef<{ primary: boolean; secondary: boolean; mobile: string } | null>(null);
+  const panelState = useRef({ primary: true, secondary: true, mobile: "controls" });
+  const pendingLockboxRef = useRef<string | null>(null);
+  const lockboxOpenTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const progressionDialogOpen = progressionOpen || Boolean(worldGrowthResult);
   const [primaryInfoOpen, setPrimaryInfoOpen] = useState(true); const [secondaryInfoOpen, setSecondaryInfoOpen] = useState(true); const [expandedPanelOpen, setExpandedPanelOpen] = useState(false); const [uiAnimations, setUiAnimations] = useState<GameViewToUiAnimation[]>([]); const [pendingUiCredits, setPendingUiCredits] = useState<{ id: string; previous: Campaign; shineKeys: string[] }[]>([]); const [shineTokens, setShineTokens] = useState<Record<string, number>>({});
   const [worldTextFocus, setWorldTextFocus] = useState(false);
-  const worldInputEnabled = !deathSequence && !deathRecap && !expandedPanelOpen && !confirmingSaveAndExit && !dragPresentation && !worldTextFocus;
+  const worldInputEnabled = !deathSequence && !deathRecap && !expandedPanelOpen && !confirmingSaveAndExit && !dragPresentation && !worldTextFocus && !openLockbox;
   useEffect(() => {
     const sync = () => {
       const target = document.activeElement;
@@ -363,12 +350,13 @@ export function Game() {
   const [selectedGridSpot, setSelectedGridSpot] = useState<SelectedCell | null>(null); const [campfireMenu, setCampfireMenu] = useState<Position | null>(null); const [campfireRestConfirming, setCampfireRestConfirming] = useState(false); const [campfireRestTransition, setCampfireRestTransition] = useState(false); const [interactionBumpActive, setInteractionBumpActive] = useState(false); const [statusReplenishProgress, setStatusReplenishProgress] = useState<number | null>(null); const [mobilePanel, setMobilePanel] = useState("controls"); const [mapTestState, setMapTestState] = useState(() => readDevBoolean(DEV_SETTINGS_STORAGE_KEYS.mapTest)); const [itemTest, setItemTestState] = useState(() => readDevBoolean(DEV_SETTINGS_STORAGE_KEYS.itemTest)); const [enemyTest, setEnemyTestState] = useState(() => readDevBoolean(DEV_SETTINGS_STORAGE_KEYS.enemyTest)); const [levelTest, setLevelTestState] = useState(() => readDevBoolean(DEV_SETTINGS_STORAGE_KEYS.leveltest)); const [zoomTest, setZoomTestState] = useState(() => readDevBoolean(DEV_SETTINGS_STORAGE_KEYS.zoomTest)); const [gameViewShader, setGameViewShaderState] = useState<GameViewShaderId>(() => gameViewShaderSystem.normalize(readDevGameViewShader()));
   const mapTest = mapTestState; const setMapTest = (value: boolean) => { writeDevBoolean(DEV_SETTINGS_STORAGE_KEYS.mapTest, value); setMapTestState(value); }; const setItemTest = (value: boolean) => { writeDevBoolean(DEV_SETTINGS_STORAGE_KEYS.itemTest, value); setItemTestState(value); }; const setEnemyTest = (value: boolean) => { writeDevBoolean(DEV_SETTINGS_STORAGE_KEYS.enemyTest, value); setEnemyTestState(value); }; const setLevelTest = (value: boolean) => { writeDevBoolean(DEV_SETTINGS_STORAGE_KEYS.leveltest, value); setLevelTestState(value); };
   const [dungeonTheme, setDungeonTheme] = useState<DungeonTheme>(1);
+  panelState.current = { primary: primaryInfoOpen, secondary: secondaryInfoOpen, mobile: mobilePanel };
   const gainTimers = useRef(new Map<ResourceName, ReturnType<typeof setTimeout>>()); const abilityTimers = useRef(new Set<ReturnType<typeof setTimeout>>()); const abilityCooldownsRef = useRef<Partial<Record<AbilityId, number>>>({}); const sessionGenerationRef = useRef(0); const settingsBoundsRef = useRef<DialogBounds | null>(null); const creationBoundsRef = useRef<DialogBounds | null>(null); const helpBoundsRef = useRef<DialogBounds | null>(null); const deathRecapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const floatingTimers = useRef(new Map<string | undefined, ReturnType<typeof setTimeout>>()); const resourceChangeEffectTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>()); const shineTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>()); const pendingMenuStartRef = useRef<(() => void) | null>(null);
   const turnPresentation = useRef(new TurnPresentationSystem()).current;
   const [gridlessInteractions] = useState(() => new GridlessInteractionController(turnPresentation));
   useEffect(() => { if (campaign) return; const interval = window.setInterval(() => setSummaryNow(Date.now()), 60_000); return () => window.clearInterval(interval); }, [campaign]);
-  useEffect(() => () => { floatingTimers.current.forEach(clearTimeout); floatingTimers.current.clear(); resourceChangeEffectTimers.current.forEach(clearTimeout); resourceChangeEffectTimers.current.clear(); shineTimers.current.forEach(clearTimeout); shineTimers.current.clear(); abilityTimers.current.forEach(clearTimeout); abilityTimers.current.clear(); if (deathRecapTimer.current) clearTimeout(deathRecapTimer.current); }, []);
+  useEffect(() => () => { floatingTimers.current.forEach(clearTimeout); floatingTimers.current.clear(); resourceChangeEffectTimers.current.forEach(clearTimeout); resourceChangeEffectTimers.current.clear(); shineTimers.current.forEach(clearTimeout); shineTimers.current.clear(); abilityTimers.current.forEach(clearTimeout); abilityTimers.current.clear(); if (lockboxOpenTimer.current) clearTimeout(lockboxOpenTimer.current); if (deathRecapTimer.current) clearTimeout(deathRecapTimer.current); }, []);
   const [preferences, setPreferences] = useState<Preferences>(() => { try { const stored = readPreferences(localStorage); const presets = availableGameZoomPresets(zoomTest); return { ...stored, zoom: presets.includes(stored.zoom) ? stored.zoom : 1, urlArgs: readDevBoolean(DEV_SETTINGS_STORAGE_KEYS.urlArgs, stored.urlArgs) }; } catch { return { movementMode: "grid-tween", zoom: 1, camera: "center", fullscreenDesired: false, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: readDevBoolean(DEV_SETTINGS_STORAGE_KEYS.urlArgs) }; } });
   useEffect(() => { sessionGenerationRef.current++; }, [slot]);
   const urlRunStarted = useRef(false);
@@ -400,7 +388,7 @@ export function Game() {
     document.addEventListener("click", playMenuClick);
     return () => document.removeEventListener("click", playMenuClick);
   }, [audio, campaign]);
-  const togglePanels = () => { audio.playPanelToggle(!primaryInfoOpen); if (primaryInfoOpen && secondaryInfoOpen) setSecondaryInfoOpen(false); else if (primaryInfoOpen) setPrimaryInfoOpen(false); else if (secondaryInfoOpen) setPrimaryInfoOpen(true); else setSecondaryInfoOpen(true); };
+  const togglePanels = () => { if (openLockboxRef.current) return; audio.playPanelToggle(!primaryInfoOpen); if (primaryInfoOpen && secondaryInfoOpen) setSecondaryInfoOpen(false); else if (primaryInfoOpen) setPrimaryInfoOpen(false); else if (secondaryInfoOpen) setPrimaryInfoOpen(true); else setSecondaryInfoOpen(true); };
   useEffect(() => {
     const next = runUrlForCampaign(window.location.href, preferences.urlArgs, campaign, slot);
     if (next !== window.location.href) window.history.replaceState(null, "", next);
@@ -466,7 +454,7 @@ export function Game() {
       const quickSlot = resource ? campaign.player.quickSlots?.findIndex((slot) => slot?.item.consumableResource === resource) ?? -1 : -1;
       const existingInventoryTarget = resource ? previous.player.inventory.some((item) => item.consumableResource === resource) : entity.kind === "item" && previous.player.inventory.some((item) => item.id === entity.item.id);
       const destination = entity.kind === "gold" || entity.kind === "key" ? "counter" : "row";
-      const target = destination === "counter" ? `[data-ui-counter-icon="${entity.kind}"]` : quickSlot >= 0 ? `[data-drop-quick-slot="${quickSlot}"]` : existingInventoryTarget && resource ? `[data-inventory-resource="${resource}"]` : existingInventoryTarget && entity.kind === "item" ? `[data-inventory-item-id="${entity.item.id}"]` : "[data-drop-inventory-slot=\"0\"]";
+      const target = destination === "counter" ? `[data-ui-counter-icon="${entity.kind}"]` : quickSlot >= 0 ? `[data-drop-quick-slot="${quickSlot}"]` : existingInventoryTarget && resource ? `[data-inventory-resource="${resource}"]` : existingInventoryTarget && entity.kind === "item" ? `[data-inventory-item-id="${entity.item.id}"]` : "[data-drop-inventory-slot][data-slot-empty=\"true\"]";
       const shineKeys = quickSlot >= 0 ? [`quick:${quickSlot}`] : resource ? [`inventory-resource:${resource}`] : entity.kind === "item" ? [`inventory:${entity.item.id}`] : [];
       const presentation = worldPickupPresentation(entity);
       const frame = itemSpriteFrame(presentation.kind, presentation.resource);
@@ -517,6 +505,12 @@ export function Game() {
       return valid;
     }, (now) => {
       const result = resolveGridlessInteraction(session, plan, now);
+      // Lock the same frame as arrival, before held input can move another pixel.
+      if (plan.kind === "entry" && result?.accepted && "state" in result
+        && result.state.floor.entities.some(entity => entity.kind === "teleport-arrow"
+          && entity.x === result.state.player.x && entity.y === result.state.player.y)) {
+        stairDepartureActiveRef.current = true;
+      }
       if (consequence) consequence();
       else if (plan.campfire) setCampfireMenu(plan.campfire);
       else {
@@ -556,12 +550,23 @@ export function Game() {
     }, INTERACTIVE_BUMP_APEX_MS);
     abilityTimers.current.add(timer);
   }, [beginInteractionBump, campfireMenu, preferences.movementMode, requestCampfireRest, startGridlessInteraction, turnPresentation]);
-  const dispatch = useCallback((action: Action) => { if (performanceSession.current.active && performanceOptions().simulation === "frozen") return sessionRef.current?.dispatch(action) ?? null; if (stairDepartureActiveRef.current || campfireRestTransition || gridlessInteractions.active && action.type !== "trap-strike") return null; if (campfireMenu && action.type !== "move" && action.type !== "move-pixels") setCampfireMenu(null); if (action.type === "move" || action.type === "move-pixels") {
+  const dispatch = useCallback((action: Action) => { if (openLockboxRef.current || pendingLockboxRef.current && action.type !== "resolve-ability") return null; if (performanceSession.current.active && performanceOptions().simulation === "frozen") return sessionRef.current?.dispatch(action) ?? null; if (stairDepartureActiveRef.current || campfireRestTransition || gridlessInteractions.active && action.type !== "trap-strike") return null; if (campfireMenu && action.type !== "move" && action.type !== "move-pixels") setCampfireMenu(null); if (action.type === "move" || action.type === "move-pixels") {
     const current = sessionRef.current?.getState();
     if (current && turnPresentation.isBumping("player", performance.now())) return null;
     const direction = action.type === "move" ? action.direction as Direction : current ? movementDirection(current.player.pixel ?? cellCenter(current.player), action.to) : null;
     if (current && direction && movementPrompts.respondToMove(direction)) return { accepted: false, events: [], state: current, ticks: 0 };
   }
+    if (preferences.movementMode !== "gridless" && action.type === "move") {
+      const current = sessionRef.current?.getState(), offset = directions[action.direction as Direction];
+      const box = current && offset ? current.floor.lockboxes?.find(entry => entry.x === current.player.x + offset[0] && entry.y === current.player.y + offset[1]) : null;
+      if (current && offset && box) {
+        beginInteractionBump(current.player, { x: offset[0], y: offset[1] }, performance.now());
+        const generation = sessionGenerationRef.current;
+        const timer = setTimeout(() => { abilityTimers.current.delete(timer); if (sessionGenerationRef.current === generation) sessionRef.current?.dispatch(action); }, INTERACTIVE_BUMP_APEX_MS);
+        abilityTimers.current.add(timer);
+        return { accepted: true, events: [], state: current, ticks: 0 };
+      }
+    }
     if (preferences.movementMode === "gridless") {
       let current = sessionRef.current?.getState();
       if (current && (action.type === "move" || action.type === "move-pixels" || action.type === "center-player")) {
@@ -598,7 +603,7 @@ export function Game() {
   useEffect(() => {
     if (!campaign) return;
     const strikeWhenSpikesRise = () => {
-      if (performanceSession.current.active && performanceOptions().simulation === "frozen") return;
+      if (openLockboxRef.current || performanceSession.current.active && performanceOptions().simulation === "frozen") return;
       const elapsedMs = performance.now();
       const trap = campaign.floor.decorations?.find((decoration) => decoration.kind === "trap" && decoration.x === campaign.player.x && decoration.y === campaign.player.y);
       const key = trap && trapIsDangerous(trapFrameAt(elapsedMs)) ? `${campaign.floor.seed}:${trap.id}:${Math.floor(elapsedMs / TRAP_CYCLE_MS)}` : null;
@@ -613,6 +618,7 @@ export function Game() {
   const completeStairDeparture = useCallback(() => { stairDepartureActiveRef.current = false; setStairDepartureStartedAt(null); dispatch({ type: "enter-stairs" }); }, [dispatch]);
   const completeTeleportDeparture = useCallback(() => {
     // Keep input locked until the destination iris has finished revealing.
+    stairDepartureActiveRef.current = true;
     sessionRef.current?.dispatch({ type: "enter-teleport" });
     setTeleportDepartureRequested(false);
   }, []);
@@ -674,7 +680,7 @@ export function Game() {
     if (!currentCampaign || !slot) { returnToMainMenu(); return; }
     try {
       if (pixelSaveTimer.current) { clearTimeout(pixelSaveTimer.current); pixelSaveTimer.current = null; }
-      if (!urlOptions.hasCompleteRunIdentity) {
+      if (!urlOptions.hasCompleteRunIdentity && !overworldPreview) {
         writeSlot(localStorage, slot, currentCampaign);
         audio.playEvents([{ type: "campaign.save.succeeded", facts: {} }]);
         setSummaries(readSlotSummary(localStorage));
@@ -689,7 +695,7 @@ export function Game() {
       // main menu so the player can continue or retry.
       returnToMainMenu();
     }
-  }, [audio, campaign, returnToMainMenu, slot, urlOptions.hasCompleteRunIdentity]);
+  }, [audio, campaign, overworldPreview, returnToMainMenu, slot, urlOptions.hasCompleteRunIdentity]);
   useEffect(() => {
     const saveAndQuitWithEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || event.repeat || settings || !campaign || !slot || event.defaultPrevented || pointerDragRef.current) return;
@@ -859,20 +865,51 @@ export function Game() {
   }, [audio, preferences]);
   const setZoomTest = (value: boolean) => { writeDevBoolean(DEV_SETTINGS_STORAGE_KEYS.zoomTest, value); setZoomTestState(value); if (!value) setPreference({ zoom: 1 }); };
   const stepZoom = useCallback((step: number) => { setPreferences((current) => { const presets = availableGameZoomPresets(zoomTest); const index = presets.indexOf(current.zoom); const zoom = presets[Math.max(0, Math.min(presets.length - 1, (index < 0 ? 0 : index) + step))]; const next = { ...current, zoom }; try { writePreferences(localStorage, next); } catch { /* session fallback */ } return next; }); }, [zoomTest]);
+  const cycleZoom = useCallback(() => { setPreferences((current) => { const presets = availableGameZoomPresets(zoomTest); const index = presets.indexOf(current.zoom); const zoom = presets[((index < 0 ? 0 : index) + 1) % presets.length]; const next = { ...current, zoom }; try { writePreferences(localStorage, next); } catch { /* session fallback */ } return next; }); }, [zoomTest]);
   const toggleFullscreen = useCallback(async () => { const desired = !document.fullscreenElement; setPreference({ fullscreenDesired: desired }); try { if (desired) await document.documentElement.requestFullscreen(); else await document.exitFullscreen(); } catch { /* browser gesture policy */ } }, [setPreference]);
   const clearLocalStorage = useCallback(() => {
     try { clearRoguesDungeonBrowserStorage(); window.location.reload(); } catch { setSaveError("Local storage could not be cleared in this browser session."); }
   }, []);
   useEffect(() => { const sync = () => { const actual = Boolean(document.fullscreenElement); if (fullscreenStateRef.current && !actual) setPreference({ fullscreenDesired: false }); fullscreenStateRef.current = actual; setFullscreenActual(actual); }; document.addEventListener("fullscreenchange", sync); sync(); return () => document.removeEventListener("fullscreenchange", sync); }, [setPreference]);
   const cancelPointerDrag = useCallback(() => { if (pointerDragRef.current?.active) suppressSlotClickRef.current = true; pointerDragRef.current = null; setPreview(null); setDragPresentation(null); }, []);
+  const closeLockbox = useCallback(() => {
+    cancelPointerDrag();
+    openLockboxRef.current = null; pendingLockboxRef.current = null; setOpenLockbox(null);
+    if (lockboxOpenTimer.current) clearTimeout(lockboxOpenTimer.current);
+    const previous = storagePanelState.current;
+    if (previous) { setPrimaryInfoOpen(previous.primary); setSecondaryInfoOpen(previous.secondary); setMobilePanel(previous.mobile); storagePanelState.current = null; }
+    const current = sessionRef.current?.getState();
+    const trap = current?.floor.decorations?.find(entry => entry.kind === "trap" && entry.x === current.player.x && entry.y === current.player.y);
+    trapStrikeRef.current = trap && current ? `${current.floor.seed}:${trap.id}:${Math.floor(performance.now() / TRAP_CYCLE_MS)}` : null;
+  }, [cancelPointerDrag]);
+  const storageTransfer = useCallback((source: DragSource, destination: DropDestination) => {
+    const boxId = openLockboxRef.current, current = sessionRef.current?.getState(), adapter = lockboxPersistence.current;
+    if (!boxId || !current || !adapter || source.kind !== "inventory" && source.kind !== "lockbox") return null;
+    if (source.kind === "inventory" && (destination.kind !== "lockbox" || destination.boxId !== boxId)) return null;
+    if (source.kind === "lockbox" && (source.boxId !== boxId || destination.kind !== "inventory")) return null;
+    if (destination.kind !== "inventory" && destination.kind !== "lockbox" || destination.index === undefined) return null;
+    return transferLockboxItem(current, adapter.getState(), boxId, source.kind, source.item.id, destination.index);
+  }, []);
+  const commitStorageTransfer = useCallback((source: DragSource, destination: DropDestination) => {
+    const current = sessionRef.current?.getState(), adapter = lockboxPersistence.current;
+    const transaction = storageTransfer(source, destination);
+    if (!current || !adapter || !transaction || !sessionRef.current) return false;
+    if (pixelSaveTimer.current) { clearTimeout(pixelSaveTimer.current); pixelSaveTimer.current = null; }
+    try {
+      const committed = sessionRef.current.commitStorage(current, transaction.campaign, () => adapter.commit(transaction.campaign, transaction.storage));
+      if (committed) setSaveError("");
+      return committed;
+    } catch { setSaveError("Saving is unavailable in this browser session."); return false; }
+  }, [storageTransfer]);
   const handlePointerDown = useCallback((event: ReactPointerEvent<HTMLElement>) => {
     const handle = event.target instanceof Element ? event.target.closest<HTMLElement>("[data-drag-kind]") : null;
     if (!campaign || !handle || event.button !== 0) return;
     const kind = handle.dataset.dragKind; const id = handle.dataset.dragId; const index = Number(handle.dataset.dragIndex);
-    const item = kind === "ability" ? (campaign.player.abilities[index] ? abilityItemInstance(campaign.player.abilities[index]!, `ability-${campaign.player.abilities[index]}-${index}`) : null) : kind === "quick-slot" ? campaign.player.quickSlots?.[index]?.item : campaign.player.inventory.find((entry) => entry.id === id) ?? [...campaign.player.equipment.weapons, ...campaign.player.equipment.armor].find((entry) => entry?.id === id);
+    if (openLockboxRef.current && kind !== "inventory" && kind !== "lockbox") return;
+    const item = kind === "lockbox" ? lockboxPersistence.current?.getState().containers[openLockboxRef.current ?? ""]?.find(entry => entry.id === id) : kind === "ability" ? (campaign.player.abilities[index] ? abilityItemInstance(campaign.player.abilities[index]!, `ability-${campaign.player.abilities[index]}-${index}`) : null) : kind === "quick-slot" ? campaign.player.quickSlots?.[index]?.item : campaign.player.inventory.find((entry) => entry.id === id) ?? Object.values(campaign.player.equipment).flat().find((entry) => entry?.id === id);
     if (!item) return;
     dismissTooltips();
-    const source = (kind === "inventory" ? { kind, item } : kind === "quick-slot" ? { kind, item, index } : { kind, item, group: handle.dataset.dragGroup, index }) as PointerSource;
+    const source = (kind === "lockbox" ? { kind, item, boxId: handle.dataset.dragContainer } : kind === "inventory" ? { kind, item } : kind === "quick-slot" ? { kind, item, index } : { kind, item, group: handle.dataset.dragGroup, index }) as PointerSource;
     handle.setPointerCapture?.(event.pointerId);
     suppressSlotClickRef.current = false;
     pointerDragRef.current = { pointerId: event.pointerId, source, startX: event.clientX, startY: event.clientY, active: false };
@@ -884,6 +921,12 @@ export function Game() {
       if (!current.active && Math.hypot(event.clientX - current.startX, event.clientY - current.startY) < 6) return;
       current.active = true;
       const target = document.elementFromPoint(event.clientX, event.clientY); const drop = itemDropTarget(target, campaign); const transfer = drop && describeInventoryDrop(campaign, current.source, drop.destination, drop.targetItem);
+      if (openLockboxRef.current) {
+        const valid = drop && storageTransfer(current.source, drop.destination);
+        setPreview(null);
+        setDragPresentation({ source: current.source, item: current.source.item, x: event.clientX, y: event.clientY, destination: valid && drop ? drop.destination : null });
+        return;
+      }
       if (current.source.kind === "inventory" || current.source.kind === "slot") setPreview((transfer || null)?.preview ?? null); else setPreview(null);
       setDragPresentation({ source: current.source, item: current.source.item, x: event.clientX, y: event.clientY, destination: (transfer || null)?.destination ?? null });
     };
@@ -891,6 +934,11 @@ export function Game() {
       const current = pointerDragRef.current; if (!campaign || !current || event.pointerId !== current.pointerId) return;
       if (current.active && event.type === "pointerup") {
         const target = document.elementFromPoint(event.clientX, event.clientY); const drop = itemDropTarget(target, campaign); const transfer = drop && describeInventoryDrop(campaign, current.source, drop.destination, drop.targetItem);
+        if (openLockboxRef.current) {
+          if (target?.closest(".lockbox-window .dialog_close")) { closeLockbox(); return; }
+          audio.playDropResult(Boolean(drop && commitStorageTransfer(current.source, drop.destination)));
+          cancelPointerDrag(); return;
+        }
         const action = (transfer || null)?.action ?? null;
          if (action) { const result = dispatch(action); if (!result?.events.length) audio.playDropResult(Boolean(result?.accepted)); if (result?.accepted) { const transferDestination = transfer && typeof transfer === "object" ? transfer.destination : null; if (transferDestination) shineSlots(shineKeysForDestination(transferDestination, current.source.kind === "ability" ? undefined : current.source.item)); else if (action.type === "assign-ability") shineSlot(`ability:${action.to}`); } }
         else if (drop) audio.playDropResult(false);
@@ -900,7 +948,7 @@ export function Game() {
     const pointerCancel = () => cancelPointerDrag(); const cancel = (event: KeyboardEvent) => { if (event.key === "Escape" && pointerDragRef.current) { event.preventDefault(); cancelPointerDrag(); } };
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", finish); window.addEventListener("pointercancel", pointerCancel); window.addEventListener("keydown", cancel);
     return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", finish); window.removeEventListener("pointercancel", pointerCancel); window.removeEventListener("keydown", cancel); };
-  }, [audio, campaign, cancelPointerDrag, dispatch, shineSlot, shineSlots]);
+  }, [audio, campaign, cancelPointerDrag, closeLockbox, commitStorageTransfer, dispatch, shineSlot, shineSlots, storageTransfer]);
   useEffect(() => {
     const editable = (target: EventTarget | null) => target instanceof HTMLElement && (target.isContentEditable || target.closest("input, textarea, select, [contenteditable='true']"));
     const clearHeldInput = () => { clickedDestination.current = null; heldMovements.current.clear(); heldShift.current.clear(); syncMovement(); };
@@ -942,8 +990,12 @@ export function Game() {
   const begin = (id: string, repairedFloor: Floor | null = null, attributes?: Attributes, previewedWorld?: Campaign, override?: Campaign) => {
     if (deathRecapTimer.current) { clearTimeout(deathRecapTimer.current); deathRecapTimer.current = null; }
     setDeathSequence(null);
-    const unsavedUrlRun = urlOptions.hasCompleteRunIdentity || performanceSession.current.active;
+    const unsavedUrlRun = urlOptions.hasCompleteRunIdentity || overworldPreview || performanceSession.current.active;
     const targetSlot = urlOptions.hasCompleteRunIdentity ? urlOptions.slot! : id;
+    openLockboxRef.current = null; pendingLockboxRef.current = null; setOpenLockbox(null);
+    if (lockboxOpenTimer.current) clearTimeout(lockboxOpenTimer.current);
+    try { lockboxPersistence.current = createLockboxPersistence(unsavedUrlRun ? null : localStorage, targetSlot); }
+    catch { setSaveError("Saving is unavailable in this browser session."); return; }
     let existing: Campaign | null = null;
     try { if (!unsavedUrlRun && !override) existing = readSlot(localStorage, targetSlot); }
     catch { setSaveError("This saved game is unavailable. Its data was left unchanged."); setSummaries(readSlotSummary(localStorage)); return; }
@@ -955,10 +1007,11 @@ export function Game() {
     const enemyTestMode = enemyTest || urlOptions.level1EnemyTestMode;
     const freshTestCampaign = () => {
       if (previewedWorld) return previewedWorld;
-      const worldSeed = unsavedUrlRun ? urlOptions.seed! : randomSeed ?? readWorldSeed(localStorage);
-      return createRunCampaign(worldSeed, Number(targetSlot), urlOptions.run, urlOptions.level, urlOptions.level, { level1TestMode: levelTest, level1ObjectTestMode: objectTest, level1EnemyTestMode: enemyTestMode, attributes, worldAttributes: levelTest ? existing?.worldAttributes ?? DEFAULT_WORLD_ATTRIBUTES : undefined });
+      const worldSeed = urlOptions.hasCompleteRunIdentity ? urlOptions.seed! : urlOptions.seed ?? randomSeed ?? readWorldSeed(localStorage);
+      return createRunCampaign(worldSeed, Number(targetSlot), urlOptions.run, urlOptions.level, urlOptions.level, { level1TestMode: levelTest, level1ObjectTestMode: objectTest, level1EnemyTestMode: enemyTestMode, attributes, worldAttributes: levelTest ? existing?.worldAttributes ?? DEFAULT_WORLD_ATTRIBUTES : undefined, worldFamily: urlOptions.worldFamily });
     };
     const initial = override ?? (unsavedUrlRun || levelTest || objectTest || enemyTestMode ? freshTestCampaign() : existing ?? freshTestCampaign());
+    if (overworldPreview) revealDiscovery(initial, { x: (initial.floor.width - 1) / 2, y: (initial.floor.height - 1) / 2 }, Math.hypot(initial.floor.width, initial.floor.height));
     if (!override && (!existing || unsavedUrlRun || levelTest || objectTest || enemyTestMode)) initial.world = urlOptions.world === 1 ? "One" : String(urlOptions.world);
     const scenario = urlOptions.mapFix ? getManualTileScenario(urlOptions.scenario) : null;
     const manualFloor = scenario ? buildManualTileScenario(scenario.name, randomSeed ?? 13579, urlOptions.level) : null;
@@ -976,24 +1029,26 @@ export function Game() {
       }
     }
     if (!override && !unsavedUrlRun && !existing) {
-      try { writeSlot(localStorage, targetSlot, initial); setSummaries(readSlotSummary(localStorage)); audio.playEvents([{ type: "campaign.save.succeeded", facts: {} }]); }
+      try { if (!unsavedUrlRun) { writeSlot(localStorage, targetSlot, initial); setSummaries(readSlotSummary(localStorage)); audio.playEvents([{ type: "campaign.save.succeeded", facts: {} }]); } }
       catch { setSaveError("Saving is unavailable in this browser session."); audio.playEvents([{ type: "campaign.save.failed", facts: {} }]); return; }
     }
     if (!unsavedUrlRun) prepareCampaignSave(initial);
     const session = createGameSession(initial, {
+      getInputPaused: () => Boolean(openLockboxRef.current),
+      reconcileRecovery: recovered => reconcileLockboxRecovery(recovered, lockboxPersistence.current!.getState()),
       getSimulationFrozen: () => performanceSession.current.active && performanceOptions().simulation === "frozen",
       getEnemyLogicDisabled: () => performanceSession.current.active && !performanceOptions().enemyLogic,
       onCommit: (result) => {
         if (performanceSession.current.active) return;
         if (pixelSaveTimer.current) { clearTimeout(pixelSaveTimer.current); pixelSaveTimer.current = null; }
         if (!unsavedUrlRun && result.ticks === 0 && result.events.some((event) => event.type === "action.committed" && event.facts.actionType === "move-pixels")) {
-          pixelSaveTimer.current = setTimeout(() => { if (sessionRef.current !== session) return; try { writeSlot(localStorage, targetSlot, session.getState()); session.publish("campaign.save.succeeded"); } catch { setSaveError("Saving is unavailable in this browser session."); session.publish("campaign.save.failed"); } }, 150);
+          if (!unsavedUrlRun) pixelSaveTimer.current = setTimeout(() => { if (sessionRef.current !== session) return; try { writeSlot(localStorage, targetSlot, session.getState()); session.publish("campaign.save.succeeded"); } catch { setSaveError("Saving is unavailable in this browser session."); session.publish("campaign.save.failed"); } }, 150);
           return;
         }
         try {
           if (!unsavedUrlRun) {
             if (result.recovery === null) deleteSlot(localStorage, targetSlot);
-            else writeSlot(localStorage, targetSlot, result.recovery ?? result.state);
+            else if (!unsavedUrlRun) writeSlot(localStorage, targetSlot, result.recovery ?? result.state);
             setSummaries(readSlotSummary(localStorage));
             session.publish("campaign.save.succeeded");
           }
@@ -1004,6 +1059,22 @@ export function Game() {
     });
     campaignRef.current = null;
     session.subscribe((result) => {
+      const storageEvent = result.events.find(event => event.type === "lockbox.opened");
+      if (storageEvent?.facts.id) {
+        const boxId = storageEvent.facts.id;
+        pendingLockboxRef.current = boxId;
+        clickedDestination.current = null; heldMovements.current.clear(); heldShift.current.clear();
+        const generation = sessionGenerationRef.current;
+        const openWhenSettled = () => {
+          if (sessionGenerationRef.current !== generation || pendingLockboxRef.current !== boxId || session.getState().player.resources.health.current <= 0) return;
+          if (abilityTimers.current.size) { lockboxOpenTimer.current = setTimeout(openWhenSettled, 30); return; }
+          storagePanelState.current = { ...panelState.current };
+          setPrimaryInfoOpen(true); setMobilePanel("info"); setExpandedPanelOpen(false);
+          openLockboxRef.current = boxId; pendingLockboxRef.current = null;
+          setOpenLockbox(boxId);
+        };
+        openWhenSettled();
+      }
       audio.playEvents(result.events.filter((event) => event.type !== "xp.level.changed" && !(event.type === "resource.changed" && event.facts.cause === "campfire-rest")));
       if (!result.accepted && !result.system && !result.events.some((event) => event.type === "quick-slot.use.rejected")) return;
       const levelEvents = result.events.filter((event) => event.type === "xp.level.changed");
@@ -1014,7 +1085,7 @@ export function Game() {
           .filter((entity) => entity.kind === "gold" && (entity.id.startsWith(`chest-gold-${openedContainer.id}-`) || entity.id.startsWith(`crate-gold-${openedContainer.id}-`)))
           .map((coin) => ({ id: coin.id, kind: "gold" as const, destination: { x: coin.x, y: coin.y } }));
         setItemThrows(throwItems(origin, items));
-        const timer = setTimeout(() => setItemThrows([]), ITEM_THROW_DURATION_MS);
+        const timer = setTimeout(() => { abilityTimers.current.delete(timer); setItemThrows([]); }, ITEM_THROW_DURATION_MS);
         abilityTimers.current.add(timer);
       }
       const split = result.events.find((event) => event.type === "enemy.split" && typeof event.facts.id === "string" && event.facts.position && typeof event.facts.position === "object" && Array.isArray(event.facts.childIds))?.facts;
@@ -1023,7 +1094,7 @@ export function Game() {
         const childIds = new Set(split.childIds);
         const items = result.state.floor.entities.filter((entity) => entity.kind === "enemy" && childIds.has(entity.id)).map((child) => ({ id: `split-burst-${child.id}`, kind: "gold", destination: { x: child.x, y: child.y } }));
         setItemThrows(throwItems(origin, items));
-        const timer = setTimeout(() => setItemThrows([]), ITEM_THROW_DURATION_MS);
+        const timer = setTimeout(() => { abilityTimers.current.delete(timer); setItemThrows([]); }, ITEM_THROW_DURATION_MS);
         abilityTimers.current.add(timer);
       }
       const droppedItems = result.events
@@ -1036,7 +1107,7 @@ export function Game() {
         .filter((item): item is NonNullable<typeof item> => item !== null);
       if (droppedItems.length) {
         setItemThrows(throwItems({ x: result.state.player.x, y: result.state.player.y }, droppedItems));
-        const timer = setTimeout(() => setItemThrows([]), ITEM_THROW_DURATION_MS);
+        const timer = setTimeout(() => { abilityTimers.current.delete(timer); setItemThrows([]); }, ITEM_THROW_DURATION_MS);
         abilityTimers.current.add(timer);
       }
       const playerTookDamage = result.events.some((event) => event.type === "resource.changed" && event.facts.resource === "health" && event.facts.current! < event.facts.previous!);
@@ -1154,7 +1225,7 @@ export function Game() {
     }
     catch (error) { setPerformanceError(error instanceof Error ? error.message : String(error)); }
   };
-  useEffect(() => { if (urlOptions.hasCompleteRunIdentity && !urlRunStarted.current && !campaign && !slot) { urlRunStarted.current = true; begin(urlOptions.slot!); } }, [campaign, slot, urlOptions]);
+  useEffect(() => { if ((urlOptions.hasCompleteRunIdentity || overworldPreview) && !urlRunStarted.current && !campaign && !slot) { urlRunStarted.current = true; begin(urlOptions.slot ?? "1"); } }, [campaign, overworldPreview, slot, urlOptions]);
   const measureMenuDialogBounds = useCallback(() => {
     const menu = document.querySelector(".main-menu-window");
     return menu ? dialogBounds(menu) : null;
@@ -1215,6 +1286,16 @@ export function Game() {
     const bounds = dialogBounds(view);
     return { left: bounds.left + bounds.width / 2, top: bounds.top + bounds.height / 2 };
   }, []);
+  useLayoutEffect(() => {
+    if (!openLockbox) return;
+    const view = document.querySelector(".world-view-region");
+    const update = () => setGameSettingsCenter(measureGameSettingsCenter());
+    update();
+    const observer = new ResizeObserver(update);
+    if (view) observer.observe(view);
+    window.addEventListener("resize", update); document.addEventListener("fullscreenchange", update);
+    return () => { observer.disconnect(); window.removeEventListener("resize", update); document.removeEventListener("fullscreenchange", update); };
+  }, [openLockbox, orientation, measureGameSettingsCenter]);
   const completePlayerDeathAnimation = useCallback(() => {
     if (!deathSequence || deathRecapTimer.current) return;
     deathRecapTimer.current = setTimeout(() => {
@@ -1224,8 +1305,8 @@ export function Game() {
       setDeathSequence(null);
     }, 1000);
   }, [deathSequence, measureGameSettingsCenter]);
-  const openGameSettings = useCallback(() => { setGameSettingsCenter(measureGameSettingsCenter()); setSettings(true); }, [measureGameSettingsCenter]);
-  const requestSaveAndQuit = useCallback(() => { setGameSettingsCenter(measureGameSettingsCenter()); setConfirmingSaveAndExit(true); }, [measureGameSettingsCenter]);
+  const openGameSettings = useCallback(() => { if (openLockboxRef.current) return; setGameSettingsCenter(measureGameSettingsCenter()); setSettings(true); }, [measureGameSettingsCenter]);
+  const requestSaveAndQuit = useCallback(() => { if (openLockboxRef.current) return; setGameSettingsCenter(measureGameSettingsCenter()); setConfirmingSaveAndExit(true); }, [measureGameSettingsCenter]);
   useEffect(() => {
     if (!campaign || (!settings && !confirmingSaveAndExit && !progressionDialogOpen)) return undefined;
     const sync = () => setGameSettingsCenter(measureGameSettingsCenter());
@@ -1253,14 +1334,15 @@ export function Game() {
   const activeUiCampaign = uiCampaign ?? campaign;
   const togglePerformance = () => { if (performanceSession.current.active) restorePerformanceRef.current(); else enterPerformance(); };
   const performancePanel = canOverride && performanceSession.current.active ? <PerformanceControls campaign={campaign} exit={() => restorePerformanceRef.current()} regenerate={regeneratePerformance} enemyScenario={startEnemyScenario} setEnemyLogic={(enabled) => { if (!performanceSession.current.active) return; if (!enabled) turnPresentation.settleEnemies(sessionRef.current?.getState() ?? campaign); setPerformanceOptions({ enemyLogic: enabled }); }} error={performanceError} /> : null;
-  return <GameScreen orientation={orientation} onPointerDown={handlePointerDown} onClickCapture={(event) => { if (suppressSlotClickRef.current && event.target instanceof Element && event.target.closest(".slot_item")) { event.preventDefault(); event.stopPropagation(); suppressSlotClickRef.current = false; } }}>
+  return <GameScreen storageOpen={Boolean(openLockbox)} orientation={orientation} onPointerDown={handlePointerDown} onClickCapture={(event) => { if (suppressSlotClickRef.current && event.target instanceof Element && event.target.closest(".slot_item")) { event.preventDefault(); event.stopPropagation(); suppressSlotClickRef.current = false; } }}>
     <TitleBar campaign={campaign} visibleCounters={pendingUiCredits[0]?.previous.counters} preferences={preferences} setPreference={setPreference} onFullscreen={toggleFullscreen} onSettings={openGameSettings} onSaveAndQuit={requestSaveAndQuit} fullscreenActual={fullscreenActual} zoomTest={zoomTest} />
     {urlOptions.mapFix && <MapFixControls campaign={campaign} slot={slot} onImport={importRepairMap} error={mapFixError} />}
     {canOverride && mapTest && <MapTestControls campaign={campaign} />}
-    <Profiler id="game-world" onRender={(_id, _phase, actualDuration) => timePerformance("React commit", actualDuration)}><section className="game-screen__middle" data-primary-open={primaryInfoOpen} data-secondary-open={secondaryInfoOpen}><WorldViewRegion primaryOpen={primaryInfoOpen} secondaryOpen={secondaryInfoOpen} dimmed={expandedPanelOpen}><BabylonWorld key={performanceEpoch} renderTestMode={renderTestMode} campaign={campaign} theme={dungeonTheme} gameViewShader={gameViewShader} zoom={preferences.zoom} camera={preferences.camera} cameraAnimationToken={cameraAnimationToken} playerDeathAnimation={Boolean(deathSequence)} stairDepartureStartedAt={stairDepartureStartedAt} teleportDepartureRequested={teleportDepartureRequested} onTeleportDepartureComplete={completeTeleportDeparture} mouseInteraction={worldInputEnabled && !settings && !progressionDialogOpen} mouseScreenEdgeTarget={worldInputEnabled ? mouseScreenEdgeMove.current?.target ?? null : null} mouseDirection={mouseDirection} showPivotPoints={showPivotPoints} floatingFeedback={floatingFeedback} resourceChangeEffects={resourceChangeEffects} particleEffects={particleEffects} itemThrows={itemThrows} uiAnimations={uiAnimations} selectedCell={selectedGridSpot} selectedCellReachable={selectedCellReachable} mousePath={selectedMousePath} campfireMenu={campfireMenu} campfireRestConfirming={campfireRestConfirming} campfireRestTransition={campfireRestTransition} turnPresentation={turnPresentation} onCampfireRestReplenish={completeCampfireRest} movementPrompts={movementPrompts} onCampfireMenuCancelled={() => setCampfireMenu(null)} onCampfireRestRequested={confirmCampfireRest} onSelectedCellChange={setSelectedGridSpot} onSelectedCellClick={activateSelectedCell} onMouseScreenEdgeAdvance={advanceMouseScreenEdge} onWorldAliveChange={handleWorldAliveChange} onPlayerDeathAnimationComplete={completePlayerDeathAnimation} onStairDepartureComplete={completeStairDeparture} onStairDescentStep={playStairDescentStep} onWallAdjacentBarrelOffscreen={(setId) => Boolean(dispatch({ type: "return-barrel", setId })?.accepted)} onUiAnimationRest={restUiAnimation} onUiAnimationComplete={completeUiAnimation} onFpsChange={canOverride ? fps.publish : undefined} onZoom={stepZoom} /><EquipmentComparison campaign={campaign} drag={dragPresentation} /></WorldViewRegion>{orientation === "landscape" && (<InformationPanels renderTestMode={renderTestMode} primaryOverlay={orientation === "landscape" ? performancePanel : null} key={performanceEpoch} campaign={activeUiCampaign} theme={dungeonTheme} dispatch={dispatch} drag={dragPresentation} preview={preview} gains={gains} cooldowns={abilityCooldowns} shineTokens={shineTokens} primaryOpen={primaryInfoOpen} secondaryOpen={secondaryInfoOpen} statusReplenishProgress={statusReplenishProgress} turnPresentation={turnPresentation} onTogglePrimary={() => { audio.playPanelToggle(!primaryInfoOpen); setPrimaryInfoOpen(!primaryInfoOpen); }} onToggleSecondary={() => { audio.playPanelToggle(!secondaryInfoOpen); setSecondaryInfoOpen(!secondaryInfoOpen); }} onFocusedPanelChange={(focused) => { audio.playPanelToggle(focused); setExpandedPanelOpen(focused); }} onOpenProgression={() => { setGameSettingsCenter(measureGameSettingsCenter()); setProgressionOpen(true); }} />)}</section></Profiler>
+    <Profiler id="game-world" onRender={(_id, _phase, actualDuration) => timePerformance("React commit", actualDuration)}><section className="game-screen__middle" data-primary-open={primaryInfoOpen} data-secondary-open={secondaryInfoOpen}><WorldViewRegion primaryOpen={primaryInfoOpen} secondaryOpen={secondaryInfoOpen} dimmed={expandedPanelOpen || Boolean(openLockbox)}><BabylonWorld key={performanceEpoch} renderTestMode={renderTestMode} campaign={campaign} theme={dungeonTheme} gameViewShader={gameViewShader} zoom={preferences.zoom} camera={preferences.camera} cameraAnimationToken={cameraAnimationToken} playerDeathAnimation={Boolean(deathSequence)} stairDepartureStartedAt={stairDepartureStartedAt} teleportDepartureRequested={teleportDepartureRequested} onTeleportDepartureComplete={completeTeleportDeparture} mouseInteraction={worldInputEnabled && !settings && !progressionDialogOpen} mouseScreenEdgeTarget={worldInputEnabled ? mouseScreenEdgeMove.current?.target ?? null : null} mouseDirection={mouseDirection} showPivotPoints={showPivotPoints} floatingFeedback={floatingFeedback} resourceChangeEffects={resourceChangeEffects} particleEffects={particleEffects} itemThrows={itemThrows} uiAnimations={uiAnimations} selectedCell={selectedGridSpot} selectedCellReachable={selectedCellReachable} mousePath={selectedMousePath} campfireMenu={campfireMenu} campfireRestConfirming={campfireRestConfirming} campfireRestTransition={campfireRestTransition} turnPresentation={turnPresentation} onCampfireRestReplenish={completeCampfireRest} movementPrompts={movementPrompts} onCampfireMenuCancelled={() => setCampfireMenu(null)} onCampfireRestRequested={confirmCampfireRest} onSelectedCellChange={setSelectedGridSpot} onSelectedCellClick={activateSelectedCell} onMouseScreenEdgeAdvance={advanceMouseScreenEdge} onWorldAliveChange={handleWorldAliveChange} onPlayerDeathAnimationComplete={completePlayerDeathAnimation} onStairDepartureComplete={completeStairDeparture} onStairDescentStep={playStairDescentStep} onWallAdjacentBarrelOffscreen={(setId) => Boolean(dispatch({ type: "return-barrel", setId })?.accepted)} onUiAnimationRest={restUiAnimation} onUiAnimationComplete={completeUiAnimation} onFpsChange={canOverride ? fps.publish : undefined} onZoom={stepZoom} onToggleZoom={cycleZoom} /><EquipmentComparison campaign={campaign} drag={dragPresentation} /></WorldViewRegion>{orientation === "landscape" && (<InformationPanels renderTestMode={renderTestMode} primaryOverlay={!openLockbox && orientation === "landscape" ? performancePanel : null} key={performanceEpoch} campaign={activeUiCampaign} theme={dungeonTheme} dispatch={dispatch} drag={dragPresentation} preview={preview} gains={gains} cooldowns={abilityCooldowns} shineTokens={shineTokens} primaryOpen={primaryInfoOpen} secondaryOpen={secondaryInfoOpen} statusReplenishProgress={statusReplenishProgress} turnPresentation={turnPresentation} onTogglePrimary={() => { audio.playPanelToggle(!primaryInfoOpen); setPrimaryInfoOpen(!primaryInfoOpen); }} onToggleSecondary={() => { audio.playPanelToggle(!secondaryInfoOpen); setSecondaryInfoOpen(!secondaryInfoOpen); }} onFocusedPanelChange={(focused) => { audio.playPanelToggle(focused); setExpandedPanelOpen(focused); }} onOpenProgression={() => { if (openLockboxRef.current) return; setGameSettingsCenter(measureGameSettingsCenter()); setProgressionOpen(true); }} />)}</section></Profiler>
 <StatusControls renderTestMode={renderTestMode} setRenderTestMode={setRenderTestMode} performanceActive={performanceSession.current.active} onTogglePerformance={togglePerformance} campaign={campaign} canOverride={canOverride} orientation={orientation} onTogglePanels={togglePanels} onPanelToggle={audio.playPanelToggle} fps={fps} drag={dragPresentation} urlArgs={preferences.urlArgs} setUrlArgs={(urlArgs) => { writeDevBoolean(DEV_SETTINGS_STORAGE_KEYS.urlArgs, urlArgs); setPreference({ urlArgs }); }} mapTest={mapTest} setMapTest={setMapTest} itemTest={itemTest} setItemTest={setItemTest} enemyTest={enemyTest} setEnemyTest={setEnemyTest} levelTest={levelTest} setLevelTest={setLevelTest} zoomTest={zoomTest} setZoomTest={setZoomTest} gameViewShader={gameViewShader} setGameViewShader={(shader) => { writeDevGameViewShader(shader); setGameViewShaderState(shader); }} mobilePanel={mobilePanel} setMobilePanel={(value) => { if (value !== mobilePanel) audio.playPanelToggle(value === "info"); setMobilePanel(value); }} onWait={() => dispatch({ type: "wait" })} />
-{orientation === "portrait" && (<section className="mobile_bottom"><MobileControls campaign={campaign} dispatch={dispatch} hidden={mobilePanel !== "controls"} />{mobilePanel === "info" && (<MobileInformationPanels renderTestMode={renderTestMode} primaryOverlay={orientation === "portrait" ? performancePanel : null} campaign={activeUiCampaign} theme={dungeonTheme} dispatch={dispatch} drag={dragPresentation} preview={preview} gains={gains} cooldowns={abilityCooldowns} shineTokens={shineTokens} hidden={mobilePanel !== "info"} statusReplenishProgress={statusReplenishProgress} onOpenProgression={() => { setGameSettingsCenter(measureGameSettingsCenter()); setProgressionOpen(true); }} turnPresentation={turnPresentation} />)}</section>)}
+{orientation === "portrait" && (<section className="mobile_bottom"><MobileControls campaign={campaign} dispatch={dispatch} hidden={mobilePanel !== "controls"} />{mobilePanel === "info" && (<MobileInformationPanels renderTestMode={renderTestMode} primaryOverlay={!openLockbox && orientation === "portrait" ? performancePanel : null} campaign={activeUiCampaign} theme={dungeonTheme} dispatch={dispatch} drag={dragPresentation} preview={preview} gains={gains} cooldowns={abilityCooldowns} shineTokens={shineTokens} hidden={mobilePanel !== "info"} statusReplenishProgress={statusReplenishProgress} onOpenProgression={() => { if (openLockboxRef.current) return; setGameSettingsCenter(measureGameSettingsCenter()); setProgressionOpen(true); }} turnPresentation={turnPresentation} />)}</section>)}
     <ItemDragPreview campaign={campaign} drag={dragPresentation} />
+    {openLockbox && <LockboxWindow boxId={openLockbox} items={lockboxPersistence.current?.getState().containers[openLockbox] ?? []} center={gameSettingsCenter} drag={dragPresentation} onClose={closeLockbox} onCancelDrag={cancelPointerDrag} />}
     {saveError && <div className="save_error">{saveError}</div>}
     {progressionOpen && <ProgressionWindow campaign={campaign} center={gameSettingsCenter} onClose={() => setProgressionOpen(false)} onConfirm={(allocation) => { const result = dispatch({ type: "spend-attribute-points", allocation }); if (result?.accepted) { shineSlot("attributes"); setProgressionOpen(false); } }} />}
     {worldGrowthResult && <WorldProgressionWindow event={worldGrowthResult} center={gameSettingsCenter} onContinue={() => dispatch({ type: 'acknowledge-world-growth', id: worldGrowthResult.id })} />}

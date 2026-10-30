@@ -122,9 +122,67 @@ Prepared source SHA256 values:
 The historical fixed-coordinate Wang test separately needed both the legacy
 topology and legacy portal layout pinned after new-run portal defaults changed.
 Its expected coordinates and frames remain untouched; the focused
-seed-3266798470 case passes. Task 2.6 remains pending browser execution and the
-second human playtest. This route preparation is not either of those gates.
+seed-3266798470 case passes.
+
+The focused muted browser smoke check passed for seeds 4 and 55. Each run had
+10 graph rooms, one loop, three hubs and all five room roles. The route visited
+a hub, returned to the start, pushed the barrel onto its trigger, crossed the
+opened door and completed the animated transition to level 2 at (49,50). Both
+views were ready with two canvases, RT3 and zero Wang diagnostics; registered
+start-room sprites matched each plan, normal slot bytes stayed unchanged and no
+application errors occurred. Raw result: `output/program-milestone-two-browser.log`;
+reproducible plans and numbered instructions: `output/program-milestone-two-plan.json`.
+
+The user reviewed the seed-4 and seed-55 hub screenshots and approved the
+branches, loops, pacing, combat space and exit reachability, then authorized
+milestone 3 to begin. Task 2.6 is complete. The approved screenshots are
+`output/program-m2-seed-4-hub.png` and `output/program-m2-seed-55-hub.png`.
+
+## Milestone three terrain and connectivity
+
+`rogues-dungeon/src/systems/procedural/overworld-generation-system.ts` adds a
+deterministic organic overworld generator with explicit width, height, seed,
+mountain-density target, organic scale, start/exit, required landmarks,
+protected cells and reserved rectangles. Its ordered mountain and route-repair
+passes use the existing semantic-cell/pass-runner contract. Terrain is a
+walkable-majority grid with `mountain` roles; route repair uses a stable
+least-cost cardinal path and carves only the required route cells, preserving
+the remaining organic obstacles.
+
+Focused checks in `rogues-dungeon/test/overworld-generation.test.ts` pass 5/5:
+fixed-input determinism, configured dimensions and parameters, walkable
+majority, protected/reserved-cell preservation, density/scale variation, and
+flood-filled connectivity for mountain-heavy, sparse, edge-start and landmark
+fixtures. Command: `npx tsx --test rogues-dungeon/test/overworld-generation.test.ts`.
+`rogues-dungeon/test/overworld-rendering.test.ts` passes 3/3 for coordinate
+equality, semantic mountain roles, campaign-family selection, paired stair
+links through level 3, and compact save/restore. Commands use the project's
+Tiled raw-import loader: `node --import ./rogues-dungeon/test/tiled-raw-import.mjs --import tsx --test rogues-dungeon/test/overworld-rendering.test.ts`.
+
+`family=overworld&randomSeed=60606` is the controlled, non-persistent browser
+entry. The preview reveals the deterministic map for inspection and suppresses
+all save writes. On 2026-10-29 the user-connected desktop Edge and built-in IAB
+both loaded this muted route (`?mute=1`), reached renderer-ready state, and
+accepted one eastward move (player x=51, y=50); each had two canvases on desktop,
+one in portrait IAB, and zero browser console errors. The preview discovery
+reveal is limited to this explicit development family route. Playwright CLI
+Edge launch was attempted but the isolated Edge process crashed before opening;
+the connected desktop Edge and IAB contexts supplied the browser evidence.
+
+`rogues-dungeon/documentation/world-generation-debugging.md` now documents
+terrain parameters, density and scale, reserved scoped composition, route
+repair, semantic projection, the preview URL and save behavior, and paired
+level transitions. Tasks 3.1–3.7 are complete. Task 3.8 remains open for the
+third human playtest and full applicable Node/browser suite.
 
 ## Current milestone-two browser check
 
 Coordinator's isolated Edge CLI check passed seeds4 and55 on the integrated graph/paired-portal source. Each has10rooms,1loop,3hubs and all current room roles. The scripted route visits a hub, returns, pushes the barrel onto its trigger, crosses the open door and completes the animated transition to Level2 at49,50. Both views were ready with two canvases, RT3 and zero Wang diagnostics; registered start-room sprites matched each plan, normal slot bytes stayed unchanged and no application errors occurred. Raw result: `output/program-milestone-two-browser.log`; reproducible plans and numbered instructions: `output/program-milestone-two-plan.json`. Screenshots were inspected for coherent start interiors and Level2 terrain. The full browser gate and human task2.6 assessment remain pending. No milestone3 implementation has started.
+
+## Milestone three final acceptance update
+
+The user reviewed the seeded overworld in the refreshed desktop Edge preview at `?mute=1&family=overworld&randomSeed=60606` and approved the organic mountains, walkable majority, route/stair reachability, and existing dungeon. This completes the third required human playtest gate.
+
+The stair return regression was corrected so first arrivals use a free cell beside the return stair and each paired link remembers a safe adjacent return cell. Returning through a saved link preserves that position across compact save/restore. Focused overworld generation and rendering tests pass 8/8; the stair-safety and legacy dungeon linked-stair checks pass 3/3.
+
+On the combined source snapshot, `npm test` passes 579/579 and `npm run build` (including TypeScript checks) succeeds. The configured Chromium Playwright project completed all 80/80 cases successfully, including lockbox, panel-slot swaps, and world generation. Playwright hung during post-run shutdown after the final passing case and was interrupted; its console showed all 80 cases as `ok`. A separate configured Edge CLI attempt could not launch its isolated Edge profile (DualEngine profile-file errors, followed by `Target page, context or browser has been closed`); the same launcher failure occurred in headed mode. The connected desktop Edge and IAB checks for the seeded overworld had already loaded, rendered, and moved successfully, and the user approved the refreshed desktop Edge playtest. With those interactive checks plus the full passing Chromium suite, task 3.8 is complete. The source-pattern assertion in `page.test.ts` was updated to match explicit-run and preview seed selection.

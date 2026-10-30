@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Provide storage through human-authored lockboxes so players can manage carried items and retain separate container contents throughout each Saved Game.
+Provide shared storage through human-authored lockbox access points so players can manage carried items throughout each Saved Game.
 
 ## ADDED Requirements
 
@@ -51,7 +51,7 @@ While a Lockbox window is open, gameplay simulation and world input SHALL be pau
 - **THEN** gameplay resumes without replaying input collected while it was open
 
 ### Requirement: Provide ten fixed storage positions
-Each lockbox SHALL start empty and provide exactly ten capacity positions using the shared inventory presentation. It SHALL omit Drop Item, show stored item categories and quantities, and apply the existing stack and multi-position presentation rules. Stored capacity items SHALL NOT expand a lockbox or contribute effects to the player.
+The shared inventory SHALL start empty and provide exactly ten capacity positions using the shared inventory presentation. Previously persisted canonical shared contents above capacity SHALL remain visible and withdrawable, with deposits blocked until withdrawals restore normal capacity. It SHALL omit Drop Item, show stored item categories and quantities, and apply the existing stack and multi-position presentation rules. Stored capacity items SHALL NOT expand a lockbox or contribute effects to the player.
 
 #### Scenario: Open a new lockbox
 - **WHEN** a Saved Game opens a lockbox that has never held an item
@@ -95,17 +95,31 @@ Invalid destinations, full destinations, release outside a destination, source-r
 - **WHEN** a lockbox-session item is released over Equipment, an Ability position, a Quick Slot, Drop Item, the world, or another closed lockbox
 - **THEN** no item transfer or gameplay action commits
 
-### Requirement: Keep storage identities independent of level and position
-The two home lockboxes SHALL have independent contents within each Saved Game. Their identities SHALL remain stable across dungeon levels, run changes, and changes to authored position, and SHALL NOT depend on transient entity order or coordinates. Removing an authored object SHALL remove access to it without transferring or deleting its stored contents.
+### Requirement: Connect every authored lockbox to shared Saved Game storage
+Every authored lockbox SHALL use the storage ID `shared-lockbox` and expose the same ten-position inventory within its Saved Game. Placement identities SHALL remain unique for map validation and collision. Moving or removing an access point SHALL NOT change or delete the shared contents, and different Saved Games SHALL NOT share storage.
 
 #### Scenario: Visit home from another level
 - **WHEN** an item is stored in the left lockbox and the player later enters home from another dungeon level
-- **THEN** the left lockbox retains that item and the right lockbox retains its own separate contents
+- **THEN** either lockbox exposes that same item in the shared inventory
 
 #### Scenario: Move the authored object
 - **WHEN** a human moves a lockbox while preserving its authored identity
-- **THEN** it exposes the same stored contents at its new position
+- **THEN** it exposes the shared stored contents at its new position
 
 #### Scenario: Reintroduce a temporarily removed object
 - **WHEN** the same authored lockbox identity is restored to its prefab
-- **THEN** it can access its previously retained contents without automatic runtime placement
+- **THEN** it can access the shared retained contents without automatic runtime placement
+
+#### Scenario: Open another lockbox
+- **WHEN** a player deposits an item through one authored lockbox and opens a different authored lockbox
+- **THEN** the other access point shows that same item and withdrawing it removes it from every lockbox view
+
+#### Scenario: Reset existing independent storage once
+- **WHEN** a supported save contains separate legacy lockbox contents
+- **THEN** migration discards the legacy placement-specific contents according to the user's reset choice
+- **AND** existing canonical shared contents, selected positions, transfer revision and ownership history remain intact
+- **AND** new shared deposits survive subsequent saves and reloads without another reset
+
+#### Scenario: Preserve already-canonical shared overflow
+- **WHEN** an earlier writer has already saved canonical shared contents with an overflow marker
+- **THEN** those shared contents remain withdrawable while new deposits are blocked until normal capacity is restored

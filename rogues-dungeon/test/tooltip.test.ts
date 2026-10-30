@@ -51,7 +51,7 @@ test("translates a fitted viewport tooltip from viewport coordinates to page coo
 test("wires UI tooltips to pointer and keyboard focus with accessible descriptions", async () => {
   const [tooltip, game, attributePanel, titleBar, gameCard] = await Promise.all([
     readFile(new URL("../src/ui/Tooltip.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../src/game/game.tsx", import.meta.url), "utf8"),
+    (async () => (await Promise.all(["../src/game/game.tsx", "../src/game/inventory-presentation.ts", "../src/game/controls/inventory-rows.tsx"].map(path => readFile(new URL(path, import.meta.url), "utf8")))).join("\n"))(),
     readFile(new URL("../src/game/panels/attribute-panel.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/game/panels/title-bar.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/game/cards/game-card.tsx", import.meta.url), "utf8"),
@@ -88,7 +88,7 @@ test("wires UI tooltips to pointer and keyboard focus with accessible descriptio
   assert.match(css, /\.ui_tooltip \{[^}]*max-width:min\(38ch/);
   assert.doesNotMatch(css, /\.ui_tooltip \{[^}]*text-overflow/);
   assert.match(game, /function inventoryItemHelp\(item: [^)]+\)/);
-  assert.match(game, /tooltip=\{secondary \? `\$\{item\.name\} occupies this position\.` : inventoryItemHelp\(item\)\}/);
+  assert.match(game, /tooltip=\{secondary \? `\$\{item\.name\} occupies this position\.` : storage \? "Drag to your Inventory\." : inventoryItemHelp\(item\)\}/);
   assert.match(game, /No stats · Drag to equip\./);
   assert.doesNotMatch(game, /onDoubleClick|Double-click/);
   assert.match(game, /<Tooltip content="Show movement and ability controls\."/);

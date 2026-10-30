@@ -17,7 +17,7 @@ This is a cross-module data and UI change, so a design artifact is required. Exi
 
 Goals are to derive lockbox existence from authored content, isolate persistent item ownership from rewindable run state, and reuse inventory presentation without coupling storage capacity to player attributes. Simulation rules and transaction validation remain independent of React and browser storage.
 
-Non-goals are procedural lockbox distribution, new placements or art, a general map-editor replacement, direct Equipment/Ability/Quick Slot transfers to storage, partial-stack controls, arbitrary slot ordering, online sync, cross-Saved-Game storage, and changes to ordinary chest rewards or home reward distribution.
+Non-goals are procedural lockbox distribution, new placements or art, a general map-editor replacement, direct Equipment/Ability/Quick Slot transfers to storage, partial-stack controls, online sync, cross-Saved-Game storage, and changes to ordinary chest rewards, home reward distribution, or the separate refresh-duplication issue.
 
 ## Decisions
 
@@ -25,7 +25,7 @@ Non-goals are procedural lockbox distribution, new placements or art, a general 
 
 Add a small isolated reader and normalizer for the constrained Tiled tile-object format used by this prefab. Import the authored TMX as a Vite raw asset so normal generation can remain synchronous and Node tests can supply the same source text. Accept the established object type/class, numeric object identity, tile GID, dimensions, and typed walkability property. Reject unsupported geometry, missing or duplicate identities, unaligned/out-of-bounds footprints, and malformed lockbox metadata instead of guessing a placement. This reader is limited to the required authored-object subset; it does not replace the prefab's unrelated terrain representation.
 
-Use the prefab ID plus Tiled object ID as the default stable container key, such as `player-home:3` and `player-home:4`. Names remain useful labels; coordinates, level, run, seed, and array index are excluded from storage identity. A moved object keeps its ID. A removed object creates no runtime target or blocker, while its retained contents remain inaccessible until that identity is authored again. Duplicated objects need distinct Tiled identities and must not alias another container.
+Keep prefab-plus-Tiled IDs such as `player-home:3` and `player-home:4` as unique placement identities for validation and collision. All normalized lockbox records additionally carry `storageId: shared-lockbox`, and every bump opens that same Saved Game inventory. Do not duplicate Tiled numeric IDs, which must remain unique in the map. Moving or removing a placement affects its visual/blocker/access point only; any remaining authored lockbox still exposes the shared contents.
 
 Normalize these records into explicit lockbox instances for the active prefab. Derive their visuals, blocking footprint, and bump lookup from the same records. Remove the two corresponding decoration and furniture-cell literals. Add no random placement pass or additional level/item-test fixture. A procedural pass may instantiate authored records when loading a prefab; it may not choose lockbox coordinates itself.
 
@@ -35,7 +35,9 @@ Alternative considered: add interaction checks at coordinates 1,8 and 8,8. That 
 
 ### 2. Own persistent storage at the Saved Game level
 
-Introduce a versioned Saved Game envelope at the existing slot key containing a nullable compact active campaign, a lockbox map keyed by authored identity, a monotonic storage-transfer revision, and the ownership information needed for recovery reconciliation. The campaign remains the simulation model; the envelope owns state whose lifetime extends beyond that campaign. Keep retained containers out of `playerHomeEntities[level]`, floor deltas, and recovery snapshots.
+Introduce a versioned Saved Game envelope at the existing slot key containing a nullable compact active campaign, a lockbox map with the canonical key `shared-lockbox`, a monotonic storage-transfer revision, and the ownership information needed for recovery reconciliation. The campaign remains the simulation model; the envelope owns state whose lifetime extends beyond that campaign. Keep retained storage out of `playerHomeEntities[level]`, floor deltas, and recovery snapshots.
+
+The user explicitly chose to reset existing lockbox contents during migration. Remove legacy authored-ID containers on normalization, without changing the active campaign, transfer revision, journal, or provenance. Preserve any existing `shared-lockbox` contents and selected positions, even in a record that also contains legacy containers. Subsequent reads and writes retain newly stored shared items. If an earlier shared-store writer already persisted canonical overflow with `legacyOverflow`, preserve that shared data as scrollable withdrawals, block deposits above ten, and remove the marker once withdrawals restore normal capacity. No compatibility-epoch reset is required.
 
 Make the persistence adapter unwrap the active campaign for existing consumers and read summary metadata through that adapter. An envelope with `campaign=null` is an empty, selectable Saved Game for character creation, even when retained lockboxes exist. Classic termination writes that state while retaining storage. A new character in the same slot replaces only the active campaign. Explicit Clear Local Storage still removes retained game data.
 
@@ -73,6 +75,8 @@ Refactor the existing inventory presentation into a reusable, narrowly typed com
 
 Extend drag source/destination types and DOM data attributes with container identity. Limit hit testing to the active storage session and reuse the existing pointer threshold, pointer-following preview, category colors, departure state, landing state, and cancellation cleanup. Empty positions must remain discoverable drop targets. Capacity checks use the same transaction preview as final commit, so a full or invalid target has no valid landing feedback.
 
+Storage transfers target a specific row selected by the user. Only that valid hovered row highlights. Persist the chosen container slot with each item so gaps, deposits and withdrawals retain their selected positions after closing or reloading. Unpositioned items use the existing alphabetical order to fill available positions. Compatible stacks still combine, with the resulting stack occupying the selected destination. Two-position items require room for their complete footprint, but highlight only the hovered anchor row.
+
 This does not add a second independent inventory implementation. Keep existing player Inventory drop behavior when storage is closed. During storage, disable the player Drop Item destination and other gameplay destinations even if their ordinary rows remain visible. Lockbox rows never contain Drop Item. Inventory and lockbox remain the only mutable item locations during the modal session.
 
 ### 6. Separate world blocking from the storage interaction layer
@@ -92,11 +96,11 @@ Alternative considered: reuse Settings's full-viewport pointer-blocking backdrop
 - [Pausing only keyboard input would allow mouse travel, timers, gamepad input, or hazards to continue.] Mitigation: a session-level simulation gate plus all input entry points, explicit pending-action handling, and no catch-up after closing.
 - [Settings geometry and the whole-viewport backdrop can hide or block Inventory on narrow layouts.] Mitigation: shared responsive sizing, game-view centering, storage-specific pointer regions, and browser checks in portrait, compact landscape, and fullscreen.
 - [The Tiled editor was disconnected during exploration.] Mitigation: re-run the read-only setup check during apply and finish live authoring verification before reporting the object path complete. Planning does not launch or repair the editor.
-- [A slot-format migration increases rollback work.] Mitigation: retain source-format backups and avoid automatic deletion of stored lockboxes. A rollback must convert or restore records deliberately; do not run an older writer against a new envelope.
+- [A slot-format migration increases rollback work.] Mitigation: retain source-format backups and limit the user-approved reset to legacy placement-specific contents. A rollback must convert or restore records deliberately; do not run an older writer against a new envelope.
 
 ## Migration plan
 
-1. Add legacy direct-campaign and new-envelope reader tests, then the minimal migration and versioned writer. Initialize only missing lockbox state empty and retain valid campaign/recovery data.
+1. Add legacy direct-campaign and new-envelope reader tests, then the minimal migration and versioned writer. Initialize missing lockbox state empty, reset legacy placement-specific contents as requested, and retain canonical shared storage and valid campaign/recovery data.
 2. Add ownership and atomic transfer behavior before connecting the UI, including Classic tombstones, snapshot reconciliation, and unsaved inspection mode.
 3. Derive lockboxes from the authored map and connect the shared inventory rows, pause gates, and window. Keep the same authored IDs and placements so existing contents remain addressable as maps move.
 4. Verify focused logic tests, typecheck, full Node suite, and production build. Use one owned safe-port server for one focused Edge Playwright CLI check and the required desktop Edge/in-app browser verification, always with `?mute=1`. Stop that server before running any repository Playwright suite that starts its own server.

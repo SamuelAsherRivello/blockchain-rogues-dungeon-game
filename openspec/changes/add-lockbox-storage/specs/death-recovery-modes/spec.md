@@ -18,4 +18,4 @@ Each campaign SHALL retain its confirmed mode for its lifetime. Classic SHALL en
 #### Scenario: End a Classic campaign
 - **WHEN** a Classic character dies
 - **THEN** its active campaign is no longer resumable and the only recovery action is Return to Main Menu
-- **AND** its Saved Game retains independent lockbox contents for a later new character in that Saved Game
+- **AND** its Saved Game retains shared lockbox contents for a later new character in that Saved Game

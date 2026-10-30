@@ -1,0 +1,621 @@
+{
+  "schemaVersion": 1,
+  "frames": [
+    {
+      "id": "idle-down-00",
+      "clip": "idle/down",
+      "index": 0,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/idle/down/00.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "0545b02dc5ed464c05096f542ada581618aa90a96748c964a33b67a82164f7d0",
+      "rgbaSha256": "f2d1d5003bb0f7cb14709f96cea70d212fb1a06e1ccd7f9fb56b970ba22b746f"
+    },
+    {
+      "id": "idle-down-01",
+      "clip": "idle/down",
+      "index": 1,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/idle/down/01.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "9a9318a8c3b9a6e0f4bd0f30fb99ce2cc1d24c2b6d7aedb85a8f3d3f87dbdcac",
+      "rgbaSha256": "c35de786e8fc029bff70b99fd3f333e352438aca5970e87276676ed1e5116efa"
+    },
+    {
+      "id": "idle-down-02",
+      "clip": "idle/down",
+      "index": 2,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/idle/down/02.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "6c2090271c35a4f51116f0ae847111325f51ea5626f3efd7c102845c22d0edd6",
+      "rgbaSha256": "0ebe34069267c982af0b67ff132822f83da780b3a6a47ce9e2f14b42979e6a5d"
+    },
+    {
+      "id": "idle-down-03",
+      "clip": "idle/down",
+      "index": 3,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/idle/down/03.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "18228cafa610545b751747e9594212b69c1b753b0967eb4bd6464f27f201efd6",
+      "rgbaSha256": "efe2b2ce5c35c21ebce87d929c44558c42be6558853f9b0c1f94077e1c6cb6d2"
+    },
+    {
+      "id": "idle-side-00",
+      "clip": "idle/side",
+      "index": 0,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/idle/side/00.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "d9fd5ad82c242f7739b0cc9ec9b89ed941de1f4ff694213a11b3749a1fce9d61",
+      "rgbaSha256": "2949dc0a522feb38824dfb1fb76514270870159514a8fa26bdda00b29ce12fa9"
+    },
+    {
+      "id": "idle-side-01",
+      "clip": "idle/side",
+      "index": 1,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/idle/side/01.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "d237020fe728517238d069ff5bf2d7689ef2d7e7356a0245fc491813440074d7",
+      "rgbaSha256": "5cee927fd32e648d7ebda09589fbf5a85484da86aae74905dcc31cbbb5e3f885"
+    },
+    {
+      "id": "idle-side-02",
+      "clip": "idle/side",
+      "index": 2,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/idle/side/02.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "778be6502be3d1177e47dfc895098f2aed5479a26dca3f2eeab416b07ab95de0",
+      "rgbaSha256": "ff1ae805fdc162dcd455ceb6a61464def64d4d97e5371c39be97e718d856ac0d"
+    },
+    {
+      "id": "idle-side-03",
+      "clip": "idle/side",
+      "index": 3,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/idle/side/03.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "ec411df97c72c7485b66fd739badb244d97b82a5d563d6bfdc0fea9b8cbe3f2b",
+      "rgbaSha256": "f33b09a199c3fe70502822529577a2081c214585339559187ab330446de35463"
+    },
+    {
+      "id": "idle-up-00",
+      "clip": "idle/up",
+      "index": 0,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/idle/up/00.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "40e7f2e67c8fc40c08c6c7da1cf9e8ef23b53a465158afe8266056731f3c3997",
+      "rgbaSha256": "49b6e498abb87b267d17f2102c6d9c3025dba75d4ffee41ccef9c089cc3ca786"
+    },
+    {
+      "id": "idle-up-01",
+      "clip": "idle/up",
+      "index": 1,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/idle/up/01.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "44b4b2faa72a34c294c66447b9e3a8fd081cb99f51116ce7cb1e44115f6f41e4",
+      "rgbaSha256": "fcad9dd268f56cf2f06256cd98d749d9a608f84d16d1df1013f183ce95ccfef0"
+    },
+    {
+      "id": "idle-up-02",
+      "clip": "idle/up",
+      "index": 2,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/idle/up/02.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "c9690a35a3233f5648f50f74a687bf5d1c0bd31368e40f25edb4fb76586b0a74",
+      "rgbaSha256": "98d5f261ada800297b7c72bf4708950ac52cdf53f8b3f1d9e020ca6b02ea4985"
+    },
+    {
+      "id": "idle-up-03",
+      "clip": "idle/up",
+      "index": 3,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/idle/up/03.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "154f64e9f0a0b0be47ae22491610a6f099efb88a50c7b8d7b75c1ba0f02ed90a",
+      "rgbaSha256": "6c41e91ef79bd996ae977d3691f0d2995a23e26ab62247d31602206d9a73c76b"
+    },
+    {
+      "id": "run-down-00",
+      "clip": "run/down",
+      "index": 0,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/run/down/00.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "3b83a28218180414953b62a32fd4302c6d9aa02ce6895952a0d64c0a896518f2",
+      "rgbaSha256": "58887fff3c81b31372caabef1b59ee0cbb9044a89b04b1645765ae60af8136b2"
+    },
+    {
+      "id": "run-down-01",
+      "clip": "run/down",
+      "index": 1,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/run/down/01.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "81448a06ac8433a1ce939e593d8f7cdf6c45bf194dc23473613f38171ad2d6f6",
+      "rgbaSha256": "3e9499673fbbf07ffe3ef254c67891528186665b72f156e0fd48b3c14d6375d7"
+    },
+    {
+      "id": "run-down-02",
+      "clip": "run/down",
+      "index": 2,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/run/down/02.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "b5529e5bcb98dc78769003ce1226e3cfc4a6c3b330a00dbcbff1e65527554168",
+      "rgbaSha256": "12b6d107e8906d188cbeb3dac900e70c12807dc09a30fbccbd16a56ab1985d52"
+    },
+    {
+      "id": "run-down-03",
+      "clip": "run/down",
+      "index": 3,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/run/down/03.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "5c011c09bed368b7928e213f9314cc871a6fa1ebc71decb80894b00b75fec9a8",
+      "rgbaSha256": "07571e1ac4d9373a64c704c0ea240bced7b4bf8b67ef1889aaf768f0ed0f9db3"
+    },
+    {
+      "id": "run-down-04",
+      "clip": "run/down",
+      "index": 4,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/run/down/04.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "70651f09b4aad1f809cd66c8fc46ff9ee3001276b956d513ed60de6bb072e288",
+      "rgbaSha256": "8f39066580c95208603645f9251fd8ae0917f5b4170ea7ba2d409193b5e61055"
+    },
+    {
+      "id": "run-down-05",
+      "clip": "run/down",
+      "index": 5,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/run/down/05.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "c45320cb42a5724205519b19b9e2fdffbc3600a2d6ae63bc6ae5f8d32414826d",
+      "rgbaSha256": "c2532f6f44dcb2365c083c8987892541dd708c008a881239f999045aa9ece9b6"
+    },
+    {
+      "id": "run-side-00",
+      "clip": "run/side",
+      "index": 0,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/run/side/00.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "ad3305e84a3af3a4d02ab8053b7431e8fdeb2625bcd1363e37cca8ebb7963bc2",
+      "rgbaSha256": "234cabfbfc292e1cde46927fcc4140584f917a38aa51b986724e5f7ee44c1b9f"
+    },
+    {
+      "id": "run-side-01",
+      "clip": "run/side",
+      "index": 1,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/run/side/01.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "1382d694d44d0520144bd94158cf7b4991a34e6c838fcdecec529dc349d7ec01",
+      "rgbaSha256": "430f9d7fe7c11eb4ba7500b7f110e595944c9cac77507da2034630458a16b820"
+    },
+    {
+      "id": "run-side-02",
+      "clip": "run/side",
+      "index": 2,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/run/side/02.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "23bfd24a5adc59d2e11efbd3dc65962b3692a2585e511891f0d196eb2fe96e03",
+      "rgbaSha256": "f063a42388f2d17f35dbd72e8dcf989342f76d1f74eb409ce939632f85a91d3d"
+    },
+    {
+      "id": "run-side-03",
+      "clip": "run/side",
+      "index": 3,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/run/side/03.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "734ba4fc30d39dae656c217fc8b8f7b6e1615b54f3c09ed11f85fa5d162b4ec6",
+      "rgbaSha256": "a360eac61406083dc41d3d758114e546deac1e940b370de0a6f0335ae2ae06be"
+    },
+    {
+      "id": "run-side-04",
+      "clip": "run/side",
+      "index": 4,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/run/side/04.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "4bfad27d8b72761f2f85457d4207043014a0fb4e1cdeebeb76a0077b1d94b067",
+      "rgbaSha256": "b79dfb9aefd47c7e527e3fdaba789759932cf2def7e3cc5574fc09f6382ee1f4"
+    },
+    {
+      "id": "run-side-05",
+      "clip": "run/side",
+      "index": 5,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/run/side/05.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "92cdab0d52e7e7b8e201f220d284d408ee940eb399bbb6ea51650eb5f1847333",
+      "rgbaSha256": "7ac2ea432e546cf80472f6425482c952145e36d995056d0eb7c0354826473238"
+    },
+    {
+      "id": "run-up-00",
+      "clip": "run/up",
+      "index": 0,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/run/up/00.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "b4cd82caee5bd21f9fca630ba760c15799eda81de519bcea72075b05267489b8",
+      "rgbaSha256": "fcf01b975a29966faa05ad241d86a69d35a0457d533f4df4e8faa282e2400c66"
+    },
+    {
+      "id": "run-up-01",
+      "clip": "run/up",
+      "index": 1,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/run/up/01.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "d09ec3c937c2118c133a9b56a2c15af6b919470260bffa4645991c124a3ba194",
+      "rgbaSha256": "b0810b3e16f5407c11eca55ba98be71eb1f425bccc321159cf95b120110d7a49"
+    },
+    {
+      "id": "run-up-02",
+      "clip": "run/up",
+      "index": 2,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/run/up/02.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "f9e367e981721f3fae67c355e87a735bc421fd92f54190dcdb2c656ed02e8a5d",
+      "rgbaSha256": "1d69fa4a81a33acb99676aff7626fe0b1ca785b83ff62a5e43cd01a8dbd86341"
+    },
+    {
+      "id": "run-up-03",
+      "clip": "run/up",
+      "index": 3,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/run/up/03.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "e3c632d10b31984e33217363c630e46afb78d77d5c96dbdde148c8b7afd49b99",
+      "rgbaSha256": "34b6d04a30f7331c9d0d21bc6c0b7c38a98e31e06fc72ddb00d9f234984d103b"
+    },
+    {
+      "id": "run-up-04",
+      "clip": "run/up",
+      "index": 4,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/run/up/04.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "30592684940894e25dcf130ccc5f71fb8e1678014dd0a37cb8206bf38e4e1aca",
+      "rgbaSha256": "0f7681e2fa91757bb1120280693a2a3a883d0aecbafe84d0c69d5716e1de835f"
+    },
+    {
+      "id": "run-up-05",
+      "clip": "run/up",
+      "index": 5,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/run/up/05.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "8a7ee49148798bfbc0c4b8c92abb8d33b1cf832974613ea5e624a020c72bf7eb",
+      "rgbaSha256": "8cd520d2bb8e7d2731baf2820be5d0a8b4dc966457f46c8636956a8546223f87"
+    },
+    {
+      "id": "attack-down-00",
+      "clip": "attack/down",
+      "index": 0,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/attack/down/00.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "c5a968ee5e3464ace7ffa76d981b69d9fd32e13c7d11f442b942fac6860c7135",
+      "rgbaSha256": "f2d1d5003bb0f7cb14709f96cea70d212fb1a06e1ccd7f9fb56b970ba22b746f"
+    },
+    {
+      "id": "attack-down-01",
+      "clip": "attack/down",
+      "index": 1,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/attack/down/01.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "b6af23096dc13cf44f137e0f6ef1463364e64de889362e6b28388799b0add080",
+      "rgbaSha256": "f5c4df798ff59d2925aadede6a581e664f61e0905f1658afc1c756ce10b1aa00"
+    },
+    {
+      "id": "attack-down-02",
+      "clip": "attack/down",
+      "index": 2,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/attack/down/02.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "8f4a3197a79c281dbf91b742e9068f788ad5c24d9e768c61e389f5c6d55b8a39",
+      "rgbaSha256": "459774b3cfd94c86046e44432e5b1a3a22f9fdf175018212de32575599b8355b"
+    },
+    {
+      "id": "attack-down-03",
+      "clip": "attack/down",
+      "index": 3,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/attack/down/03.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "2eeead252a9d0b89c3c0ce48d3917e357d851e5f203ce2a33d11d8e330386593",
+      "rgbaSha256": "ea9d69889c04b3b4dbe6346ffca3458ea14416129c111157035b4c29a364906c"
+    },
+    {
+      "id": "attack-side-00",
+      "clip": "attack/side",
+      "index": 0,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/attack/side/00.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "315c2b51dbb35ca2577e37560fdf9378be7e095732232586ecce23579502476a",
+      "rgbaSha256": "2949dc0a522feb38824dfb1fb76514270870159514a8fa26bdda00b29ce12fa9"
+    },
+    {
+      "id": "attack-side-01",
+      "clip": "attack/side",
+      "index": 1,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/attack/side/01.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "0dc9a86c2f71a95c29819e6c4c9ff05d3e37256f76110aeec4586e95a102bd7e",
+      "rgbaSha256": "1107afd1a36c8ce311e4d478bed24ccfd73299d4c49f994bdc2005b7c0304852"
+    },
+    {
+      "id": "attack-side-02",
+      "clip": "attack/side",
+      "index": 2,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/attack/side/02.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "20464e25252f39c34230c2d907dd85083e06c771f515d61f142cc6b66f89879f",
+      "rgbaSha256": "915e92f2b12065c8f48b3d5a6152c517ae12a706a5713e6ef78e1ae3f3da4a95"
+    },
+    {
+      "id": "attack-side-03",
+      "clip": "attack/side",
+      "index": 3,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/attack/side/03.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "7193a1d52b96d07176c2c2e2c5bdf72d1e3af4d90eadc9ea1ca67c93d6a9ab62",
+      "rgbaSha256": "19a8516c9f34dbccef101659d3db2144dfe70cac576fb8671ed4fe5c1cbeacf2"
+    },
+    {
+      "id": "attack-up-00",
+      "clip": "attack/up",
+      "index": 0,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/attack/up/00.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "dcdb9e2e7cdaa060fbdabd349af952d18444785cf721140a0b5db7e3db94eccc",
+      "rgbaSha256": "49b6e498abb87b267d17f2102c6d9c3025dba75d4ffee41ccef9c089cc3ca786"
+    },
+    {
+      "id": "attack-up-01",
+      "clip": "attack/up",
+      "index": 1,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/attack/up/01.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "a772f47c833ad1c0cb2bfbfb7e6eff8b7f08ca5b09fc6c6ae38d4a1c4470d2a0",
+      "rgbaSha256": "182fce16876016681e360e7eb24ef525123826bbceebd22c157bb20d5de16600"
+    },
+    {
+      "id": "attack-up-02",
+      "clip": "attack/up",
+      "index": 2,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/attack/up/02.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "cd9a407e9208118f5e7bf1aa94f53a7854a4cb8eeb34a480e137658648c46054",
+      "rgbaSha256": "f0d6be6542e8fcfa3abd79b20fdd99dfdf917febbdb82916895d64ce2dffaf51"
+    },
+    {
+      "id": "attack-up-03",
+      "clip": "attack/up",
+      "index": 3,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/attack/up/03.png",
+      "size": [
+        32,
+        48
+      ],
+      "encodedSha256": "a172ff751b8f8f50403cbf65466ab8b9441420dbe22082c6752f4b52b650d7ac",
+      "rgbaSha256": "7a137ab96b21f5d358b8d5c45efe0578ea8ee9040838271f52e9f6bfd4c03b4f"
+    },
+    {
+      "id": "death-00",
+      "clip": "death",
+      "index": 0,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/death/00.png",
+      "size": [
+        48,
+        48
+      ],
+      "encodedSha256": "d7841ebd9ff51c51b06cce4eb494f6f3e367c0c5779b54da45e55101590c323b",
+      "rgbaSha256": "aa92dfa7ced40001fba240273e6eb7b10e970d4d77cb2dc3364104a2dcb51d3b"
+    },
+    {
+      "id": "death-01",
+      "clip": "death",
+      "index": 1,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/death/01.png",
+      "size": [
+        48,
+        48
+      ],
+      "encodedSha256": "307b9f21bc3125331c3bf611c38812129d36fdf903cc0e307d7b148a1aa8ac71",
+      "rgbaSha256": "9456c900d1f983b0783e90c336a11e56e3d66bafd370a8ba7ad024e497ec8ba3"
+    },
+    {
+      "id": "death-02",
+      "clip": "death",
+      "index": 2,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/death/02.png",
+      "size": [
+        48,
+        48
+      ],
+      "encodedSha256": "8ba09bbff8e5eba7cf2236b3132766f4f613cdbc2c414483c03213e2f4be6429",
+      "rgbaSha256": "d110f71b4c9fd65e3ff8786077a9ea923282c1acf62a0083f0edafae1eda5e4d"
+    },
+    {
+      "id": "death-03",
+      "clip": "death",
+      "index": 3,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/death/03.png",
+      "size": [
+        48,
+        48
+      ],
+      "encodedSha256": "8cf06493098a7c66d454ffe0883b0a5c8fd500255cc268514ddc38d1ff617e0d",
+      "rgbaSha256": "8bf429fd000968051be768253de9937ebdbed420e9e8989e75e4b7137c8ca75c"
+    },
+    {
+      "id": "death-04",
+      "clip": "death",
+      "index": 4,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/death/04.png",
+      "size": [
+        48,
+        48
+      ],
+      "encodedSha256": "4e0c12c629ffeebf3d9556bf0a55c8a3c7c0177c91386ba1304ae99d8fa64684",
+      "rgbaSha256": "3a131e06a4aa16571ef19d61623cc76dc3ce146ecb7cfa7a163a9748ae28042e"
+    },
+    {
+      "id": "death-05",
+      "clip": "death",
+      "index": 5,
+      "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/frames/death/05.png",
+      "size": [
+        48,
+        48
+      ],
+      "encodedSha256": "53a7d061fb5025c47b450c731a3c308607d3953733c21845c51546104a2976ab",
+      "rgbaSha256": "dd2d1cce3f15dbab2366475f88ea0962f09111511d0de0730c6ea1c5304a0d23"
+    }
+  ],
+  "shadow": {
+    "path": "rogues-dungeon/public/assets/art/game-view/characters/hero-warrior/shadow.png",
+    "sha256": "d253bc78a68b9a2021666065c0ab98b70d62323334400830a317369b8e4af5c8"
+  },
+  "skill": {
+    "name": "ai-skills-tiled-create-spritesheet-png",
+    "path": "D:\\Documents\\Projects\\VC\\AI\\ai-skills-tiled\\skills\\ai-skills-tiled-create-spritesheet-png",
+    "sourceRevision": "5757a91fd4979f039c3d4e92bee72133ea6502ab",
+    "files": [
+      {
+        "path": "SKILL.md",
+        "sha256": "2155e63187f4271bf32f6722b62891b07f6eb174e6c1740be9fa7bfc2bd1cd6b"
+      },
+      {
+        "path": "scripts/spritesheet-tool.py",
+        "sha256": "cdb1aaefdd5f28aa74178241e3cc5dc16dcc3663c8e19dbce1b9028bd73dfb30"
+      },
+      {
+        "path": "references/art-contract.md",
+        "sha256": "e1445ef4a4ef3501185d0c7cd416b06be3ca60be492752fb9fe07cdd61bfed2b"
+      },
+      {
+        "path": "references/revisions.md",
+        "sha256": "103bd5d74e97a6bbe47dc6d6f7b02e0fc024094b774cf2405960c2eb1a225c38"
+      },
+      {
+        "path": "references/verification.md",
+        "sha256": "5a09661c1a63517593d127bdc41318d1d40c4c7509c8c08a2694b0e601991c8c"
+      }
+    ]
+  },
+  "tools": {
+    "pythonPillow": "12.3.0",
+    "imagegen": "built-in edit tool; not yet invoked"
+  },
+  "intendedOperation": "modify",
+  "originalRegistrationTranslation": [
+    0,
+    0
+  ]
+}

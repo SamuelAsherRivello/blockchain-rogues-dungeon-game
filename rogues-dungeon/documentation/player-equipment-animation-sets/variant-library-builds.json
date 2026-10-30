@@ -1,0 +1,38 @@
+[
+  {
+    "appearance": "sword-only",
+    "family": "directional",
+    "manifest": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\sword-only-directional-v3\\spritesheet-manifest.json",
+    "status": "structural-pass-visual-pending"
+  },
+  {
+    "appearance": "sword-only",
+    "family": "death",
+    "manifest": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\sword-only-death-v3\\spritesheet-manifest.json",
+    "status": "structural-pass-visual-pending"
+  },
+  {
+    "appearance": "shield-only",
+    "family": "directional",
+    "manifest": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\shield-only-directional-v3\\spritesheet-manifest.json",
+    "status": "structural-pass-visual-pending"
+  },
+  {
+    "appearance": "shield-only",
+    "family": "death",
+    "manifest": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\shield-only-death-v3\\spritesheet-manifest.json",
+    "status": "structural-pass-visual-pending"
+  },
+  {
+    "appearance": "unarmed",
+    "family": "directional",
+    "manifest": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\unarmed-directional-v3\\spritesheet-manifest.json",
+    "status": "structural-pass-visual-pending"
+  },
+  {
+    "appearance": "unarmed",
+    "family": "death",
+    "manifest": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\unarmed-death-v3\\spritesheet-manifest.json",
+    "status": "structural-pass-visual-pending"
+  }
+]

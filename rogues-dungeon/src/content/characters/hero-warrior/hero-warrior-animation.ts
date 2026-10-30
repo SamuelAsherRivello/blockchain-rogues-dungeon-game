@@ -1,4 +1,5 @@
 import type { CharacterHeading } from "../../../game/types.ts";
+import type { HeroWarriorAppearance } from "./hero-warrior-appearance.ts";
 import { createSpriteSheetAnimationEntity, type SpriteAnimationDefinition, type SpriteAnimationSummary, type SpriteSheetAnimationEntity } from "../../../systems/animation/sprite-animation-system.ts";
 
 export const HERO_WARRIOR_ANIMATION_NAMES = ["idle/down", "idle/side", "idle/up", "run/down", "run/side", "run/up", "attack/down", "attack/side", "attack/up", "death"] as const;
@@ -31,19 +32,26 @@ function directionalDefinitions(baseUrl: string, animation: "idle" | "run" | "at
   return directions.map((direction) => ({ name: `${animation}/${direction}`, source: { kind: "frames", frames: frameList(baseUrl, animation, direction, count, 32, 48) }, frameDurationMs, loopCount }));
 }
 
-export function createHeroWarriorAnimationDefinitions(baseUrl = "/") {
-  return [
+export function createHeroWarriorAnimationDefinitions(baseUrl = "/", appearance: HeroWarriorAppearance = "sword-and-shield"): SpriteAnimationDefinition[] {
+  const original = [
     ...directionalDefinitions(baseUrl, "idle", 4, 140, -1),
     ...directionalDefinitions(baseUrl, "run", 6, 100, -1),
     ...directionalDefinitions(baseUrl, "attack", 4, 90, 0),
     { name: "death", source: { kind: "frames" as const, frames: frameList(baseUrl, "death", null, 6, 48, 48) }, frameDurationMs: 120, loopCount: 0 },
   ] satisfies SpriteAnimationDefinition[];
+  if (appearance === "sword-and-shield") return original;
+  return original.map((animation) => {
+    const source = animation.source;
+    if (source.kind !== "frames") throw new Error(`Expected original Hero Warrior frame inventory: ${animation.name}`);
+    const frame = source.frames[0]!;
+    return { ...animation, source: { kind: "sheet", path: `${baseUrl}assets/art/game-view/characters/hero-warrior/variants/${appearance}/${animation.name.replace("/", "-")}.png`, cellWidthPx: frame.widthPx, cellHeightPx: frame.heightPx, columns: 6, rows: 1, frameCount: source.frames.length } };
+  });
 }
 
 export function createHeroWarriorAnimationEntity(baseUrl = "/", speed = 0.5): SpriteSheetAnimationEntity {
   return createSpriteSheetAnimationEntity(createHeroWarriorAnimationDefinitions(baseUrl), "idle/side", { speed });
 }
 
-export function heroWarriorAnimationCatalog(baseUrl = "/"): readonly SpriteAnimationSummary[] {
-  return createHeroWarriorAnimationEntity(baseUrl).listAnimations();
+export function heroWarriorAnimationCatalog(baseUrl = "/", appearance: HeroWarriorAppearance = "sword-and-shield"): readonly SpriteAnimationSummary[] {
+  return createSpriteSheetAnimationEntity(createHeroWarriorAnimationDefinitions(baseUrl, appearance), "idle/side", { speed: 0.5 }).listAnimations();
 }

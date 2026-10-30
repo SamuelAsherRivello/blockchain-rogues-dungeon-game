@@ -32,6 +32,7 @@ export function parseGameUrlOptions(search = "") {
     level1ObjectTestMode: params.get("level-1-item-test") === "true",
     level1EnemyTestMode: params.get("level-1-enemy-test") === "true",
     mapFix: params.get(MAP_FIX_FLAG) === "1",
+    worldFamily: params.get("family") === "overworld" ? "overworld" as const : "dungeon" as const,
     scenario: params.get("scenario") || null,
     map: params.get("map") || null,
   });

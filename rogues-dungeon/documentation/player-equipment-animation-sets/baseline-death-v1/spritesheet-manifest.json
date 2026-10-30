@@ -1,0 +1,187 @@
+{
+  "schemaVersion": 1,
+  "entity": {
+    "id": "hero-warrior-death",
+    "kind": "character"
+  },
+  "mode": "animated",
+  "operation": "create",
+  "cellSize": [
+    48,
+    48
+  ],
+  "anchor": [
+    24,
+    48
+  ],
+  "style": {
+    "name": "Dungeons-and-Pixels Hero Warrior",
+    "pixelArt": true
+  },
+  "background": "transparent",
+  "sheets": [
+    {
+      "id": "sheet-000",
+      "group": "death",
+      "file": "sheet-000.png",
+      "size": [
+        288,
+        48
+      ],
+      "columns": 6,
+      "rows": 1,
+      "margin": 0,
+      "spacing": 0,
+      "unusedSlots": [],
+      "sha256": "3d9f04c9affef9a7f4efe4ea8ba628e7a4a3f424ecc0d541c4a9d4a35378d76c"
+    }
+  ],
+  "frames": [
+    {
+      "id": "death-00",
+      "sheet": "sheet-000",
+      "rect": [
+        0,
+        0,
+        48,
+        48
+      ],
+      "pixelHash": "0841c11f6f9ddd825075150963a5f56fd9130a5d78f13c9f501a3c870d43040c",
+      "direction": "none"
+    },
+    {
+      "id": "death-01",
+      "sheet": "sheet-000",
+      "rect": [
+        48,
+        0,
+        48,
+        48
+      ],
+      "pixelHash": "dcd914ff6a232401adb3bd51247de06b4e552ab9ef0da92133684419e550bd88",
+      "direction": "none"
+    },
+    {
+      "id": "death-02",
+      "sheet": "sheet-000",
+      "rect": [
+        96,
+        0,
+        48,
+        48
+      ],
+      "pixelHash": "74df7ba5e34d2943aec67f149eb08891a0acf531689c28127c4f82a1f6d2a8eb",
+      "direction": "none"
+    },
+    {
+      "id": "death-03",
+      "sheet": "sheet-000",
+      "rect": [
+        144,
+        0,
+        48,
+        48
+      ],
+      "pixelHash": "75c54482aafb152052ce6e8ad67973c4e6cf904dce90f0edd766f959390869f9",
+      "direction": "none"
+    },
+    {
+      "id": "death-04",
+      "sheet": "sheet-000",
+      "rect": [
+        192,
+        0,
+        48,
+        48
+      ],
+      "pixelHash": "09150f4a80ef74e01aaec123a22d85f7d150d8db908298114f6eb3158a5d58e1",
+      "direction": "none"
+    },
+    {
+      "id": "death-05",
+      "sheet": "sheet-000",
+      "rect": [
+        240,
+        0,
+        48,
+        48
+      ],
+      "pixelHash": "9b9b02ac0d3adf368389b1c5e1f559e81fc26eef777bedb8575577cbc8ccd739",
+      "direction": "none"
+    }
+  ],
+  "poses": [],
+  "sources": [
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\public\\assets\\art\\game-view\\characters\\hero-warrior\\frames\\death\\00.png",
+      "sha256": "d7841ebd9ff51c51b06cce4eb494f6f3e367c0c5779b54da45e55101590c323b",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\public\\assets\\art\\game-view\\characters\\hero-warrior\\frames\\death\\01.png",
+      "sha256": "307b9f21bc3125331c3bf611c38812129d36fdf903cc0e307d7b148a1aa8ac71",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\public\\assets\\art\\game-view\\characters\\hero-warrior\\frames\\death\\02.png",
+      "sha256": "8ba09bbff8e5eba7cf2236b3132766f4f613cdbc2c414483c03213e2f4be6429",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\public\\assets\\art\\game-view\\characters\\hero-warrior\\frames\\death\\03.png",
+      "sha256": "8cf06493098a7c66d454ffe0883b0a5c8fd500255cc268514ddc38d1ff617e0d",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\public\\assets\\art\\game-view\\characters\\hero-warrior\\frames\\death\\04.png",
+      "sha256": "4e0c12c629ffeebf3d9556bf0a55c8a3c7c0177c91386ba1304ae99d8fa64684",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\public\\assets\\art\\game-view\\characters\\hero-warrior\\frames\\death\\05.png",
+      "sha256": "53a7d061fb5025c47b450c731a3c308607d3953733c21845c51546104a2976ab",
+      "role": "art"
+    }
+  ],
+  "provenance": {
+    "artSource": "existing",
+    "identityReference": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\public\\assets\\art\\game-view\\characters\\hero-warrior\\frames\\idle\\side\\00.png",
+    "notes": "Unmodified source pixels. No image generation. Base timing; runtime speed 0.5."
+  },
+  "changedFrameIds": [
+    "death-00",
+    "death-01",
+    "death-02",
+    "death-03",
+    "death-04",
+    "death-05"
+  ],
+  "retainedFrameIds": [],
+  "preservation": {
+    "frames": {},
+    "sequences": []
+  },
+  "sequences": [
+    {
+      "id": "death",
+      "frames": [
+        "death-00",
+        "death-01",
+        "death-02",
+        "death-03",
+        "death-04",
+        "death-05"
+      ],
+      "durationsMs": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "loop": false,
+      "direction": "none"
+    }
+  ]
+}

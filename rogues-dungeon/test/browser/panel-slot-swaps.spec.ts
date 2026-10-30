@@ -5,7 +5,15 @@ import { installCampaignFixture, readSavedCampaign } from "./campaign-fixture.ts
 import { openSavedGame } from "./start-saved-game.ts";
 
 async function hoverDrop(page: Page, source: Locator, target: Locator) {
-  const from = (await source.boundingBox())!, to = (await target.boundingBox())!;
+  await source.waitFor({ state: "visible" }); await target.waitFor({ state: "visible" });
+  await source.scrollIntoViewIfNeeded(); await target.scrollIntoViewIfNeeded();
+  let bounds = { from: await source.boundingBox(), to: await target.boundingBox() };
+  await expect.poll(async () => {
+    bounds = { from: await source.boundingBox(), to: await target.boundingBox() };
+    return Boolean(bounds.from && bounds.to);
+  }, { message: 'Both drag controls must finish rendering before the next gesture' }).toBe(true);
+  const { from, to } = bounds;
+  if (!from || !to) throw new Error('Drag controls lost their rendered bounds');
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
   await page.mouse.down();
   await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 10 });
@@ -14,6 +22,9 @@ async function hoverDrop(page: Page, source: Locator, target: Locator) {
 }
 
 test("abilities and quick slots compare and swap occupied slots without losing items", async ({ page }) => {
+  // WebGPU startup and four gestures share this total budget; assertion waits
+  // still independently require each transaction to finish promptly.
+  test.setTimeout(60_000);
   const campaign = createCampaign(9044); campaign.floor.entities = [];
   campaign.player.abilities = ["heal", "wand", null];
   const potion = (resource: "health" | "mana" | "stamina", quantity: number): Item => ({ id: resource, name: `${resource[0].toUpperCase()}${resource.slice(1)} Potion`, group: "weapons", modifiers: {}, category: "consumable", consumableResource: resource, isStackable: true, quantity });

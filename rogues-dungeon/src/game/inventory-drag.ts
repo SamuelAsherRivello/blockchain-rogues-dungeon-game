@@ -1,5 +1,5 @@
 import type { Action, Campaign, DragSource, DropDestination, EquipmentGroup, Item } from "./types.ts";
-import { abilityItemInstance, effectiveAttributes, isQuickSlottableItem, previewEquipment, projectEquipmentSwap, quickSlotKey } from "../systems/procedural/world-procedural-system.ts";
+import { abilityItemInstance, effectiveAttributes, inventoryFitsCapacity, isQuickSlottableItem, previewEquipment, projectEquipmentSwap, quickSlotKey } from "../systems/procedural/world-procedural-system.ts";
 
 export function previewInventoryDrop(campaign: Campaign, drag: DragSource | null, group: EquipmentGroup, index: number, targetItem: Item | null) {
   if (!drag) return null;
@@ -17,6 +17,7 @@ export function previewInventoryDrop(campaign: Campaign, drag: DragSource | null
 
 export function resolveInventoryDrop(drag: DragSource | null, destination: DropDestination | null, targetItem: Item | null = null): Action | null {
   if (!drag || !destination) return null;
+  if (drag.kind === "lockbox" || destination.kind === "lockbox") return null;
   if (destination.kind === "inventory" && drag.kind === "ability") return { type: "store-ability", index: drag.index };
   if (destination.kind === "drop-item") {
     if (drag.kind === "inventory") return { type: "drop-item", source: { kind: "inventory", itemId: drag.item.id } };
@@ -67,7 +68,10 @@ export function describeInventoryDrop(campaign: Campaign, drag: DragSource, dest
   if (destination.kind === "ability" || destination.kind === "inventory" && drag.kind === "ability") return { action, destination, preview: null, before: destinationItem, after: drag.item };
   if (destination.kind === "inventory" && (drag.kind === "slot" || drag.kind === "quick-slot")) {
     const quantity = drag.kind === "quick-slot" ? campaign.player.quickSlots?.[drag.index]?.quantity ?? 0 : 1;
-    if (campaign.player.inventory.length + quantity > campaign.player.inventoryCapacity) return null;
+    const exceedsCapacity = drag.kind === "slot"
+      ? !inventoryFitsCapacity(campaign, [...campaign.player.inventory, drag.item])
+      : campaign.player.inventory.length + quantity > campaign.player.inventoryCapacity;
+    if (exceedsCapacity) return null;
     if (drag.kind === "quick-slot") return { action, destination, preview: null, before: drag.item, after: null };
     return { action, destination, preview: previewEquipment(campaign, drag.item, drag.group, drag.index, "unequip"), before: drag.item, after: null };
   }

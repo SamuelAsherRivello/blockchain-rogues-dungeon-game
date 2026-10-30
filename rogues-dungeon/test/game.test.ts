@@ -77,7 +77,7 @@ test('enemy AI plans deterministic state transitions and bounded cardinal paths'
   assert.deepEqual(plan({ x: 4, y: 1 }, 1, 1), { enemyId: 'planner', kind: 'blocked', state: 'blocked' });
 });
 
-test('enemy AI resolves contested cells by ID and keeps blocked enemies ready to move', () => {
+test('enemy AI resolves contested cells by ID and wakes when wall visibility is restored', () => {
   const campaign = createCampaign(8_812); campaign.floor.width = 3; campaign.floor.height = 2; campaign.floor.map = undefined; campaign.floor.decorations = []; campaign.floor.objectSets = [];
   campaign.floor.cells = [[{ walkable: true, role: 'floor' }, { walkable: true, role: 'floor' }, { walkable: true, role: 'floor' }], [{ walkable: true, role: 'floor' }, { walkable: true, role: 'floor' }, { walkable: false, role: 'wall' }]];
   campaign.floor.time = 1; campaign.player.x = 2; campaign.player.y = 0;
@@ -91,7 +91,7 @@ test('enemy AI resolves contested cells by ID and keeps blocked enemies ready to
   blocked.floor.cells = [[{ walkable: true, role: 'floor' }, { walkable: false, role: 'wall' }, { walkable: true, role: 'floor' }]]; blocked.floor.time = 1; blocked.player.x = 2; blocked.player.y = 0;
   const trapped = enemyAiFixture('trapped', 0, 0); trapped.nextActionAt = 2; blocked.floor.entities = [trapped];
   const blockedTurn = applyAction(blocked, { type: 'wait' }); const blockedEnemy = present(blockedTurn.state.floor.entities.find((entity): entity is Enemy => entity.kind === 'enemy'));
-  assert.deepEqual({ state: blockedEnemy.ai.state, nextActionAt: blockedEnemy.nextActionAt }, { state: 'blocked', nextActionAt: 2 });
+  assert.deepEqual({ state: blockedEnemy.ai.state, nextActionAt: blockedEnemy.nextActionAt }, { state: 'idle', nextActionAt: 2 });
   blockedTurn.state.floor.cells[0][1].walkable = true; blockedTurn.state.floor.map![0][1] = 0;
   const reopened = applyAction(blockedTurn.state, { type: 'wait' }); const reopenedEnemy = present(reopened.state.floor.entities.find((entity): entity is Enemy => entity.kind === 'enemy'));
   assert.deepEqual({ x: reopenedEnemy.x, y: reopenedEnemy.y, state: reopenedEnemy.ai.state, nextActionAt: reopenedEnemy.nextActionAt }, { x: 1, y: 0, state: 'pursue', nextActionAt: 4 });
@@ -135,7 +135,8 @@ test('reads a validated randomSeed URL parameter for reproducible campaigns', ()
 });
 
 test('parses deterministic world, level, slot, seed, map-fix, and item/enemy test URL options', () => {
-  assert.deepEqual(parseGameUrlOptions('?world=2&level=3&slot=2&run=4&seed=7&mute=1&debug-fix-map-autotiled=1&scenario=corridor-joins'), { world: 2, level: 3, run: 4, slot: '2', seed: 7, hasCompleteRunIdentity: true, mute: true, level1ObjectTestMode: false, level1EnemyTestMode: false, mapFix: true, scenario: 'corridor-joins', map: null });
+  assert.deepEqual(parseGameUrlOptions('?world=2&level=3&slot=2&run=4&seed=7&mute=1&debug-fix-map-autotiled=1&scenario=corridor-joins'), { world: 2, level: 3, run: 4, slot: '2', seed: 7, hasCompleteRunIdentity: true, mute: true, level1ObjectTestMode: false, level1EnemyTestMode: false, mapFix: true, worldFamily: "dungeon", scenario: 'corridor-joins', map: null });
+  assert.equal(parseGameUrlOptions('?family=overworld').worldFamily, "overworld");
   assert.equal(parseGameUrlOptions('?slot=4').slot, null);
   assert.equal(parseGameUrlOptions('?seed=-1').seed, null);
   assert.equal('level1TestMode' in parseGameUrlOptions('?leveltest=1'), false);
@@ -1410,8 +1411,13 @@ test('incoming attacks apply front, side, rear mitigation and Two-Handed Sword p
 test('Skeleton Archer fires across a clear five-tile cardinal line but not through walls', () => {
   const setup = (blocked = false) => {
     const campaign = createCampaign(398); const archer = legacyEnemy({ id: 'archer', kind: 'enemy', name: 'Skeleton Archer', x: campaign.player.x + 5, y: campaign.player.y, hp: 20, maxHp: 20, damage: 4, xp: 1, actionCooldown: 2, nextActionAt: 1, attackKind: 'ranged', attackRange: 5 });
-    campaign.floor.entities = [archer]; campaign.floor.map![archer.y][archer.x] = 0;
-    for (let x = campaign.player.x + 1; x < archer.x; x++) campaign.floor.map![campaign.player.y][x] = blocked && x === campaign.player.x + 2 ? 1 : 0;
+    const setWalkable = (x: number, y: number, walkable: boolean) => {
+      campaign.floor.map![y][x] = walkable ? 0 : 1;
+      campaign.floor.cells[y]![x]!.walkable = walkable;
+      campaign.floor.cells[y]![x]!.role = walkable ? 'floor' : 'wall';
+    };
+    campaign.floor.entities = [archer]; campaign.floor.objectSets = []; campaign.floor.decorations = []; setWalkable(archer.x, archer.y, true);
+    for (let x = campaign.player.x + 1; x < archer.x; x++) setWalkable(x, campaign.player.y, !(blocked && x === campaign.player.x + 2));
     return applyAction(campaign, { type: 'wait' });
   };
   const clear = setup();

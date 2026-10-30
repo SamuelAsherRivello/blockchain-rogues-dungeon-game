@@ -50,7 +50,7 @@ export function buildDungeonWangWalls({ map, cells, tileSize = 32 }: { map?: num
   const grid = cells ? { cells } : map;
   const height = cells?.length ?? map?.length ?? 0;
   const width = cells?.[0]?.length ?? map?.[0]?.length ?? 0;
-  const walls: { x: number; y: number; mask: number; worldX: number; worldY: number; frame: number | null; quarters?: WallQuarter[] }[] = [];
+  const walls: { x: number; y: number; mask: number; worldX: number; worldY: number; frame: number | null; role: string; quarters?: WallQuarter[] }[] = [];
   const diagnostics: { x: number; y: number; mask: number; worldX: number; worldY: number }[] = [];
   for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
     if (walkableAt(grid, x, y)) continue;
@@ -65,7 +65,8 @@ export function buildDungeonWangWalls({ map, cells, tileSize = 32 }: { map?: num
     const inwardFrame = DUNGEON_CANONICAL_RULES.inwardCornerRules[cardinal as keyof typeof DUNGEON_CANONICAL_RULES.inwardCornerRules];
     const quarters = inwardFrame !== undefined || rule ? undefined : wallQuartersForMask(DUNGEON_CANONICAL_RULES, mask) ?? undefined;
     const frame = inwardFrame ?? rule?.tileId ?? quarters?.[0].tileId ?? null;
-    const entry = { x, y, mask, worldX: x * tileSize + tileSize / 2, worldY: y * tileSize + tileSize / 2, frame, ...(quarters ? { quarters } : {}) };
+    const role = cells?.[y]?.[x]?.role ?? "wall";
+    const entry = { x, y, mask, worldX: x * tileSize + tileSize / 2, worldY: y * tileSize + tileSize / 2, frame, role, ...(quarters ? { quarters } : {}) };
     if (frame === null) diagnostics.push(entry);
     walls.push(entry);
   }

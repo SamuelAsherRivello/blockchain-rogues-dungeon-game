@@ -16,6 +16,8 @@ export interface EnemyAiPlanInput {
   time: number;
   enemies: readonly Enemy[];
   effectiveAwareness: (enemy: Enemy) => number;
+  /** A closed door blocks awareness just as it blocks movement. */
+  canSee?: (enemy: Enemy, player: Position) => boolean;
   canAttack: (enemy: Enemy, player: Position) => boolean;
   canEnter: (enemy: Enemy, position: Position) => boolean;
   /** Equal keys promise identical canEnter results for this planning snapshot. */
@@ -32,7 +34,7 @@ export function planEnemyActions(input: EnemyAiPlanInput): readonly EnemyAiInten
   const maxPathNodes = input.maxPathNodes ?? Math.max(ENEMY_PATH_MAX_NODES, input.floor.width * input.floor.height);
   let findPath: ReturnType<typeof createCardinalPathBatch> | undefined;
   return [...input.enemies].sort((left, right) => left.id.localeCompare(right.id)).map((enemy) => {
-    if (chebyshevDistance(enemy, input.player) > input.effectiveAwareness(enemy)) return { enemyId: enemy.id, kind: "idle", state: "idle" };
+    if (chebyshevDistance(enemy, input.player) > input.effectiveAwareness(enemy) || input.canSee && !input.canSee(enemy, input.player)) return { enemyId: enemy.id, kind: "idle", state: "idle" };
     if (input.time < enemy.nextActionAt) return { enemyId: enemy.id, kind: "wait", state: enemy.ai.state };
     if (input.canAttack(enemy, input.player)) return { enemyId: enemy.id, kind: "attack", state: "attack" };
     findPath ??= createCardinalPathBatch(input.floor, input.player);

@@ -1,4 +1,6 @@
-export interface AuthoredLockbox { id: string; name: string; x: number; y: number; gid: number }
+import { SHARED_LOCKBOX_ID } from "../../game/lockbox-identity.ts";
+
+export interface AuthoredLockbox { id: string; storageId: string; name: string; x: number; y: number; gid: number }
 
 const attributes = (text: string) => Object.fromEntries([...text.matchAll(/([\w-]+)\s*=\s*"([^"]*)"/g)].map(match => [match[1]!, match[2]!]));
 
@@ -28,7 +30,7 @@ export function readAuthoredLockboxes(xml: string): AuthoredLockbox[] {
         throw new Error(`Invalid authored lockbox ${id}.`);
       }
       identities.add(id);
-      result.push({ id, name: object.name ?? "Lockbox", x, y, gid });
+      result.push({ id, storageId: SHARED_LOCKBOX_ID, name: object.name ?? "Lockbox", x, y, gid });
     }
   }
   return result;

@@ -70,12 +70,18 @@ test('graph generation remains deterministic and role placement retains bounded 
   assert.ok(treasureChests > 0); assert.ok(arenaEnemies > 0);
 });
 
-test('graph compact saves and retries preserve the selected geometry and missing-version legacy recovery stays exact', () => {
+test('graph saves and supported legacy recovery preserve geometry while retired balance records reject', () => {
   const campaign = createRunCampaign(17, 1, 1, 2, 2, { worldAttributes: DEFAULT_WORLD_ATTRIBUTES });
   const original = geometry(campaign.floor), baseline = createAdventureLevelBaseline(campaign);
   assert.deepEqual(geometry(baseline.floor), original);
   assert.deepEqual(geometry(restoreCompactCampaign(JSON.parse(JSON.stringify(compactCampaignForSave(campaign))) as Campaign).floor), original);
   for (const entry of fixtures.compact) {
+    if (Object.values(entry.record.floorProfiles ?? {}).some(profile => profile.tuningVersion === 'world-attributes-1:world-balance-1')) {
+      const record = structuredClone(entry.record), before = JSON.stringify(record);
+      assert.throws(() => restoreCompactCampaign(record), /Unsupported saved world generator/);
+      assert.equal(JSON.stringify(record), before);
+      continue;
+    }
     const legacy = restoreCompactCampaign(structuredClone(entry.record));
     assert.equal(hash(geometry(createAdventureLevelBaseline(legacy).floor)), entry.expected.geometryHash, entry.name);
     legacy.topologyVersion = DUNGEON_TOPOLOGY_VERSION;

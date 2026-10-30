@@ -7,7 +7,7 @@ export interface DungeonGraphLayoutOptions {
   width: number; height: number; seed: number;
   /** Total room count, including the start room. */
   roomCount: number; startRoom?: Room; corridorWidth?: number; extraLinks?: number;
-  roomClearance?: number; levelOneChamber?: boolean;
+  roomClearance?: number; levelOneChamber?: boolean; levelOneLockdownFixture?: boolean;
   /** The caller stamps the authored home after layout and opens this south entrance. */
   homeFootprint?: Room;
   reservations?: readonly DungeonLayoutReservation[];
@@ -25,6 +25,7 @@ export interface DungeonGraphLayout {
   start: Position; startRoom: Room; rooms: Room[]; topology: DungeonLayoutTopology;
   corridors: DungeonLayoutCorridor[]; reservations: DungeonLayoutReservation[];
   chamber?: { bounds: Room; door: Position; goal: Position };
+  lockdownFixture?: { bounds: Room; room: Room; door: Position; trigger: Position };
   homeEntrance?: Position;
 }
 
@@ -96,7 +97,13 @@ export function generateDungeonGraphLayout(options: DungeonGraphLayoutOptions): 
   if (!inBounds(startRoom) || Math.min(startRoom.w, startRoom.h) < corridorWidth) throw new Error('Dungeon start room does not fit the layout.');
   const start = dungeonRoomCenter(startRoom), reservations = (options.reservations ?? []).map(region => ({ ...region }));
   const chamber = options.levelOneChamber ? { bounds: { x: start.x + 4, y: start.y - 2, w: 5, h: 5 }, door: { x: start.x + 4, y: start.y }, goal: { x: start.x + 6, y: start.y } } : undefined;
+  const lockdownFixture = options.levelOneLockdownFixture ? {
+    bounds: { x: start.x - 3, y: start.y - 9, w: 7, h: 6 },
+    room: { x: start.x - 2, y: start.y - 8, w: 5, h: 4 },
+    door: { x: start.x, y: start.y - 4 }, trigger: { x: start.x, y: start.y - 5 },
+  } : undefined;
   if (chamber) reservations.push({ id: 'level-one-chamber', ...chamber.bounds });
+  if (lockdownFixture) reservations.push({ id: 'level-one-lockdown-fixture', ...lockdownFixture.bounds });
   const home = options.homeFootprint ? { ...options.homeFootprint } : undefined;
   const homeEntrance = home ? { x: home.x + Math.floor(home.w / 2), y: home.y + home.h - 1 } : undefined;
   if (home) reservations.push({ id: 'player-home-footprint', ...home });
@@ -153,9 +160,16 @@ export function generateDungeonGraphLayout(options: DungeonGraphLayoutOptions): 
     }
     carve(chamber.door);
   }
+  if (lockdownFixture) {
+    for (let y = lockdownFixture.bounds.y; y < lockdownFixture.bounds.y + lockdownFixture.bounds.h; y++) for (let x = lockdownFixture.bounds.x; x < lockdownFixture.bounds.x + lockdownFixture.bounds.w; x++) {
+      cells[y]![x] = { walkable: false, role: 'wall' };
+    }
+    for (let y = lockdownFixture.room.y; y < lockdownFixture.room.y + lockdownFixture.room.h; y++) for (let x = lockdownFixture.room.x; x < lockdownFixture.room.x + lockdownFixture.room.w; x++) carve({ x, y });
+    carve(lockdownFixture.door);
+  }
   const routedTopology: DungeonLayoutTopology = { ...topology, edges: topology.edges.map((edge, index) => {
     const { bend: _plannedBend, ...metadata } = edge, corridor = corridors[index]!;
     return { ...metadata, fromSocket: { ...corridor.path[0]! }, toSocket: { ...corridor.path.at(-1)! }, path: corridor.path, segments: corridor.segments };
   }) };
-  return { width, height, cells, map: cells.map(row => row.map(cell => cell.walkable ? 0 : 1)), start, startRoom, rooms, topology: routedTopology, corridors, reservations, ...(chamber ? { chamber } : {}), ...(homeEntrance ? { homeEntrance } : {}) };
+  return { width, height, cells, map: cells.map(row => row.map(cell => cell.walkable ? 0 : 1)), start, startRoom, rooms, topology: routedTopology, corridors, reservations, ...(chamber ? { chamber } : {}), ...(lockdownFixture ? { lockdownFixture } : {}), ...(homeEntrance ? { homeEntrance } : {}) };
 }

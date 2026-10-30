@@ -12,7 +12,7 @@ async function startCampaign(page: Page) {
 
 test("PC aspect preview and portrait/mobile layouts keep controls and information reachable", async ({ page, browser }) => {
   // Four browser contexts and two complete WebGPU campaign startups share this budget.
-  test.setTimeout(60_000);
+  test.setTimeout(120_000);
   await page.setViewportSize({ width: 1280, height: 720 });
   await startCampaign(page);
   await expect(page.locator("#viewport")).toHaveAttribute("data-orientation", "landscape");

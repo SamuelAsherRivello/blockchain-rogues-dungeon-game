@@ -1,0 +1,53 @@
+{
+  "status": "candidate-not-accepted",
+  "frames": [
+    {
+      "frame": 0,
+      "editableRect": [
+        23,
+        28,
+        9,
+        15
+      ],
+      "protectedPixelChanges": 0,
+      "changedPixels": 135,
+      "partialAlphaPixels": 73
+    },
+    {
+      "frame": 1,
+      "editableRect": [
+        23,
+        28,
+        9,
+        15
+      ],
+      "protectedPixelChanges": 0,
+      "changedPixels": 135,
+      "partialAlphaPixels": 72
+    },
+    {
+      "frame": 2,
+      "editableRect": [
+        23,
+        28,
+        9,
+        15
+      ],
+      "protectedPixelChanges": 0,
+      "changedPixels": 135,
+      "partialAlphaPixels": 65
+    },
+    {
+      "frame": 3,
+      "editableRect": [
+        23,
+        28,
+        9,
+        15
+      ],
+      "protectedPixelChanges": 0,
+      "changedPixels": 135,
+      "partialAlphaPixels": 76
+    }
+  ]
+}

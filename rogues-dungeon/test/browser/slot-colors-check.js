@@ -55,7 +55,7 @@ async page => {
     }
     check(await primary.locator('[data-drag-id="two"]').count() === 1, "Secondary row became draggable");
     check(await primary.locator('.inventory_item[data-slot-category="equipment"]').count() === 4, "Two-position gear lost its second strip");
-    check(await primary.locator('[data-drop-inventory-slot][data-slot-category]').count() === 0, "Empty Inventory has fixed category");
+    check(await primary.locator('[data-drop-inventory-slot][data-slot-empty="true"][data-slot-category]').count() === 0, "Empty Inventory has fixed category");
   };
   await validateRows();
   const hoverDrag = async (source, target, category, valid = true) => {
@@ -84,9 +84,9 @@ async page => {
   await page.waitForTimeout(120);
   check(await quick.evaluate(el => el.classList.contains("slot_item--shine")), "Accepted drop did not shine");
   check(await strip(quick) === color.quick, "Shine hid category");
-  await hoverDrag(quick, primary.locator('[data-drop-inventory-slot]').first(), "quick"); await cancel();
+  await hoverDrag(quick, primary.locator('[data-drop-inventory-slot][data-slot-empty="true"]').first(), "quick"); await cancel();
   await hoverDrag(primary.locator('[data-drag-id="sword"]'), weapon, "equipment"); await page.mouse.up();
-  await hoverDrag(weapon, primary.locator('[data-drop-inventory-slot]').first(), "equipment"); await cancel();
+  await hoverDrag(weapon, primary.locator('[data-drop-inventory-slot][data-slot-empty="true"]').first(), "equipment"); await cancel();
   await hoverDrag(primary.locator('[data-drop-ability="0"]'), primary.locator('[data-drop-ability="2"]'), "ability"); await cancel();
   // Both potions use green, including a full-resource Mana potion that cannot be used.
   const manaQuick = primary.locator('[data-drop-quick-slot="1"]');

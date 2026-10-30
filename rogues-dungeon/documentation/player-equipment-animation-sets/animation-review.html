@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Hero Warrior equipment animation review</title>
+<style>
+body { margin: 20px; background: #24262c; color: #eee; font: 14px system-ui; }
+button { padding: 8px 16px; margin-right: 8px; }
+main { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 16px; }
+figure { margin: 0; border: 1px solid #777; text-align: center; padding: 8px; }
+canvas { image-rendering: pixelated; }
+body.light { background: #f0f0f0; color: #222; }
+</style>
+<h1>Hero Warrior equipment animation review</h1>
+<p>Native source pixels, 4× display, effective runtime speed 0.5. Attacks and death stop on their final frame.</p>
+<button id="restart">Restart all clips</button><button id="pause">Pause</button><button id="background">Toggle light background</button>
+<label>Appearance <select id="appearance"><option value="original">1: Sword and shield</option><option value="sword-only">2: Sword only</option><option value="shield-only">3: Shield only</option><option value="unarmed">4: Neither</option></select></label>
+<main></main><p id="status">Loading source manifests…</p>
+<script type="module">
+const clips = [], libraries = {};
+for (const appearance of ['original', 'sword-only', 'shield-only', 'unarmed']) {
+libraries[appearance] = [];
+for (const folder of appearance === 'original' ? ['baseline-directional-v2', 'baseline-death-v1'] : [`${appearance}-directional-v3`, `${appearance}-death-v3`]) {
+  const manifest = await fetch(`${folder}/spritesheet-manifest.json`).then(r => r.json());
+  const images = new Map();
+  for (const sheet of manifest.sheets.filter(s => manifest.frames.some(f => f.sheet === s.id))) {
+    const image = new Image(); image.src = `${folder}/${sheet.file}`; await image.decode(); images.set(sheet.id, image);
+  }
+  for (const sequence of manifest.sequences) {
+    libraries[appearance].push({ sequence, manifest, images });
+    if (appearance !== 'original') continue;
+    const figure = document.createElement('figure');
+    const caption = document.createElement('figcaption'); caption.textContent = sequence.id;
+    const canvas = document.createElement('canvas'); canvas.width = manifest.cellSize[0] * 4; canvas.height = manifest.cellSize[1] * 4;
+    const progress = document.createElement('p');
+    figure.append(caption, canvas, progress); document.querySelector('main').append(figure);
+    clips.push({ id: sequence.id, canvas, progress });
+  }
+}
+}
+let start = performance.now(), pausedAt = null;
+document.querySelector('#restart').onclick = () => { start = performance.now(); pausedAt = null; document.querySelector('#pause').textContent = 'Pause'; };
+document.querySelector('#pause').onclick = () => {
+  if (pausedAt === null) { pausedAt = performance.now(); document.querySelector('#pause').textContent = 'Resume'; }
+  else { start += performance.now() - pausedAt; pausedAt = null; document.querySelector('#pause').textContent = 'Pause'; }
+};
+document.querySelector('#background').onclick = () => document.body.classList.toggle('light');
+document.querySelector('#status').textContent = 'Ready: four sets / 40 clips / 192 mapped frames. Art comparison. Gameplay verification is tracked separately. Switching appearance preserves the playback clock.';
+function draw(time) {
+  const elapsed = Math.max(0, ((pausedAt ?? time) - start) * 0.5);
+  for (const { id, canvas, progress } of clips) {
+    const { sequence, manifest, images } = libraries[document.querySelector('#appearance').value].find(c => c.sequence.id === id);
+    const total = sequence.durationsMs.reduce((a, b) => a + b, 0);
+    let local = sequence.loop ? elapsed % total : Math.min(elapsed, total - 0.001), index = 0;
+    while (index < sequence.frames.length - 1 && local >= sequence.durationsMs[index]) local -= sequence.durationsMs[index++];
+    const frame = manifest.frames.find(f => f.id === sequence.frames[index]);
+    const [x, y, width, height] = frame.rect;
+    const context = canvas.getContext('2d'); context.clearRect(0, 0, canvas.width, canvas.height); context.imageSmoothingEnabled = false;
+    context.drawImage(images.get(frame.sheet), x, y, width, height, 0, 0, canvas.width, canvas.height);
+    progress.textContent = `Frame ${index + 1}/${sequence.frames.length}${!sequence.loop && elapsed >= total ? ' · Complete' : ''}`;
+  }
+  requestAnimationFrame(draw);
+}
+requestAnimationFrame(draw);
+</script>
+</html>

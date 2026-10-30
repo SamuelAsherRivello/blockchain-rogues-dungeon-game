@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { readAuthoredLockboxes } from "../src/systems/procedural/tiled-lockbox-system.ts";
 import { applyAction, createRunCampaign } from "../src/systems/procedural/world-procedural-system.ts";
+import { getMouseMovementFromSelectedCell, getMousePathResult } from "../src/game/mouse-selection.ts";
 
 const source = readFileSync(new URL("../public/assets/art/game-view/maps/prefabs/player-home.tmx", import.meta.url), "utf8");
 
@@ -11,6 +12,29 @@ test("reads only the two human-authored home lockboxes with bottom-left tile anc
     { id: "player-home:3", x: 1, y: 8, gid: 153 },
     { id: "player-home:4", x: 8, y: 8, gid: 153 },
   ]);
+});
+
+test("mouse travel approaches each blocked authored lockbox and bumps without entering it", () => {
+  const campaign = createRunCampaign(39, 1, 1);
+  const arrow = campaign.floor.entities.find(entity => entity.kind === "teleport-arrow")!;
+  campaign.player.x = arrow.x; campaign.player.y = arrow.y;
+  const home = applyAction(campaign, { type: "enter-teleport" }).state;
+  for (const box of home.floor.lockboxes!) {
+    home.player.x = 5; home.player.y = 7;
+    const selection = { ...box, pressed: true, sprint: false };
+    const route = getMousePathResult(selection, home);
+    assert.equal(route.reachable, true);
+    assert.ok(route.path?.length);
+    for (const cell of route.path!.slice(1)) { home.player.x = cell.x; home.player.y = cell.y; }
+    const move = getMouseMovementFromSelectedCell(selection, home)!;
+    assert.ok(move);
+    const result = applyAction(home, { type: "move", direction: move.direction });
+    assert.equal(result.ticks, 0);
+    assert.equal(result.events.find(event => event.type === "lockbox.opened")?.facts.id, box.storageId);
+    assert.notDeepEqual({ x: result.state.player.x, y: result.state.player.y }, { x: box.x, y: box.y });
+  }
+  home.player.x = 2; home.player.y = 9;
+  assert.equal(applyAction(home, { type: "move", direction: "nw" }).accepted, false);
 });
 
 test("a moved or removed lockbox has no independent fallback placement", () => {
@@ -43,5 +67,5 @@ test("home lockboxes are blocked authored interactables while generated levels c
   assert.equal(bumped.state.player.x, 2);
   assert.equal(bumped.state.floor.time, home.floor.time);
   assert.equal(bumped.state.floor.cells[8]![1]!.walkable, false);
-  assert.equal(bumped.events.find(event => event.type === "lockbox.opened")?.facts.id, "player-home:3");
+  assert.equal(bumped.events.find(event => event.type === "lockbox.opened")?.facts.id, "shared-lockbox");
 });

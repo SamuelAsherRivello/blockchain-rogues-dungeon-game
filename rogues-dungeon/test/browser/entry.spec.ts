@@ -74,7 +74,8 @@ test("new muted runs begin with an empty loadout and five inventory positions", 
   await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
   await openSavedGame(page, 1);
   await expect(page.getByRole("heading", { name: "INVENTORY 00/05" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Empty equipment slot" })).toHaveCount(4);
+  await expect(page.getByRole("button", { name: "Empty equipment slot" })).toHaveCount(6);
+  await expect(page.locator('[data-drop-group="jewels"][data-slot-empty="true"]')).toHaveCount(2);
   await expect(page.getByRole("button", { name: "Empty ability slot" })).toHaveCount(3);
   await expect(page.getByRole("button", { name: "Empty quick slot" })).toHaveCount(2);
 });

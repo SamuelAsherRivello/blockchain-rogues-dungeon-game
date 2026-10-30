@@ -46,6 +46,18 @@ test('home footprint reserves placement and routes start edges only through its 
   }
 });
 
+test('Level One lockdown fixture is immediately north of the start behind one choke-point door', () => {
+  const layout = generateDungeonGraphLayout({ width: 70, height: 70, seed: 93, roomCount: 6, corridorWidth: 3, levelOneLockdownFixture: true });
+  const fixture = layout.lockdownFixture!;
+  assert.equal(fixture.door.x, layout.start.x);
+  assert.equal(fixture.door.y, layout.start.y - 4);
+  assert.equal(Math.abs(fixture.door.x - layout.start.x) + Math.abs(fixture.door.y - layout.start.y), 4);
+  assert.equal(layout.cells[fixture.door.y]![fixture.door.x]!.walkable, true);
+  const walkableNeighbors = [[0, -1], [0, 1], [-1, 0], [1, 0]].filter(([dx, dy]) => layout.cells[fixture.door.y + dy]![fixture.door.x + dx]!.walkable);
+  assert.deepEqual(walkableNeighbors, [[0, -1], [0, 1]]);
+  assert.equal(layout.cells[fixture.trigger.y]![fixture.trigger.x]!.walkable, true);
+});
+
 test('reservation detours retain complete widths and cannot carve through an impassable barrier', () => {
   const obstacle = (point: { x: number; y: number }) => point.x >= 9 && point.x <= 12 && point.y >= 4 && point.y <= 14;
   const path = routeDungeonCorridor({ x: 4, y: 9 }, { x: 18, y: 9 }, 3, { width: 24, height: 22 }, obstacle);

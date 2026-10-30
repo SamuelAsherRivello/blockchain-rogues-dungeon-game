@@ -1,0 +1,876 @@
+{
+  "schemaVersion": 1,
+  "entity": {
+    "id": "hero-warrior-directional",
+    "kind": "character"
+  },
+  "mode": "animated",
+  "operation": "modify",
+  "cellSize": [
+    32,
+    48
+  ],
+  "anchor": [
+    16,
+    48
+  ],
+  "style": {
+    "name": "Dungeons-and-Pixels Hero Warrior",
+    "pixelArt": true
+  },
+  "background": "transparent",
+  "scale": 1,
+  "expectedFrameCount": 42,
+  "frames": [
+    {
+      "id": "idle-down-00",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\idle\\down\\frame-00.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "idle-down",
+      "direction": "down"
+    },
+    {
+      "id": "idle-down-01",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\idle\\down\\frame-01.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "idle-down",
+      "direction": "down"
+    },
+    {
+      "id": "idle-down-02",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\idle\\down\\frame-02.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "idle-down",
+      "direction": "down"
+    },
+    {
+      "id": "idle-down-03",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\idle\\down\\frame-03.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "idle-down",
+      "direction": "down"
+    },
+    {
+      "id": "idle-side-00",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\idle\\side\\frame-00.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "idle-side",
+      "direction": "side"
+    },
+    {
+      "id": "idle-side-01",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\idle\\side\\frame-01.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "idle-side",
+      "direction": "side"
+    },
+    {
+      "id": "idle-side-02",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\idle\\side\\frame-02.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "idle-side",
+      "direction": "side"
+    },
+    {
+      "id": "idle-side-03",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\idle\\side\\frame-03.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "idle-side",
+      "direction": "side"
+    },
+    {
+      "id": "idle-up-00",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\idle\\up\\frame-00.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "idle-up",
+      "direction": "up"
+    },
+    {
+      "id": "idle-up-01",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\idle\\up\\frame-01.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "idle-up",
+      "direction": "up"
+    },
+    {
+      "id": "idle-up-02",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\idle\\up\\frame-02.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "idle-up",
+      "direction": "up"
+    },
+    {
+      "id": "idle-up-03",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\idle\\up\\frame-03.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "idle-up",
+      "direction": "up"
+    },
+    {
+      "id": "run-down-00",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\run\\down\\frame-00.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "run-down",
+      "direction": "down"
+    },
+    {
+      "id": "run-down-01",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\run\\down\\frame-01.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "run-down",
+      "direction": "down"
+    },
+    {
+      "id": "run-down-02",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\run\\down\\frame-02.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "run-down",
+      "direction": "down"
+    },
+    {
+      "id": "run-down-03",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\run\\down\\frame-03.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "run-down",
+      "direction": "down"
+    },
+    {
+      "id": "run-down-04",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\run\\down\\frame-04.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "run-down",
+      "direction": "down"
+    },
+    {
+      "id": "run-down-05",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\run\\down\\frame-05.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "run-down",
+      "direction": "down"
+    },
+    {
+      "id": "run-side-00",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\run\\side\\frame-00.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "run-side",
+      "direction": "side"
+    },
+    {
+      "id": "run-side-01",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\run\\side\\frame-01.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "run-side",
+      "direction": "side"
+    },
+    {
+      "id": "run-side-02",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\run\\side\\frame-02.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "run-side",
+      "direction": "side"
+    },
+    {
+      "id": "run-side-03",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\run\\side\\frame-03.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "run-side",
+      "direction": "side"
+    },
+    {
+      "id": "run-side-04",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\run\\side\\frame-04.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "run-side",
+      "direction": "side"
+    },
+    {
+      "id": "run-side-05",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\run\\side\\frame-05.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "run-side",
+      "direction": "side"
+    },
+    {
+      "id": "run-up-00",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\run\\up\\frame-00.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "run-up",
+      "direction": "up"
+    },
+    {
+      "id": "run-up-01",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\run\\up\\frame-01.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "run-up",
+      "direction": "up"
+    },
+    {
+      "id": "run-up-02",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\run\\up\\frame-02.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "run-up",
+      "direction": "up"
+    },
+    {
+      "id": "run-up-03",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\run\\up\\frame-03.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "run-up",
+      "direction": "up"
+    },
+    {
+      "id": "run-up-04",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\run\\up\\frame-04.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "run-up",
+      "direction": "up"
+    },
+    {
+      "id": "run-up-05",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\run\\up\\frame-05.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "run-up",
+      "direction": "up"
+    },
+    {
+      "id": "attack-down-00",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\attack\\down\\frame-00.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "attack-down",
+      "direction": "down"
+    },
+    {
+      "id": "attack-down-01",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\attack\\down\\frame-01.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "attack-down",
+      "direction": "down"
+    },
+    {
+      "id": "attack-down-02",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\attack\\down\\frame-02.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "attack-down",
+      "direction": "down"
+    },
+    {
+      "id": "attack-down-03",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\attack\\down\\frame-03.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "attack-down",
+      "direction": "down"
+    },
+    {
+      "id": "attack-side-00",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\attack\\side\\frame-00.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "attack-side",
+      "direction": "side"
+    },
+    {
+      "id": "attack-side-01",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\attack\\side\\frame-01.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "attack-side",
+      "direction": "side"
+    },
+    {
+      "id": "attack-side-02",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\attack\\side\\frame-02.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "attack-side",
+      "direction": "side"
+    },
+    {
+      "id": "attack-side-03",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\attack\\side\\frame-03.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "attack-side",
+      "direction": "side"
+    },
+    {
+      "id": "attack-up-00",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\attack\\up\\frame-00.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "attack-up",
+      "direction": "up"
+    },
+    {
+      "id": "attack-up-01",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\attack\\up\\frame-01.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "attack-up",
+      "direction": "up"
+    },
+    {
+      "id": "attack-up-02",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\attack\\up\\frame-02.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "attack-up",
+      "direction": "up"
+    },
+    {
+      "id": "attack-up-03",
+      "image": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v4\\sword-only\\attack\\up\\frame-03.png",
+      "rect": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "sourceAnchor": [
+        16,
+        48
+      ],
+      "sheet": "attack-up",
+      "direction": "up"
+    }
+  ],
+  "sequences": [
+    {
+      "id": "idle-down",
+      "frames": [
+        "idle-down-00",
+        "idle-down-01",
+        "idle-down-02",
+        "idle-down-03"
+      ],
+      "durationsMs": [
+        140,
+        140,
+        140,
+        140
+      ],
+      "loop": true,
+      "direction": "down"
+    },
+    {
+      "id": "idle-side",
+      "frames": [
+        "idle-side-00",
+        "idle-side-01",
+        "idle-side-02",
+        "idle-side-03"
+      ],
+      "durationsMs": [
+        140,
+        140,
+        140,
+        140
+      ],
+      "loop": true,
+      "direction": "side"
+    },
+    {
+      "id": "idle-up",
+      "frames": [
+        "idle-up-00",
+        "idle-up-01",
+        "idle-up-02",
+        "idle-up-03"
+      ],
+      "durationsMs": [
+        140,
+        140,
+        140,
+        140
+      ],
+      "loop": true,
+      "direction": "up"
+    },
+    {
+      "id": "run-down",
+      "frames": [
+        "run-down-00",
+        "run-down-01",
+        "run-down-02",
+        "run-down-03",
+        "run-down-04",
+        "run-down-05"
+      ],
+      "durationsMs": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "loop": true,
+      "direction": "down"
+    },
+    {
+      "id": "run-side",
+      "frames": [
+        "run-side-00",
+        "run-side-01",
+        "run-side-02",
+        "run-side-03",
+        "run-side-04",
+        "run-side-05"
+      ],
+      "durationsMs": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "loop": true,
+      "direction": "side"
+    },
+    {
+      "id": "run-up",
+      "frames": [
+        "run-up-00",
+        "run-up-01",
+        "run-up-02",
+        "run-up-03",
+        "run-up-04",
+        "run-up-05"
+      ],
+      "durationsMs": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "loop": true,
+      "direction": "up"
+    },
+    {
+      "id": "attack-down",
+      "frames": [
+        "attack-down-00",
+        "attack-down-01",
+        "attack-down-02",
+        "attack-down-03"
+      ],
+      "durationsMs": [
+        90,
+        90,
+        90,
+        90
+      ],
+      "loop": false,
+      "direction": "down"
+    },
+    {
+      "id": "attack-side",
+      "frames": [
+        "attack-side-00",
+        "attack-side-01",
+        "attack-side-02",
+        "attack-side-03"
+      ],
+      "durationsMs": [
+        90,
+        90,
+        90,
+        90
+      ],
+      "loop": false,
+      "direction": "side"
+    },
+    {
+      "id": "attack-up",
+      "frames": [
+        "attack-up-00",
+        "attack-up-01",
+        "attack-up-02",
+        "attack-up-03"
+      ],
+      "durationsMs": [
+        90,
+        90,
+        90,
+        90
+      ],
+      "loop": false,
+      "direction": "up"
+    }
+  ],
+  "layout": {
+    "columns": 6,
+    "margin": 0,
+    "spacing": 0
+  },
+  "provenance": {
+    "artSource": "existing-with-user-authorized-manual-pixel-repairs",
+    "identityReference": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\public\\assets\\art\\game-view\\characters\\hero-warrior\\frames\\idle\\side\\00.png",
+    "notes": "Two imagegen shield-removal trials were retained as references and rejected for haze. User explicitly authorized targeted pixel repairs on 2026-10-29. Original palette, binary alpha, protected original pixels and coordinates retained. See manual-pixel-repair-validation.json and per-frame masks."
+  },
+  "parent": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\baseline-directional-v2\\spritesheet-manifest.json"
+}

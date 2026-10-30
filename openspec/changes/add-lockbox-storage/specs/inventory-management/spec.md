@@ -24,7 +24,7 @@ The player's ordinary Inventory SHALL render a first Drop Item row above all cap
 ## ADDED Requirements
 
 ### Requirement: Configure the shared inventory presentation for a container
-The shared inventory presentation SHALL support configurable contents, capacity, container identity, and Drop Item visibility. Its defaults SHALL preserve the player Inventory's existing rows, effective capacity, sorting, category cues, and scrolling. Lockbox mode SHALL display its own contents and ten fixed capacity positions without reading player-carried capacity bonuses.
+The shared inventory presentation SHALL support configurable contents, capacity, container identity, and Drop Item visibility. Its defaults SHALL preserve the player Inventory's effective capacity, alphabetical placement of unpositioned items, category cues, and scrolling. Items positioned by storage dragging SHALL retain their chosen container slot. Lockbox mode SHALL display its own contents and ten fixed capacity positions without reading player-carried capacity bonuses.
 
 #### Scenario: Render player Inventory and lockbox together
 - **WHEN** both containers are visible during a lockbox session
@@ -32,4 +32,8 @@ The shared inventory presentation SHALL support configurable contents, capacity,
 
 #### Scenario: Preserve ordinary Inventory defaults
 - **WHEN** player Inventory is shown without lockbox mode
-- **THEN** its existing effective-capacity calculation, alphabetical rows, category cues, scrollbar, and Drop Item row are preserved
+- **THEN** its existing effective-capacity calculation, category cues, scrollbar, and Drop Item row are preserved, with unpositioned items filling available positions alphabetically
+
+#### Scenario: Choose a storage destination
+- **WHEN** the player drags an item over an available row in either the open lockbox or Inventory
+- **THEN** only the hovered valid row highlights and a completed transfer keeps the item in that selected position, including after reload

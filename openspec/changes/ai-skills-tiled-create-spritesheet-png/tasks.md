@@ -2,7 +2,7 @@
 
 ## 1. Establish the maintained source and acceptance fixtures
 
-- [ ] 1.1 Select an authorized workspace for `D:/Documents/Projects/VC/AI/ai-skills-tiled`, resolve its OpenSpec context, and carry this proposal into that planning scope through the applicable OpenSpec workflow before implementation; verify the target path, applicable instructions, branch, and existing unrelated changes are recorded without modifying this game's source.
+- [x] 1.1 Select an authorized workspace for `D:/Documents/Projects/VC/AI/ai-skills-tiled`, resolve its OpenSpec context, and carry this proposal into that planning scope through the applicable OpenSpec workflow before implementation; verify the target path, applicable instructions, branch, and existing unrelated changes are recorded without modifying this game's source.
 - [ ] 1.2 Reconcile the installed `tiled-ai-create-animated-object-png` and `tiled-ai-create-animated-object` definitions into authoritative `skills/` sources with portable references and UI metadata; verify their documented defaults and integration responsibilities match the inspected installed baseline and no global installation is overwritten.
 - [ ] 1.3 Add a concise source-inspiration/evidence reference and an acceptance matrix covering both entity kinds, both modes, all three operations, and unavailable imagegen/editor cases; verify it links the inspected Forge, Scenario, and Vibedgames tests/records and distinguishes tests, author reports, and unverified visual claims.
 

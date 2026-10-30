@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "originalFrames": 48,
+  "additionalFrames": 144,
+  "totalFrames": 192,
+  "protectedPixelChanges": 0,
+  "registrationTranslation": [
+    0,
+    0
+  ],
+  "palette": "original-source-only",
+  "alpha": "binary",
+  "visualAcceptance": "separate-hash-bound-skill-reviews"
+}

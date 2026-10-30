@@ -1,0 +1,219 @@
+{
+  "ok": true,
+  "errors": [],
+  "warnings": [
+    {
+      "id": "edge-contact",
+      "frame": "idle-down-00",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "idle-down-01",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "idle-down-02",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "idle-down-03",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "idle-side-00",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "idle-side-01",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "idle-side-02",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "idle-side-03",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "idle-up-00",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "idle-up-01",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "idle-up-02",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "idle-up-03",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "run-down-00",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "run-down-02",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "run-down-03",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "run-down-05",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "run-side-00",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "run-side-01",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "run-side-02",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "run-side-03",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "run-side-04",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "run-side-05",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "run-up-00",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "run-up-01",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "run-up-03",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "run-up-04",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "attack-down-00",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "attack-down-01",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "attack-down-02",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "attack-down-03",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "attack-side-00",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "attack-side-01",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "attack-side-02",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "attack-side-03",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "attack-up-00",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "attack-up-01",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "attack-up-02",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    },
+    {
+      "id": "edge-contact",
+      "frame": "attack-up-03",
+      "message": "Inspect complete anatomy; edge contact alone is not proof of clipping."
+    }
+  ],
+  "scope": "structural",
+  "visualStatus": "pending",
+  "manifestHash": "b233f3fd96927042476b2bf55c8c27e8dcb11acf5416d83ea0a000ae605d3118",
+  "sheetHashes": {
+    "sheet-000": "1d23f1ad7bf47e76a74bcfd7fa4d7ee1f67292b8f29e3472f84806c7a0cea90a",
+    "sheet-001": "9ef0746d68a6926f20e27cb91dc025c4506440322a69a698b6216b9c7ee5943b",
+    "sheet-002": "bba29c2b7297e193c639005f990eb834f4842818aab4b8aefd8d1a9fa4fb2644",
+    "sheet-003": "33bbeb9133dfbb9a773e18395401e0e346031674db3fba457b2715418eca2ff4",
+    "sheet-004": "4276979b6541a5623d1e0c990a7536c78843fd840bbb7097f7d8e54bbc84a3bb",
+    "sheet-005": "955f9e9bc1940a6308de376dae13020850df9906a49444b0f4311b77c44be880",
+    "sheet-006": "524d318147e1322cdb10aa831e5b41cee3832f610c62e40f955e7efcc2303131",
+    "sheet-007": "20b09760e7d9fd20d860d56ba8decc8713293fad998383b291ab47b90bcf3a15",
+    "sheet-008": "f3675d2e13a0c30cea17e867ddf2c87df75406970bfaf55b7715e39bebbb3e42",
+    "sheet-009": "e039d4b1bbdd1c27a7841b340a09c66f0179fb63e4d4ad8e9af2382e73102463",
+    "sheet-010": "bebb5893ddb7f718308c362a127a44123863571ea0e74fe9279c261e46da4d95",
+    "sheet-011": "c5423a8c5cee0cf5c773cbe68c870d521f6ebbc8c9b5974d755bb45a68791c2c",
+    "sheet-012": "998cc6af99add8697069d4b7fdb3c5ef675a37db9b1edb6bdbabd1e207eea5b5",
+    "sheet-013": "d918a063366ce5574c2ec6c755a2ca5e57aeee795b619228e4233d012d90faf4",
+    "sheet-014": "0e26ebb79ad614d0b57401435d9569f104cdeae7dfab5b45b1da533e64452f44",
+    "sheet-015": "e8327b95faf778ffbeb83037f47b0e345baa72c14d4822334a364f4211a1bbf3",
+    "sheet-016": "f541bcc3643809b0bf606d8cd4db9872b9eaf3bf9bbd19028bb27ae3b6cf63bd",
+    "sheet-017": "7b9715f53b062fff498644adb7cb0631a8167231247d62e84f9ff740e6a272d0"
+  }
+}

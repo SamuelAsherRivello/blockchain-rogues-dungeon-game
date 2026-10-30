@@ -1,0 +1,1446 @@
+{
+  "status": "pending-visual-review",
+  "authorization": "User explicitly allowed targeted manual pixel edits on 2026-10-29.",
+  "frames": [
+    {
+      "appearance": "sword-only",
+      "id": "idle-down-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\idle\\down\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\idle\\down\\mask-00.png",
+      "changedPixels": 88,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "68bacf9719da9bfd483a8bbaaed657e0bb0440b24540800ecb89d4315bf6d52f"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "idle-down-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\idle\\down\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\idle\\down\\mask-00.png",
+      "changedPixels": 104,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "acee8b6a2d866e0312306fd0e679aa2189b44bc9f6a6c8f33925a0ee63ac6f8c"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "idle-down-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\idle\\down\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\idle\\down\\mask-00.png",
+      "changedPixels": 188,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "1c918628cc0fcf12cde3a46e7d21e52ab2f1bcd2d95633f60093b0984cc52d4b"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "idle-down-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\idle\\down\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\idle\\down\\mask-01.png",
+      "changedPixels": 96,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "51743b5391755aa62f9b866a56534e662f2095037e94367505e1f51ca4298495"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "idle-down-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\idle\\down\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\idle\\down\\mask-01.png",
+      "changedPixels": 100,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "65a0e8e62551d29f575193929f726646f0f72c632f32f18699aa46debd824e94"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "idle-down-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\idle\\down\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\idle\\down\\mask-01.png",
+      "changedPixels": 192,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "37a228818635fe146926baa4d8d6329f0b81536c5392c44cb9e735df95414786"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "idle-down-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\idle\\down\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\idle\\down\\mask-02.png",
+      "changedPixels": 93,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "c4c14d802dbc5a280c069eebd35fe29b2db3f7a90d4758dee96896eefa377ece"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "idle-down-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\idle\\down\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\idle\\down\\mask-02.png",
+      "changedPixels": 104,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "7b44b355cc00d4b4ed0e42bf3e89d1e420da307c2f5c43656273ea86828b866f"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "idle-down-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\idle\\down\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\idle\\down\\mask-02.png",
+      "changedPixels": 194,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "535feecbb258b65744fc2bda869d9bfad2202f6778835d4965c40a8603d5e8ed"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "idle-down-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\idle\\down\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\idle\\down\\mask-03.png",
+      "changedPixels": 93,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "881555a03655cfa85f814dd9e1d4c63e4e1f1c3e88c98c48e9c4c2af4a039f90"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "idle-down-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\idle\\down\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\idle\\down\\mask-03.png",
+      "changedPixels": 112,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "da0e363bea9618669058902eb9ea1b8c99f43ca95fa7b53ef8f6ade7526082d8"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "idle-down-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\idle\\down\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\idle\\down\\mask-03.png",
+      "changedPixels": 202,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "35016ccb6c94333fa040cc4e0c0593e48a4f8c0b80d1e005e784b062c05e96c4"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "idle-side-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\idle\\side\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\idle\\side\\mask-00.png",
+      "changedPixels": 62,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "bcc41b845c3471d0b8a03beebc7d3bc361729e5890c8b084ead06fb5a6d0d863"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "idle-side-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\idle\\side\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\idle\\side\\mask-00.png",
+      "changedPixels": 77,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "6a931cb8d965680122b7e6ae11ff80d15853a856d246bdb9168cac732fc54258"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "idle-side-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\idle\\side\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\idle\\side\\mask-00.png",
+      "changedPixels": 135,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "049c0430391065bc58a36ef8834a0f317ed8c3e9ac7060da009d72e2d48dbab3"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "idle-side-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\idle\\side\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\idle\\side\\mask-01.png",
+      "changedPixels": 62,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "501cdbc43c84e35f6250a4f3fca68a960071109771b9bdaffce3803f7686cb9c"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "idle-side-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\idle\\side\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\idle\\side\\mask-01.png",
+      "changedPixels": 86,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "1cfc027d41425b6ea6559f3dbb864cbc7a4d5cfba3c644e9ddd2d876c2a4def6"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "idle-side-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\idle\\side\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\idle\\side\\mask-01.png",
+      "changedPixels": 144,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "36b41e25c5b55820c14ebaa82037a75def20cbc79af108b563cbdd31f5741f17"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "idle-side-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\idle\\side\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\idle\\side\\mask-02.png",
+      "changedPixels": 82,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "d7fcac7e9613dcfcbfe7e8383c68fe635a57ccfe0cabcbd65c6edf46cb5da7c5"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "idle-side-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\idle\\side\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\idle\\side\\mask-02.png",
+      "changedPixels": 89,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "29e5ae08e5b183ebb57880e885a140216c81e6f3f67bb2efcc0c8f24a8dc52ba"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "idle-side-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\idle\\side\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\idle\\side\\mask-02.png",
+      "changedPixels": 166,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "4137dde80b4ad3942aebad6a418e739a01ac293c6a44557b556092664946ca13"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "idle-side-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\idle\\side\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\idle\\side\\mask-03.png",
+      "changedPixels": 83,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "683a42f343ba86fbb9df46f34363119286998577a736e5657e04e811b60ef9ec"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "idle-side-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\idle\\side\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\idle\\side\\mask-03.png",
+      "changedPixels": 87,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "3f3e528515a02b49fcf9d969c792338c754a4df17b3ebc8e72ccfe3936e2cce3"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "idle-side-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\idle\\side\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\idle\\side\\mask-03.png",
+      "changedPixels": 165,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "0b744439850a8534c60360fb66fbe5d24c186c927bb965ce3ff8dcc30fa71ac9"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "idle-up-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\idle\\up\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\idle\\up\\mask-00.png",
+      "changedPixels": 128,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "9d1256db50c77b2af53729a9aacc27140f6e78bfc0a3dd157b9073e2b783d5f3"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "idle-up-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\idle\\up\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\idle\\up\\mask-00.png",
+      "changedPixels": 50,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "79ac9f27be1030e7b426058af916ce69632569e0614e6992168586509c0eb222"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "idle-up-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\idle\\up\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\idle\\up\\mask-00.png",
+      "changedPixels": 178,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "ec895ab0d858c2b3f5069db17dd9185d0e3c3230d4a9dc6d1ea0626048dad4e5"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "idle-up-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\idle\\up\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\idle\\up\\mask-01.png",
+      "changedPixels": 119,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "21df5fea84dae48e42f91c95c0be2f4f1eb6748b253967e2b244e24b6248678e"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "idle-up-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\idle\\up\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\idle\\up\\mask-01.png",
+      "changedPixels": 50,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "5aa5b841c8e9f07d396f0404a9692e549c085fd2105746a7a54ab750a61b0129"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "idle-up-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\idle\\up\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\idle\\up\\mask-01.png",
+      "changedPixels": 169,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "55e3da64a245ff703d636181bf4edd7179234c3cb5e8e908f69af249c6014a30"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "idle-up-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\idle\\up\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\idle\\up\\mask-02.png",
+      "changedPixels": 118,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "4d18d354c0d3a220fe488265d9d98079d18a5326a0e3f8983f875b4bb8b753ad"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "idle-up-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\idle\\up\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\idle\\up\\mask-02.png",
+      "changedPixels": 49,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "a614e2e35c5cd7e9675987c1f16a15624d55b54e7fd399dd9e50acd551f3d439"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "idle-up-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\idle\\up\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\idle\\up\\mask-02.png",
+      "changedPixels": 167,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "1d60e474f3484de71c2ec7db28c5b871cbea4a579f4976a67ca0dc2b45838d54"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "idle-up-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\idle\\up\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\idle\\up\\mask-03.png",
+      "changedPixels": 139,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "6ef8e2ee89bb08eb3e2c022b203405fd6a4a191af23d51e7f794367070bd3c5e"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "idle-up-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\idle\\up\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\idle\\up\\mask-03.png",
+      "changedPixels": 49,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "2b6851c4e94e4abd5d33f53121ff38c642e0091bab5e532739807e0910008785"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "idle-up-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\idle\\up\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\idle\\up\\mask-03.png",
+      "changedPixels": 188,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "079f79a9c4098d2adb7060231b57ba4843f52e3258508d5824d76642c83c7e6d"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "run-down-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\down\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\down\\mask-00.png",
+      "changedPixels": 96,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "6510bf1edf1a9746993b69e345c86ccacf8f105fb1b430756da611c47f4ab81a"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "run-down-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\down\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\down\\mask-00.png",
+      "changedPixels": 104,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "2b8ed5d151ace708719b55d5bc26c2dc7480c9624f8e44ed4faac56759246f95"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "run-down-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\down\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\down\\mask-00.png",
+      "changedPixels": 196,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "833890ef00552fbfd812da5dfdb9e4aa6d5e00fe0f5e57c702f3856f45c30533"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "run-down-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\down\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\down\\mask-01.png",
+      "changedPixels": 90,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "abeef10460e37ce7410d43e809dfa9766b2754a2adbb764e592623e61e7add3c"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "run-down-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\down\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\down\\mask-01.png",
+      "changedPixels": 102,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "4684672d9e2b726aca338bc1fafe0e7e5faafb736e461572e9f716825da37cfe"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "run-down-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\down\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\down\\mask-01.png",
+      "changedPixels": 185,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "63755802e4406787ce9ef96a1bfcb57dd2fb26c2ab2e9fcbcddc22654569494f"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "run-down-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\down\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\down\\mask-02.png",
+      "changedPixels": 94,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "f178ceda6ba52982e110bcb2d9519fc811c727e4f3835b41ec8e10eebeccce97"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "run-down-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\down\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\down\\mask-02.png",
+      "changedPixels": 90,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "c7d66eaf0774f0648cb0ef6c2e21a2811a352be0913fb218f41c9d097c21af2b"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "run-down-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\down\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\down\\mask-02.png",
+      "changedPixels": 177,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "75415502599a8c9040598f245da9b531ea291de4f9ecc0c4427d933e31473334"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "run-down-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\down\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\down\\mask-03.png",
+      "changedPixels": 96,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "5b59528d789671b57d426072fce21af601518fe433cb1a657d06b83312d7ddd0"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "run-down-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\down\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\down\\mask-03.png",
+      "changedPixels": 102,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "174d63cc7c145f8c6d711b95ae1f04b2fda13aada02de205d8f175e2f612d8f0"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "run-down-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\down\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\down\\mask-03.png",
+      "changedPixels": 194,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "4cbfe07e7b885b9767af2e8b112d42b5676877b6cfa4c374a32f75aa37bc7d28"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "run-down-04",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\down\\frame-04.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\down\\mask-04.png",
+      "changedPixels": 101,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "b33ee6ec7deb4d28e01d26599d80a90375d9da77f19d933490b62494838e62eb"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "run-down-04",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\down\\frame-04.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\down\\mask-04.png",
+      "changedPixels": 101,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "ca081c7a1384f09fb784f6b4f6ef725069e3641729f907bcb833c716e81c2190"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "run-down-04",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\down\\frame-04.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\down\\mask-04.png",
+      "changedPixels": 202,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "aa18aebabe118b678f9d0d75b2aee49a0afc50669bf69fe232511251222e1773"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "run-down-05",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\down\\frame-05.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\down\\mask-05.png",
+      "changedPixels": 102,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "452b66cd733d635e34e9945552d8eca123b34dc41d582370d4277c4862468c25"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "run-down-05",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\down\\frame-05.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\down\\mask-05.png",
+      "changedPixels": 86,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "d0215a8101eef5cd58252c591b786974ced5737e4e58af15f3f43b8a899bb1c9"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "run-down-05",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\down\\frame-05.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\down\\mask-05.png",
+      "changedPixels": 188,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "3e2fb90e02d354cc616385860275894d32c33f2970a5eefbd18b2295eb738202"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "run-side-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\side\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\side\\mask-00.png",
+      "changedPixels": 62,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "302b063bbcced6dd9eba0d3a493293b4d18398e15be1478f183a411502cddf90"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "run-side-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\side\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\side\\mask-00.png",
+      "changedPixels": 79,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "422f579789fa809fe8018a86b1c40390cda6147ab8b77dbcb83a4be34f273956"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "run-side-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\side\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\side\\mask-00.png",
+      "changedPixels": 137,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "0f70b67c90d1aa66d0f5f82fe73cbdc62f2a0e30e5115f48261520dd4b6bb25f"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "run-side-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\side\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\side\\mask-01.png",
+      "changedPixels": 58,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "58a43b54d6d89454b82421f19a98cad3f5918526c91299181641f53de2c9a3c1"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "run-side-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\side\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\side\\mask-01.png",
+      "changedPixels": 73,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "5f82299a9f6e4e1c5bee10a032a5ac89bd05ef0113883c0a80db11397f2d956c"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "run-side-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\side\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\side\\mask-01.png",
+      "changedPixels": 127,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "4a8e98a6848214562c6e57a361996cbf6eb240454d80d223f17bd55ff12815c9"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "run-side-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\side\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\side\\mask-02.png",
+      "changedPixels": 58,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "c8dc71817e21a43e410cbb4d4df5ae370d23a0130c6433c58933cbc2168ef5fb"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "run-side-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\side\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\side\\mask-02.png",
+      "changedPixels": 74,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "2500d1230b0db303c615f076b134988eab2a881f16457417c51957c7a19348df"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "run-side-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\side\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\side\\mask-02.png",
+      "changedPixels": 128,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "cc76b9b84e860844d4812b34f309ba6048cd62dadd32cdb43f12c44dd42e030a"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "run-side-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\side\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\side\\mask-03.png",
+      "changedPixels": 62,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "e249257f90399a55ef01ffce45789384a1040f13858d3d313ceabc6a2d8084d7"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "run-side-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\side\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\side\\mask-03.png",
+      "changedPixels": 83,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "2bcbdc577a40c7b1a4f0745bb32e42a8b59b46f9a2e12ee07b99e3b88cbf5896"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "run-side-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\side\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\side\\mask-03.png",
+      "changedPixels": 141,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "5b8c4710f013c07fa93201ad0cdaf1a2fee7a5b3aa399403a32d2bf8038eb563"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "run-side-04",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\side\\frame-04.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\side\\mask-04.png",
+      "changedPixels": 82,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "35fec622e25b58b2b15f2d9a9fe487f4ca1ff08db25167e84660737d13440033"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "run-side-04",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\side\\frame-04.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\side\\mask-04.png",
+      "changedPixels": 86,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "9401214fd327955b4152cdf40495f7e4010e0b27f362212cc2ebc96018e4ace2"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "run-side-04",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\side\\frame-04.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\side\\mask-04.png",
+      "changedPixels": 163,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "021077303a1a6c1aafa6a9aeb290e911656c944c5582d42b4df81e019522ec87"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "run-side-05",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\side\\frame-05.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\side\\mask-05.png",
+      "changedPixels": 82,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "5ceeffcda40e7a1834b7012f0a0103b539079295cf12d2258ccd88c7661545bf"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "run-side-05",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\side\\frame-05.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\side\\mask-05.png",
+      "changedPixels": 89,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "7413204cfa2a9b4374ff00da25a6076f7d4cc42532ca028d510d3690a9223d8f"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "run-side-05",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\side\\frame-05.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\side\\mask-05.png",
+      "changedPixels": 166,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "000a6ad10b1ab35e38dd50e2d238ce8a0f647152b61dabb9ffc0ee0f3b07d06b"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "run-up-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\up\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\up\\mask-00.png",
+      "changedPixels": 128,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "2e537675260a4c61548c29fa5aa060239c9f3706ea651694b764f1539e4803e9"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "run-up-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\up\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\up\\mask-00.png",
+      "changedPixels": 50,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "8884b621f9fbb757e16ee94fa74891b63b80789ac17bd0cd32861e6dd947da03"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "run-up-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\up\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\up\\mask-00.png",
+      "changedPixels": 178,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "25f406e95b90bd4f56eeb98c97ea9c23ee6e0b8c686b3340f63ca6fdebd9832c"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "run-up-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\up\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\up\\mask-01.png",
+      "changedPixels": 103,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "1fa58fdac505c78fb08738a204daffe30dc3240c29ae20debb73230437371c4c"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "run-up-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\up\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\up\\mask-01.png",
+      "changedPixels": 50,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "1e0f5eaf3aeff74a716df42f982c13df28c9e780fc1748c4780cd41eedd04043"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "run-up-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\up\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\up\\mask-01.png",
+      "changedPixels": 153,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "a2feb13d2bef526d81ab87171fe6d93ef7f9104b68035ca5ef0ccc83489e0c72"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "run-up-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\up\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\up\\mask-02.png",
+      "changedPixels": 109,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "39b7506d2f01176e3fb7ac7d2c42d3cd907d241fe836fe346e65d4f1c216e0cf"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "run-up-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\up\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\up\\mask-02.png",
+      "changedPixels": 46,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "64640d57dc936ddadd5d1aca31702e6221f7191065e93cc5649f3653934ac7de"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "run-up-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\up\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\up\\mask-02.png",
+      "changedPixels": 155,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "250b637f1a8f6270277326cc5afa7e2d903c629235fc9f36527b8012f78058c8"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "run-up-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\up\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\up\\mask-03.png",
+      "changedPixels": 128,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "31b350d087d8918b0ee4c09fb5f44cbdd677c3ef251771132f5d15b9bcd999f5"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "run-up-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\up\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\up\\mask-03.png",
+      "changedPixels": 50,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "9d8bc615fd3062ea61d90319393c8df57f13c04d52d2d090b009b755647a6779"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "run-up-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\up\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\up\\mask-03.png",
+      "changedPixels": 178,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "5cf6a9d252bf66105f22b0853f987ac46930f8504ecbd517eabd7b08dee0c1a4"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "run-up-04",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\up\\frame-04.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\up\\mask-04.png",
+      "changedPixels": 133,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "2b3ad2794fb90990197aa5a051d51edea5e8549015e529a62be203c9a0f195a0"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "run-up-04",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\up\\frame-04.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\up\\mask-04.png",
+      "changedPixels": 48,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "8310ad37fdfc9a870b83a28a4a23d1536f9bdae5ef8652f57f34aec44b44445b"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "run-up-04",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\up\\frame-04.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\up\\mask-04.png",
+      "changedPixels": 181,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "795e76ba35a3da8ef91b02e335e933ad8ed1fd1672d6abfa52364b342d28fc76"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "run-up-05",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\up\\frame-05.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\run\\up\\mask-05.png",
+      "changedPixels": 152,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "9df2cba27fbf64fdf168d0d23ca24ff568e4ab614370cda6bcb69cc22d48f470"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "run-up-05",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\up\\frame-05.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\run\\up\\mask-05.png",
+      "changedPixels": 52,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "d5fb57de5fb41543d5d52e9ff53ce9da6a20aa51f262885d30e4ee42f21a4420"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "run-up-05",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\up\\frame-05.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\run\\up\\mask-05.png",
+      "changedPixels": 204,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "7b5bde39d94ac228f0bfdef2c7e194a74957759135f373c578aba2ba82568df6"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "attack-down-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\attack\\down\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\attack\\down\\mask-00.png",
+      "changedPixels": 88,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "68bacf9719da9bfd483a8bbaaed657e0bb0440b24540800ecb89d4315bf6d52f"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "attack-down-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\attack\\down\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\attack\\down\\mask-00.png",
+      "changedPixels": 104,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "acee8b6a2d866e0312306fd0e679aa2189b44bc9f6a6c8f33925a0ee63ac6f8c"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "attack-down-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\attack\\down\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\attack\\down\\mask-00.png",
+      "changedPixels": 188,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "1c918628cc0fcf12cde3a46e7d21e52ab2f1bcd2d95633f60093b0984cc52d4b"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "attack-down-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\attack\\down\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\attack\\down\\mask-01.png",
+      "changedPixels": 90,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "76ebd72894153e8094f796eef63a786a1cb4a7a96792cf761cc68acb08f7daa4"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "attack-down-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\attack\\down\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\attack\\down\\mask-01.png",
+      "changedPixels": 121,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "2c0de08aff461c88d99a532ad81639e9032f6d94d23734679eceda90f56595b3"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "attack-down-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\attack\\down\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\attack\\down\\mask-01.png",
+      "changedPixels": 211,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "c945cd79e7d368b3552930fb20aa3cda169f0bf04b471a0c5ff45cb5dc13d3c5"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "attack-down-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\attack\\down\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\attack\\down\\mask-02.png",
+      "changedPixels": 90,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "ca57762947d132ddacc3904e4a495dc17ebe92e1918ed2c08a1b9c5ad390c936"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "attack-down-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\attack\\down\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\attack\\down\\mask-02.png",
+      "changedPixels": 221,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "17b8215c6b8e0e4d70538d6583f421e187c6c906e55efa8de4a1f00b6d04870b"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "attack-down-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\attack\\down\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\attack\\down\\mask-02.png",
+      "changedPixels": 311,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "54e3ae10e9ae49040d5dbd54b04c37ddb4733c6dd156f9f70ad58f2f0220504b"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "attack-down-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\attack\\down\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\attack\\down\\mask-03.png",
+      "changedPixels": 91,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "7d4cf4c37ed59beee8f6e1e46d009608c1d390d78877a1746889451f77acdc48"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "attack-down-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\attack\\down\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\attack\\down\\mask-03.png",
+      "changedPixels": 104,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "711083fcc6ff6c9b106407a97a5ff8deba984f9f50c017b3e57f424ecab03688"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "attack-down-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\attack\\down\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\attack\\down\\mask-03.png",
+      "changedPixels": 195,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "479ae4fd946d9dac1aeb6e4809d2529c7337465c10038f66919c5b5ec8020b82"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "attack-side-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\attack\\side\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\attack\\side\\mask-00.png",
+      "changedPixels": 62,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "bcc41b845c3471d0b8a03beebc7d3bc361729e5890c8b084ead06fb5a6d0d863"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "attack-side-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\attack\\side\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\attack\\side\\mask-00.png",
+      "changedPixels": 77,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "6a931cb8d965680122b7e6ae11ff80d15853a856d246bdb9168cac732fc54258"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "attack-side-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\attack\\side\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\attack\\side\\mask-00.png",
+      "changedPixels": 135,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "049c0430391065bc58a36ef8834a0f317ed8c3e9ac7060da009d72e2d48dbab3"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "attack-side-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\attack\\side\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\attack\\side\\mask-01.png",
+      "changedPixels": 84,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "9f8472eb00060352eafd2b07de69cc048a8a4d1aff7088d4d3626a049f1c7fec"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "attack-side-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\attack\\side\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\attack\\side\\mask-01.png",
+      "changedPixels": 118,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "f808ae75f1e0ecd32870fd1218b7865a53e5c86bd01efa6a97c3a72d69be4b8b"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "attack-side-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\attack\\side\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\attack\\side\\mask-01.png",
+      "changedPixels": 202,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "7d103f2f16ef41746142ddfad1b0f041f69bc19adc9a5cafce0eb9da626e9d37"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "attack-side-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\attack\\side\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\attack\\side\\mask-02.png",
+      "changedPixels": 66,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "c6afe137a6bce04accd86669e2b87619363d0baff4f8d662c2c0eb2b5691b189"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "attack-side-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\attack\\side\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\attack\\side\\mask-02.png",
+      "changedPixels": 185,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "fc4624cfe4328e0fd53cc5e571b4dfd92683746a8a0d7812857428a9de3c4ffb"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "attack-side-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\attack\\side\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\attack\\side\\mask-02.png",
+      "changedPixels": 246,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "d934462227e14e1ac036d8e842d8a4852b58f25e548f3e491d3e9d03710e42c3"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "attack-side-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\attack\\side\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\attack\\side\\mask-03.png",
+      "changedPixels": 54,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "6a1dfa297f9f101254de85acdcbf1ab835cfbc22de32b6fa650608613a5c68ab"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "attack-side-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\attack\\side\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\attack\\side\\mask-03.png",
+      "changedPixels": 191,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "c845c450d559d355340c91fe0068dbe05a64e410e81f89352dca6e8eb76c09c3"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "attack-side-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\attack\\side\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\attack\\side\\mask-03.png",
+      "changedPixels": 213,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "c3513fbc0b47476439c469ba5efb1a408610118ecc0f2c9fcba7bb4cff831a76"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "attack-up-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\attack\\up\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\attack\\up\\mask-00.png",
+      "changedPixels": 128,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "9d1256db50c77b2af53729a9aacc27140f6e78bfc0a3dd157b9073e2b783d5f3"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "attack-up-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\attack\\up\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\attack\\up\\mask-00.png",
+      "changedPixels": 50,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "79ac9f27be1030e7b426058af916ce69632569e0614e6992168586509c0eb222"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "attack-up-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\attack\\up\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\attack\\up\\mask-00.png",
+      "changedPixels": 178,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "ec895ab0d858c2b3f5069db17dd9185d0e3c3230d4a9dc6d1ea0626048dad4e5"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "attack-up-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\attack\\up\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\attack\\up\\mask-01.png",
+      "changedPixels": 120,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "6b536d27e4e1dcff3dd7a669cfc534dedfc0a4ceed4cdd216ca38e75ad25eb56"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "attack-up-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\attack\\up\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\attack\\up\\mask-01.png",
+      "changedPixels": 137,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "6a0db0dc5bd26d59c48345082b9ec4b0d59b02958a383a45ddb943a8afdc3d42"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "attack-up-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\attack\\up\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\attack\\up\\mask-01.png",
+      "changedPixels": 257,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "53db52fd82eead2031ab282fbcffcb299f1e71097500d1cfca8e1651ee62e4c3"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "attack-up-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\attack\\up\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\attack\\up\\mask-02.png",
+      "changedPixels": 120,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "ad0619c3ee560e3f0d310582f75b0528eecf4ea416ae0d00e88cb77213877e75"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "attack-up-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\attack\\up\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\attack\\up\\mask-02.png",
+      "changedPixels": 63,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "af6e9b0f0fddb1779fa7043d1c13bb8b188830a7b03b14f969900e8e352a69a4"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "attack-up-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\attack\\up\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\attack\\up\\mask-02.png",
+      "changedPixels": 183,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "b4e3a0d8bf753003e32ada1147391917566f25f4c3e0f6a7c030324f540afb8f"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "attack-up-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\attack\\up\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\attack\\up\\mask-03.png",
+      "changedPixels": 128,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "a1a3c98c5948d6c6dd85d06807227d3e11484b60a42986d4c7bc0c8ff9bfa519"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "attack-up-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\attack\\up\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\attack\\up\\mask-03.png",
+      "changedPixels": 165,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "c06227a8ddcb74c127f9f7a6b7d257c50e8f8e81044ab80fec4240fb401777c8"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "attack-up-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\attack\\up\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\attack\\up\\mask-03.png",
+      "changedPixels": 293,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "01ab21097b1a3bccdce639a6111766ab0b44a891da2e3f70b91a39637eac3e80"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "death-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\death\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\death\\mask-00.png",
+      "changedPixels": 71,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "208abbf2b07f4eb374d76eafa7cc232f51888ffcbc9b14ff91cec0e45a02fb07"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "death-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\death\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\death\\mask-00.png",
+      "changedPixels": 83,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "b1a926070e861d7df3e12f5f23efee4e57b0d4bc9c12604b90490d098db12d74"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "death-00",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\death\\frame-00.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\death\\mask-00.png",
+      "changedPixels": 137,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "6368271f18d439ba13eb5ac3b08ad14f7ec90fb45c019ffd611a769d7a1549f3"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "death-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\death\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\death\\mask-01.png",
+      "changedPixels": 91,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "f54f6e6501d01ba29925d69ccc3b862e11d413fe0c36a8b636c87dbc8fc32e4a"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "death-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\death\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\death\\mask-01.png",
+      "changedPixels": 162,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "82ce6125d5a7b10a88f0d0ab9b19579e6649faba65f2bc59f00f152f9914ca34"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "death-01",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\death\\frame-01.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\death\\mask-01.png",
+      "changedPixels": 235,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "2e2b8157de857489c6a317da3391e9a739749470fb74fdcfa76f2f5a70c36741"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "death-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\death\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\death\\mask-02.png",
+      "changedPixels": 104,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "e925ca0356618b7e0a470fe0fe0e081653014b00bae390cf3bc473ce340ceeb4"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "death-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\death\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\death\\mask-02.png",
+      "changedPixels": 132,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "22dc29c953269e0137242b0820a4f049b21543ccce777c2b4ed628f027977393"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "death-02",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\death\\frame-02.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\death\\mask-02.png",
+      "changedPixels": 228,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "62360780932d9ee5d8456fc78469e52cb63d949a3faf97bcdd931af1d0502d5d"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "death-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\death\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\death\\mask-03.png",
+      "changedPixels": 145,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "0df3f436000e510fda9d8bac0749b0d468cf792c694388377d3fb0ae495ecf2e"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "death-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\death\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\death\\mask-03.png",
+      "changedPixels": 122,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "a7a5e64bf2106b39c0345e28b379f71dc7532097f0e9afe4d5fb4c89d9953706"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "death-03",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\death\\frame-03.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\death\\mask-03.png",
+      "changedPixels": 259,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "b10289f462877ebf1fdf443997f3b99a98d5bfc59943b9faea36cb1435a6e2f9"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "death-04",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\death\\frame-04.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\death\\mask-04.png",
+      "changedPixels": 80,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "74d30e9a410a2290d94c616cf9d8d308d06db690c2ac4d88f9c6428a6dd7f3a6"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "death-04",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\death\\frame-04.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\death\\mask-04.png",
+      "changedPixels": 133,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "5e169e6f2ac161fbfed8cecadf395b9dedbaee42d69c364431abf343bb47ff20"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "death-04",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\death\\frame-04.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\death\\mask-04.png",
+      "changedPixels": 208,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "8aae6e658b3e0e20cf7dd7fd5029f32d3b679bff13489bd4c5cff760edd2794e"
+    },
+    {
+      "appearance": "sword-only",
+      "id": "death-05",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\death\\frame-05.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\sword-only\\death\\mask-05.png",
+      "changedPixels": 54,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "f9eed63130dbb305a2138ec0fe201e5c56b91572ca91219176747d0b73a8535f"
+    },
+    {
+      "appearance": "shield-only",
+      "id": "death-05",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\death\\frame-05.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\shield-only\\death\\mask-05.png",
+      "changedPixels": 133,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "1f185b0271618a3281dc36019dd93fb853347ec0a03c47fa40abc6795a568db4"
+    },
+    {
+      "appearance": "unarmed",
+      "id": "death-05",
+      "file": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\death\\frame-05.png",
+      "mask": "rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v6\\unarmed\\death\\mask-05.png",
+      "changedPixels": 182,
+      "protectedPixelChanges": 0,
+      "partialAlphaPixels": 0,
+      "pixelHash": "10cd8d8d1137f6b451ad8e31455d0e0b34c81270ef45db8949d87d04c8cae2f9"
+    }
+  ]
+}

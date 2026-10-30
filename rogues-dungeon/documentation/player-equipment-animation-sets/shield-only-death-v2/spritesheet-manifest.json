@@ -1,0 +1,237 @@
+{
+  "schemaVersion": 1,
+  "entity": {
+    "id": "hero-warrior-death",
+    "kind": "character"
+  },
+  "mode": "animated",
+  "operation": "modify",
+  "cellSize": [
+    48,
+    48
+  ],
+  "anchor": [
+    24,
+    48
+  ],
+  "style": {
+    "name": "Dungeons-and-Pixels Hero Warrior",
+    "pixelArt": true
+  },
+  "background": "transparent",
+  "sheets": [
+    {
+      "id": "sheet-000",
+      "group": "death",
+      "file": "inherited/sheet-000.png",
+      "size": [
+        288,
+        48
+      ],
+      "columns": 6,
+      "rows": 1,
+      "margin": 0,
+      "spacing": 0,
+      "unusedSlots": [],
+      "sha256": "3d9f04c9affef9a7f4efe4ea8ba628e7a4a3f424ecc0d541c4a9d4a35378d76c",
+      "archivedSlots": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          0
+        ],
+        [
+          4,
+          0
+        ],
+        [
+          5,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "sheet-001",
+      "group": "death",
+      "file": "sheet-001.png",
+      "size": [
+        288,
+        48
+      ],
+      "columns": 6,
+      "rows": 1,
+      "margin": 0,
+      "spacing": 0,
+      "unusedSlots": [],
+      "sha256": "d50dc9a2e9d5f9e606944e488c325c73e930b56fc3c622c44605a3b91b588133"
+    }
+  ],
+  "frames": [
+    {
+      "id": "death-00",
+      "sheet": "sheet-001",
+      "rect": [
+        0,
+        0,
+        48,
+        48
+      ],
+      "pixelHash": "148dd48daf0afa872888b7a953af39fc604c1b81d8b090133dcf1d5a7d323a0b",
+      "direction": "none"
+    },
+    {
+      "id": "death-01",
+      "sheet": "sheet-001",
+      "rect": [
+        48,
+        0,
+        48,
+        48
+      ],
+      "pixelHash": "e926b1c5614e1f060c786e0c78523ec96fa1dd2865b5bc69e511569392b78e11",
+      "direction": "none"
+    },
+    {
+      "id": "death-02",
+      "sheet": "sheet-001",
+      "rect": [
+        96,
+        0,
+        48,
+        48
+      ],
+      "pixelHash": "44362a9e4daa93beed8fb2f13d7192174fde81c3f3ba652b1ac4c4b1781df4b9",
+      "direction": "none"
+    },
+    {
+      "id": "death-03",
+      "sheet": "sheet-001",
+      "rect": [
+        144,
+        0,
+        48,
+        48
+      ],
+      "pixelHash": "9483c495666d7a0a1017fc9786c66dc5d5322d6dfd2381afa290c24aa7ad09e7",
+      "direction": "none"
+    },
+    {
+      "id": "death-04",
+      "sheet": "sheet-001",
+      "rect": [
+        192,
+        0,
+        48,
+        48
+      ],
+      "pixelHash": "2510f20f57ebe084e9e3f129debcf80e2da6943bbf0050fc3816a6c1e9e67c96",
+      "direction": "none"
+    },
+    {
+      "id": "death-05",
+      "sheet": "sheet-001",
+      "rect": [
+        240,
+        0,
+        48,
+        48
+      ],
+      "pixelHash": "7a16e9415220dc1e0eb2559eb5d230beb1603c131dee31b5269c85d1d5022045",
+      "direction": "none"
+    }
+  ],
+  "poses": [],
+  "sources": [
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\baseline-death-v1\\spritesheet-manifest.json",
+      "sha256": "2e927e95d99d78b65a19787f7c66f7890c780945c2a77691b8e002fc786571c4",
+      "role": "parent"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v5\\shield-only\\death\\frame-00.png",
+      "sha256": "d995e80b5e082541bb9e74e3027e5b9c8b75251d16c76f66485d8bfb9f70c4fa",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v5\\shield-only\\death\\frame-01.png",
+      "sha256": "763ea9e0d3b9935a9bab389d6ca640506b7f7aa216d712f45aa2237f71e3a892",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v5\\shield-only\\death\\frame-02.png",
+      "sha256": "c7fcb15961def6ecea8c60f68c4691d0c3f22fccaf8106bb14f0a93d5f666f32",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v5\\shield-only\\death\\frame-03.png",
+      "sha256": "abb6033eab4868171aac1a336c56e6fa28e405aa3038a6a606d8291753452a75",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v5\\shield-only\\death\\frame-04.png",
+      "sha256": "b85663d37c452934d283608fee69e41ab227719dcac1acea27cdbb4cbf4c574a",
+      "role": "art"
+    },
+    {
+      "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\authored-frames-v5\\shield-only\\death\\frame-05.png",
+      "sha256": "4bbce85d92d0087222b44ad58f2e267ac886d9994ed0719e9a69f169aa5c2799",
+      "role": "art"
+    }
+  ],
+  "provenance": {
+    "artSource": "existing-with-user-authorized-manual-pixel-repairs",
+    "identityReference": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\public\\assets\\art\\game-view\\characters\\hero-warrior\\frames\\idle\\side\\00.png",
+    "notes": "Two imagegen shield-removal trials were retained as references and rejected for haze. User explicitly authorized targeted pixel repairs on 2026-10-29. Original palette, binary alpha, protected original pixels and coordinates retained. See manual-pixel-repair-validation.json and per-frame masks."
+  },
+  "changedFrameIds": [
+    "death-00",
+    "death-01",
+    "death-02",
+    "death-03",
+    "death-04",
+    "death-05"
+  ],
+  "retainedFrameIds": [],
+  "preservation": {
+    "frames": {},
+    "sequences": []
+  },
+  "sequences": [
+    {
+      "id": "death",
+      "frames": [
+        "death-00",
+        "death-01",
+        "death-02",
+        "death-03",
+        "death-04",
+        "death-05"
+      ],
+      "durationsMs": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "loop": false,
+      "direction": "none"
+    }
+  ],
+  "parent": {
+    "path": "D:\\Documents\\Projects\\VC\\Babylon\\babylon-lite-dungeon-crawl\\rogues-dungeon\\documentation\\player-equipment-animation-sets\\baseline-death-v1\\spritesheet-manifest.json",
+    "sha256": "2e927e95d99d78b65a19787f7c66f7890c780945c2a77691b8e002fc786571c4"
+  }
+}
