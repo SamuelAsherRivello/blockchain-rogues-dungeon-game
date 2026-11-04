@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createCampaign, worldDroppableItemInstance, applyAction, createResourcesModel } from '../src/systems/procedural/world-procedural-system.ts';
 import type { Enemy } from '../src/game/types.ts';
+import { formatLogEvent } from '../src/game/log-policy.ts';
 
 test('Throwing Knife is a separate stack of three and hits the nearest eligible enemy', () => {
   const state = createCampaign(221); const {x,y} = state.player;
@@ -11,6 +12,9 @@ test('Throwing Knife is a separate stack of three and hits the nearest eligible 
   state.player.inventory = [dagger];
   let result = applyAction(state, {type:'assign-quick-slot', itemId:dagger.id, index:0}, {enemyLogicDisabled:true});
   assert.equal(result.state.player.quickSlots?.[0]?.quantity, 3);
+  result.state.floor.entities = [];
+  const rejected = applyAction(result.state, {type:'use-quick-slot', index:0}, {enemyLogicDisabled:true});
+  assert.equal(formatLogEvent(rejected.events.find(event => event.type === 'quick-slot.use.rejected')!), 'Throwing Knife disabled. Enemy out of range.');
   const enemy = (id:string, x:number): Enemy => ({id, kind:'enemy', name:id, x, y, hp:20, maxHp:20, damage:0, xp:0, resources:createResourcesModel({health:{current:20,currentMax:20}}), awareness:0, actionCooldown:99, nextActionAt:999, ai:{state:'idle',targetId:null}});
   result.state.floor.entities = [enemy('far', x+4), enemy('near', x+2)];
   result = applyAction(result.state, {type:'use-quick-slot', index:0}, {enemyLogicDisabled:true});

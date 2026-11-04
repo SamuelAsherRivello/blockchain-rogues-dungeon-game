@@ -30,6 +30,7 @@ export function Dialog({ title, onClose, children, headerTitle, headerActions = 
   useEffect(() => {
     if (!dismissible) return undefined;
     const keydown = (event: KeyboardEvent) => {
+      if (event.ctrlKey) return;
       if (event.key === "Escape") { event.preventDefault(); requestClose(); return; }
     };
     document.addEventListener("keydown", keydown);

@@ -5,9 +5,9 @@ const LOG_RULES: Readonly<Partial<Record<string, (facts: EventFacts) => string>>
   "item.drop.rejected": (facts) => `You cannot drop ${facts.name ?? "that item"}.`,
   "potion.consumed": (facts) => `You restore ${facts.resource === "health" ? "Health" : facts.resource === "stamina" ? "Stamina" : "Mana"}.`,
   "quick-slot.use.rejected": (facts) => facts.reason === "bomb-out-of-range"
-    ? "Bomb range too far."
+    ? "Bomb disabled. Enemy out of range."
     : facts.reason === "no-valid-target"
-    ? `${facts.item ?? "That item"} needs an enemy in a clear row or column${facts.amount ? ` within ${facts.amount} tiles` : ""}.`
+    ? facts.item === "Bomb" || facts.item === "Throwing Knife" ? `${facts.item} disabled. Enemy out of range.` : `${facts.item ?? "That item"} needs an enemy in a clear row or column${facts.amount ? ` within ${facts.amount} tiles` : ""}.`
     : facts.reason === "resource-full" && facts.resource
       ? `${facts.item ?? "Potion"} cannot be used while ${facts.resource === "health" ? "Health" : facts.resource === "stamina" ? "Stamina" : "Mana"} is full.`
       : `${facts.item ?? "That item"} cannot be used.`,

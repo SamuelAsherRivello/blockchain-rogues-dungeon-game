@@ -17,6 +17,7 @@ export function DeathRecapWindow({ campaign, lines, center, onAction }: { campai
   const [selected, setSelected] = useState(0);
   useEffect(() => {
     const keydown = (event: KeyboardEvent) => {
+      if (event.ctrlKey) return;
       if (event.key === "ArrowUp" || event.key === "ArrowLeft") { event.preventDefault(); setSelected((value) => (value + actions.length - 1) % actions.length); }
       else if (event.key === "ArrowDown" || event.key === "ArrowRight") { event.preventDefault(); setSelected((value) => (value + 1) % actions.length); }
       else if (event.key === "Enter") { event.preventDefault(); onAction(actions[selected]!.id); }

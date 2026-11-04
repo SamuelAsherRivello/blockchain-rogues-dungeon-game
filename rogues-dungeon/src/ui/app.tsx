@@ -71,7 +71,7 @@ export function App({ content = null, gutters = {} }: { content?: ReactNode; gut
     });
     observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["tabindex", "href", "contenteditable"] });
     const preventTabNavigation = (event: KeyboardEvent) => {
-      if (event.key !== "Tab") return;
+      if (event.ctrlKey || event.key !== "Tab") return;
       // A pointer activation can leave a control focused even when it is not
       // in the tab order. Clear that focus as well so Tab never leaves a
       // visible focus state behind on a clicked game control.

@@ -20,7 +20,7 @@ test('bomb is collected, assigned, thrown and damages only the cross at impact',
   assert.equal(rejected.state.player.quickSlots?.[0]?.quantity, 3);
   const rejection = rejected.events.find(event => event.type === 'quick-slot.use.rejected');
   assert.equal(rejection?.facts.reason, 'no-valid-target');
-  assert.match(formatLogEvent(rejection!)!, /^Bomb needs an enemy in a clear row or column within \d+ tiles\.$/);
+  assert.equal(formatLogEvent(rejection!), 'Bomb disabled. Enemy out of range.');
   const enemy = (id: string, ex: number, ey: number): Enemy => ({ id, kind: 'enemy', name: id, x: ex, y: ey, hp: 20, maxHp: 20, damage: 0, xp: 0, resources: createResourcesModel({ health: { current: 20, currentMax: 20 }, xp: { current: 0, currentMax: 0 } }), awareness: 0, actionCooldown: 99, nextActionAt: 999, ai: { state: 'idle', targetId: null } });
   result.state.floor.entities = [enemy('target', x + 3, y), enemy('adjacent', x + 3, y + 1), enemy('diagonal', x + 4, y + 1)];
   result = applyAction(result.state, { type: 'use-quick-slot', index: 0 }, { enemyLogicDisabled: true });
@@ -64,7 +64,7 @@ test('bomb throw range grows with Strength and rejects distant enemies', () => {
   const distant = applyAction(state, { type: 'use-quick-slot', index: 0 }, { enemyLogicDisabled: true });
   assert.equal(distant.accepted, false);
   assert.equal(distant.events.find(event => event.type === 'quick-slot.use.rejected')?.facts.amount, 2);
-  assert.equal(formatLogEvent(distant.events.find(event => event.type === 'quick-slot.use.rejected')!), 'Bomb range too far.');
+  assert.equal(formatLogEvent(distant.events.find(event => event.type === 'quick-slot.use.rejected')!), 'Bomb disabled. Enemy out of range.');
   state.progression.attributes.strength = 3;
   const inRange = applyAction(state, { type: 'use-quick-slot', index: 0 }, { enemyLogicDisabled: true });
   assert.equal(inRange.accepted, true);

@@ -276,7 +276,7 @@ function StatusControls({ campaign, performanceActive, onTogglePerformance, canO
   };
   useEffect(() => {
     const normalize = (event: KeyboardEvent) => String(event.key ?? "").toUpperCase();
-    const down = (event: KeyboardEvent) => { const key = normalize(event); if (!feedbackKeys.has(key) || !keyAvailable(key)) return; if (key === "Z" && !event.repeat) { event.preventDefault(); setExpanded(!expanded); onPanelToggle(!expanded); } if (key === "C" && !event.repeat) { event.preventDefault(); onTogglePanels(); } if (expanded || trayRetained || key === "Z") setPressedKeys((current) => current.has(key) ? current : new Set(current).add(key)); };
+    const down = (event: KeyboardEvent) => { if (event.ctrlKey) { setPressedKeys(new Set()); return; } const key = normalize(event); if (!feedbackKeys.has(key) || !keyAvailable(key)) return; if (key === "Z" && !event.repeat) { event.preventDefault(); setExpanded(!expanded); onPanelToggle(!expanded); } if (key === "C" && !event.repeat) { event.preventDefault(); onTogglePanels(); } if (expanded || trayRetained || key === "Z") setPressedKeys((current) => current.has(key) ? current : new Set(current).add(key)); };
     const up = (event: KeyboardEvent) => { const key = normalize(event); if (!feedbackKeys.has(key)) return; setPressedKeys((current) => { if (!current.has(key)) return current; const next = new Set(current); next.delete(key); return next; }); };
     const clear = () => setPressedKeys(current => current.size ? new Set() : current);
     // Record feedback before an action can update the campaign and replace these listeners.
@@ -407,7 +407,7 @@ export function Game() {
   useEffect(() => { audio.setGameMode(currentGameMode); }, [audio, currentGameMode]);
   useEffect(() => () => audio.dispose(), [audio]);
   useEffect(() => { void audio.prewarm(); }, [audio]);
-  useEffect(() => { const startMusic = () => audio.startMusic(); window.addEventListener("pointerdown", startMusic); window.addEventListener("keydown", startMusic); return () => { window.removeEventListener("pointerdown", startMusic); window.removeEventListener("keydown", startMusic); }; }, [audio]);
+  useEffect(() => { const startMusic = (event: Event) => { if (event instanceof KeyboardEvent && event.ctrlKey) return; audio.startMusic(); }; window.addEventListener("pointerdown", startMusic); window.addEventListener("keydown", startMusic); return () => { window.removeEventListener("pointerdown", startMusic); window.removeEventListener("keydown", startMusic); }; }, [audio]);
   const [fullscreenActual, setFullscreenActual] = useState(() => Boolean(document.fullscreenElement));
   const fullscreenStateRef = useRef(Boolean(document.fullscreenElement));
   const performanceSession = useRef(new PerformanceSession());
@@ -705,7 +705,7 @@ export function Game() {
   }, [audio, campaign, overworldPreview, returnToMainMenu, slot, urlOptions.hasCompleteRunIdentity]);
   useEffect(() => {
     const saveAndQuitWithEscape = (event: KeyboardEvent) => {
-      if (event.key !== "Escape" || event.repeat || settings || !campaign || !slot || event.defaultPrevented || pointerDragRef.current) return;
+      if (event.ctrlKey || event.key !== "Escape" || event.repeat || settings || !campaign || !slot || event.defaultPrevented || pointerDragRef.current) return;
       event.preventDefault();
       saveAndQuit();
     };
@@ -962,7 +962,7 @@ export function Game() {
       }
       cancelPointerDrag();
     };
-    const pointerCancel = () => cancelPointerDrag(); const cancel = (event: KeyboardEvent) => { if (event.key === "Escape" && pointerDragRef.current) { event.preventDefault(); cancelPointerDrag(); } };
+    const pointerCancel = () => cancelPointerDrag(); const cancel = (event: KeyboardEvent) => { if (!event.ctrlKey && event.key === "Escape" && pointerDragRef.current) { event.preventDefault(); cancelPointerDrag(); } };
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", finish); window.addEventListener("pointercancel", pointerCancel); window.addEventListener("keydown", cancel);
     return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", finish); window.removeEventListener("pointercancel", pointerCancel); window.removeEventListener("keydown", cancel); };
   }, [audio, campaign, cancelPointerDrag, closeLockbox, commitStorageTransfer, dispatch, shineSlot, shineSlots, storageTransfer]);
@@ -971,6 +971,12 @@ export function Game() {
     const clearHeldInput = () => { clickedDestination.current = null; heldMovements.current.clear(); heldShift.current.clear(); syncMovement(); };
     const blur = () => { physicalMovementKeys.current.clear(); clearHeldInput(); };
     const down = (event: KeyboardEvent) => {
+      if (event.ctrlKey) {
+        for (const key of heldMovements.current.keys()) if (key !== "gamepad") heldMovements.current.delete(key);
+        heldShift.current.clear();
+        syncMovement(false);
+        return;
+      }
       const movement = getMovementKey(event);
       const alreadyHeld = movement ? physicalMovementKeys.current.has(movement.code) : false;
       if (movement) physicalMovementKeys.current.add(movement.code);
@@ -1331,7 +1337,7 @@ export function Game() {
     const view = document.querySelector(".world-view-region");
     const observer = view ? new ResizeObserver(sync) : null;
     observer?.observe(view!);
-    const keydown = (event: KeyboardEvent) => { if (event.key.toLowerCase() === "c") requestAnimationFrame(sync); };
+    const keydown = (event: KeyboardEvent) => { if (!event.ctrlKey && event.key.toLowerCase() === "c") requestAnimationFrame(sync); };
     window.addEventListener("resize", sync); document.addEventListener("fullscreenchange", sync); window.addEventListener("keydown", keydown);
     sync();
     return () => { observer?.disconnect(); window.removeEventListener("resize", sync); document.removeEventListener("fullscreenchange", sync); window.removeEventListener("keydown", keydown); };

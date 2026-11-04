@@ -7,7 +7,7 @@ import { InventoryRows } from "../controls/inventory-rows.tsx";
 export function LockboxWindow({ boxId, items, center, drag, onClose, onCancelDrag }: { boxId: string; items: Item[]; center: DialogCenter | null; drag: DragPresentation | null; onClose(): void; onCancelDrag(): void }) {
   useEffect(() => {
     const escape = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
+      if (event.ctrlKey || event.key !== "Escape") return;
       event.preventDefault(); event.stopImmediatePropagation();
       if (drag) onCancelDrag(); else onClose();
     };
