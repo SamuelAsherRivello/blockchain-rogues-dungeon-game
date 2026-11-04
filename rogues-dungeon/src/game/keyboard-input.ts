@@ -4,8 +4,8 @@ const MOVEMENT_CODES = Object.freeze<Record<string, Direction>>({ KeyW: "n", Key
 // A deliberate initial delay prevents a held input from skipping several tactical turns.
 export const WALK_INITIAL_DELAY = 400;
 export const WALK_REPEAT_DELAY = 200;
-export const SPRINT_INITIAL_DELAY = 250;
-export const SPRINT_REPEAT_DELAY = 125;
+export const SPRINT_INITIAL_DELAY = 180;
+export const SPRINT_REPEAT_DELAY = 75;
 
 export function getMoveInitialDelay(sprint: boolean) {
   return sprint ? SPRINT_INITIAL_DELAY : WALK_INITIAL_DELAY;

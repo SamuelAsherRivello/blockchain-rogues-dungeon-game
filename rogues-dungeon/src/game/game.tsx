@@ -719,6 +719,7 @@ export function Game() {
     const battle = current && gameMode(current) === "Battle";
     if (movementRuntime.current.preferences.movementMode === "gridless" && !battle) return;
     const move = () => {
+      turnPresentation.setPlayerMovementDuration(next.sprint ? 150 : CHARACTER_MOVEMENT_DURATION_MS);
       const before = sessionRef.current?.getState().player;
       const result = dispatch({ type: "move", direction: next.direction, hazardElapsedMs: performance.now() });
       if (source === "pointer" && before) noteMouseScreenEdgeMove(before, result, next.direction as Direction);
@@ -734,7 +735,7 @@ export function Game() {
       if (activeMovement.current?.source === source && activeMovement.current.direction === next.direction && activeMovement.current.sprint === next.sprint) scheduleRepeat(getMoveRepeatDelay(next.sprint));
     }, delay); };
     scheduleRepeat(getMoveScheduleDelay(next.sprint, continuing));
-  }, [dispatch, noteMouseScreenEdgeMove, worldAlive]);
+  }, [dispatch, noteMouseScreenEdgeMove, turnPresentation, worldAlive]);
   const activateSelectedCell = useCallback((selected: SelectedCell) => {
     if (gridlessInteractions.active) return;
     if (!campaign || !worldAlive || !worldInputEnabled || settings || confirmingSaveAndExit || progressionDialogOpen) return;
@@ -828,8 +829,8 @@ export function Game() {
             if (blocked && held.length && now >= nextGridStep) {
               const direction = held.at(-1)!.direction; const [ox, oy] = directions[direction];
               const x = current.player.x + ox; const y = current.player.y + oy;
-              if (x !== current.player.x || y !== current.player.y) dispatch({ type: "move", direction });
-              nextGridStep = now + 250;
+              if (x !== current.player.x || y !== current.player.y) { turnPresentation.setPlayerMovementDuration(target?.sprint ? 150 : CHARACTER_MOVEMENT_DURATION_MS); dispatch({ type: "move", direction }); }
+              nextGridStep = now + (target?.sprint ? 75 : 250);
             }
             if (result && "state" in result && result.state.player.pixel?.x === pixel.x && result.state.player.pixel?.y === pixel.y) clickedDestination.current = null;
           } else if (!length) { turnPresentation.stopPlayerPixelTravel(); if (target) clickedDestination.current = null; }
@@ -838,10 +839,10 @@ export function Game() {
           if (movement) {
             const [dx, dy] = directions[movement.direction as Direction]; const next = { x: current.player.x + dx, y: current.player.y + dy };
             if (mouseCellAllowed(current, next) && isMouseHazard(current.floor, next) && (next.x !== confirmedMouseHazard.current?.x || next.y !== confirmedMouseHazard.current?.y)) { warnedMouseHazard.current = next; clickedDestination.current = null; }
-            else { const result = dispatch({ type: "move", direction: movement.direction }); if (result?.accepted) { mouseTravelBudget.current--; noteMouseScreenEdgeMove(current.player, result, movement.direction as Direction); } else clickedDestination.current = null; }
+            else { turnPresentation.setPlayerMovementDuration(target.sprint ? 150 : CHARACTER_MOVEMENT_DURATION_MS); const result = dispatch({ type: "move", direction: movement.direction }); if (result?.accepted) { mouseTravelBudget.current--; noteMouseScreenEdgeMove(current.player, result, movement.direction as Direction); } else clickedDestination.current = null; }
           }
           else clickedDestination.current = null;
-          nextGridStep = now + (target.sprint ? 125 : 250);
+          nextGridStep = now + (target.sprint ? 75 : 250);
         } else if (!target && !held.length) { integrator.reset(); turnPresentation.stopPlayerPixelTravel(); }
       } else { integrator.reset(); turnPresentation.stopPlayerPixelTravel(); }
       frame = requestAnimationFrame(animateMovement);

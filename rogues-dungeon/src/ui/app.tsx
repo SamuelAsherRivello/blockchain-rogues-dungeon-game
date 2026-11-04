@@ -81,10 +81,13 @@ export function App({ content = null, gutters = {} }: { content?: ReactNode; gut
     };
     window.addEventListener("keydown", preventTabNavigation, true);
     document.addEventListener("wheel", handleWheelScroll, { capture: true, passive: false });
+    const preventContextMenu = (event: MouseEvent) => event.preventDefault();
+    document.addEventListener("contextmenu", preventContextMenu, true);
     return () => {
       observer.disconnect();
       window.removeEventListener("keydown", preventTabNavigation, true);
       document.removeEventListener("wheel", handleWheelScroll, true);
+      document.removeEventListener("contextmenu", preventContextMenu, true);
     };
   }, []);
   const platform = classifyPlatform({ userAgentDataMobile: navigator.userAgentData?.mobile, userAgent: navigator.userAgent });

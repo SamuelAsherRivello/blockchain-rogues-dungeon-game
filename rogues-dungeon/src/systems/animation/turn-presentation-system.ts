@@ -42,8 +42,10 @@ export class TurnPresentationSystem {
   private playerMode: MovementMode = "grid-tween";
   private playerPixelTraveling = false;
   private interactionActors = new Set<string>();
+  private playerMovementDuration = CHARACTER_MOVEMENT_DURATION_MS;
 
   setPlayerMode(mode: MovementMode) { if (mode !== this.playerMode) this.playerPixelTraveling = false; this.playerMode = mode; }
+  setPlayerMovementDuration(duration: number) { this.playerMovementDuration = duration; }
 
   constructor(private readonly subGridMovement = SUB_GRID_MOVEMENT) {}
 
@@ -91,7 +93,7 @@ export class TurnPresentationSystem {
     // must not snap the sprite back to its cell centre before the bump returns.
     if (this.interactionActors.has("player")) { /* The interaction owns this position until its consequence commits. */ }
     else if (this.playerMode !== "grid-tween") { this.motions.delete("player"); if (!this.bumps.has("player")) this.positions.set("player", playerAfter); }
-    else if (!this.bumps.has("player") && !samePosition(playerBefore, playerAfter) && !samePosition(this.positions.get("player"), playerAfter)) this.setMotion("player", { from: this.positions.get("player") ?? playerBefore, to: playerAfter, startAt: now, endAt: now + CHARACTER_MOVEMENT_DURATION_MS }, now);
+    else if (!this.bumps.has("player") && !samePosition(playerBefore, playerAfter) && !samePosition(this.positions.get("player"), playerAfter)) this.setMotion("player", { from: this.positions.get("player") ?? playerBefore, to: playerAfter, startAt: now, endAt: now + this.playerMovementDuration }, now);
     else if (!this.motions.has("player") && !this.bumps.has("player")) this.positions.set("player", playerAfter);
     for (const barrel of barrels(current)) {
       if (this.interactionActors.has(barrel.id)) continue;
