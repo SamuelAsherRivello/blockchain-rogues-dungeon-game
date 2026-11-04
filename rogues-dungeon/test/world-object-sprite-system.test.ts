@@ -29,12 +29,14 @@ test("maps barrel and door puzzle states to their dedicated static frames", () =
   assert.equal(puzzleObjectSpriteFrame("barrel", false), OBJECTS_OVERLAY_BARREL_FRAME);
   assert.equal(puzzleObjectSpriteFrame("door", true), OBJECTS_OVERLAY_DOOR_OPEN_FRAME);
   assert.equal(puzzleObjectSpriteFrame("door", false), OBJECTS_OVERLAY_DOOR_CLOSED_FRAME);
-  assert.equal(OBJECTS_OVERLAY_DOOR_OPEN_FRAME, 0);
-  assert.equal(OBJECTS_OVERLAY_DOOR_CLOSED_FRAME, 1);
-  assert.equal(puzzleObjectSpriteFrame("door", true, "horizontal"), OBJECTS_OVERLAY_SIDE_DOOR_CLOSED_FRAME);
-  assert.equal(puzzleObjectSpriteFrame("door", false, "horizontal"), OBJECTS_OVERLAY_SIDE_DOOR_OPEN_FRAME);
-  assert.equal(OBJECTS_OVERLAY_SIDE_DOOR_OPEN_FRAME, 2);
-  assert.equal(OBJECTS_OVERLAY_SIDE_DOOR_CLOSED_FRAME, 3);
+  assert.equal(OBJECTS_OVERLAY_DOOR_CLOSED_FRAME, 0);
+  assert.equal(OBJECTS_OVERLAY_DOOR_OPEN_FRAME, 1);
+  assert.equal(puzzleObjectSpriteFrame("door", false, "horizontal"), OBJECTS_OVERLAY_DOOR_CLOSED_FRAME);
+  assert.equal(puzzleObjectSpriteFrame("door", true, "horizontal"), OBJECTS_OVERLAY_DOOR_OPEN_FRAME);
+  assert.equal(OBJECTS_OVERLAY_SIDE_DOOR_CLOSED_FRAME, 2);
+  assert.equal(OBJECTS_OVERLAY_SIDE_DOOR_OPEN_FRAME, 3);
+  assert.equal(puzzleObjectSpriteFrame("door", false, "vertical"), OBJECTS_OVERLAY_SIDE_DOOR_CLOSED_FRAME);
+  assert.equal(puzzleObjectSpriteFrame("door", true, "vertical"), OBJECTS_OVERLAY_SIDE_DOOR_OPEN_FRAME);
 });
 
 test("keeps chest and door main-art anchors distinct", () => {

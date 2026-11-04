@@ -52,7 +52,7 @@ test("a closed door in a vertical wall keeps the closed front-door frame", () =>
   const model = WorldRender.Render({
     map,
     player: { x: 0, y: 0, hasMass: true },
-    objectSets: [{ id: "vertical-wall-door", kind: "floor-trigger-door-barrel", barrel: { x: 2, y: 2 }, trigger: { x: 0, y: 2 }, door: { x: 1, y: 1 }, regionRole: "optional-reward" }],
+    objectSets: [{ id: "vertical-wall-door", kind: "barrel-panel-door", barrel: { x: 2, y: 2 }, trigger: { x: 0, y: 2 }, door: { x: 1, y: 1 }, regionRole: "optional-reward" }],
   });
   const door = model.puzzleObjects.find((object) => object.kind === "door");
 

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { EncounterLockdownSet, Enemy } from "../src/game/types.ts";
-import { applyAction, createCampaign, createResourcesModel, generateFloor, isObjectSetBlocked } from "../src/systems/procedural/world-procedural-system.ts";
+import type { EnemyLockedDoorPuzzle, Enemy } from "../src/game/types.ts";
+import { applyAction, createCampaign, createResourcesModel, gameMode, generateFloor, isObjectSetBlocked } from "../src/systems/procedural/world-procedural-system.ts";
 import { DEFAULT_WORLD_ATTRIBUTES } from "../src/systems/procedural/world-attributes.ts";
 import { DUNGEON_TOPOLOGY_VERSION } from "../src/systems/procedural/dungeon-topology-system.ts";
 import { hasPerceptionLineOfSight } from "../src/game/enemy-detection.ts";
@@ -15,8 +15,8 @@ function enemy(id: string, x: number): Enemy {
 }
 
 function key({ x, y }: { x: number; y: number }) { return `${x},${y}`; }
-function isInRoom(room: EncounterLockdownSet["room"], { x, y }: { x: number; y: number }) { return x >= room.x && x < room.x + room.w && y >= room.y && y < room.y + room.h; }
-function lockdownThresholds(floor: ReturnType<typeof generateFloor>, room: EncounterLockdownSet["room"]) {
+function isInRoom(room: EnemyLockedDoorPuzzle["room"], { x, y }: { x: number; y: number }) { return x >= room.x && x < room.x + room.w && y >= room.y && y < room.y + room.h; }
+function lockdownThresholds(floor: ReturnType<typeof generateFloor>, room: EnemyLockedDoorPuzzle["room"]) {
   const exits: { door: { x: number; y: number }; trigger: { x: number; y: number } }[] = [];
   for (let y = room.y; y < room.y + room.h; y++) for (let x = room.x; x < room.x + room.w; x++) for (const [dx, dy] of [[0, -1], [1, 0], [0, 1], [-1, 0]]) {
     const trigger = { x, y }, door = { x: x + dx, y: y + dy };
@@ -28,7 +28,7 @@ function lockdownThresholds(floor: ReturnType<typeof generateFloor>, room: Encou
 test("generated encounter rooms seal every one-tile-wide exit and three enemies from the current level pool", () => {
   for (const seed of [1, 93, 1234]) {
     const floor = generateFloor(2, seed, 2, { topologyVersion: DUNGEON_TOPOLOGY_VERSION });
-    const encounter = floor.objectSets?.find((set) => set.kind === "encounter-lockdown");
+    const encounter = floor.objectSets?.find((set) => set.kind === "enemy-locked-door");
     assert.ok(encounter);
     const exits = lockdownThresholds(floor, encounter.room);
     assert.ok(encounter.doors.length >= 1 && encounter.doors.length <= 4);
@@ -45,7 +45,7 @@ test("generated encounter rooms seal every one-tile-wide exit and three enemies 
 test("current-version LT adds exactly one World One level-one lockdown example four cells from the start", () => {
   for (const seed of [1, 93, 1234]) {
     const floor = generateFloor(1, seed, 1, { worldAttributes: DEFAULT_WORLD_ATTRIBUTES, level1TestMode: true, topologyVersion: DUNGEON_TOPOLOGY_VERSION });
-    const fixtures = floor.objectSets?.filter((set): set is EncounterLockdownSet => set.kind === "encounter-lockdown" && set.id === "encounter-lockdown-fixture-level-1") ?? [];
+    const fixtures = floor.objectSets?.filter((set): set is EnemyLockedDoorPuzzle => set.kind === "enemy-locked-door" && set.id === "enemy-locked-door-fixture-level-1") ?? [];
     assert.equal(fixtures.length, 1);
     const fixture = fixtures[0]!;
     assert.ok(fixture.doors.every((door) => Math.hypot(door.x - floor.start.x, door.y - floor.start.y) <= 4));
@@ -60,12 +60,12 @@ test("current-version LT adds exactly one World One level-one lockdown example f
   }
 
   const legacyWorldFloor = generateFloor(1, 93, 1, { worldAttributes: DEFAULT_WORLD_ATTRIBUTES, level1TestMode: true });
-  const legacyFixture = legacyWorldFloor.objectSets?.find((set): set is EncounterLockdownSet => set.kind === "encounter-lockdown" && set.id === "encounter-lockdown-fixture-level-1");
+  const legacyFixture = legacyWorldFloor.objectSets?.find((set): set is EnemyLockedDoorPuzzle => set.kind === "enemy-locked-door" && set.id === "enemy-locked-door-fixture-level-1");
   assert.ok(legacyFixture);
   assert.ok(legacyFixture.doors.every((door) => Math.hypot(door.x - legacyWorldFloor.start.x, door.y - legacyWorldFloor.start.y) <= 100));
 
   const nonWorldFloor = generateFloor(1, 93, 1, { level1TestMode: true });
-  assert.equal(nonWorldFloor.objectSets?.some((set) => set.kind === "encounter-lockdown" && set.id === "encounter-lockdown-fixture-level-1"), false);
+  assert.equal(nonWorldFloor.objectSets?.some((set) => set.kind === "enemy-locked-door" && set.id === "enemy-locked-door-fixture-level-1"), false);
 });
 
 test("crossing an encounter trigger locks every doorway until the final enemy is removed", () => {
@@ -76,20 +76,22 @@ test("crossing an encounter trigger locks every doorway until the final enemy is
   campaign.player.x = 0; campaign.player.y = 1;
   campaign.floor.entities = [enemy("arena-1", 3), enemy("arena-2", 4), enemy("arena-3", 5)];
   campaign.floor.objectSets = [{
-    id: "arena", kind: "encounter-lockdown", barrel: { x: 1, y: 1, hasMass: false }, trigger: { x: 2, y: 1 }, door: { x: 1, y: 1 }, regionRole: "optional-reward",
+    id: "arena", kind: "enemy-locked-door", regionRole: "optional-reward",
     doors: [{ x: 1, y: 1 }], triggers: [{ x: 2, y: 1 }], room: { x: 1, y: 0, w: 5, h: 3 }, enemyIds: ["arena-1", "arena-2", "arena-3"], activated: false, completed: false,
   }];
   const throughDoor = applyAction(campaign, { type: "move", direction: "e" });
+  assert.equal(gameMode(throughDoor.state), "General");
   const locked = applyAction(throughDoor.state, { type: "move", direction: "e" });
   const encounter = locked.state.floor.objectSets![0]!;
-  assert.equal(encounter.kind, "encounter-lockdown");
+  assert.equal(encounter.kind, "enemy-locked-door");
   assert.equal(encounter.activated, true);
+  assert.equal(gameMode(locked.state), "Battle");
   assert.equal(isObjectSetBlocked(locked.state.floor, locked.state.player, 1, 1), true);
   assert.ok(locked.events.some((event) => event.type === "encounter.locked"));
   locked.state.floor.entities = [];
   const cleared = applyAction(locked.state, { type: "wait" });
   const clearedEncounter = cleared.state.floor.objectSets![0]!;
-  assert.equal(clearedEncounter.kind, "encounter-lockdown");
+  assert.equal(clearedEncounter.kind, "enemy-locked-door");
   assert.equal(clearedEncounter.completed, true);
   assert.equal(isObjectSetBlocked(cleared.state.floor, cleared.state.player, 1, 1), false);
   assert.ok(cleared.events.some((event) => event.type === "encounter.cleared"));
@@ -104,7 +106,7 @@ test("a locked encounter door blocks enemy movement and awareness in both direct
   const guard = enemy("arena-guard", 0); guard.awareness = 10; guard.actionCooldown = 0; guard.nextActionAt = 0;
   campaign.floor.entities = [guard];
   campaign.floor.objectSets = [{
-    id: "arena", kind: "encounter-lockdown", barrel: { x: 1, y: 1, hasMass: false }, trigger: { x: 2, y: 1 }, door: { x: 1, y: 1 }, regionRole: "optional-reward",
+    id: "arena", kind: "enemy-locked-door", regionRole: "optional-reward",
     doors: [{ x: 1, y: 1 }], triggers: [{ x: 2, y: 1 }], room: { x: 2, y: 1, w: 1, h: 1 }, enemyIds: [guard.id], activated: true, completed: false,
   }];
   assert.equal(isObjectSetBlocked(campaign.floor, campaign.player, 1, 1), true);

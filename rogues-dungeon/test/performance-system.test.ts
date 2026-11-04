@@ -420,7 +420,7 @@ test("lazy navigation matches full-grid paths including blockers, pickups, doors
   floor.entities = [];
   for (let y = 0; y < 19; y++) if (y !== 3 && y !== 15) setCell(floor, 8, y, { walkable: false });
   floor.entities.push({ id: "gold-shortcut", kind: "gold", x: 8, y: 3, amount: 1 } as Campaign["floor"]["entities"][number]);
-  floor.objectSets = [{ id: "locked", kind: "encounter-lockdown", activated: true, completed: false, doors: [{x:8,y:15}] }] as typeof floor.objectSets;
+  floor.objectSets = [{ id: "locked", kind: "enemy-locked-door", activated: true, completed: false, doors: [{x:8,y:15}] }] as typeof floor.objectSets;
   ensureSemanticCells(floor); markRuntimeGridValid(floor);
   const from = { x: 2, y: 5 }, targets = [{x:14,y:5},{x:3,y:3},{x:8,y:5},{x:18,y:18}];
   for (const to of targets) for (const maxNodes of [1, 20, 400, undefined]) for (const respectObjectSets of [false, true]) {

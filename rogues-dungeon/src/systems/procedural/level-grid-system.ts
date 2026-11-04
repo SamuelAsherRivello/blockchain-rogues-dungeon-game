@@ -1,5 +1,5 @@
 import type { Entity, Position, TerrainCell } from "../../game/types.ts";
-export interface Grid { cells?: TerrainCell[][]; map?: number[][]; width?: number; height?: number }
+export interface Grid { cells?: TerrainCell[][]; map?: number[][]; width?: number; height?: number; tiledDecorations?: (Position & { gid?: number })[]; objectSets?: { kind?: string; barrel?: Position & { hasMass?: boolean }; trigger?: Position; door?: Position; doors?: Position[]; triggers?: Position[]; activated?: boolean; completed?: boolean }[] }
 interface Scope extends Position { width: number; height: number }
 interface LevelOptions { worldId?: string; realmId?: string; levelId?: number; seed?: number; width?: number; height?: number; cells?: TerrainCell[][] | null; entities?: Entity[]; start?: Position | null; exit?: Position | null }
 // Only an authoritative session marks a floor runtime-readonly. Legacy callers
@@ -57,7 +57,28 @@ export function ensureSemanticCells<T extends Grid>(floor: T): T & { cells: Terr
 }
 
 export function cellAt(floor: Grid | null | undefined, x: number, y: number) { return floor?.cells?.[y]?.[x] ?? null; }
-export function isWalkable(floor: Grid | null | undefined, x: number, y: number) { return Boolean(cellAt(floor, x, y)?.walkable); }
+export function doorApertureCells(floor: Grid | null | undefined, door: Position) {
+  const walkableAt = (x: number, y: number) => cellAt(floor, x, y)?.walkable ?? floor?.map?.[y]?.[x] === 0;
+  const sideDoor = Boolean(walkableAt(door.x, door.y - 1) || walkableAt(door.x, door.y + 1));
+  return sideDoor ? [door] : [door, { x: door.x + 1, y: door.y }];
+}
+function authoredDoorAt(floor: Grid | null | undefined, x: number, y: number) {
+  return floor?.tiledDecorations?.find((door) => {
+    if (door.gid === 154 || door.gid === 155) return door.x === x && door.y === y;
+    // Side-door art is two tiles wide and its visible opening falls in the cell
+    // immediately to the right of the authored door cell.
+    return (door.gid === 158 || door.gid === 159) && door.y === y && (door.x === x || door.x + 1 === x);
+  });
+}
+export function isWalkable(floor: Grid | null | undefined, x: number, y: number) {
+  const door = authoredDoorAt(floor, x, y);
+  if (door) return door.gid === 155 || door.gid === 159;
+  if (floor?.objectSets?.some((set) => {
+    const doors = set.kind === "enemy-locked-door" ? set.doors ?? [] : set.door ? [set.door] : [];
+    return doors.some((position) => doorApertureCells(floor, position).some((cell) => cell.x === x && cell.y === y));
+  })) return true;
+  return Boolean(cellAt(floor, x, y)?.walkable);
+}
 
 export function setCell(floor: Grid, x: number, y: number, { walkable, role, ...extra }: Partial<TerrainCell> = {}) {
   const cell = cellAt(floor, x, y); if (!cell) return false;

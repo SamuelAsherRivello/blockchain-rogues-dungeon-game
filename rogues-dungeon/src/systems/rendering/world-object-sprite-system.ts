@@ -6,11 +6,11 @@ export const DROPPABLE_ITEM_ATLAS_LAYOUT = Object.freeze({ cellWidthPx: 362, cel
 
 export const DUNGEON_STAIR_UP_FRAME = 42;
 export const OBJECTS_OVERLAY_BARREL_FRAME = 0;
-// The horizontal atlas pair is visually opposite its source-file names.
-export const OBJECTS_OVERLAY_DOOR_OPEN_FRAME = 0;
-export const OBJECTS_OVERLAY_DOOR_CLOSED_FRAME = 1;
-export const OBJECTS_OVERLAY_SIDE_DOOR_OPEN_FRAME = 2;
-export const OBJECTS_OVERLAY_SIDE_DOOR_CLOSED_FRAME = 3;
+// Door frames follow the numbered reference: horizontal closed/open, then vertical closed/open.
+export const OBJECTS_OVERLAY_DOOR_CLOSED_FRAME = 0;
+export const OBJECTS_OVERLAY_DOOR_OPEN_FRAME = 1;
+export const OBJECTS_OVERLAY_SIDE_DOOR_CLOSED_FRAME = 2;
+export const OBJECTS_OVERLAY_SIDE_DOOR_OPEN_FRAME = 3;
 // objects-overlay is a 7 × 6 sheet; the crate is bottom row, second tile.
 export const OBJECTS_OVERLAY_CRATE_CLOSED_FRAME = 36;
 export const PROPS_STATIC_CRATE_OPEN_FRAMES = Object.freeze([1, 5] as const);
@@ -19,6 +19,7 @@ export const PROPS_STATIC_CRATE_OPEN_FRAMES = Object.freeze([1, 5] as const);
 export const CHEST_MAIN_ART_ANCHOR_OFFSET_PX = 16;
 export const DOOR_CLOSED_MAIN_ART_ANCHOR_OFFSET_PX = 32;
 export const DOOR_OPEN_MAIN_ART_ANCHOR_OFFSET_PX = 16;
+export const SIDE_DOOR_MAIN_ART_OFFSET_X_PX = -8;
 
 export function doorMainArtAnchorOffset(open: boolean) {
   return open ? DOOR_OPEN_MAIN_ART_ANCHOR_OFFSET_PX : DOOR_CLOSED_MAIN_ART_ANCHOR_OFFSET_PX;
@@ -82,8 +83,8 @@ export function itemSpriteFrame(kind: ItemKind, resource?: "health" | "stamina" 
 
 export function puzzleObjectSpriteFrame(kind: "barrel" | "door", active: boolean, wallAxis: "horizontal" | "vertical" = "vertical") {
   if (kind === "barrel") return OBJECTS_OVERLAY_BARREL_FRAME;
-  if (wallAxis === "horizontal") return active ? OBJECTS_OVERLAY_SIDE_DOOR_CLOSED_FRAME : OBJECTS_OVERLAY_SIDE_DOOR_OPEN_FRAME;
-  return active ? OBJECTS_OVERLAY_DOOR_OPEN_FRAME : OBJECTS_OVERLAY_DOOR_CLOSED_FRAME;
+  if (wallAxis === "horizontal") return active ? OBJECTS_OVERLAY_DOOR_OPEN_FRAME : OBJECTS_OVERLAY_DOOR_CLOSED_FRAME;
+  return active ? OBJECTS_OVERLAY_SIDE_DOOR_OPEN_FRAME : OBJECTS_OVERLAY_SIDE_DOOR_CLOSED_FRAME;
 }
 
 /** Inventory drops retain their item data but share the native potion artwork. */

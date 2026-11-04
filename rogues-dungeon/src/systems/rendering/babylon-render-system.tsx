@@ -10,9 +10,9 @@ import { createStaticLayerVisibility } from "./static-layer-visibility-system.ts
 import { createSharedEngineLifecycle } from "./shared-engine-lifecycle.ts";
 import { BattleIndicator, TacticalAreaOverlay } from "../../game/views/battle-overlay.tsx";
 import { tacticalRectangles } from "../../game/tactical-area.ts";
-import type { CSSProperties, MouseEvent } from "react";
+import type { CSSProperties } from "react";
 import type { EngineContext, SurfaceContext, Texture2D, DynamicTexture2D, SpriteAtlas, SpriteRenderer, Sprite2DHandle, Sprite2DLayer } from "@babylonjs/lite";
-import { detectedEnemyIds } from "../../game/enemy-detection.ts"; import { resolveWorldCursor } from "../../game/world-cursor.ts"; import { gameMode, hasAssignedWeapon, REST_GOLD_COST } from "../procedural/world-procedural-system.ts"; import type { Campaign, Direction, EncounterLockdownSet, Enemy, Feedback, Position, Resources, SelectedCell } from "../../game/types.ts";
+import { detectedEnemyIds } from "../../game/enemy-detection.ts"; import { resolveWorldCursor } from "../../game/world-cursor.ts"; import { gameMode, hasAssignedWeapon, REST_GOLD_COST } from "../procedural/world-procedural-system.ts"; import type { Campaign, Direction, Enemy, Feedback, Position, Resources, SelectedCell } from "../../game/types.ts";
 import type { ResourceChangeEffect } from "../../game/resource-change-effects.ts";
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
@@ -21,7 +21,7 @@ import {
   enableSprite2DYSort, loadTexture2D, registerSpriteRenderer, releaseTexture, resizeSurface, unregisterSpriteRenderer, setSprite2DShaderParams, startEngine, updateDynamicTexture,
 } from "@babylonjs/lite";
 import { createWorldPresentationReader, performanceCellBounds, getCameraCenter, getMouseScreenEdgeExit, getVisibleWorldCellBounds, getWorldCellAtScreenPosition, getWorldCellScreenCenter, getWorldScreenPosition, isWorldCellVisible, isWorldChunkVisible, WorldRender, type PuzzleObjectPresentation } from "./world-render-system.ts";
-import { getCutsceneBarHeightPx, getRenderedTileCssSize } from "../../content/world/zoom.ts";
+import { getCutsceneBarHeightPx } from "../../content/world/zoom.ts";
 import { pixelPerfectOptions } from "../../content/babylon/config.ts";
 import { getInitializationMessage } from "../../content/babylon/initialization.ts";
 import { findWorldTooltipPosition } from "../../content/world/tooltip-placement.ts";
@@ -38,7 +38,7 @@ import { particleBoundsAt, particleBoundsAtTile, particleExpired, particleFrame,
 import { UiCutsceneTransition, UiIrisTransition, UiPassiveTransition, useUiMotion, type UiCutscenePhase, type UiIrisPhase } from "../../ui/ui-transition-system.tsx";
 import { easeInCubic, easeOutCubic } from "../animation/tween-animation-system.ts";
 import { GRID_RENDER_PASS, orderWorldRenderEntries, type GridRenderEntry } from "./grid-render-order-system.ts";
-import { CHEST_MAIN_ART_ANCHOR_OFFSET_PX, DROPPABLE_ITEM_ATLAS_LAYOUT, DUNGEON_STAIR_UP_FRAME, doorMainArtAnchorOffset, droppableItemMainOffsetXPx, droppableItemSpriteFrame, droppableItemSpriteSizePx, itemSpriteFrame, OBJECTS_OVERLAY_CRATE_CLOSED_FRAME, pickupMainArtPresentation, puzzleObjectSpriteFrame } from "./world-object-sprite-system.ts";
+import { CHEST_MAIN_ART_ANCHOR_OFFSET_PX, DROPPABLE_ITEM_ATLAS_LAYOUT, DUNGEON_STAIR_UP_FRAME, doorMainArtAnchorOffset, droppableItemMainOffsetXPx, droppableItemSpriteFrame, droppableItemSpriteSizePx, itemSpriteFrame, OBJECTS_OVERLAY_CRATE_CLOSED_FRAME, pickupMainArtPresentation, puzzleObjectSpriteFrame, SIDE_DOOR_MAIN_ART_OFFSET_X_PX } from "./world-object-sprite-system.ts";
 import { pickupOscillationOffset, pickupShadowWidthScale } from "../animation/pickup-oscillation-system.ts";
 import { CHARACTER_MOVEMENT_DURATION_MS, TurnPresentationSystem } from "../animation/turn-presentation-system.ts";
 import { STAIR_DESCENT_DURATION_MS, STAIR_DESCENT_STEP_COUNT, STAIR_DESCENT_STEP_DURATION_MS, STAIR_DESCENT_STEP_INTERVAL_MS, stairDescentHeading, stairDescentIsMasked, stairDescentOffset } from "../animation/stair-descent-animation-system.ts";
@@ -140,6 +140,7 @@ const TERRAIN_RENDER_ORDER = 0;
 const FLOOR_DECAL_RENDER_ORDER = 10;
 const FLOOR_TRAP_RENDER_ORDER = FLOOR_DECAL_RENDER_ORDER + 1;
 const OVERLAY_RENDER_ORDER = 1_000_000;
+const PLAYER_PATH_RENDER_ORDER = 99;
 const WORLD_TIE_BREAK = { wall: 0, decoration: 10, stair: 20, prop: 30, pickup: 40, entity: 50, effect: 60 } as const;
 const LANDED_DAMAGE_PARTICLE_RENDER_ORDER = FLOOR_TRAP_RENDER_ORDER + 1;
 const CUTSCENE_OPENING_DELAY_MS = 200;
@@ -264,6 +265,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
   const reticleInput = useRef(new GamepadReticleController());
   const previousViewButtonPressed = useRef(false);
   const selectedCellRef = useRef(selectedCell);
+  const mousePathOverlayRef = useRef<readonly Position[]>([]);
   const onFpsChangeRef = useRef(onFpsChange);
   const onPlayerDeathAnimationCompleteRef = useRef(onPlayerDeathAnimationComplete);
   const previousCampaignRef = useRef(campaign);
@@ -508,10 +510,9 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
     return undefined;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uiAnimations, worldAlive, minimap]);
-  const cellSizeAt = (rect: DOMRect, zoomValue = latestRef.current.zoom) => {
-    const canvas = canvasRef.current;
-    const backingPixelsPerCssPixel = canvas && canvas.width > 0 && rect.width > 0 ? canvas.width / rect.width : window.devicePixelRatio || 1;
-    return getRenderedTileCssSize({ zoom: typeof zoomValue === "number" ? zoomValue : 1, devicePixelRatio: window.devicePixelRatio || 1, backingPixelsPerCssPixel });
+  const cellSizeAt = (_rect: DOMRect, zoomValue = latestRef.current.zoom) => (typeof zoomValue === "number" ? zoomValue : 1) * cameraTransformRef.current.scale * 32;
+  const projectionAt = (rect: DOMRect) => {
+    return { center: getViewCenter(rect), tileCssSize: cellSizeAt(rect) };
   };
   const getViewCenter = (rect: DOMRect, state = latestRef.current.campaign) => {
     const { camera: cameraNow, zoom: zoomNow } = latestRef.current;
@@ -539,42 +540,76 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
     if (!presentationAllowed({ x, y })) return isWalkable(campaign.floor, x, y) ? "valid" : "invalid";
     if (campaign.floor.decorations?.some(entry => entry.kind === "trap" && entry.x === x && entry.y === y)) return "hazard";
     const entity = campaign.floor.entities.find((entry) => entry.x === x && entry.y === y && (entry.kind !== "enemy" || detected.has(entry.id)));
-    const barrel = campaign.floor.objectSets?.some((set) => set.kind === "floor-trigger-door-barrel" && set.barrel.x === x && set.barrel.y === y);
+    const barrel = campaign.floor.objectSets?.some((set) => set.kind === "barrel-panel-door" && set.barrel.x === x && set.barrel.y === y);
     if (barrel) return "item";
     return entity?.kind === "enemy" ? "enemy" : entity && ["item", "potion", "key", "gold", "chest", "campfire", "stairs"].includes(entity.kind) ? "item" : isWalkable(campaign.floor, x ?? NaN, y ?? NaN) ? "valid" : "invalid";
   };
   const targetAtScreenPosition = (point: Position, rect: DOMRect) => {
-    const cellSize = cellSizeAt(rect);
-    const center = getViewCenter(rect);
+    const { tileCssSize: cellSize, center } = projectionAt(rect);
     const { x, y } = getWorldCellAtScreenPosition({ screenX: point.x, screenY: point.y, center, viewportWidth: rect.width, viewportHeight: rect.height, tileCssSize: cellSize });
     return { x, y, pixel: { x: Math.round((center.x + (point.x - rect.width / 2) / cellSize + .5) * 32), y: Math.round((center.y + (point.y - rect.height / 2) / cellSize + .5) * 32) }, kind: targetKindAt(x, y), ...getWorldCellScreenCenter({ x, y, center, viewportWidth: rect.width, viewportHeight: rect.height, tileCssSize: cellSize }), size: cellSize };
   };
-  const targetAt = (event: MouseEvent<HTMLDivElement>) => {
+  const interactionBounds = () => hostRef.current?.closest<HTMLElement>(".world-view-region") ?? hostRef.current;
+  const targetAt = (event: globalThis.MouseEvent) => {
     if (!mouseInteraction || !worldAlive) return null;
-    const rect = event.currentTarget.getBoundingClientRect();
+    const bounds = interactionBounds();
+    if (!bounds) return null;
+    const rect = bounds.getBoundingClientRect();
     const point = { x: event.clientX - rect.left, y: event.clientY - rect.top };
-    pointerRef.current = point;
+    pointerRef.current = { x: event.clientX, y: event.clientY };
     return targetAtScreenPosition(point, rect);
   };
   const selectCell = (target: SelectedCell | null, pressed = false, sprint = false) => {
-    const next = target && { ...target, pressed, sprint };
+    const previous = selectedCellRef.current;
+    const next = target && { ...target, pathEntryDirection: target.pathEntryDirection ?? (previous?.x === target.x && previous.y === target.y ? previous.pathEntryDirection : undefined), pressed, sprint };
     selectedCellRef.current = next;
     onSelectedCellChange?.(next);
   };
   const targetAtNeighbor = (offset: Position, rect: DOMRect) => {
     const player = latestRef.current.campaign.player;
     const x = player.x + offset.x; const y = player.y + offset.y;
-    const size = cellSizeAt(rect);
-    return { x, y, pixel: { x: (x + .5) * 32, y: (y + .5) * 32 }, kind: targetKindAt(x, y), ...getWorldCellScreenCenter({ x, y, center: getViewCenter(rect), viewportWidth: rect.width, viewportHeight: rect.height, tileCssSize: size }), size };
+    const { center, tileCssSize: size } = projectionAt(rect);
+    return { x, y, pixel: { x: (x + .5) * 32, y: (y + .5) * 32 }, kind: targetKindAt(x, y), ...getWorldCellScreenCenter({ x, y, center, viewportWidth: rect.width, viewportHeight: rect.height, tileCssSize: size }), size };
   };
-  const pointerMove = (event: MouseEvent<HTMLDivElement>) => {
+  const pointerMove = (event: globalThis.MouseEvent) => {
     reticleInput.current.mouseMoved({ x: event.clientX, y: event.clientY });
     const target = targetAt(event);
-    if (target) selectCell(target, mouseDownRef.current, mouseDownRef.current && (event.buttons & 2) !== 0);
+    if (target) {
+      const previous = selectedCellRef.current;
+      let pathEntryDirection = previous?.pathEntryDirection;
+      if (previous && (previous.x !== target.x || previous.y !== target.y)) {
+        const dx = target.x - previous.x; const dy = target.y - previous.y;
+        pathEntryDirection = Math.abs(dx) > Math.abs(dy) ? dx > 0 ? "e" : "w" : dy > 0 ? "s" : "n";
+      }
+      selectCell({ ...target, pathEntryDirection }, mouseDownRef.current, mouseDownRef.current && (event.buttons & 2) !== 0);
+    }
   };
-  const pointerDown = (event: MouseEvent<HTMLDivElement>) => { const target = targetAt(event); if (!target) return; reticleInput.current.claimMouse(); event.preventDefault(); mouseDownRef.current = true; selectCell(target, true, event.button === 2); };
-  const pointerUp = (event: MouseEvent<HTMLDivElement>) => { if (reticleInput.current.source !== "mouse") return; mouseDownRef.current = false; selectCell(targetAt(event)); };
+  const pointerDown = (event: globalThis.MouseEvent) => { const target = targetAt(event); if (!target) return; const previous = selectedCellRef.current; const pathEntryDirection = previous?.x === target.x && previous.y === target.y ? previous.pathEntryDirection : previous ? (Math.abs(target.x - previous.x) > Math.abs(target.y - previous.y) ? target.x > previous.x ? "e" : "w" : target.y > previous.y ? "s" : "n") : undefined; reticleInput.current.claimMouse(); event.preventDefault(); mouseDownRef.current = true; selectCell({ ...target, pathEntryDirection }, true, event.button === 2); };
+  const pointerUp = (event: globalThis.MouseEvent) => { if (reticleInput.current.source !== "mouse") return; mouseDownRef.current = false; selectCell(targetAt(event)); };
   const pointerLeave = () => { if (reticleInput.current.source === "mouse" && !mouseDownRef.current) { pointerRef.current = null; selectCell(null); } };
+  const mouseHandlersRef = useRef({ move: (_event: globalThis.MouseEvent) => {}, down: (_event: globalThis.MouseEvent) => {}, up: (_event: globalThis.MouseEvent) => {}, leave: () => {}, wheel: (_event: WheelEvent) => {} });
+  mouseHandlersRef.current = { move: pointerMove, down: pointerDown, up: pointerUp, leave: pointerLeave, wheel: (event) => { event.preventDefault(); onZoom?.(event.deltaY < 0 ? 1 : -1); } };
+  useEffect(() => {
+    const bounds = interactionBounds();
+    if (!mouseInteraction || !worldAlive || !bounds) return undefined;
+    const move = (event: MouseEvent) => { event.stopPropagation(); mouseHandlersRef.current.move(event); };
+    const down = (event: MouseEvent) => { event.stopPropagation(); mouseHandlersRef.current.down(event); };
+    const up = (event: MouseEvent) => { event.stopPropagation(); mouseHandlersRef.current.up(event); };
+    const leave = (event: MouseEvent) => { event.stopPropagation(); mouseHandlersRef.current.leave(); };
+    const wheel = (event: WheelEvent) => { event.stopPropagation(); mouseHandlersRef.current.wheel(event); };
+    bounds.addEventListener("mousemove", move, true);
+    bounds.addEventListener("mousedown", down, true);
+    bounds.addEventListener("mouseup", up, true);
+    bounds.addEventListener("mouseleave", leave, true);
+    bounds.addEventListener("wheel", wheel, { capture: true, passive: false });
+    return () => {
+      bounds.removeEventListener("mousemove", move, true);
+      bounds.removeEventListener("mousedown", down, true);
+      bounds.removeEventListener("mouseup", up, true);
+      bounds.removeEventListener("mouseleave", leave, true);
+      bounds.removeEventListener("wheel", wheel, true);
+    };
+  }, [mouseInteraction, worldAlive]);
   useGamepadReticle(
     !minimap && mouseInteraction && worldAlive,
     `${campaign.run}:${campaign.floor.seed}:${campaign.floor.level}:${campaign.activePrefab?.id}:${gameMode(campaign)}`,
@@ -582,7 +617,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
       const viewButtonPressed = Boolean(input.buttons?.[8]);
       if (viewButtonPressed && !previousViewButtonPressed.current) onToggleZoom?.();
       previousViewButtonPressed.current = viewButtonPressed;
-      const rect = hostRef.current?.getBoundingClientRect();
+      const rect = interactionBounds()?.getBoundingClientRect();
       if (!rect || !rect.width || !rect.height) return;
       const target = selectedCellRef.current;
       const update = reticleInput.current.advance(input, movementPrompts?.revision ?? 0, movementPrompts?.hasRightStickPrompt ?? false);
@@ -622,7 +657,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
 
   useEffect(() => {
     const host = hostRef.current!; const canvas = canvasRef.current!;
-    let cancelled = false; let engine: EngineContext | null = null; let surface: SurfaceContext | null = null; let renderer: SpriteRenderer | null = null; let atlases: SpriteAtlas[] = []; let textures: Record<string, Texture2D> = {}; let acquiredTexturePaths: string[] = []; let observers: { disconnect(): void }[] = []; let tileTexture: DynamicTexture2D | null = null; const tileThemeImages = new Map<DungeonTheme, ImageBitmap>(); let debugTexture: DynamicTexture2D | null = null; let pivotTexture: DynamicTexture2D | null = null; let pickupShadowTexture: DynamicTexture2D | null = null; let animationFrameId = 0; let fpsSampleStartedAt = 0; let fpsFrameCount = 0; let heroAnimation: ReturnType<typeof createHeroWarriorAnimationEntity> | null = null; let enemyAnimations: ReturnType<typeof createEnemyAnimationEntities> | null = null; const triggerAnimations = new Map<string, ReturnType<typeof createFloorTriggerAnimationEntity>>();
+    let cancelled = false; let engine: EngineContext | null = null; let surface: SurfaceContext | null = null; let renderer: SpriteRenderer | null = null; let atlases: SpriteAtlas[] = []; let textures: Record<string, Texture2D> = {}; let acquiredTexturePaths: string[] = []; let observers: { disconnect(): void }[] = []; let tileTexture: DynamicTexture2D | null = null; const tileThemeImages = new Map<DungeonTheme, ImageBitmap>(); let debugTexture: DynamicTexture2D | null = null; let walkingPathTexture: DynamicTexture2D | null = null; let walkingPathArrowTexture: DynamicTexture2D | null = null; let pivotTexture: DynamicTexture2D | null = null; let pickupShadowTexture: DynamicTexture2D | null = null; let animationFrameId = 0; let fpsSampleStartedAt = 0; let fpsFrameCount = 0; let heroAnimation: ReturnType<typeof createHeroWarriorAnimationEntity> | null = null; let enemyAnimations: ReturnType<typeof createEnemyAnimationEntities> | null = null; const triggerAnimations = new Map<string, ReturnType<typeof createFloorTriggerAnimationEntity>>();
     let acquiredSurface: Awaited<ReturnType<typeof acquireSharedSurface>> | null = null;
     const readWorld = createWorldPresentationReader();
     const field = createWorldPresentationField();
@@ -633,15 +668,17 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
       cancelAnimationFrame(animationFrameId); observers.forEach(observer => observer.disconnect()); observers = [];
       if (renderer) { disposeSpriteRenderer(renderer); renderer = null; }
       atlases.forEach(disposeSpriteAtlas); atlases = [];
+      triggerAnimations.forEach(animation => animation.dispose()); triggerAnimations.clear();
       field.dispose(); if (fieldTexture) { releaseTexture(fieldTexture); fieldTexture = null; }
       if (tileTexture) { releaseTexture(tileTexture); tileTexture = null; }
       tileThemeImages.forEach(image => image.close()); tileThemeImages.clear();
       if (debugTexture) { releaseTexture(debugTexture); debugTexture = null; }
+      if (walkingPathTexture) { releaseTexture(walkingPathTexture); walkingPathTexture = null; }
+      if (walkingPathArrowTexture) { releaseTexture(walkingPathArrowTexture); walkingPathArrowTexture = null; }
       if (pivotTexture) { releaseTexture(pivotTexture); pivotTexture = null; }
       if (pickupShadowTexture) { releaseTexture(pickupShadowTexture); pickupShadowTexture = null; }
       heroAnimation?.dispose(); heroAnimation = null;
       Object.values(enemyAnimations ?? {}).forEach(animation => animation.dispose()); enemyAnimations = null;
-      triggerAnimations.forEach(animation => animation.dispose()); triggerAnimations.clear();
       acquiredTexturePaths.forEach(releaseSharedTexture); acquiredTexturePaths = []; textures = {};
       acquiredSurface?.release(); acquiredSurface = null; surface = null; engine = null;
     };
@@ -767,6 +804,42 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
         debugTexture = createDynamicTexture(engine, 32, 32, { minFilter: "nearest", magFilter: "nearest", mipMaps: false });
         updateDynamicTexture(engine, debugTexture, debugCanvas, { invertY: false });
         const debugAtlas = createGridSpriteAtlas(debugTexture, { cellWidthPx: 32, cellHeightPx: 32, columns: 1, rows: 1, pivot: [0.5, 0.5] });
+        const walkingPathCanvas = document.createElement("canvas"); walkingPathCanvas.width = 128; walkingPathCanvas.height = 128;
+        const walkingPathContext = walkingPathCanvas.getContext("2d")!;
+        walkingPathContext.strokeStyle = INTERACTION_COLORS.walkingPath; walkingPathContext.lineWidth = 2; walkingPathContext.lineCap = "round"; walkingPathContext.lineJoin = "round";
+        for (let mask = 0; mask < 16; mask++) {
+          const x = mask % 4 * 32, y = Math.floor(mask / 4) * 32;
+          walkingPathContext.clearRect(x, y, 32, 32); walkingPathContext.beginPath();
+          const directions = [
+            ...(mask & 1 ? [[x + 16, y] as const] : []),
+            ...(mask & 2 ? [[x + 32, y + 16] as const] : []),
+            ...(mask & 4 ? [[x + 16, y + 32] as const] : []),
+            ...(mask & 8 ? [[x, y + 16] as const] : []),
+          ];
+          if (directions.length === 2) {
+            walkingPathContext.moveTo(directions[0]![0], directions[0]![1]);
+            walkingPathContext.lineTo(x + 16, y + 16);
+            walkingPathContext.lineTo(directions[1]![0], directions[1]![1]);
+          } else {
+            for (const [endX, endY] of directions) {
+              walkingPathContext.moveTo(x + 16, y + 16);
+              walkingPathContext.lineTo(endX, endY);
+            }
+          }
+          walkingPathContext.stroke();
+        }
+        walkingPathTexture = createDynamicTexture(engine, 128, 128, { minFilter: "nearest", magFilter: "nearest", mipMaps: false });
+        updateDynamicTexture(engine, walkingPathTexture, walkingPathCanvas, { invertY: false });
+        const walkingPathLineAtlas = createGridSpriteAtlas(walkingPathTexture, { cellWidthPx: 32, cellHeightPx: 32, columns: 4, rows: 4, pivot: [0.5, 0.5] });
+        atlases.push(walkingPathLineAtlas);
+        const walkingPathArrowCanvas = document.createElement("canvas"); walkingPathArrowCanvas.width = 64; walkingPathArrowCanvas.height = 64;
+        const walkingPathArrowContext = walkingPathArrowCanvas.getContext("2d")!;
+        walkingPathArrowContext.fillStyle = INTERACTION_COLORS.walkingPath;
+        walkingPathArrowContext.beginPath(); walkingPathArrowContext.moveTo(32, 12); walkingPathArrowContext.lineTo(48, 52); walkingPathArrowContext.lineTo(16, 52); walkingPathArrowContext.closePath(); walkingPathArrowContext.fill();
+        walkingPathArrowTexture = createDynamicTexture(engine, 64, 64, { minFilter: "linear", magFilter: "linear", mipMaps: false });
+        updateDynamicTexture(engine, walkingPathArrowTexture, walkingPathArrowCanvas, { invertY: false });
+        const walkingPathArrowAtlas = createGridSpriteAtlas(walkingPathArrowTexture, { cellWidthPx: 64, cellHeightPx: 64, columns: 1, rows: 1, pivot: [0.5, 0.5] });
+        atlases.push(walkingPathArrowAtlas);
         const pivotCanvas = document.createElement("canvas"); pivotCanvas.width = 15; pivotCanvas.height = 5;
         const pivotContext = pivotCanvas[contextGetter]("2d")!;
         ["#ff3b3b", "#3b8cff", "#56d364"].forEach((color, index) => { pivotContext.fillStyle = "#101014"; pivotContext.fillRect(index * 5, 0, 5, 5); pivotContext.fillStyle = color; pivotContext.fillRect(index * 5 + 1, 1, 3, 3); });
@@ -887,8 +960,6 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
         const startRoomVisibility = createStaticLayerVisibility([...startRoomDecorationLayers.values()], startRoomDecorationSprites);
         let staticVisibilityKey = "";
         const debugLayer = createSprite2DLayer(debugAtlas, { pivot: [0.5, 0.5] });
-        const lockdownDoorMarkerLayer = createSprite2DLayer(debugAtlas, { pivot: [0.5, 0.5], order: OVERLAY_RENDER_ORDER + 3 });
-        lockdownDoorMarkerLayer.visible = false;
         const pivotMarkerLayer = createSprite2DLayer(pivotAtlas, { pivot: [0.5, 0.5] });
         debugLayer.order = OVERLAY_RENDER_ORDER;
         debugLayer.visible = diagnosticsEnabled;
@@ -918,7 +989,6 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
           { handle: addSprite2D(playerLayers.shadow, { positionPx: [-10000, -10000], sizePx: [32, 32], frame: heroFrameIndexes.get(heroShadowPath) ?? 0 }), offsetPx: [0, -5] },
         ) : null;
         const debugHandles = [...model.diagnostics, ...model.wallDiagnostics].map(({ worldX, worldY }) => addSprite2D(debugLayer, { positionPx: [worldX, worldY], sizePx: [32, 32], frame: 0 }));
-        const lockdownDoorMarkers = Array.from({ length: 4 }, () => addSprite2D(lockdownDoorMarkerLayer, { positionPx: [-10000, -10000], sizePx: [36, 36], frame: 0 }));
         const actors = Object.fromEntries(ENEMY_CHARACTER_NAMES.map((key) => [key, [] as CharacterSprite[]])) as Record<EnemyCharacterName, CharacterSprite[]>;
         const actorPivotMarkers = Object.fromEntries(ENEMY_CHARACTER_NAMES.map((key) => [key, [] as Sprite2DHandle[][]])) as Record<EnemyCharacterName, Sprite2DHandle[][]>;
         for (const key of ENEMY_CHARACTER_NAMES) for (let i = 0; i < 40; i++) {
@@ -950,7 +1020,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
           { handle: addSprite2D(layers.main, { positionPx: [-10000, -10000], sizePx: [32, 32], frame: 0 }), offsetPx: [0, 11] },
           { handle: addSprite2D(layers.shadow, { positionPx: [-10000, -10000], sizePx: [32, 32], frame: 1 }), offsetPx: [0, -5] },
         ));
-        const triggers = triggerLayers.map((layer) => addSprite2D(layer, { positionPx: [-10000,-10000], sizePx: [32,32], frame: 0 }));
+        const triggers = triggerLayers.map((layer) => addSprite2D(layer, { positionPx: [-10000, -10000], sizePx: [32, 32], frame: 0 }));
         let previousTriggerDrawAt = performance.now();
         const goldCoins = goldCoinLayers.map((layers) => createCharacterSprite(
           { handle: addSprite2D(layers.main, { positionPx: [-10000, -10000], sizePx: [32, 32], frame: 0 }), offsetPx: [0, 0] },
@@ -970,18 +1040,22 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
         const stairs = stairLayers.map((layer) => addSprite2D(layer, { positionPx: [-10000,-10000], sizePx: [32,32], frame: DUNGEON_STAIR_UP_FRAME }));
         const teleportArrows = teleportArrowLayers.map((layer) => addSprite2D(layer, { positionPx: [-10000,-10000], sizePx: [32,32], frame: 0, color: [1, 1, 1, 1] }));
         const particles = particleLayers.map((layer) => addSprite2D(layer, { positionPx: [-10000,-10000], sizePx: [32,32], frame: 0 }));
+        const walkingPathLineLayer = createSprite2DLayer(walkingPathLineAtlas, { pivot: [0.5, 0.5], order: PLAYER_PATH_RENDER_ORDER });
+        const walkingPathLineSprites: Sprite2DHandle[] = [];
+        const walkingPathArrowLayer = createSprite2DLayer(walkingPathArrowAtlas, { pivot: [0.5, 0.5], order: PLAYER_PATH_RENDER_ORDER });
+        const walkingPathArrowSprite = addSprite2D(walkingPathArrowLayer, { positionPx: [-10000, -10000], sizePx: [16, 16], frame: 0 });
         const projectileFrameIndexes = new Map(projectileAtlasPaths.map((path, index) => [path, index]));
         const projectiles = projectileLayers.map((layer) => addSprite2D(layer, { positionPx: [-10000,-10000], sizePx: [16,16], frame: 0 }));
         const projectileStartedAt = new Map<string, number>();
         const staticLayers = [...authoredDecorationLayers, ...startRoomDecorationLayers.values(), ...staticChunkList.flatMap((chunk) => [chunk.terrain, ...chunk.walls.values()])];
-        const viewLayers = [...staticLayers, ...triggerLayers, debugLayer, lockdownDoorMarkerLayer, ...itemLayers.flatMap((layers) => [layers.shadow, layers.main]), ...droppableItemLayers.flatMap((layers) => [layers.shadow, layers.main]), ...specialItemLayers.flatMap((layers) => [layers.shadow, layers.main]), ...chestLayers.flatMap((layers) => [layers.shadow, layers.main]), ...closedCrateLayers, ...openCrateLayers, ...doorLayers, ...barrelLayers.flatMap((layers) => [layers.shadow, layers.main]), ...goldCoinLayers.flatMap((layers) => [layers.shadow, layers.main]), ...chestCoinLayers, ...itemThrowLayers, ...droppableItemThrowLayers, ...staminaPotionThrowLayers, ...torchLayers, ...trapLayers, ...campfireLayers, ...stairLayers, ...teleportArrowLayers, ...projectileLayers, ...particleLayers, ...ENEMY_CHARACTER_NAMES.flatMap((key) => actorLayers[key].flatMap((layers) => [layers.shadow, layers.main])), ...(playerLayers ? [playerLayers.shadow, playerLayers.main] : []), pivotMarkerLayer];
+        const viewLayers = [...staticLayers, walkingPathLineLayer, walkingPathArrowLayer, debugLayer, ...triggerLayers, ...itemLayers.flatMap((layers) => [layers.shadow, layers.main]), ...droppableItemLayers.flatMap((layers) => [layers.shadow, layers.main]), ...specialItemLayers.flatMap((layers) => [layers.shadow, layers.main]), ...chestLayers.flatMap((layers) => [layers.shadow, layers.main]), ...closedCrateLayers, ...openCrateLayers, ...doorLayers, ...barrelLayers.flatMap((layers) => [layers.shadow, layers.main]), ...goldCoinLayers.flatMap((layers) => [layers.shadow, layers.main]), ...chestCoinLayers, ...itemThrowLayers, ...droppableItemThrowLayers, ...staminaPotionThrowLayers, ...torchLayers, ...trapLayers, ...campfireLayers, ...stairLayers, ...teleportArrowLayers, ...projectileLayers, ...particleLayers, ...ENEMY_CHARACTER_NAMES.flatMap((key) => actorLayers[key].flatMap((layers) => [layers.shadow, layers.main])), ...(playerLayers ? [playerLayers.shadow, playerLayers.main] : []), pivotMarkerLayer];
         // Terrain and overlays use fixed passes. Every participating world layer
         // receives a shared order below, while its own sprites retain stable Y sort.
-        viewLayers.filter((layer) => !staticLayers.includes(layer) && layer !== debugLayer && layer !== lockdownDoorMarkerLayer && layer !== pivotMarkerLayer).forEach((layer) => enableSprite2DYSort(layer));
+        viewLayers.filter((layer) => !staticLayers.includes(layer) && layer !== walkingPathLineLayer && layer !== walkingPathArrowLayer && layer !== debugLayer && layer !== pivotMarkerLayer).forEach((layer) => enableSprite2DYSort(layer));
         // Pools start dormant.  A draw only reactivates layers with a visible
         // occupant, so hidden pool capacity has neither a draw call nor camera
         // transform work.
-        viewLayers.filter((layer) => !staticLayers.includes(layer) && layer !== debugLayer && layer !== lockdownDoorMarkerLayer && layer !== pivotMarkerLayer && !(playerLayers && (layer === playerLayers.main || layer === playerLayers.shadow))).forEach((layer) => { layer.visible = false; });
+        viewLayers.filter((layer) => !staticLayers.includes(layer) && layer !== debugLayer && layer !== pivotMarkerLayer && !(playerLayers && (layer === playerLayers.main || layer === playerLayers.shadow))).forEach((layer) => { layer.visible = false; });
         renderer = createSpriteRenderer(surface, { layers: viewLayers, clear: true, clearValue: clear });
         registerSpriteRenderer(renderer);
         let stairClipTopWorldY: number | null = null;
@@ -997,8 +1071,6 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
           const started = performance.now();
           const now = performanceOptions().animated ? started : 0;
           countPerformance("game preparations");
-          const triggerDeltaMs = performanceOptions().animated ? Math.max(0, now - previousTriggerDrawAt) : 0;
-          previousTriggerDrawAt = now;
           if (!minimap) turnPresentation?.sample(performance.now());
           const state = latestRef.current.campaign;
           const selectedMode = latestRef.current.renderTestMode;
@@ -1068,7 +1140,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
           if (!isMinimap && onWallAdjacentBarrelOffscreen) {
             const tileCss = cellSizeAt(rect); const halfWidth = rect.width / tileCss / 2; const halfHeight = rect.height / tileCss / 2;
             for (const set of state.floor.objectSets ?? []) {
-              if (set.kind !== "floor-trigger-door-barrel") continue;
+              if (set.kind !== "barrel-panel-door") continue;
               const barrelOffscreen = isPositionOffscreen(set.barrel, cameraCenter, halfWidth, halfHeight);
               const startOffscreen = Boolean(set.barrelStart && isPositionOffscreen(set.barrelStart, cameraCenter, halfWidth, halfHeight));
               if (barrelOffscreen && startOffscreen && isBlockingPathCell(state.floor, set.barrel) && !recoveredBarrelIdsRef.current.has(set.id) && onWallAdjacentBarrelOffscreen(set.id)) recoveredBarrelIdsRef.current.add(set.id);
@@ -1077,6 +1149,31 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
           const centerX = cameraCenter.x * 32 + 16;
           const centerY = cameraCenter.y * 32 + 16;
           cameraTransform.positionPx = [centerX, centerY];
+          const pathCells = isMinimap ? [] : mousePathOverlayRef.current;
+          walkingPathLineLayer.visible = pathCells.length > 1;
+          walkingPathLineLayer.order = PLAYER_PATH_RENDER_ORDER;
+          walkingPathArrowLayer.visible = pathCells.length > 1;
+          walkingPathArrowLayer.order = PLAYER_PATH_RENDER_ORDER;
+          for (let index = 0; index < pathCells.length; index++) {
+            const cell = pathCells[index]!; const previous = pathCells[index - 1]; const next = pathCells[index + 1];
+            let mask = 0;
+            if (previous?.x === cell.x - 1 && previous.y === cell.y || next?.x === cell.x - 1 && next.y === cell.y) mask |= 8;
+            if (previous?.x === cell.x + 1 && previous.y === cell.y || next?.x === cell.x + 1 && next.y === cell.y) mask |= 2;
+            if (previous?.y === cell.y - 1 && previous.x === cell.x || next?.y === cell.y - 1 && next.x === cell.x) mask |= 1;
+            if (previous?.y === cell.y + 1 && previous.x === cell.x || next?.y === cell.y + 1 && next.x === cell.x) mask |= 4;
+            if (!walkingPathLineSprites[index]) walkingPathLineSprites[index] = addSprite2D(walkingPathLineLayer, { positionPx: [cell.x * 32 + 16, cell.y * 32 + 16], sizePx: [32, 32], frame: mask });
+            updateSprite2D(walkingPathLineSprites[index]!, { visible: true, positionPx: [cell.x * 32 + 16, cell.y * 32 + 16], sizePx: [32, 32], frame: mask, color: [1, 1, 1, 1] });
+          }
+          for (let index = pathCells.length; index < walkingPathLineSprites.length; index++) updateSprite2D(walkingPathLineSprites[index]!, { visible: false });
+          const pathEnd = pathCells.at(-1); const pathBeforeEnd = pathCells.at(-2);
+          const destinationRotation = pathEnd && pathBeforeEnd
+            ? Math.atan2(pathEnd.x - pathBeforeEnd.x, pathBeforeEnd.y - pathEnd.y)
+            : 0;
+          updateSprite2D(walkingPathArrowSprite, {
+            visible: Boolean(pathEnd && pathBeforeEnd),
+            positionPx: pathEnd ? [pathEnd.x * 32 + 16, pathEnd.y * 32 + 16] : [-10000, -10000],
+            sizePx: [16, 16], frame: 0, rotation: destinationRotation, color: [1, 1, 1, 1],
+          });
           if (playerLayers) {
             const clipY = stairClipTopWorldY === null ? -10000 : (stairClipTopWorldY - playerLayers.main.view.positionPx[1]) * playerLayers.main.view.zoom;
             const clipActive = stairClipTopWorldY === null ? 0 : 1;
@@ -1202,15 +1299,16 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
           const doorObjects = world.puzzleObjects.filter((entity): entity is Extract<PuzzleObjectPresentation, { kind: "door" }> => entity.kind === "door" && dynamicVisible(entity));
           doors.forEach((sprite, i) => {
             const door = doorObjects[i]; doorLayers[i].visible = Boolean(door);
-            const sideArt = door?.wallAxis === "horizontal";
-            updateSprite2D(sprite, { frame: door ? puzzleObjectSpriteFrame("door", door.active, door.wallAxis) : 0, positionPx: door ? sideArt ? [door.x * 32 + 32, door.y * 32 + 32] : [door.x * 32 + 16, door.y * 32 + 16 + doorMainArtAnchorOffset(door.active)] : [-10000,-10000], sizePx: sideArt ? [64, 64] : [32, door ? 48 : 32] });
+            const sideArt = door?.wallAxis === "vertical";
+            updateSprite2D(sprite, { frame: door ? puzzleObjectSpriteFrame("door", door.active, door.wallAxis) : 0, positionPx: door ? sideArt ? [door.x * 32 + 32 + SIDE_DOOR_MAIN_ART_OFFSET_X_PX, door.y * 32 + 32] : [door.x * 32 + 16, door.y * 32 + 16 + doorMainArtAnchorOffset(door.active) + (door.active ? 8 : 0)] : [-10000,-10000], sizePx: sideArt ? [64, 64] : [32, door ? 48 : 32] });
             if (door) addLayerDepth(door.id, groundContactY(door), WORLD_TIE_BREAK.prop, doorLayers[i]);
           });
           const barrelObjects = world.puzzleObjects.filter((entity) => entity.kind === "barrel" && dynamicVisible(entity));
-          barrels.forEach((barrel, i) => { const entity = barrelObjects[i]; const position = entity && (turnPresentation?.positionOf(entity.id, entity) ?? entity); barrelLayers[i].shadow.visible = Boolean(position); barrelLayers[i].main.visible = Boolean(position); if (!position) { hideCharacterSprite(barrel); return; } const positionPx: [number, number] = [position.x * 32 + 16, position.y * 32 + 16]; updateCharacterSprite(barrel, positionPx, 0, { sizePx: [32, 32], frame: 0 }); addCharacterDepth(entity.id, groundContactY(position), barrel); });
-          const triggerObjects = world.puzzleObjects.filter((entity) => entity.kind === "trigger" && dynamicVisible(entity));
+          const triggerObjects = world.puzzleObjects.filter((entity) => entity.kind === "trigger" && entity.showFloorPanel !== false && dynamicVisible(entity));
           const liveTriggerIds = new Set(triggerObjects.map((trigger) => trigger.id));
           for (const [id, animation] of triggerAnimations) if (!liveTriggerIds.has(id)) { animation.dispose(); triggerAnimations.delete(id); }
+          const triggerDeltaMs = performanceOptions().animated ? Math.max(0, now - previousTriggerDrawAt) : 0;
+          previousTriggerDrawAt = now;
           triggers.forEach((sprite, i) => {
             const trigger = triggerObjects[i]; triggerLayers[i].visible = Boolean(trigger);
             if (!trigger) { updateSprite2D(sprite, { positionPx: [-10000, -10000] }); return; }
@@ -1225,6 +1323,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
             triggerLayers[i].order = FLOOR_DECAL_RENDER_ORDER;
             updateSprite2D(sprite, { frame, positionPx: [trigger.worldX, trigger.worldY + 16], sizePx: [32, 32] });
           });
+          barrels.forEach((barrel, i) => { const entity = barrelObjects[i]; const position = entity && (turnPresentation?.positionOf(entity.id, entity) ?? entity); barrelLayers[i].shadow.visible = Boolean(position); barrelLayers[i].main.visible = Boolean(position); if (!position) { hideCharacterSprite(barrel); return; } const positionPx: [number, number] = [position.x * 32 + 16, position.y * 32 + 16]; updateCharacterSprite(barrel, positionPx, 0, { sizePx: [32, 32], frame: 0 }); addCharacterDepth(entity.id, groundContactY(position), barrel); });
           const goldCoinFrame = Math.floor(now / 120) % 4;
           goldCoins.forEach((pickup, i) => { const entity = goldObjects[i]; goldCoinLayers[i].shadow.visible = Boolean(entity); goldCoinLayers[i].main.visible = Boolean(entity); if (!entity) { hideCharacterSprite(pickup); return; } updateCharacterSprite(pickup, [entity.worldX, entity.worldY - 10], 0, { frame: goldCoinFrame }, 0, 0); updateSprite2D(pickup.shadow.handle, { positionPx: [entity.worldX, entity.worldY], sizePx: [16, 16], color: [1, 1, 1, 0.5] }); addPickupDepth(entity.id, groundContactY(entity), pickup); });
           chestCoins.forEach((sprite, i) => { const throwItem = activeItemThrows[i]; const position = throwItem ? itemThrowPosition(throwItem, performance.now()) : null; const visible = Boolean(position && dynamicVisible(position) && throwItem?.kind === "gold"); chestCoinLayers[i].visible = visible; if (!visible || !position || !throwItem) return; updateSprite2D(sprite, { frame: goldCoinFrame, positionPx: [position.x * 32 + 16, position.y * 32 + 16] }); addLayerDepth(throwItem.id, groundContactY(position), WORLD_TIE_BREAK.effect, chestCoinLayers[i]); });
@@ -1243,13 +1342,6 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
           const visibleStairObjects = stairObjects.filter(dynamicVisible);
           stairs.forEach((sprite, i) => { const entity = visibleStairObjects[i]; stairLayers[i].visible = Boolean(entity); updateSprite2D(sprite, { frame: DUNGEON_STAIR_UP_FRAME, positionPx: entity ? [entity.worldX, entity.worldY] : [-10000,-10000], flipY: entity?.direction === "back" }); if (entity) addLayerDepth(entity.id, groundContactY(entity), WORLD_TIE_BREAK.stair, stairLayers[i]); });
           teleportArrows.forEach((sprite, i) => { const entity = teleportArrowObjects[i]; teleportArrowLayers[i].visible = Boolean(entity); const frame = entity?.direction === "e" ? 1 : entity?.direction === "s" ? 2 : entity?.direction === "w" ? 3 : 0; updateSprite2D(sprite, { frame, positionPx: entity ? [entity.worldX, entity.worldY] : [-10000, -10000], sizePx: [32, 32], color: [1, 1, 1, 1] }); if (entity) addLayerDepth(entity.id, groundContactY(entity), WORLD_TIE_BREAK.stair, teleportArrowLayers[i]); });
-          const lockdownFixture = state.floor.objectSets?.find((set): set is EncounterLockdownSet => set.kind === "encounter-lockdown" && set.id === "encounter-lockdown-fixture-level-1");
-          const fixtureDoors = lockdownFixture?.doors.filter(allowed) ?? [];
-          lockdownDoorMarkerLayer.visible = fixtureDoors.length > 0;
-          lockdownDoorMarkers.forEach((marker, index) => {
-            const door = fixtureDoors[index];
-            updateSprite2D(marker, { frame: 0, positionPx: door ? [door.x * 32 + 16, door.y * 32 + 16] : [-10000, -10000], sizePx: isMinimap ? [96, 96] : [36, 36] });
-          });
           const activeProjectiles = state.floor.projectiles ?? [];
           const activeProjectileIds = new Set(activeProjectiles.map((projectile) => projectile.id));
           for (const id of projectileStartedAt.keys()) if (!activeProjectileIds.has(id)) projectileStartedAt.delete(id);
@@ -1370,23 +1462,49 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
   useEffect(() => {
     if (!worldAlive) return;
     sceneRef.current?.draw();
-    const rect = hostRef.current?.getBoundingClientRect();
+    const rect = interactionBounds()?.getBoundingClientRect();
     if (!mouseInteraction || !rect) return;
     if (reticleInput.current.source === "gamepad" && reticleInput.current.offset) selectCell(targetAtNeighbor(reticleInput.current.offset, rect));
-    else if (!mouseDownRef.current && pointerRef.current) selectCell(targetAtScreenPosition(pointerRef.current, rect));
+    else if (!mouseDownRef.current && pointerRef.current) {
+      const point = { x: pointerRef.current.x - rect.left, y: pointerRef.current.y - rect.top };
+      if (point.x >= 0 && point.x < rect.width && point.y >= 0 && point.y < rect.height) selectCell(targetAtScreenPosition(point, rect));
+      else selectCell(null);
+    }
   }, [campaign, renderTestMode, zoom, minimap, camera, mouseInteraction, turnPresentation, worldAlive]);
-  const rect = hostRef.current?.getBoundingClientRect();
-  const reticleCellSize = rect ? cellSizeAt(rect) : 32;
-  const reticleCenter = rect && selectedCell ? getWorldCellScreenCenter({ x: selectedCell.x, y: selectedCell.y, center: getViewCenter(rect), viewportWidth: rect.width, viewportHeight: rect.height, tileCssSize: reticleCellSize }) : null;
+  useEffect(() => {
+    const bounds = interactionBounds();
+    if (!worldAlive || !mouseInteraction || !bounds || typeof ResizeObserver === "undefined") return undefined;
+    const refreshPointerSelection = () => {
+      if (mouseDownRef.current || reticleInput.current.source !== "mouse" || !pointerRef.current) return;
+      const rect = bounds.getBoundingClientRect();
+      const point = { x: pointerRef.current.x - rect.left, y: pointerRef.current.y - rect.top };
+      if (point.x >= 0 && point.x < rect.width && point.y >= 0 && point.y < rect.height) selectCell(targetAtScreenPosition(point, rect));
+      else selectCell(null);
+    };
+    const observer = new ResizeObserver(refreshPointerSelection);
+    observer.observe(bounds);
+    return () => observer.disconnect();
+  }, [mouseInteraction, worldAlive]);
+  const rect = interactionBounds()?.getBoundingClientRect();
+  const reticleProjection = rect ? projectionAt(rect) : null;
+  const reticleCellSize = reticleProjection?.tileCssSize ?? 32;
+  const reticleCenter = rect && selectedCell && reticleProjection ? getWorldCellScreenCenter({ x: selectedCell.x, y: selectedCell.y, center: reticleProjection.center, viewportWidth: rect.width, viewportHeight: rect.height, tileCssSize: reticleCellSize }) : null;
   const reticleStyle = selectedCell && rect ? {
-    left: selectedCell.pressed || reticleInput.current.source === "gamepad" ? reticleCenter!.left : selectedCell.left,
-    top: selectedCell.pressed || reticleInput.current.source === "gamepad" ? reticleCenter!.top : selectedCell.top,
-    width: selectedCell.pressed ? reticleCellSize : selectedCell.size,
-    height: selectedCell.pressed ? reticleCellSize : selectedCell.size,
+    left: reticleCenter!.left,
+    top: reticleCenter!.top,
+    width: reticleCellSize,
+    height: reticleCellSize,
   } : null;
-  const mousePathPoints = mouseInteraction && worldAlive && selectedCell && mousePath && rect
-    ? mousePath.filter((cell) => !(cell.x === selectedCell.x && cell.y === selectedCell.y && targetKindAt(cell.x, cell.y) === "item")).map((cell) => getWorldCellScreenCenter({ x: cell.x, y: cell.y, center: getViewCenter(rect), viewportWidth: rect.width, viewportHeight: rect.height, tileCssSize: reticleCellSize }))
+  const displayedMousePath = mouseInteraction && worldAlive && selectedCell && mousePath
+    ? (() => {
+      const targetIndex = mousePath.findIndex((cell) => cell.x === selectedCell.x && cell.y === selectedCell.y);
+      if (targetIndex >= 0) return mousePath.slice(0, targetIndex + 1);
+      const last = mousePath.at(-1);
+      if (selectedCellReachable === false) return mousePath;
+      return last && Math.abs(last.x - selectedCell.x) + Math.abs(last.y - selectedCell.y) === 1 ? [...mousePath, selectedCell] : [];
+    })()
     : [];
+  mousePathOverlayRef.current = displayedMousePath;
   const feedbackRect = hostRef.current?.getBoundingClientRect();
   const feedbackCenter = feedbackRect && !minimap ? getViewCenter(feedbackRect) : null;
   const feedbackCellSize = feedbackRect ? cellSizeAt(feedbackRect) : 32;
@@ -1437,7 +1555,6 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
     return () => { observer.disconnect(); window.removeEventListener("resize", update); };
   }, [campfireMenu, campaign.player.x, campaign.player.y, zoom, camera]);
   const offsets = new Map();
-  const playerPath = mousePathPoints.length > 1 ? mousePathPoints.map(({ left, top }) => `${left},${top}`).join(" ") : "";
   const targetKind = targetKindAt(selectedCell?.x, selectedCell?.y);
   const unarmedEnemyTarget = targetKind === "enemy" && Boolean(selectedCell && campaign.floor.entities.some((entity) => entity.kind === "enemy" && entity.x === selectedCell.x && entity.y === selectedCell.y && detected.has(entity.id))) && !hasAssignedWeapon(campaign);
   const reticleKind = unarmedEnemyTarget ? "unarmed" : targetKind === "hazard" ? "enemy" : targetKind === "item" || targetKind === "enemy" ? targetKind : selectedCellReachable === false ? "invalid" : targetKind;
@@ -1490,5 +1607,5 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
     "--interaction-invalid-color": INTERACTION_COLORS.invalid,
     "--ui-cutscene-bar-height": `${getCutsceneBarHeightPx(zoom)}px`,
   } as CSSProperties;
-return <div tabIndex={-1} className={minimap ? "minimap-view" : "world-view"} ref={hostRef} style={interactionColorStyle} data-world-alive={worldAlive} data-render-test-mode={renderTestMode} data-map-context={mapContextKey(presentedCampaign)} data-player-x={presentedCampaign.player.x} data-player-y={presentedCampaign.player.y} data-player-pixel-x={presentedCampaign.player.pixel?.x} data-player-pixel-y={presentedCampaign.player.pixel?.y} data-game-mode={minimap ? undefined : gameMode(campaign)} data-cursor={mouseInteraction ? resolveWorldCursor(campaign, selectedCell, selectedCellReachable, detected, mousePath, presentationAllowed) : undefined} aria-label={minimap ? "Minimap" : `Game view, ${gameMode(campaign)} mode`} data-renderer="babylon-lite" data-renderer-ready={rendererLoaded} data-content-style="2d" onMouseMove={mouseInteraction && worldAlive ? pointerMove : undefined} onMouseLeave={mouseInteraction && worldAlive ? pointerLeave : undefined} onMouseDown={mouseInteraction && worldAlive ? pointerDown : undefined} onMouseUp={mouseInteraction && worldAlive ? pointerUp : undefined} onWheel={mouseInteraction && worldAlive ? (event) => { event.preventDefault(); onZoom?.(event.deltaY < 0 ? 1 : -1); } : undefined} onContextMenu={mouseInteraction && worldAlive ? (event) => event.preventDefault() : undefined}><canvas tabIndex={-1} ref={canvasRef} className={`${minimap ? "minimap-view__canvas" : "world-view__canvas"}${gameViewShaderSystem.canvasClassName(gameViewShader, minimap)}`} aria-label={minimap ? "Dungeon minimap" : "Pixel-perfect dungeon map"}/>{!minimap && worldAlive && gameMode(campaign) === "Battle" && feedbackRect && feedbackCenter && <TacticalAreaOverlay allowed={presentationAllowed} rectangles={tacticalArea} center={renderedProjectionRef.current?.center ?? feedbackCenter} width={feedbackRect.width} height={feedbackRect.height} tileSize={renderedProjectionRef.current?.tileCssSize ?? feedbackCellSize} />}{!minimap && movementPrompts && <BattleIndicator key={`${campaign.run}:${campaign.floor.seed}:${campaign.floor.level}`} visible={worldAlive} active={gameMode(campaign) === "Battle"} movement={movementPrompts} unarmed={!hasAssignedWeapon(campaign)} />}{!minimap && resourceChangeEffects.map((effect) => <i key={effect.id} className={`world-view__resource-change-effect world-view__resource-change-effect--${effect.color}`} aria-hidden="true" />)}{playerPath && rect && <svg className="world-view__player-path" viewBox={`0 0 ${rect.width} ${rect.height}`} preserveAspectRatio="none" aria-hidden="true"><polyline points={playerPath} /></svg>}{worldAlive && !minimap && feedbackCenter && floatingFeedback.filter(presentationAllowed).map((effect) => { const key = `${effect.x},${effect.y}`; const index = offsets.get(key) ?? 0; offsets.set(key, index + 1); const position = getWorldScreenPosition({ x: effect.x, y: effect.y, center: feedbackCenter, viewportWidth: feedbackRect!.width, viewportHeight: feedbackRect!.height, tileCssSize: feedbackCellSize }); const zoomScale = typeof zoom === "number" ? zoom : 1; return <span key={effect.id} className={`world-view__floating-text world-view__floating-text--${effect.color} world-view__floating-text--${effect.kind}`} style={{ left: position.left, top: position.top - index * 12 * zoomScale, fontSize: `${14 * zoomScale}px`, "--world-floating-travel": `${11 * zoomScale}px` } as CSSProperties} aria-hidden="true">{effect.text}</span>; })}{tooltipEnemy && presentationAllowed(tooltipEnemy) && detected.has(tooltipEnemy.id) && !minimap && <section ref={tooltipRef} className="world-view__enemy-tooltip" aria-label={`${tooltipEnemy.name} information`} style={{ left: tooltipPosition?.left ?? -10000, top: tooltipPosition?.top ?? -10000, visibility: tooltipPosition ? "visible" : "hidden", ...tooltipMotion }}><div className="world-view__enemy-tooltip-section world-view__enemy-tooltip-section--portrait"><h2>Enemy: {tooltipEnemy.name}</h2><div className={`world-view__enemy-tooltip-portrait-box world-view__enemy-tooltip-portrait-box--${tooltipEnemy.name.toLowerCase()}`}><EnemyPortrait src={enemyStaticIdleFramePath(import.meta.env.BASE_URL, enemyCharacterForName(tooltipEnemy.graphic ?? tooltipEnemy.character ?? tooltipEnemy.name))} name={tooltipEnemy.name} /></div></div><div className="world-view__enemy-tooltip-section world-view__enemy-tooltip-section--resource-panel"><h2>RESOURCES</h2><EnemyResourceRows resources={tooltipEnemy.resources} /></div></section>}{campfireMenu && presentationAllowed(campfireMenu) && !minimap && movementPrompts && <MovementPrompt key={`${campfireMenu.x}:${campfireMenu.y}`} movement={movementPrompts} panelRef={campfireMenuRef} title="Interact" heading="Campfire" body={<i>Spend {REST_GOLD_COST} gold to rest and replenish status.</i>} visible={Boolean(campfireMenuPosition)} style={{ left: campfireMenuPosition?.left ?? -10000, top: campfireMenuPosition?.top ?? -10000 }} affirmation={{ direction: movementDirection(campaign.player, campfireMenu)!, label: "Bump to rest", disabled: campaign.counters.gold < REST_GOLD_COST, confirming: campfireRestConfirming, onAffirm: () => onCampfireRestRequested?.() }} onNegate={() => onCampfireMenuCancelled?.()} />}{mouseInteraction && worldAlive && selectedCell && reticleStyle && <i className={`world-view__grid-reticle world-view__grid-reticle--${reticleKind}`} style={reticleStyle}>{showPivotPoints && <span className="world-view__grid-reticle-code" aria-hidden="true">({String(selectedCell.y).padStart(2, "0")},{String(selectedCell.x).padStart(2, "0")})</span>}</i>}{!minimap && passiveMounted && <UiPassiveTransition phase={passivePhase} onPhaseComplete={finishPassivePhase} />}{!minimap && irisMounted && <UiIrisTransition phase={irisPhase} label={campfireRestPhase === "resting" ? campfireRestMessage : undefined} onPhaseComplete={finishIrisPhase} />}{!minimap && irisPhase === "open" && !rendererLoaded && message && <div role="status" className={minimap ? "minimap-view__message" : "world-view__message"}>{message}</div>}</div>;
+return <div tabIndex={-1} className={minimap ? "minimap-view" : "world-view"} ref={hostRef} style={interactionColorStyle} data-world-alive={worldAlive} data-render-test-mode={renderTestMode} data-map-context={mapContextKey(presentedCampaign)} data-player-x={presentedCampaign.player.x} data-player-y={presentedCampaign.player.y} data-player-pixel-x={presentedCampaign.player.pixel?.x} data-player-pixel-y={presentedCampaign.player.pixel?.y} data-game-mode={minimap ? undefined : gameMode(campaign)} data-cursor={mouseInteraction ? resolveWorldCursor(campaign, selectedCell, selectedCellReachable, detected, mousePath, presentationAllowed) : undefined} aria-label={minimap ? "Minimap" : `Game view, ${gameMode(campaign)} mode`} data-renderer="babylon-lite" data-renderer-ready={rendererLoaded} data-content-style="2d" onMouseMove={mouseInteraction && worldAlive ? (event) => pointerMove(event.nativeEvent) : undefined} onMouseLeave={mouseInteraction && worldAlive ? pointerLeave : undefined} onMouseDown={mouseInteraction && worldAlive ? (event) => pointerDown(event.nativeEvent) : undefined} onMouseUp={mouseInteraction && worldAlive ? (event) => pointerUp(event.nativeEvent) : undefined} onWheel={mouseInteraction && worldAlive ? (event) => { event.preventDefault(); onZoom?.(event.deltaY < 0 ? 1 : -1); } : undefined} onContextMenu={mouseInteraction && worldAlive ? (event) => event.preventDefault() : undefined}><canvas tabIndex={-1} ref={canvasRef} className={`${minimap ? "minimap-view__canvas" : "world-view__canvas"}${gameViewShaderSystem.canvasClassName(gameViewShader, minimap)}`} aria-label={minimap ? "Dungeon minimap" : "Pixel-perfect dungeon map"}/>{!minimap && worldAlive && gameMode(campaign) === "Battle" && feedbackRect && feedbackCenter && <TacticalAreaOverlay allowed={presentationAllowed} rectangles={tacticalArea} center={renderedProjectionRef.current?.center ?? feedbackCenter} width={feedbackRect.width} height={feedbackRect.height} tileSize={renderedProjectionRef.current?.tileCssSize ?? feedbackCellSize} />}{!minimap && movementPrompts && <BattleIndicator key={`${campaign.run}:${campaign.floor.seed}:${campaign.floor.level}`} visible={worldAlive} active={gameMode(campaign) === "Battle"} movement={movementPrompts} unarmed={!hasAssignedWeapon(campaign)} />}{!minimap && resourceChangeEffects.map((effect) => <i key={effect.id} className={`world-view__resource-change-effect world-view__resource-change-effect--${effect.color}`} aria-hidden="true" />)}{worldAlive && !minimap && feedbackCenter && floatingFeedback.filter(presentationAllowed).map((effect) => { const key = `${effect.x},${effect.y}`; const index = offsets.get(key) ?? 0; offsets.set(key, index + 1); const position = getWorldScreenPosition({ x: effect.x, y: effect.y, center: feedbackCenter, viewportWidth: feedbackRect!.width, viewportHeight: feedbackRect!.height, tileCssSize: feedbackCellSize }); const zoomScale = typeof zoom === "number" ? zoom : 1; return <span key={effect.id} className={`world-view__floating-text world-view__floating-text--${effect.color} world-view__floating-text--${effect.kind}`} style={{ left: position.left, top: position.top - index * 12 * zoomScale, fontSize: `${14 * zoomScale}px`, "--world-floating-travel": `${11 * zoomScale}px` } as CSSProperties} aria-hidden="true">{effect.text}</span>; })}{tooltipEnemy && presentationAllowed(tooltipEnemy) && detected.has(tooltipEnemy.id) && !minimap && <section ref={tooltipRef} className="world-view__enemy-tooltip" aria-label={`${tooltipEnemy.name} information`} style={{ left: tooltipPosition?.left ?? -10000, top: tooltipPosition?.top ?? -10000, visibility: tooltipPosition ? "visible" : "hidden", ...tooltipMotion }}><div className="world-view__enemy-tooltip-section world-view__enemy-tooltip-section--portrait"><h2>Enemy: {tooltipEnemy.name}</h2><div className={`world-view__enemy-tooltip-portrait-box world-view__enemy-tooltip-portrait-box--${tooltipEnemy.name.toLowerCase()}`}><EnemyPortrait src={enemyStaticIdleFramePath(import.meta.env.BASE_URL, enemyCharacterForName(tooltipEnemy.graphic ?? tooltipEnemy.character ?? tooltipEnemy.name))} name={tooltipEnemy.name} /></div></div><div className="world-view__enemy-tooltip-section world-view__enemy-tooltip-section--resource-panel"><h2>RESOURCES</h2><EnemyResourceRows resources={tooltipEnemy.resources} /></div></section>}{campfireMenu && presentationAllowed(campfireMenu) && !minimap && movementPrompts && <MovementPrompt key={`${campfireMenu.x}:${campfireMenu.y}`} movement={movementPrompts} panelRef={campfireMenuRef} title="Interact" heading="Campfire" body={<i>Spend {REST_GOLD_COST} gold to rest and replenish status.</i>} visible={Boolean(campfireMenuPosition)} style={{ left: campfireMenuPosition?.left ?? -10000, top: campfireMenuPosition?.top ?? -10000 }} affirmation={{ direction: movementDirection(campaign.player, campfireMenu)!, label: "Bump to rest", disabled: campaign.counters.gold < REST_GOLD_COST, confirming: campfireRestConfirming, onAffirm: () => onCampfireRestRequested?.() }} onNegate={() => onCampfireMenuCancelled?.()} />}{mouseInteraction && worldAlive && selectedCell && reticleStyle && <i className={`world-view__grid-reticle world-view__grid-reticle--${reticleKind}`} style={reticleStyle}>{showPivotPoints && <span className="world-view__grid-reticle-code" aria-hidden="true">({String(selectedCell.y).padStart(2, "0")},{String(selectedCell.x).padStart(2, "0")})</span>}</i>}{!minimap && passiveMounted && <UiPassiveTransition phase={passivePhase} onPhaseComplete={finishPassivePhase} />}{!minimap && irisMounted && <UiIrisTransition phase={irisPhase} label={campfireRestPhase === "resting" ? campfireRestMessage : undefined} onPhaseComplete={finishIrisPhase} />}{!minimap && irisPhase === "open" && !rendererLoaded && message && <div role="status" className={minimap ? "minimap-view__message" : "world-view__message"}>{message}</div>}</div>;
 }

@@ -1526,9 +1526,24 @@ test('level one generates one sealed floor-trigger door barrel set with every se
 
 test('a barrel push holds and releases its linked door while closed doors block movement', () => {
   const campaign = createCampaign(77); campaign.floor.entities = [];
-  campaign.floor.objectSets = [{ id: 'fixture', kind: 'floor-trigger-door-barrel', barrel: { x: 48, y: 50 }, trigger: { x: 49, y: 50 }, door: { x: 54, y: 50 }, regionRole: 'optional-reward' }];
+  campaign.floor.objectSets = [{ id: 'fixture', kind: 'barrel-panel-door', barrel: { x: 48, y: 50 }, trigger: { x: 49, y: 50 }, door: { x: 54, y: 50 }, regionRole: 'optional-reward' }];
   campaign.player.x = 53; campaign.player.y = 50;
   assert.equal(isObjectSetBlocked(campaign.floor, campaign.player, 54, 50), true);
+  const crossing = createCampaign(78); crossing.floor.entities = [];
+  crossing.floor.objectSets = [{ id: 'crossing-fixture', kind: 'barrel-panel-door', barrel: { x: 48, y: 50 }, trigger: { x: 53, y: 50 }, door: { x: 54, y: 50 }, regionRole: 'optional-reward' }];
+  for (const x of [52, 53, 54, 55]) { crossing.floor.cells[50]![x] = { walkable: true, role: 'floor' }; crossing.floor.map![50]![x] = 0; }
+  crossing.player.x = 52; crossing.player.y = 50;
+  const enteredTrigger = applyAction(crossing, { type: 'move', direction: 'e' });
+  const enteredDoor = applyAction(enteredTrigger.state, { type: 'move', direction: 'e' });
+  assert.equal(enteredDoor.accepted, true, 'the player can step into the open doorway');
+  assert.equal(isObjectSetDoorOpen(present(enteredDoor.state.floor.objectSets)[0], enteredDoor.state.player), true);
+  assert.equal(isObjectSetBlocked(enteredDoor.state.floor, enteredDoor.state.player, 54, 50), false);
+  const clearedDoor = applyAction(enteredDoor.state, { type: 'move', direction: 'e' });
+  assert.equal(clearedDoor.accepted, true, 'the doorway remains open until the player clears it');
+  assert.equal(isObjectSetDoorOpen(present(clearedDoor.state.floor.objectSets)[0], clearedDoor.state.player), false);
+  const exitPreview = getMousePathResult({ x: 55, y: 50 }, enteredDoor.state);
+  assert.equal(exitPreview.reachable, true, 'mouse route remains reachable from inside the open doorway');
+  assert.equal(getMouseMovementFromSelectedCell({ x: 55, y: 50, pressed: true }, enteredDoor.state, exitPreview.path)?.direction, 'e');
   assert.equal(applyAction(campaign, { type: 'move', direction: 'e' }).accepted, false);
   const blockedPush = structuredClone(campaign); blockedPush.player.x = 49; blockedPush.floor.objectSets![0].barrel = { x: 50, y: 50 }; blockedPush.floor.cells[50][51].walkable = false; blockedPush.floor.map![50][51] = 1;
   const rejectedPush = applyAction(blockedPush, { type: 'move', direction: 'e' });
@@ -1546,15 +1561,15 @@ test('a barrel push holds and releases its linked door while closed doors block 
   assert.equal(isObjectSetDoorOpen(present(released.state.floor.objectSets)[0], released.state.player), false);
   assert.equal(isObjectSetBlocked(released.state.floor, released.state.player, 54, 50), true);
   const enemyCampaign = createCampaign(91); const enemy = present(enemyCampaign.floor.entities.find((entity): entity is Enemy => entity.kind === 'enemy'));
-  enemyCampaign.floor.objectSets = [{ id: 'enemy-fixture', kind: 'floor-trigger-door-barrel', barrel: { x: 48, y: 50 }, trigger: { x: 49, y: 50 }, door: { x: 54, y: 50 }, regionRole: 'optional-reward' }];
-  enemyCampaign.player.x = 55; enemyCampaign.player.y = 50; enemy.x = 53; enemy.y = 50; enemy.nextActionAt = 1;
+  enemyCampaign.floor.objectSets = [{ id: 'enemy-fixture', kind: 'barrel-panel-door', barrel: { x: 48, y: 50 }, trigger: { x: 49, y: 50 }, door: { x: 54, y: 50 }, regionRole: 'optional-reward' }];
+  enemyCampaign.player.x = 56; enemyCampaign.player.y = 50; enemy.x = 53; enemy.y = 50; enemy.nextActionAt = 1;
   const enemyBlocked = applyAction(enemyCampaign, { type: 'wait' });
   assert.deepEqual(present(enemyBlocked.state.floor.entities.find((entity): entity is Enemy => entity.kind === 'enemy')).x, 53);
 });
 
 test('commits a floor-trigger change when its active state changes', () => {
   const campaign = createCampaign(77); campaign.floor.entities = [];
-  campaign.floor.objectSets = [{ id: 'fixture', kind: 'floor-trigger-door-barrel', barrel: { x: 48, y: 50 }, trigger: { x: 49, y: 50 }, door: { x: 54, y: 50 }, regionRole: 'optional-reward' }];
+  campaign.floor.objectSets = [{ id: 'fixture', kind: 'barrel-panel-door', barrel: { x: 48, y: 50 }, trigger: { x: 49, y: 50 }, door: { x: 54, y: 50 }, regionRole: 'optional-reward' }];
   campaign.player.x = 47; campaign.player.y = 50;
   const session = createGameSession(campaign);
   const activated = transaction(session.dispatch({ type: 'move', direction: 'e' }));
@@ -1568,7 +1583,7 @@ test('commits a floor-trigger change when its active state changes', () => {
 
 test('any object with hasMass activates a floor trigger', () => {
   const campaign = createCampaign(44); campaign.floor.entities = [];
-  const set = { id: 'mass-fixture', kind: 'floor-trigger-door-barrel' as const, barrel: { x: 48, y: 50, hasMass: true }, trigger: { x: 49, y: 50 }, door: { x: 54, y: 50 }, regionRole: 'optional-reward' as const };
+  const set = { id: 'mass-fixture', kind: 'barrel-panel-door' as const, barrel: { x: 48, y: 50, hasMass: true }, trigger: { x: 49, y: 50 }, door: { x: 54, y: 50 }, regionRole: 'optional-reward' as const };
   campaign.floor.objectSets = [set];
   campaign.player.x = 47; campaign.player.y = 50;
   assert.equal(isObjectSetDoorOpen(set, campaign.player), false);
@@ -1579,7 +1594,7 @@ test('any object with hasMass activates a floor trigger', () => {
 });
 
 test('object sets survive save-shaped campaign normalization and render identically in both world views', () => {
-  const campaign = createCampaign(123); const set = present(campaign.floor.objectSets?.find((entry) => entry.kind === 'floor-trigger-door-barrel'));
+  const campaign = createCampaign(123); const set = present(campaign.floor.objectSets?.find((entry) => entry.kind === 'barrel-panel-door'));
   campaign.floor.objectSets = [set];
   campaign.player.x = set.trigger.x; campaign.player.y = set.trigger.y;
   const restored = upgradeCampaignResources(structuredClone(campaign));
@@ -1591,7 +1606,7 @@ test('object sets survive save-shaped campaign normalization and render identica
   const legacy = structuredClone(campaign); delete legacy.floor.objectSets;
   assert.deepEqual(upgradeCampaignResources(legacy).floor.objectSets, []);
   const closed = structuredClone(campaign); closed.player.x = set.door.x; closed.player.y = set.door.y;
-  assert.equal(isObjectSetDoorOpen(present(upgradeCampaignResources(closed).floor.objectSets)[0], closed.player), false);
+  assert.equal(isObjectSetDoorOpen(present(upgradeCampaignResources(closed).floor.objectSets)[0], closed.player), true, 'standing in the doorway keeps it open until the player clears it');
   const returned = structuredClone(restored); returned.floors = { '1': structuredClone(restored.floor) }; returned.floor = generateFloor(2, 902, 2);
   returned.floor = structuredClone(returned.floors['1']);
   assert.deepEqual(upgradeCampaignResources(returned).floor.objectSets, restored.floor.objectSets);
@@ -1600,7 +1615,7 @@ test('object sets survive save-shaped campaign normalization and render identica
 
 test('a moved barrel keeps mass for renderer trigger activation', () => {
   const campaign = createCampaign(77); campaign.floor.entities = [];
-  campaign.floor.objectSets = [{ id: 'fixture', kind: 'floor-trigger-door-barrel', barrel: { x: 48, y: 50, hasMass: true }, trigger: { x: 49, y: 50 }, door: { x: 54, y: 50 }, regionRole: 'optional-reward' }];
+  campaign.floor.objectSets = [{ id: 'fixture', kind: 'barrel-panel-door', barrel: { x: 48, y: 50, hasMass: true }, trigger: { x: 49, y: 50 }, door: { x: 54, y: 50 }, regionRole: 'optional-reward' }];
   campaign.player.x = 47; campaign.player.y = 50;
   const pushed = applyAction(campaign, { type: 'move', direction: 'e' });
   const set = present(pushed.state.floor.objectSets)[0];
@@ -1611,7 +1626,7 @@ test('a moved barrel keeps mass for renderer trigger activation', () => {
 
 test('a legacy barrel without an explicit mass flag activates its floor trigger', () => {
   const campaign = createCampaign(78); campaign.floor.entities = [];
-  campaign.floor.objectSets = [{ id: 'legacy-fixture', kind: 'floor-trigger-door-barrel', barrel: { x: 49, y: 50 }, trigger: { x: 49, y: 50 }, door: { x: 54, y: 50 }, regionRole: 'optional-reward' }];
+  campaign.floor.objectSets = [{ id: 'legacy-fixture', kind: 'barrel-panel-door', barrel: { x: 49, y: 50 }, trigger: { x: 49, y: 50 }, door: { x: 54, y: 50 }, regionRole: 'optional-reward' }];
   const rendered = WorldRender.Render({ map: campaign.floor.map, entities: campaign.floor.entities, objectSets: campaign.floor.objectSets, player: { ...campaign.player, x: 47, y: 50 } });
   assert.equal(rendered.puzzleObjects.find((object) => object.kind === 'trigger')?.active, true);
 });
@@ -1731,7 +1746,7 @@ test('cardinal A* routes around terrain, rejects sealed destinations, and honors
   assert.deepEqual(goldShortcut, [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 3, y: 0 }, { x: 4, y: 0 }], 'take a coin when it saves at least five moves');
   assert.equal(findCardinalPath({ map: [[0, 0, 0]], entities: [{ id: 'chest', kind: 'chest', x: 1, y: 0 }] }, { x: 0, y: 0 }, { x: 2, y: 0 }), null);
   assert.equal(findCardinalPath({ map: [[0, 0, 0]], entities: [legacyEnemy({ id: 'target', kind: 'enemy', x: 2, y: 0 })] }, { x: 0, y: 0 }, { x: 2, y: 0 }), null);
-  const closedDoorFloor = { map: [[0, 0, 0]], entities: [], objectSets: [{ kind: 'floor-trigger-door-barrel', barrel: { x: 0, y: 0 }, trigger: { x: 2, y: 0 }, door: { x: 1, y: 0 } }] };
+  const closedDoorFloor = { map: [[0, 0, 0]], entities: [], objectSets: [{ kind: 'barrel-panel-door', barrel: { x: 0, y: 0 }, trigger: { x: 2, y: 0 }, door: { x: 1, y: 0 } }] };
   assert.equal(findCardinalPath(closedDoorFloor, { x: 0, y: 0 }, { x: 2, y: 0 }, { respectObjectSets: true }), null, 'closed doors are hard blockers');
   assert.deepEqual(findCardinalApproachPath(closedDoorFloor, { x: 0, y: 0 }, { x: 2, y: 0 }, { respectObjectSets: true }), [{ x: 0, y: 0 }], 'closed-door approach ends on the cardinal tile before the door');
 });
@@ -1744,8 +1759,8 @@ test('player routes avoid walkable objects only within a five-tile total detour'
     { decorations: [{ kind: 'trap', ...object }] },
     { decorations: [{ kind: 'torch', ...object }] },
     { tiledDecorations: [object] },
-    { objectSets: [{ kind: 'floor-trigger-door-barrel', trigger: object }] },
-    { objectSets: [{ kind: 'encounter-lockdown', completed: true, doors: [object] }] },
+    { objectSets: [{ kind: 'barrel-panel-door', trigger: object }] },
+    { objectSets: [{ kind: 'enemy-locked-door', completed: true, doors: [object] }] },
   ];
   for (const fixture of fixtures) for (const depth of [1, 2, 3]) {
     const map = Array.from({ length: depth + 1 }, (_, y) => [0, y === 0 || y === depth ? 0 : 1, y === 0 || y === depth ? 0 : 1, y === 0 || y === depth ? 0 : 1, 0]);
@@ -1769,7 +1784,7 @@ test('player object avoidance falls back through unavoidable objects and preserv
     assert.equal(result.reachable, false, kind);
     assert.deepEqual(result.path?.at(-1), { x: 1, y: 0 }, kind);
   }
-  const doorFloor = { ...floor, entities: [], objectSets: [{ kind: 'floor-trigger-door-barrel', barrel: player, trigger: target, door: { x: 2, y: 0 } }] };
+  const doorFloor = { ...floor, entities: [], objectSets: [{ kind: 'barrel-panel-door', barrel: player, trigger: target, door: { x: 2, y: 0 } }] };
   assert.deepEqual(getMousePathResult(target, { player, floor: doorFloor }).path?.at(-1), { x: 1, y: 0 });
 });
 
@@ -1933,7 +1948,7 @@ test('turn presentation changes player depth to the destination tile at the move
 
 test('turn presentation moves a pushed barrel with the player sub-grid animation', () => {
   const previous = createCampaign(75);
-  previous.floor.objectSets = [{ id: 'animated-set', kind: 'floor-trigger-door-barrel', barrel: { x: 48, y: 50 }, trigger: { x: 49, y: 50 }, door: { x: 54, y: 50 }, regionRole: 'optional-reward' }];
+  previous.floor.objectSets = [{ id: 'animated-set', kind: 'barrel-panel-door', barrel: { x: 48, y: 50 }, trigger: { x: 49, y: 50 }, door: { x: 54, y: 50 }, regionRole: 'optional-reward' }];
   const current = structuredClone(previous);
   current.player.x++;
   current.floor.objectSets![0].barrel.x++;

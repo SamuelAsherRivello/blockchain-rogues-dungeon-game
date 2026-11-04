@@ -146,10 +146,11 @@ button:focus-visible { outline:2px solid #f6de92; outline-offset:2px; }
 .title-bar .title-bar__select-utility select { width:7.4em; max-width:none; box-sizing:border-box; }
 .game-screen__middle { position:relative; min-height:0; }
 .world-view-region { position:absolute; inset:0 auto 0 0; display:flex; min-width:0; min-height:0; }
+.world-view-region > .world-view { flex:0 0 100%; width:100%; height:100%; }
 .world-view-region__backdrop { position:absolute; inset:0; z-index:20; background:rgb(0 0 0 / 50%); pointer-events:none; }
-.game-card__tab-placement { position:absolute; z-index:1; right:100%; width:.55rem; height:4rem; pointer-events:none; }
+.game-card__tab-placement { position:absolute; z-index:10; right:100%; width:.55rem; height:4rem; pointer-events:auto; }
 .game-card__tab-placement .tab-control { top:50%; left:50%; transform:translate(-50%,-50%) rotate(-90deg); }
-.information-panels { display:grid; grid-template-columns:1fr 1fr; min-width:0; min-height:0; }
+.information-panels { display:grid; grid-template-columns:1fr 1fr; min-width:0; min-height:0; pointer-events:none; }
 /* Each column remains 22% of a 16:9 shell's width at the current shell height.
    The game view absorbs the horizontal difference across the 16:10–16:9 range. */
 #viewport[data-orientation="landscape"] { --landscape-panel-column-width:39.111111cqh; --landscape-panels-width:78.222222cqh; }
@@ -295,9 +296,6 @@ button:focus-visible { outline:2px solid #f6de92; outline-offset:2px; }
 @keyframes cutscene-bar-bottom-out { from { transform:translateY(0); } to { transform:translateY(100%); } }
 .world-view__message,.mobile-notice { position:absolute; inset:0; display:grid; place-items:center; padding:10%; text-align:center; background:#100e17; color:#e4b85e; font-size:1rem; line-height:1.5; }
 .world-view__grid-reticle { position:absolute; pointer-events:none; transform:translate(-50%,-50%); color:var(--interaction-valid-color); z-index:2; background:linear-gradient(currentColor,currentColor) left top/8px 2px no-repeat,linear-gradient(currentColor,currentColor) left top/2px 8px no-repeat,linear-gradient(currentColor,currentColor) right top/8px 2px no-repeat,linear-gradient(currentColor,currentColor) right top/2px 8px no-repeat,linear-gradient(currentColor,currentColor) left bottom/8px 2px no-repeat,linear-gradient(currentColor,currentColor) left bottom/2px 8px no-repeat,linear-gradient(currentColor,currentColor) right bottom/8px 2px no-repeat,linear-gradient(currentColor,currentColor) right bottom/2px 8px no-repeat; }
-.world-view__path-dot { position:absolute; width:4px; height:4px; border-radius:50%; pointer-events:none; transform:translate(-50%,-50%); background:var(--interaction-valid-color); box-shadow:0 0 2px #000,0 0 4px var(--interaction-valid-color); z-index:2; }
-.world-view__path-dot--interactive { background:var(--interaction-interactive-color); box-shadow:0 0 2px #000,0 0 4px var(--interaction-interactive-color); }
-.world-view__path-dot--hazard { background:var(--interaction-enemy-color); box-shadow:0 0 2px #000,0 0 4px var(--interaction-enemy-color); }
 .world-view__grid-reticle-code { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); padding:1px 2px; color:#f5f1e6; background:#101014; font:normal 10px/1 ui-monospace,monospace; white-space:nowrap; }
 .world-view__grid-reticle--invalid { color:var(--interaction-invalid-color); }.world-view__grid-reticle--enemy { color:var(--interaction-enemy-color); }.world-view__grid-reticle--item { color:var(--interaction-interactive-color); }.world-view__grid-reticle--unarmed { color:#df6161; background:transparent; box-shadow:0 0 0 1px #df6161; }
 .movement-prompt--centered { position:absolute; z-index:21; left:50%; top:50%; transform:translate(-50%,-50%); }
@@ -617,7 +615,7 @@ button:focus-visible { outline:2px solid #f6de92; outline-offset:2px; }
 .select-mode-window .select-mode-window__footer { padding:.45rem .75rem; }
 .select-mode-window .select-mode-window__footer button { width:100%; border-color:#604124; background:rgb(255 251 232 / 80%); color:#2e2117; }
 .select-mode-window .select-mode-window__footer button:hover,.select-mode-window .select-mode-window__footer button:focus-visible { background:#f1d98b; outline:2px solid #5d331b; outline-offset:2px; }
-.progression-window__attributes { margin:0 0 .7rem; }.progression-window .body_text { margin:0 0 .7rem; text-align:center; }.progression-window__results-heading { margin-bottom:.25rem !important; }.progression-window__results { min-height:3.9rem; margin:0 0 .7rem; padding:.1rem 0 .1rem 1.8rem; }.progression-window__results:empty { visibility:visible; }.progression-window__results .body_text { margin:0; text-align:left; line-height:1.3; }.progression-window__actions { display:flex; gap:.5rem; }.progression-window__actions button { flex:1; border:1px solid #65583e; background:#211d24; color:#e8dec4; padding:.45rem .75rem; font:inherit; cursor:pointer; }.progression-window__actions button:disabled { border-color:#5c574d; background:#343238; color:#85817a; cursor:not-allowed; }
+.progression-window__attributes { margin:0 0 .7rem; }.progression-window .body_text { margin:0 0 1.4rem; text-align:center; }.progression-window__results-heading { margin-bottom:.25rem !important; }.progression-window__results { min-height:3.9rem; margin:0 0 .7rem; padding:.1rem 0 .1rem 1.8rem; }.progression-window__results:empty { visibility:visible; }.progression-window__results .body_text { margin:0; text-align:left; line-height:1.3; }.progression-window__actions { display:flex; gap:.5rem; }.progression-window__actions button { flex:1; border:1px solid #65583e; background:#211d24; color:#e8dec4; padding:.45rem .75rem; font:inherit; cursor:pointer; }.progression-window__actions button:disabled { border-color:#5c574d; background:#343238; color:#85817a; cursor:not-allowed; }
 @media (max-width:600px) { .create-character-window { width:84%; height:calc(69% + 50px); }.create-character-window__content { gap:.55rem; }.create-character-window__details { gap:.7rem; } }
 
 /* In a short fitted viewport, keep the creation flow to one readable screen.
@@ -880,6 +878,7 @@ button:focus-visible { outline:2px solid #f6de92; outline-offset:2px; }
 .create-world-window .attribute_item { min-width:0; }
 .create-world-window .delta_value { flex-shrink:0; }
 .world-progression-window .progression-window__results { min-height:3lh; height:auto; }
+.world-progression-window .progression-window__actions { margin-top:.7rem; }
 /* Menu dialogs inherit the live Start Game rectangle. Match its portrait density. */
 #viewport[data-orientation="portrait"] :is(.settings-window--menu,.create-character-window) { top:22% !important; bottom:5cqw; left:5% !important; width:90% !important; height:auto !important; }
 #viewport[data-orientation="portrait"] :is(.settings-window--menu,.create-character-window) .dialog_header { flex-basis:8.1cqw; padding-inline:3cqw; }

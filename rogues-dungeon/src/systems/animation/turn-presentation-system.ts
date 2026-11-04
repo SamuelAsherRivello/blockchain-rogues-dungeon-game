@@ -15,7 +15,7 @@ export interface TurnPlaybackPlan { duration: number; enemies: PresentedEnemy[] 
 interface SubGridMotion { from: Position; to: Position; startAt: number; endAt: number }
 
 function enemies(campaign: Campaign) { return campaign.floor.entities.filter((entity): entity is Enemy => entity.kind === "enemy"); }
-function barrels(campaign: Campaign) { return (campaign.floor.objectSets ?? []).filter((set) => set.kind === "floor-trigger-door-barrel").map((set) => ({ id: `${set.id}-barrel`, ...set.barrel })); }
+function barrels(campaign: Campaign) { return (campaign.floor.objectSets ?? []).filter((set) => set.kind === "barrel-panel-door").map((set) => ({ id: `${set.id}-barrel`, ...set.barrel })); }
 function subGridMovers(campaign: Campaign) { return [...enemies(campaign), ...barrels(campaign)]; }
 function samePosition(a: Position | undefined, b: Position | undefined) { return a?.x === b?.x && a?.y === b?.y; }
 function clonePosition(position: Position): Position { return { x: position.x, y: position.y }; }
@@ -39,6 +39,7 @@ export class TurnPresentationSystem {
   private bumps = new Map<string, { origin: Position; direction: Position; startAt: number }>();
   private damageReactions = new Map<string, number>();
   private headings = new Map<string, Direction>();
+  private pendingPlayerHeading: Direction | null = null;
   private playerMode: MovementMode = "grid-tween";
   private playerPixelTraveling = false;
   private interactionActors = new Set<string>();
@@ -53,7 +54,7 @@ export class TurnPresentationSystem {
     this.floorKey = `${campaign.floor.seed}:${campaign.floor.level}`;
     this.playerPixelTraveling = false;
     this.interactionActors.clear();
-    this.ranks.clear(); this.nextRank = 0; this.active = null; this.motions.clear(); this.bumps.clear(); this.damageReactions.clear(); this.headings.clear();
+    this.ranks.clear(); this.nextRank = 0; this.active = null; this.motions.clear(); this.bumps.clear(); this.damageReactions.clear(); this.headings.clear(); this.pendingPlayerHeading = null;
     this.positions = new Map(subGridMovers(campaign).map((mover) => [mover.id, clonePosition(mover)]));
     this.positions.set("player", precisePlayerPosition(campaign.player));
   }
@@ -86,7 +87,10 @@ export class TurnPresentationSystem {
       this.setMotion(enemy.id, entry, now);
       return entry;
     });
-    if (current.player.heading) this.headings.set("player", current.player.heading);
+    if (current.player.heading) {
+      this.headings.set("player", this.pendingPlayerHeading ?? current.player.heading);
+      this.pendingPlayerHeading = null;
+    }
     const playerBefore = precisePlayerPosition(previous.player); const playerAfter = precisePlayerPosition(current.player);
     // An interaction bump owns the player's presented position even when the
     // campaign commits its result at the bump apex.  In particular, Gridless
@@ -148,7 +152,7 @@ export class TurnPresentationSystem {
   releaseInteractionActors() { for (const id of this.interactionActors) { this.motions.delete(id); this.bumps.delete(id); } this.interactionActors.clear(); }
   tweenInteractionActor(id: string, from: Position, to: Position, now: number) { this.setMotion(id, { from: clonePosition(from), to: clonePosition(to), startAt: now, endAt: now + CHARACTER_MOVEMENT_DURATION_MS }, now); }
   endInteractionBump() { this.bumps.delete("player"); }
-  faceInteraction(direction: Direction) { this.headings.set("player", direction); }
+  faceInteraction(direction: Direction) { this.headings.set("player", direction); this.pendingPlayerHeading = direction; }
   get isPlayerMoving() { return this.motions.has("player"); }
   /** Start a cardinal bump and face its direction for the entire gesture. */
   beginBump(id: string, origin: Position, direction: Direction | Position, now: number) { const heading = typeof direction === "string" ? direction : bumpDirectionFromOffset(direction); const offset = bumpOffsets[heading]; this.positions.set(id, clonePosition(origin)); this.headings.set(id, heading); this.bumps.set(id, { origin: clonePosition(origin), direction: clonePosition(offset), startAt: now }); }

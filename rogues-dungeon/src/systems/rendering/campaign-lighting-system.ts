@@ -1,6 +1,6 @@
 import type { Campaign } from "../../game/types.ts";
-import { encounterLockdownSets, floorTriggerDoorSets, isEncounterLockdownDoorOpen, isObjectSetDoorOpen } from "../procedural/world-procedural-system.ts";
-import { isWalkable } from "../procedural/level-grid-system.ts";
+import { enemyLockedDoorPuzzles, barrelPanelDoorPuzzles, isEnemyLockedDoorOpen, isObjectSetDoorOpen } from "../procedural/world-procedural-system.ts";
+import { doorApertureCells, isWalkable } from "../procedural/level-grid-system.ts";
 import { GRID_LIGHTING, playerGridLights, wallLightOrigin, type GridLight, type LightingScene } from "./grid-lighting-system.ts";
 
 /** Per-view adapter; never retained globally across campaigns or renderer teardown. */
@@ -10,8 +10,8 @@ export function createCampaignLightingReader() {
     if (campaign === previous && result) return result;
     const floor = campaign.floor;
     const closed = [
-      ...floorTriggerDoorSets(floor).filter((set) => !isObjectSetDoorOpen(set, campaign.player, floor.entities)).map((set) => set.door),
-      ...encounterLockdownSets(floor).filter((set) => !isEncounterLockdownDoorOpen(set)).flatMap((set) => set.doors),
+      ...barrelPanelDoorPuzzles(floor).flatMap((set) => { const doorway = doorApertureCells(floor, set.door); return isObjectSetDoorOpen(set, campaign.player, floor.entities, doorway) ? [] : doorway; }),
+      ...enemyLockedDoorPuzzles(floor).filter((set) => !isEnemyLockedDoorOpen(set)).flatMap((set) => set.doors.flatMap((door) => doorApertureCells(floor, door))),
     ];
     const blocked = new Set(closed.map((p) => `${p.x},${p.y}`));
     const opaque = (x: number, y: number) => !isWalkable(floor, x, y) || blocked.has(`${x},${y}`);

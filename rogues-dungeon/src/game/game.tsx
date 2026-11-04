@@ -155,7 +155,7 @@ function ItemComparisonPanel({ before, after, destination }: { before: Item | nu
   return <aside ref={panel} className="item-comparison-panel" aria-label="Equipment comparison"><GameCard title="Item Comparison"><ItemComparisonItemPanel title="Before" item={before} baseline={before} /><ItemComparisonItemPanel title="After" item={after} baseline={before} /></GameCard></aside>;
 }
 function EquipmentItem({ item, group, index, drag, shineTokens = {} }: { item: Item | null; group: EquipmentGroup; index: number; drag: DragPresentation | null; shineTokens?: SlotShineTokens }) { const secondary = item?.slotSpan === 2 && index === 1; const departure = !secondary && drag?.source.kind === "slot" && drag.source.group === group && drag.source.index === index; const landing = drag?.destination?.kind === "slot" && drag.destination.group === group && ((drag.source.item as Item).slotSpan === 2 || drag.destination.index === index); const effects = itemPresentation(item); return <SlotItem slotType="equipment" slotSubtype={group} text={item ? `${item.name}${secondary ? " (2)" : ""}` : ""} effects={effects} shineKey={`equipment:${group}:${index}`} shineTokens={shineTokens} className={["equipment_item", secondary && "slot_item--occupied-secondary", departure && "drag_departure", landing && "drag_landing"].filter(Boolean).join(" ")} dropTarget={{ "data-drop-group": group, "data-drop-index": index }} dragSource={item && !secondary ? { "data-drag-kind": "slot", "data-drag-id": item.id, "data-drag-group": group, "data-drag-index": index, "aria-label": `Drag ${item.name}` } : {}} empty={!item} tooltip={secondary ? `${item.name} occupies this position.` : equipmentSlotHelp(item)} />; }
-function SlotListView({ campaign, drag = null, shineTokens = {} }: { campaign: Campaign; drag?: DragPresentation | null; shineTokens?: SlotShineTokens }) { return <div className="slot_scroll">{([["Weapons", "weapons"], ["Armor", "armor"], ["Jewels", "jewels"]] as const).map(([label, group]) => <div className="slot_group" key={group}><h3>{label}</h3>{campaign.player.equipment[group].map((item, index) => <EquipmentItem key={index} item={item} group={group} index={index} drag={drag} shineTokens={shineTokens} />)}</div>)}</div>; }
+function SlotListView({ campaign, drag = null, shineTokens = {} }: { campaign: Campaign; drag?: DragPresentation | null; shineTokens?: SlotShineTokens }) { return <div className="slot_scroll">{([["Arms", "weapons"], ["Armors", "armor"], ["Jewels", "jewels"]] as const).map(([label, group]) => <div className="slot_group" key={group}><h3>{label}</h3>{campaign.player.equipment[group].map((item, index) => <EquipmentItem key={index} item={item} group={group} index={index} drag={drag} shineTokens={shineTokens} />)}</div>)}</div>; }
 export const SlotList = memoCampaignView(SlotListView, campaign => campaign.player.equipment);
 export function EquipmentComparison({ campaign, drag }: { campaign: Campaign; drag: DragPresentation | null }) {
   const destination = drag?.destination;
@@ -661,7 +661,7 @@ export function Game() {
     return () => window.clearTimeout(timer);
   }, [campaign?.floor.seed, campaign?.floor.level, campaign?.activePrefab?.id, campaign?.player.x, campaign?.player.y, preferences.movementMode, turnPresentation]);
   // Keep A* stable while the pointer moves within the same grid cell.
-  const selectedMouseResult = useMemo(() => getMousePathResult(selectedGridSpot, campaign, (position) => Boolean(campaign && mouseCellAllowed(campaign, position))), [renderTestMode,campaign?.floor, campaign?.player.x, campaign?.player.y, selectedGridSpot?.x, selectedGridSpot?.y]);
+  const selectedMouseResult = useMemo(() => getMousePathResult(selectedGridSpot, campaign, (position) => Boolean(campaign && mouseCellAllowed(campaign, position))), [renderTestMode,campaign?.floor, campaign?.player.x, campaign?.player.y, selectedGridSpot?.x, selectedGridSpot?.y, selectedGridSpot?.pathEntryDirection]);
   const selectedMousePath = selectedMouseResult.path;
   const selectedCellReachable = selectedGridSpot ? selectedMouseResult.reachable : null;
   const returnToMainMenu = useCallback(() => {
@@ -740,6 +740,7 @@ export function Game() {
     if (gridlessInteractions.active) return;
     if (!campaign || !worldAlive || !worldInputEnabled || settings || confirmingSaveAndExit || progressionDialogOpen) return;
     const plan = planMouseTravel(selected, campaign, warnedMouseHazard.current, (position) => mouseCellAllowed(campaign, position));
+    if (!plan.reachable) return;
     warnedMouseHazard.current = plan.warnedHazard; confirmedMouseHazard.current = plan.confirmedHazard;
     mouseTravelBudget.current = MAX_MOUSE_TRAVEL_STEPS;
     heldMovements.current.clear(); activeMovement.current = null;
@@ -797,7 +798,14 @@ export function Game() {
             const path = route.path;
             const center = cellCenter(current.player);
             const next = path?.[1];
-            if (next && mouseCellAllowed(current, next) && isMouseHazard(current.floor, next) && (next.x !== confirmedMouseHazard.current?.x || next.y !== confirmedMouseHazard.current?.y)) {
+            const selectedEnemy = current.floor.entities?.some((entity) => entity.kind === "enemy" && entity.x === target.x && entity.y === target.y);
+            const enemyIsCardinallyAdjacent = selectedEnemy && Math.abs(target.x - current.player.x) + Math.abs(target.y - current.player.y) === 1;
+            if (enemyIsCardinallyAdjacent) {
+              const bump = getMouseMovementFromSelectedCell({ ...target, pressed: true }, current, path, (position) => mouseCellAllowed(current, position));
+              clickedDestination.current = null;
+              if (bump) dispatch({ type: "move", direction: bump.direction });
+            }
+            else if (next && mouseCellAllowed(current, next) && isMouseHazard(current.floor, next) && (next.x !== confirmedMouseHazard.current?.x || next.y !== confirmedMouseHazard.current?.y)) {
               warnedMouseHazard.current = next; clickedDestination.current = null; dispatch({ type: "center-player" }); turnPresentation.stopPlayerPixelTravel();
               frame = requestAnimationFrame(animateMovement); return;
             }
@@ -818,6 +826,7 @@ export function Game() {
             if (target && result && "state" in result && (result.state.player.x !== current.player.x || result.state.player.y !== current.player.y)) mouseTravelBudget.current--;
             if (result?.accepted && "state" in result) {
               turnPresentation.notePlayerPixelTravel(current.player, result.state.player);
+              if (target && target.pathEntryDirection && result.state.player.x === target.x && result.state.player.y === target.y && result.state.player.pixel?.x === cellCenter(target).x && result.state.player.pixel?.y === cellCenter(target).y) turnPresentation.faceInteraction(target.pathEntryDirection);
               if (target) {
                 const dx = result.state.player.x - current.player.x; const dy = result.state.player.y - current.player.y;
                 const direction = dx === 1 && dy === 0 ? "e" : dx === -1 && dy === 0 ? "w" : dx === 0 && dy === 1 ? "s" : dx === 0 && dy === -1 ? "n" : null;
@@ -839,7 +848,7 @@ export function Game() {
           if (movement) {
             const [dx, dy] = directions[movement.direction as Direction]; const next = { x: current.player.x + dx, y: current.player.y + dy };
             if (mouseCellAllowed(current, next) && isMouseHazard(current.floor, next) && (next.x !== confirmedMouseHazard.current?.x || next.y !== confirmedMouseHazard.current?.y)) { warnedMouseHazard.current = next; clickedDestination.current = null; }
-            else { turnPresentation.setPlayerMovementDuration(target.sprint ? 150 : CHARACTER_MOVEMENT_DURATION_MS); const result = dispatch({ type: "move", direction: movement.direction }); if (result?.accepted) { mouseTravelBudget.current--; noteMouseScreenEdgeMove(current.player, result, movement.direction as Direction); } else clickedDestination.current = null; }
+            else { turnPresentation.setPlayerMovementDuration(target.sprint ? 150 : CHARACTER_MOVEMENT_DURATION_MS); const result = dispatch({ type: "move", direction: movement.direction }); if (result?.accepted) { mouseTravelBudget.current--; noteMouseScreenEdgeMove(current.player, result, movement.direction as Direction); if (target.pathEntryDirection && result.state.player.x === target.x && result.state.player.y === target.y) turnPresentation.faceInteraction(target.pathEntryDirection); } else clickedDestination.current = null; }
           }
           else clickedDestination.current = null;
           nextGridStep = now + (target.sprint ? 75 : 250);

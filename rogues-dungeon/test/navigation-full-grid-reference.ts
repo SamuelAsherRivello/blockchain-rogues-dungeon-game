@@ -54,7 +54,7 @@ function closedObjectSetCells(floor: PathFloor, from: Position) {
     (object.hasMass ?? defaultHasMass) === true && object.x === position.x && object.y === position.y;
   const objectSetCells = new Set<string>();
   for (const set of floor.objectSets ?? []) {
-    if (set.kind === "encounter-lockdown") {
+    if (set.kind === "enemy-locked-door") {
       if (set.activated && !set.completed) for (const door of set.doors ?? []) objectSetCells.add(cellKey(door));
       continue;
     }

@@ -235,14 +235,14 @@ test('real session actions reach audio for movement, crates, doors, restoration,
   await check(s => { s.floor.cells[20][21].walkable = false; }, [{ type: 'toggle-sneak' }, { type: 'wait' }, { type: 'move', direction: 'e' }], ['playerSneak', 'playerWait', 'moveBlocked']);
   await check(s => { s.floor.entities = [{ id: 'crate', kind: 'crate', x: 21, y: 20, health: 50, opened: false }]; }, [{ type: 'move', direction: 'e' }], ['woodBreak']);
   await check(s => {
-    s.floor.objectSets = [{ id: 'switch', kind: 'floor-trigger-door-barrel', regionRole: 'optional-reward', trigger: { x: 21, y: 20 }, door: { x: 23, y: 20 }, barrel: { x: 25, y: 20, hasMass: true }, barrelStart: { x: 25, y: 20 } }];
+    s.floor.objectSets = [{ id: 'switch', kind: 'barrel-panel-door', regionRole: 'optional-reward', trigger: { x: 21, y: 20 }, door: { x: 23, y: 20 }, barrel: { x: 25, y: 20, hasMass: true }, barrelStart: { x: 25, y: 20 } }];
   }, [{ type: 'move', direction: 'e' }, { type: 'move', direction: 'w' }], ['floorTrigger', 'doorOpen', 'doorLocked']);
   await check(s => {
-    s.floor.objectSets = [{ id: 'door', kind: 'floor-trigger-door-barrel', regionRole: 'optional-reward', trigger: { x: 24, y: 20 }, door: { x: 21, y: 20 }, barrel: { x: 25, y: 20, hasMass: true } }];
+    s.floor.objectSets = [{ id: 'door', kind: 'barrel-panel-door', regionRole: 'optional-reward', trigger: { x: 24, y: 20 }, door: { x: 21, y: 20 }, barrel: { x: 25, y: 20, hasMass: true } }];
   }, [{ type: 'move', direction: 'e' }], ['doorLocked']);
   await check(s => {
     s.floor.cells[20][26].walkable = false;
-    s.floor.objectSets = [{ id: 'return', kind: 'floor-trigger-door-barrel', regionRole: 'optional-reward', trigger: { x: 24, y: 22 }, door: { x: 27, y: 20 }, barrel: { x: 25, y: 20, hasMass: true }, barrelStart: { x: 24, y: 20 } }];
+    s.floor.objectSets = [{ id: 'return', kind: 'barrel-panel-door', regionRole: 'optional-reward', trigger: { x: 24, y: 22 }, door: { x: 27, y: 20 }, barrel: { x: 25, y: 20, hasMass: true }, barrelStart: { x: 24, y: 20 } }];
   }, [{ type: 'return-barrel', setId: 'return' }], ['barrelReturn']);
   await check(s => {
     const target = structuredClone(base.floor.entities.find(e => e.kind === 'enemy')!);

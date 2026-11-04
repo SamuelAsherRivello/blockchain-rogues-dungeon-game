@@ -4,8 +4,8 @@ import { normalizeDiscovery, revealDiscovery } from "./map-discovery-system.ts";
 export { revealDiscovery, isCellDiscovered, discoveredCoverage } from "./map-discovery-system.ts";
 import { hasPerceptionLineOfSight } from "../../game/enemy-detection.ts";
 import { planStartRoomDecoration } from "../../content/world/start-wall-autotile.ts";
-import { RESOURCE_WILL_REPLENISH, type AbilityId, type Action, type ActionResult, type Attributes, type AttributeName, type Campaign, type ConsumableResource, type Direction, type EncounterLockdownSet, type Enemy, type Entity, type Equipment, type EquipmentGroup, type EventFacts, type Floor, type FloorTriggerDoorBarrelSet, type GameEvent, type Item, type LevelStateDelta, type MassBearingPosition, type ObjectSet, type ObjectSetRegionRole, type Position, type QuickSlot, type Resource, type ResourceInput, type ResourceName, type Resources, type Room, type WorldDecoration } from "../../game/types.ts";
-import { createLevelContext, ensureSemanticCells, isWalkable, markRuntimeGridValid, runLevelPasses, setCell } from "./level-grid-system.ts";
+import { RESOURCE_WILL_REPLENISH, type AbilityId, type Action, type ActionResult, type Attributes, type AttributeName, type Campaign, type ConsumableResource, type Direction, type EnemyLockedDoorPuzzle, type Enemy, type Entity, type Equipment, type EquipmentGroup, type EventFacts, type Floor, type BarrelPanelDoorPuzzle, type GameEvent, type Item, type LevelStateDelta, type MassBearingPosition, type ObjectSet, type ObjectSetRegionRole, type Position, type QuickSlot, type Resource, type ResourceInput, type ResourceName, type Resources, type Room, type WorldDecoration } from "../../game/types.ts";
+import { createLevelContext, doorApertureCells, ensureSemanticCells, isWalkable, markRuntimeGridValid, runLevelPasses, setCell } from "./level-grid-system.ts";
 import { HERO_HOUSE_PREFAB, PLAYER_HOME_PREFAB, PLAYER_HOME_LOCKBOXES, prefabPortalEntrances, stampPrefab, type PrefabPlacement } from "./prefab-system.ts";
 import { isWallDecorationCell, TRAP_FRAME_DURATION_MS, trapFrameAt, trapIsDangerous, trapStrikeDamage } from "./world-hazards-system.ts";
 import { worldFloorSeed } from "./world-seed-system.ts";
@@ -143,34 +143,41 @@ export function normalizeStartRoomMetadata(floor: Floor) {
 }
 export function normalizeObjectSets(floor: Floor) {
   const raw = Array.isArray(floor.objectSets) ? floor.objectSets : [];
-  floor.objectSets = raw.flatMap((set): ObjectSet[] => {
-    if (set?.kind === "floor-trigger-door-barrel" && typeof set.id === "string" && validPosition(set.barrel) && validPosition(set.trigger) && validPosition(set.door) && objectSetRoles.includes(set.regionRole)) {
+  floor.objectSets = raw.flatMap((storedSet): ObjectSet[] => {
+    const set = storedSet.kind === "floor-trigger-door-barrel"
+      ? { ...storedSet, kind: "barrel-panel-door" } as ObjectSet
+      : storedSet.kind === "encounter-lockdown"
+        ? { ...storedSet, kind: "enemy-locked-door" } as ObjectSet
+        : storedSet;
+    if (set?.kind === "barrel-panel-door" && typeof set.id === "string" && validPosition(set.barrel) && validPosition(set.trigger) && validPosition(set.door) && objectSetRoles.includes(set.regionRole)) {
       return [{ ...set, barrel: { ...set.barrel, hasMass: set.barrel.hasMass !== false }, barrelStart: validPosition(set.barrelStart) ? { ...set.barrelStart } : { ...set.barrel }, barrelReturnUsed: Boolean(set.barrelReturnUsed), trigger: { ...set.trigger }, door: { ...set.door } }];
     }
-    if (set?.kind === "encounter-lockdown" && typeof set.id === "string" && Array.isArray(set.doors) && set.doors.length > 0 && set.doors.every(validPosition) && Array.isArray(set.triggers) && set.triggers.length > 0 && set.triggers.every(validPosition) && Array.isArray(set.enemyIds) && set.enemyIds.every((id) => typeof id === "string") && set.room && validPosition(set.room) && Number.isInteger(set.room.w) && Number.isInteger(set.room.h)) {
-      return [{ ...set, barrel: validPosition(set.barrel) ? { ...set.barrel, hasMass: false } : { ...set.doors[0], hasMass: false }, trigger: validPosition(set.trigger) ? { ...set.trigger } : { ...set.triggers[0] }, door: validPosition(set.door) ? { ...set.door } : { ...set.doors[0] }, regionRole: objectSetRoles.includes(set.regionRole) ? set.regionRole : "optional-reward", doors: set.doors.map((door) => ({ ...door })), triggers: set.triggers.map((trigger) => ({ ...trigger })), enemyIds: [...set.enemyIds], room: { ...set.room }, activated: Boolean(set.activated), completed: Boolean(set.completed) }];
+    if (set?.kind === "enemy-locked-door" && typeof set.id === "string" && Array.isArray(set.doors) && set.doors.length > 0 && set.doors.every(validPosition) && Array.isArray(set.triggers) && set.triggers.length > 0 && set.triggers.every(validPosition) && Array.isArray(set.enemyIds) && set.enemyIds.every((id) => typeof id === "string") && set.room && validPosition(set.room) && Number.isInteger(set.room.w) && Number.isInteger(set.room.h)) {
+      return [{ id: set.id, kind: set.kind, regionRole: objectSetRoles.includes(set.regionRole) ? set.regionRole : "optional-reward", doors: set.doors.map((door) => ({ ...door })), triggers: set.triggers.map((trigger) => ({ ...trigger })), enemyIds: [...set.enemyIds], room: { ...set.room }, activated: Boolean(set.activated), completed: Boolean(set.completed) }];
     }
     return [];
   });
   return floor;
 }
-export function keyedDoorCountForFloor(floor: Floor) { return floorTriggerDoorSets(floor).filter((set) => set.requiresKey === true).length; }
+export function keyedDoorCountForFloor(floor: Floor) { return barrelPanelDoorPuzzles(floor).filter((set) => set.requiresKey === true).length; }
 function hasMassAt(position: Position, object: MassBearingPosition, defaultHasMass = false) { return (object.hasMass ?? defaultHasMass) === true && samePosition(position, object); }
-export function isObjectSetDoorOpen(set: Pick<FloorTriggerDoorBarrelSet, "barrel" | "trigger" | "door">, player: MassBearingPosition, entities: Entity[] = []) {
-  return hasMassAt(set.trigger, player) || hasMassAt(set.trigger, set.barrel, true) || entities.some((entity) => hasMassAt(set.trigger, entity));
+export function isObjectSetDoorOpen(set: Pick<BarrelPanelDoorPuzzle, "barrel" | "trigger" | "door">, player: MassBearingPosition, entities: Entity[] = [], doorway = [set.door]) {
+  // Keep the doorway passable while the player is crossing it. The trigger can
+  // release as soon as the player steps off it, before they have cleared the door.
+  return hasMassAt(set.trigger, player) || doorway.some((cell) => hasMassAt(cell, player)) || hasMassAt(set.trigger, set.barrel, true) || entities.some((entity) => hasMassAt(set.trigger, entity));
 }
 function emitFloorTriggerChanges(events: GameEvent[], previous: Campaign, current: Campaign) {
-  const previousSets = new Map(floorTriggerDoorSets(previous.floor).map((set) => [set.id, set]));
-  for (const set of floorTriggerDoorSets(current.floor)) {
+  const previousSets = new Map(barrelPanelDoorPuzzles(previous.floor).map((set) => [set.id, set]));
+  for (const set of barrelPanelDoorPuzzles(current.floor)) {
     const previousSet = previousSets.get(set.id);
     if (!previousSet) continue;
-    const wasActive = isObjectSetDoorOpen(previousSet, previous.player, previous.floor.entities);
-    const active = isObjectSetDoorOpen(set, current.player, current.floor.entities);
+    const wasActive = isObjectSetDoorOpen(previousSet, previous.player, previous.floor.entities, doorApertureCells(previous.floor, previousSet.door));
+    const active = isObjectSetDoorOpen(set, current.player, current.floor.entities, doorApertureCells(current.floor, set.door));
     if (active !== wasActive) emit(events, "floor-trigger.changed", { id: set.id, active }, current);
   }
 }
 function updateEncounterLockdowns(state: Campaign, events: GameEvent[]) {
-  for (const set of encounterLockdownSets(state.floor)) {
+  for (const set of enemyLockedDoorPuzzles(state.floor)) {
     if (!set.activated && set.triggers.some((trigger) => samePosition(trigger, state.player))) {
       set.activated = true;
       emit(events, "encounter.locked", { id: set.id, position: { x: state.player.x, y: state.player.y } }, state);
@@ -182,10 +189,16 @@ function updateEncounterLockdowns(state: Campaign, events: GameEvent[]) {
     }
   }
 }
-export function floorTriggerDoorSets(floor: Floor) { return (floor.objectSets ?? []).filter((set): set is FloorTriggerDoorBarrelSet => set.kind === "floor-trigger-door-barrel"); }
-export function encounterLockdownSets(floor: Floor) { return (floor.objectSets ?? []).filter((set): set is EncounterLockdownSet => set.kind === "encounter-lockdown"); }
-export function isEncounterLockdownDoorOpen(set: EncounterLockdownSet) { return !set.activated || set.completed; }
-function barrelSetAt(floor: Floor, x: number, y: number) { return floorTriggerDoorSets(floor).find((set) => set.barrel.x === x && set.barrel.y === y); }
+export function barrelPanelDoorPuzzles(floor: Floor) { return (floor.objectSets ?? []).filter((set): set is BarrelPanelDoorPuzzle => set.kind === "barrel-panel-door"); }
+export function enemyLockedDoorPuzzles(floor: Floor) { return (floor.objectSets ?? []).filter((set): set is EnemyLockedDoorPuzzle => set.kind === "enemy-locked-door"); }
+export function isEnemyLockedDoorOpen(set: EnemyLockedDoorPuzzle) { return !set.activated || set.completed; }
+/** Encounter enemies remain dormant until the player crosses that encounter's interior trigger. */
+export function isEncounterEnemyActive(floor: Floor, enemy: Enemy) {
+  if (!enemy.encounterId) return true;
+  const encounter = enemyLockedDoorPuzzles(floor).find((set) => set.id === enemy.encounterId);
+  return !encounter || encounter.activated;
+}
+function barrelSetAt(floor: Floor, x: number, y: number) { return barrelPanelDoorPuzzles(floor).find((set) => set.barrel.x === x && set.barrel.y === y); }
 export function isBarrelAdjacentToWall(floor: Parameters<typeof isWalkable>[0], barrel: Position) { return [[0, -1], [1, 0], [0, 1], [-1, 0]].some(([dx, dy]) => !isWalkable(floor, barrel.x + dx, barrel.y + dy)); }
 export function isBlockingPathCell(floor: Parameters<typeof isWalkable>[0], cell: Position) {
   return [[0, -1], [1, 0], [0, 1], [-1, 0]].filter(([dx, dy]) => isWalkable(floor, cell.x + dx, cell.y + dy)).length === 2;
@@ -249,8 +262,11 @@ function carveNearbyLockdownFixture(map: number[][], start: Position): Encounter
   return { room, entrances: [{ door, trigger }] };
 }
 export function isObjectSetBlocked(floor: Floor, player: MassBearingPosition, x: number, y: number) {
-  return floorTriggerDoorSets(floor).some((set) => samePosition(set.barrel, { x, y }) || (samePosition(set.door, { x, y }) && !isObjectSetDoorOpen(set, player, floor.entities)))
-    || encounterLockdownSets(floor).some((set) => !isEncounterLockdownDoorOpen(set) && set.doors.some((door) => samePosition(door, { x, y })));
+  return barrelPanelDoorPuzzles(floor).some((set) => {
+    const doorway = doorApertureCells(floor, set.door);
+    return samePosition(set.barrel, { x, y }) || (!isObjectSetDoorOpen(set, player, floor.entities, doorway) && doorway.some((cell) => samePosition(cell, { x, y })));
+  })
+    || enemyLockedDoorPuzzles(floor).some((set) => !isEnemyLockedDoorOpen(set) && set.doors.some((door) => doorApertureCells(floor, door).some((cell) => samePosition(cell, { x, y }))));
 }
 
 function stairsForLevel(level: number, start: Position, forward: Position): Extract<Entity, { kind: "stairs" }>[] {
@@ -843,8 +859,8 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
       })
     : null;
   const encounterLayouts = [
-    ...(encounterLayout ? [{ id: `encounter-lockdown-${level}`, layout: encounterLayout, random: encounterRandom }] : []),
-    ...(encounterFixtureLayout ? [{ id: "encounter-lockdown-fixture-level-1", layout: encounterFixtureLayout, random: worldRandom(seed, "level-one-encounter-fixture-enemies") }] : []),
+    ...(encounterLayout ? [{ id: `enemy-locked-door-${level}`, layout: encounterLayout, random: encounterRandom }] : []),
+    ...(encounterFixtureLayout ? [{ id: "enemy-locked-door-fixture-level-1", layout: encounterFixtureLayout, random: worldRandom(seed, "level-one-encounter-fixture-enemies") }] : []),
   ];
   if (options.size && options.size !== 100) {
     const reference = generateFloor(level, seed, difficulty, { ...options, size: 100 });
@@ -1000,7 +1016,7 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
       const layout = layouts[Math.floor(random() * layouts.length)];
       const claimSetCell = (cell: Position) => generation.reserveEntityCell(cell.x, cell.y);
       if (!isBlockingPathCell(generation, layout.barrel) && !isBarrelAdjacentToWall(generation, layout.barrel) && claimSetCell(layout.barrel) && claimSetCell(layout.trigger) && claimSetCell(sealedDoor)) {
-        objectSets.push({ id: "floor-trigger-door-barrel-1", kind: "floor-trigger-door-barrel", barrel: { ...layout.barrel, hasMass: true }, barrelStart: { ...layout.barrel }, trigger: layout.trigger, door: sealedDoor, regionRole });
+        objectSets.push({ id: "barrel-panel-door-1", kind: "barrel-panel-door", barrel: { ...layout.barrel, hasMass: true }, barrelStart: { ...layout.barrel }, trigger: layout.trigger, door: sealedDoor, regionRole });
         blockingCells.push(layout.barrel, sealedDoor);
         if (regionRole === "optional-reward" && claimSetCell(sealedGoal)) add({ id: "sealed-reward", kind: "chest", opened: false, ...sealedGoal });
       }
@@ -1021,7 +1037,7 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
           const enemy = enemyFromDefinition(`${encounterId}-enemy-${index + 1}`, definition, cell, level, tuning?.threatScale ?? 1, tuning ? tuning.awareness + traitRandom() * .5 - definition.awareness : 0, tuning?.engagementDelay ?? 0);
           return { ...enemy, encounterId, resources: enemyResources(enemy, level) };
         });
-        objectSets.push({ id: encounterId, kind: "encounter-lockdown", barrel: { ...encounterLayout.entrances[0]!.door, hasMass: false }, trigger: { ...encounterLayout.entrances[0]!.trigger }, door: { ...encounterLayout.entrances[0]!.door }, regionRole: "optional-reward", doors: encounterLayout.entrances.map((entry) => ({ ...entry.door })), triggers: encounterLayout.entrances.map((entry) => ({ ...entry.trigger })), room: { ...encounterLayout.room }, enemyIds: enemies.map((enemy) => enemy.id), activated: false, completed: false });
+        objectSets.push({ id: encounterId, kind: "enemy-locked-door", regionRole: "optional-reward", doors: encounterLayout.entrances.map((entry) => ({ ...entry.door })), triggers: encounterLayout.entrances.map((entry) => ({ ...entry.trigger })), room: { ...encounterLayout.room }, enemyIds: enemies.map((enemy) => enemy.id), activated: false, completed: false });
         encounterLayout.entrances.forEach((entry) => blockingCells.push(entry.door));
         enemies.forEach(add);
       }
@@ -1133,7 +1149,7 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
       const cell = nextOrdinaryPickupCell();
       if (cell) add({ id: `${potionKinds[index % potionKinds.length]}-potion-${index + 1}`, kind: "potion", resource: potionKinds[index % potionKinds.length], ...(tuning ? { quantity: tuning.supplyQuantity ?? 1 } : {}), ...cell });
     }
-    const keyedDoorCount = objectSets.filter((set): set is FloorTriggerDoorBarrelSet => set.kind === "floor-trigger-door-barrel" && set.requiresKey === true).length;
+    const keyedDoorCount = objectSets.filter((set): set is BarrelPanelDoorPuzzle => set.kind === "barrel-panel-door" && set.requiresKey === true).length;
     const baseKeyCount = budgetCount(pickupRandom, balance.budgets.keys);
     const surplusKeyCount = pickupRandom() < balance.surplusKeyChance ? 1 : 0;
     const keyCount = Math.max(keyedDoorCount, baseKeyCount) + surplusKeyCount;
@@ -1204,7 +1220,7 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
     requireQuality();
     const occupied = floor.entities.map(entity => ({ id: entity.id, x: entity.x, y: entity.y }));
     for (const set of floor.objectSets ?? []) {
-      if (set.kind === "floor-trigger-door-barrel") occupied.push({ id: `${set.id}-barrel`, ...set.barrel }, { id: `${set.id}-door`, ...set.door });
+      if (set.kind === "barrel-panel-door") occupied.push({ id: `${set.id}-barrel`, ...set.barrel }, { id: `${set.id}-door`, ...set.door });
     }
     quality = validateDungeonQuality({ ...qualityInput(), entities: occupied });
     if (!quality.valid) throw new Error(`Dungeon generation rejected before activation: ${JSON.stringify(quality.issues)}`);
@@ -1377,7 +1393,7 @@ function headingToward(from: Position, to: Position, fallback: Direction) {
 function enemyPhase(state: Campaign, events: GameEvent[]) {
   if (state.floor.time === 1) return;
   const player = state.player;
-  const enemies = state.floor.entities.filter((entity): entity is Enemy => entity.kind === "enemy");
+  const enemies = state.floor.entities.filter((entity): entity is Enemy => entity.kind === "enemy" && isEncounterEnemyActive(state.floor, entity));
   countPerformance("enemy visits", enemies.length);
   const canEnter = (enemy: Enemy, position: Position) => !isObjectSetBlocked(state.floor, state.player, position.x, position.y)
     && !(floorTrapAt(state.floor, position) && enemyAvoidsTrap(enemy, position, state.floor.time));
@@ -1386,11 +1402,12 @@ function enemyPhase(state: Campaign, events: GameEvent[]) {
   const key = (position: Position) => position.y * state.floor.width + position.x;
   const blockedObjects = new Set<number>();
   for (const set of state.floor.objectSets ?? []) {
-    if (set.kind === "floor-trigger-door-barrel") {
+    if (set.kind === "barrel-panel-door") {
       blockedObjects.add(key(set.barrel));
-      if (!isObjectSetDoorOpen(set, player, state.floor.entities)) blockedObjects.add(key(set.door));
-    } else if (set.kind === "encounter-lockdown" && !isEncounterLockdownDoorOpen(set)) {
-      for (const door of set.doors) blockedObjects.add(key(door));
+      const doorway = doorApertureCells(state.floor, set.door);
+      if (!isObjectSetDoorOpen(set, player, state.floor.entities, doorway)) for (const cell of doorway) blockedObjects.add(key(cell));
+    } else if (set.kind === "enemy-locked-door" && !isEnemyLockedDoorOpen(set)) {
+      for (const door of set.doors) for (const cell of doorApertureCells(state.floor, door)) blockedObjects.add(key(cell));
     }
   }
   const traps = (state.floor.decorations ?? []).filter(decoration => decoration.kind === "trap");
@@ -1775,7 +1792,7 @@ export function gameMode(campaign: Campaign, now = Date.now()): "General" | "Bat
 
 export function isBattleThreat(campaign: Campaign, enemy: Enemy): boolean {
   const range = Math.max(effectiveAwareness(campaign, enemy), 1, 2 * effectiveAttributes(campaign).perception);
-  return enemy.hp > 0 && Math.max(Math.abs(enemy.x - campaign.player.x), Math.abs(enemy.y - campaign.player.y)) <= range;
+  return isEncounterEnemyActive(campaign.floor, enemy) && enemy.hp > 0 && Math.max(Math.abs(enemy.x - campaign.player.x), Math.abs(enemy.y - campaign.player.y)) <= range;
 }
 
 /** Temporary diagnostic movement. No turns, interactions, hazards or rewards. */
@@ -1985,7 +2002,7 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
     return { state, events, accepted: true, ticks: 0 };
   }
   if (action.type === "return-barrel") {
-    const set = floorTriggerDoorSets(state.floor).find((entry) => entry.id === action.setId); const start = set?.barrelStart;
+    const set = barrelPanelDoorPuzzles(state.floor).find((entry) => entry.id === action.setId); const start = set?.barrelStart;
     if (!set || !start || set.barrelReturnUsed || !isBarrelAdjacentToWall(state.floor, set.barrel) || samePosition(set.barrel, start) || !isWalkable(state.floor, start.x, start.y) || samePosition(state.player, start) || entityAt(state.floor.entities, start.x, start.y)) return reject("barrel-return-unavailable");
     const from = { ...set.barrel }; set.barrel = { ...start, hasMass: true }; set.barrelReturnUsed = true;
     emit(events, "barrel.returned", { id: set.id, from, to: { ...start } }, state); return { state, events, accepted: true, ticks: 0 };
@@ -2100,8 +2117,8 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
       tick(state, events); return { state, events, accepted: true, ticks: 1 };
     }
     if ((!isWalkable(state.floor, x, y) || isObjectSetBlocked(state.floor, state.player, x, y)) && !entity) {
-      const door = floorTriggerDoorSets(state.floor).some((set) => samePosition(set.door, { x, y }))
-        || encounterLockdownSets(state.floor).some((set) => set.doors.some((position) => samePosition(position, { x, y })));
+      const door = barrelPanelDoorPuzzles(state.floor).some((set) => samePosition(set.door, { x, y }))
+        || enemyLockedDoorPuzzles(state.floor).some((set) => set.doors.some((position) => samePosition(position, { x, y })));
       return reject("blocked", door ? { obstacle: "door" } : {});
     }
     if (entity?.kind === "campfire") return reject("blocked-campfire");

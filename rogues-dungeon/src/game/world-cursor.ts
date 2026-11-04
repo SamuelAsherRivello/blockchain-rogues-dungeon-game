@@ -9,7 +9,7 @@ export function resolveWorldCursor(campaign: Campaign, target: SelectedCell | nu
   const adjacent = (from: Position) => Math.abs(target.x - from.x) + Math.abs(target.y - from.y) === 1;
   const canApproach = adjacent(campaign.player) || Boolean(approach?.length && adjacent(approach.at(-1)!));
   if (entity?.kind === "enemy") return detected.has(entity.id) ? hasAssignedWeapon(campaign) && canApproach ? "fight" : "blocked" : "neutral";
-  const barrel = campaign.floor.objectSets?.find((set) => set.kind === "floor-trigger-door-barrel" && set.barrel.x === target.x && set.barrel.y === target.y);
+  const barrel = campaign.floor.objectSets?.find((set) => set.kind === "barrel-panel-door" && set.barrel.x === target.x && set.barrel.y === target.y);
   if (barrel) {
     const from = adjacent(campaign.player) ? campaign.player : approach?.at(-1) ?? campaign.player;
     const dx = target.x - from.x; const dy = target.y - from.y;

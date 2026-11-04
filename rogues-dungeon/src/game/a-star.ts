@@ -2,7 +2,8 @@ import { countPerformance, measurePerformance } from "../systems/rendering/perfo
 import type { Position } from "./types.ts";
 import type { Grid } from "../systems/procedural/level-grid-system.ts";
 import { createAStarPathfinder, DEFAULT_GRID_OPTIONS, DIRECTIONS_4, GridNode, type IPathfindingMap } from "@esengine/pathfinding";
-import { ensureSemanticCells, isWalkable } from "../systems/procedural/level-grid-system.ts";
+import { doorApertureCells, ensureSemanticCells, isWalkable } from "../systems/procedural/level-grid-system.ts";
+import { isObjectSetBlocked } from "../systems/procedural/world-procedural-system.ts";
 
 // Adapted from the MIT-licensed cardinal A* integration in
 // https://github.com/SamuelAsherRivello/babylon-lite-ascii-rpg
@@ -20,9 +21,17 @@ const isPassableEntity = (entity: PathEntity, options: CardinalPathOptions) => p
   || options.avoidObjects === true && entity.kind === "crate" && entity.opened === true;
 
 function objectCells(floor: PathFloor) {
-  const cells = new Set([...(floor.entities ?? []), ...(floor.decorations ?? []), ...(floor.tiledDecorations ?? [])].map(cellKey));
+  // Doors are navigation terrain, not optional scenery to route around. A
+  // closed door is already excluded by the hard blocker set; an open door
+  // should be treated like any other walkable cell by object avoidance.
+  const doorTileGids = new Set([154, 155, 158, 159]);
+  const cells = new Set([
+    ...(floor.entities ?? []),
+    ...(floor.decorations ?? []),
+    ...(floor.tiledDecorations ?? []).filter((decoration) => !doorTileGids.has(decoration.gid ?? -1)),
+  ].map(cellKey));
   for (const set of floor.objectSets ?? []) {
-    for (const position of [set.barrel, set.trigger, set.door, ...(set.doors ?? []), ...(set.triggers ?? [])]) {
+    for (const position of [set.kind === "enemy-locked-door" ? undefined : set.barrel, set.trigger, ...(set.triggers ?? [])]) {
       if (position) cells.add(cellKey(position));
     }
   }
@@ -64,22 +73,17 @@ function pathToClosestReachableCell(normalizedFloor: Grid & { entities?: (Positi
 }
 
 function closedObjectSetCells(floor: PathFloor, from: Position) {
-  const entities = floor.entities ?? [];
-  const hasMassAt = (position: Position, object: Position & { hasMass?: boolean }, defaultHasMass = false) =>
-    (object.hasMass ?? defaultHasMass) === true && object.x === position.x && object.y === position.y;
   const objectSetCells = new Set<string>();
   for (const set of floor.objectSets ?? []) {
-    if (set.kind === "encounter-lockdown") {
-      if (set.activated && !set.completed) for (const door of set.doors ?? []) objectSetCells.add(cellKey(door));
-      continue;
-    }
-    const { trigger, door, barrel } = set;
-    if (!trigger || !door || !barrel) continue;
-    const open = hasMassAt(trigger, from)
-      || hasMassAt(trigger, barrel, true)
-      || entities.some((entity) => hasMassAt(trigger, entity));
-    if (!open) {
-      objectSetCells.add(cellKey(door));
+    const doors = set.kind === "enemy-locked-door" ? set.doors ?? [] : set.door ? [set.door] : [];
+    for (const door of doors) {
+      for (const cell of doorApertureCells(floor, door)) {
+        // Keep mouse pathfinding in lockstep with keyboard movement's door
+        // state check instead of maintaining a second interpretation here.
+        if (isObjectSetBlocked(floor as Parameters<typeof isObjectSetBlocked>[0], from as Parameters<typeof isObjectSetBlocked>[1], cell.x, cell.y)) {
+          objectSetCells.add(cellKey(cell));
+        }
+      }
     }
   }
   return objectSetCells;
@@ -139,7 +143,7 @@ function findCardinalPathCore(floor: PathFloor, from: Position, to: Position, op
     .filter((entity) => !isPassableEntity(entity, options) && !(entity.kind !== "enemy" && entity.x === to.x && entity.y === to.y))
     .map(cellKey));
   if (options.respectObjectSets) for (const key of closedObjectSetCells(normalizedFloor, from)) hardBlocked.add(key);
-  if (options.respectObjectSets) for (const set of normalizedFloor.objectSets ?? []) if (set.barrel) hardBlocked.add(cellKey(set.barrel));
+  if (options.respectObjectSets) for (const set of normalizedFloor.objectSets ?? []) if (set.kind !== "enemy-locked-door" && set.barrel) hardBlocked.add(cellKey(set.barrel));
   if (options.respectObjectSets) for (const entity of normalizedFloor.entities ?? []) if (entity.kind === "campfire") hardBlocked.add(cellKey(entity));
   const pickupBlocked = new Set((normalizedFloor.entities ?? [])
     .filter((entity) => passableEntityKinds.has(entity.kind ?? ""))
@@ -249,7 +253,7 @@ function findCardinalApproachPathCore(floor: PathFloor, from: Position, to: Posi
     .filter((entity) => !isPassableEntity(entity, options) && !(entity.kind !== "enemy" && entity.x === to.x && entity.y === to.y))
     .map(cellKey));
   if (options.respectObjectSets) for (const key of closedObjectSetCells(normalizedFloor, from)) hardBlocked.add(key);
-  if (options.respectObjectSets) for (const set of normalizedFloor.objectSets ?? []) if (set.barrel) hardBlocked.add(cellKey(set.barrel));
+  if (options.respectObjectSets) for (const set of normalizedFloor.objectSets ?? []) if (set.kind !== "enemy-locked-door" && set.barrel) hardBlocked.add(cellKey(set.barrel));
   if (options.respectObjectSets) for (const entity of normalizedFloor.entities ?? []) if (entity.kind === "campfire") hardBlocked.add(cellKey(entity));
   const pickupBlocked = new Set((normalizedFloor.entities ?? [])
     .filter((entity) => passableEntityKinds.has(entity.kind ?? ""))

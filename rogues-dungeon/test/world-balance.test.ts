@@ -75,7 +75,7 @@ test('Level One uses a compact footprint without reducing its opening content cl
 
 test('trigger-only doors do not consume keyed-door coverage', () => {
   const floor = generateFloor(1, 17, 1, { worldAttributes: DEFAULT_WORLD_ATTRIBUTES });
-  assert.equal(floor.objectSets?.filter((set) => set.kind === 'floor-trigger-door-barrel').length, 1);
+  assert.equal(floor.objectSets?.filter((set) => set.kind === 'barrel-panel-door').length, 1);
   assert.equal(keyedDoorCountForFloor(floor), 0);
   assert.ok(floor.entities.filter(entity => entity.kind === 'key').length >= keyedDoorCountForFloor(floor));
 });

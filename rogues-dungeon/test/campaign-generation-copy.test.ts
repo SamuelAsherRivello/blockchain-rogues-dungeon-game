@@ -37,7 +37,7 @@ test('actor, puzzle, resource, discovery and recovery state remain independently
   source.journeyCheckpoint.adventureBaseline = undefined;
   source.adventureBaseline.floor.generation = source.floor.generation;
   source.journeyCheckpoint.floor.generation = source.floor.generation;
-  source.floor.objectSets = [{ id: 'copy-fixture', kind: 'floor-trigger-door-barrel', regionRole: 'optional-reward', barrel: { x: 1, y: 1 }, trigger: { x: 2, y: 1 }, door: { x: 3, y: 1 } }];
+  source.floor.objectSets = [{ id: 'copy-fixture', kind: 'barrel-panel-door', regionRole: 'optional-reward', barrel: { x: 1, y: 1 }, trigger: { x: 2, y: 1 }, door: { x: 3, y: 1 } }];
   const before = JSON.stringify(source), copy = copyCampaignMutableState(source);
   assert.strictEqual(copy.floor, copy.floors!['2']);
   assert.strictEqual(copy.floor.generation, copy.adventureBaseline!.floor.generation);

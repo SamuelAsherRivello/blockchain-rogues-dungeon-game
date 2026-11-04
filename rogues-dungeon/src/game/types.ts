@@ -57,20 +57,16 @@ export type Entity = Enemy
   | (Position & { id: string; kind: "campfire"; name?: string })
   | (Position & { id: string; kind: "item"; item: Item });
 export type ObjectSetRegionRole = "optional-reward" | "exit";
-export interface FloorTriggerDoorBarrelSet {
-  id: string; kind: "floor-trigger-door-barrel"; barrel: MassBearingPosition; trigger: Position; door: Position;
+export interface BarrelPanelDoorPuzzle {
+  id: string; kind: "barrel-panel-door"; barrel: MassBearingPosition; trigger: Position; door: Position;
   barrelStart?: Position; barrelReturnUsed?: boolean;
   requiresKey?: boolean;
   regionRole: ObjectSetRegionRole;
 }
 /** A combat room begins with all entrances open and locks after the player crosses an interior trigger. */
-export interface EncounterLockdownSet {
+export interface EnemyLockedDoorPuzzle {
   id: string;
-  kind: "encounter-lockdown";
-  /** Legacy single-door fields keep shared object-set consumers source-compatible. */
-  barrel: MassBearingPosition;
-  trigger: Position;
-  door: Position;
+  kind: "enemy-locked-door";
   regionRole: ObjectSetRegionRole;
   /** Boundary cells that become impassable while the encounter is active. */
   doors: Position[];
@@ -82,7 +78,7 @@ export interface EncounterLockdownSet {
   activated: boolean;
   completed: boolean;
 }
-export type ObjectSet = FloorTriggerDoorBarrelSet | EncounterLockdownSet;
+export type ObjectSet = BarrelPanelDoorPuzzle | EnemyLockedDoorPuzzle;
 export interface WorldDecoration extends Position { id: string; kind: "torch" | "trap" | "start-room-wall"; wallMounted: boolean; frame?: number }
 export interface TiledDecoration extends Position { gid: number }
 export interface Floor {
@@ -202,7 +198,7 @@ export interface EventFacts {
 export interface GameEvent { type: string; facts: EventFacts; source?: string; gameTime: number; sequence: number; eventId?: string; transactionId?: string | null; outcome?: string }
 export interface ActionResult { state: Campaign; events: GameEvent[]; accepted: boolean; ticks: number; transactionId?: string; system?: boolean; recovery?: Campaign | null }
 export interface LogEntry { id?: string; text: string }
-export interface SelectedCell extends Position { pixel?: Position; pressed?: boolean; sprint?: boolean; left?: number; top?: number; size?: number; kind?: string }
+export interface SelectedCell extends Position { pixel?: Position; pressed?: boolean; sprint?: boolean; left?: number; top?: number; size?: number; kind?: string; pathEntryDirection?: Direction }
 export interface Feedback extends Position { id?: string; kind: string; text: string; color: string; duration: number }
 export type DragSource = { kind: "inventory"; item: Item } | { kind: "lockbox"; item: Item; boxId: string } | { kind: "slot"; item: Item; group: EquipmentGroup; index: number } | { kind: "quick-slot"; item: Item; index: number } | { kind: "ability"; item: Item; index: number };
 export type DropDestination = { kind: "inventory"; index?: number } | { kind: "lockbox"; boxId: string; index?: number } | { kind: "slot"; group: EquipmentGroup; index: number } | { kind: "quick-slot"; index: number } | { kind: "ability"; index: number } | { kind: "drop-item" };

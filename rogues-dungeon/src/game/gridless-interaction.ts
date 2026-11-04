@@ -27,7 +27,7 @@ function blocked(state: Campaign, cell: Position) {
 }
 
 function contact(state: Campaign, cell: Position, direction: Direction): Pick<GridlessInteraction, "kind" | "barrelId" | "campfire"> | null {
-  const barrel = state.floor.objectSets?.find(s => s.kind === "floor-trigger-door-barrel" && at(s.barrel, cell));
+  const barrel = state.floor.objectSets?.find(s => s.kind === "barrel-panel-door" && at(s.barrel, cell));
   if (barrel) {
     const [dx, dy] = directions[direction]; const beyond = { x: cell.x + dx, y: cell.y + dy };
     const legal = isWalkable(state.floor, beyond.x, beyond.y) && !isObjectSetBlocked(state.floor, state.player, beyond.x, beyond.y)
@@ -42,7 +42,7 @@ function contact(state: Campaign, cell: Position, direction: Direction): Pick<Gr
 function specialEntry(state: Campaign, from: Position, to: Position) {
   return state.floor.entities.some(e => at(e, to) && !(e.kind === "crate" && e.opened || e.kind === "chest" && e.opened))
     || state.floor.decorations?.some(e => e.kind === "trap" && at(e, to))
-    || state.floor.objectSets?.some(s => s.kind === "floor-trigger-door-barrel" ? at(s.trigger, from) || at(s.trigger, to) : !s.activated && s.triggers.some(t => at(t, to)))
+    || state.floor.objectSets?.some(s => s.kind === "barrel-panel-door" ? at(s.trigger, from) || at(s.trigger, to) : !s.activated && s.triggers.some(t => at(t, to)))
     || state.floor.entities.some(e => e.kind === "enemy") && gameMode({ ...state, player: { ...state.player, ...to, pixel: cellCenter(to) } }) === "Battle";
 }
 

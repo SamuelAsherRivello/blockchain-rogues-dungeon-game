@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { createRunCampaign, GENERATOR_VERSION, isObjectSetDoorOpen } from "../../src/systems/procedural/world-procedural-system.ts";
+import { cellCenter } from "../../src/game/player-position.ts";
 import { installCampaignFixture, readSavedCampaign } from "./campaign-fixture.ts";
 import { openSavedGame } from "./start-saved-game.ts";
 import { sampleCanvasPixels } from "./canvas-pixel-sample.ts";
@@ -14,7 +15,7 @@ test("@smoke pushes a barrel onto its floor trigger in a muted Edge session", as
       floor: {
         generatorVersion, seed: 1, width: 100, height: 100, map, start: { x: 47, y: 50 }, time: 0, level: 1,
         entities: [{ id: "depth-rat", kind: "enemy", name: "Rat", x: 49, y: 51, hp: 3, maxHp: 3, damage: 0, xp: 1, awareness: 0, actionCooldown: 9, nextActionAt: 9 }],
-        objectSets: [{ id: "fixture", kind: "floor-trigger-door-barrel", barrel: { x: 48, y: 50 }, trigger: { x: 49, y: 50 }, door: { x: 54, y: 50 }, regionRole: "optional-reward" }],
+        objectSets: [{ id: "fixture", kind: "barrel-panel-door", barrel: { x: 48, y: 50 }, trigger: { x: 49, y: 50 }, door: { x: 54, y: 50 }, regionRole: "optional-reward" }],
       },
       progression: { attributes: { health: 30, stamina: 16, offense: 0, defense: 1, mana: 12, vitality: 0, strength: 0, luck: 0, recovery: 0, stealth: 0 }, level: 1, xp: 0, nextXp: 100, totalKills: 0, difficulty: 1, attributePoints: 0 },
       player: { x: 47, y: 50, resources: { health: resource(30, 30), stamina: resource(16, 16), offense: resource(8, 8), defense: resource(1, 1), mana: resource(12, 12), xp: { ...resource(0, 100), level: 1 } }, equipment: { weapons: [null, null], armor: [null, null] }, inventory: [], inventoryCapacity: 10, abilities: ["heal", "wand", null], sneaking: false }, counters: { keys: 0, gold: 0 }, objective: "Find the exit", log: [],
@@ -34,13 +35,40 @@ test("@smoke pushes a barrel onto its floor trigger in a muted Edge session", as
   await page.screenshot({ path: "output/playwright/render-depth-barrel.png" });
 });
 
+test("@smoke mouse pathing crosses an open door using keyboard movement's passability rule", async ({ page }) => {
+  const campaign = createRunCampaign(23, 1, 1);
+  const cells = Array.from({ length: 100 }, () => Array.from({ length: 100 }, () => ({ walkable: false, role: "wall" })));
+  for (let x = 49; x <= 56; x++) cells[50]![x] = { walkable: true, role: "floor" };
+  campaign.floor.cells = cells;
+  campaign.floor.map = cells.map(row => row.map(cell => cell.walkable ? 0 : 1));
+  campaign.floor.entities = [];
+  campaign.floor.decorations = [];
+  campaign.floor.tiledDecorations = [];
+  campaign.floor.objectSets = [{ id: "open-door-mouse", kind: "barrel-panel-door", barrel: { x: 49, y: 50 }, trigger: { x: 52, y: 50 }, door: { x: 53, y: 50 }, regionRole: "optional-reward" }];
+  campaign.player.x = 52;
+  campaign.player.y = 50;
+  campaign.player.pixel = cellCenter(campaign.player);
+  await installCampaignFixture(page, (saved) => {
+    localStorage.setItem("rogues-dungeon.slot.1", JSON.stringify(saved));
+  }, campaign);
+  await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
+  await openSavedGame(page);
+  await page.getByRole("button", { name: "RT:3", exact: true }).click();
+  await expect(page.locator(".world-view")).toHaveAttribute("data-render-test-mode", "0");
+  const canvas = page.locator(".world-view canvas");
+  const box = (await canvas.boundingBox())!;
+  await page.mouse.click(box.x + box.width / 2 + (55 - campaign.player.x) * 32, box.y + box.height / 2);
+  await expect(page.locator(".world-view")).toHaveAttribute("data-player-x", "55", { timeout: 10_000 });
+  await expect(page.locator(".world-view")).toHaveAttribute("data-player-y", "50");
+});
+
 test("@smoke synchronizes generated puzzle pixels in both views and retains them after compact reload", async ({ page }, testInfo) => {
   test.setTimeout(60_000);
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
   page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
   const campaign = createRunCampaign(17, 1, 1);
-  const puzzle = campaign.floor.objectSets!.find(set => set.kind === "floor-trigger-door-barrel")!;
+  const puzzle = campaign.floor.objectSets!.find(set => set.kind === "barrel-panel-door")!;
   expect(puzzle.trigger).toEqual({ x: puzzle.barrel.x + 1, y: puzzle.barrel.y });
   // Preserve the generated gate and terrain; isolate its interaction from enemy turns.
   campaign.floor.entities = campaign.floor.entities.filter(entity => entity.kind !== "enemy");
@@ -69,7 +97,7 @@ test("@smoke synchronizes generated puzzle pixels in both views and retains them
   const state = async () => {
     const saved = await readSavedCampaign(page);
     const set = saved.floor.objectSets!.find(entry => entry.id === puzzle.id);
-    if (!set || set.kind !== "floor-trigger-door-barrel") throw new Error("Generated puzzle was not restored");
+    if (!set || set.kind !== "barrel-panel-door") throw new Error("Generated puzzle was not restored");
     return { time: saved.floor.time, player: { x: saved.player.x, y: saved.player.y }, barrel: set.barrel, open: isObjectSetDoorOpen(set, saved.player, saved.floor.entities) };
   };
   const capture = async (label: string, center: { x: number; y: number }) => {

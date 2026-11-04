@@ -25,7 +25,7 @@ async page => {
       const { createCampaign } = await import("/blockchain-rogues-dungeon-game/src/systems/procedural/world-procedural-system.ts");
       const { revealDiscovery } = await import("/blockchain-rogues-dungeon-game/src/systems/procedural/map-discovery-system.ts");
       const state = createCampaign(90210);
-      const barrelSetId = state.floor.objectSets.find(set => set.kind === "floor-trigger-door-barrel")?.id;
+      const barrelSetId = state.floor.objectSets.find(set => set.kind === "barrel-panel-door")?.id;
       if (!barrelSetId) throw Error("Missing generated barrel identity for save round trip");
       state.floor.cells = Array.from({ length: 100 }, () => Array.from({ length: 100 }, () => ({ walkable: true, role: "floor" })));
       delete state.floor.map; delete state.generatorVersion; delete state.floors;
@@ -37,7 +37,7 @@ async page => {
       state.player.x = 50; state.player.y = 50; state.player.pixel = { x: 1630, y: 1616 };
       state.counters.gold = 100;
       const position = { x: 51, y: 50 };
-      if (kind === "barrel") state.floor.objectSets = [{ id: barrelSetId, kind: "floor-trigger-door-barrel", barrel: position, trigger: { x: 52, y: 50 }, door: { x: 55, y: 50 }, regionRole: "optional-reward" }];
+      if (kind === "barrel") state.floor.objectSets = [{ id: barrelSetId, kind: "barrel-panel-door", barrel: position, trigger: { x: 52, y: 50 }, door: { x: 55, y: 50 }, regionRole: "optional-reward" }];
       else if (kind === "wall") state.floor.cells[50][51].walkable = false;
       else state.floor.entities = [{ id: "fixture", kind, ...position, ...(kind === "crate" ? { health: 100 } : kind === "gold" ? { amount: 2 } : kind === "teleport-arrow" ? { destination: "player-home", direction: "n" } : {}) }];
       revealDiscovery(state, state.player);

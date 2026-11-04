@@ -2,13 +2,14 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { getMousePathResult, getMouseMovementFromSelectedCell, MAX_MOUSE_TRAVEL_STEPS, planMouseTravel } from "../src/game/mouse-selection.ts";
-import { applyAction, createCampaign, effectiveAttributes, gameMode, progressionStatNames, upgradeCampaignResources } from "../src/systems/procedural/world-procedural-system.ts";
+import { applyAction, createCampaign, effectiveAttributes, gameMode, isObjectSetBlocked, isObjectSetDoorOpen, progressionStatNames, upgradeCampaignResources } from "../src/systems/procedural/world-procedural-system.ts";
 import { normalizePreferences, migrateCampaign } from "../src/systems/persistence/save-system.ts";
 import { cellCenter, centerCrossings, normalizePlayerPosition, occupiedCell, PixelMovementIntegrator } from "../src/game/player-position.ts";
 import { TurnPresentationSystem } from "../src/systems/animation/turn-presentation-system.ts";
 import { resolveWorldCursor } from "../src/game/world-cursor.ts";
 import { createHeroWarriorAnimationEntity, heroWarriorRunAnimationForHeading } from "../src/content/characters/hero-warrior/hero-warrior-animation.ts";
-import { setCell } from "../src/systems/procedural/level-grid-system.ts"; import { detectedEnemyIds, hasPerceptionLineOfSight } from "../src/game/enemy-detection.ts";
+import { isWalkable, setCell } from "../src/systems/procedural/level-grid-system.ts"; import { detectedEnemyIds, hasPerceptionLineOfSight } from "../src/game/enemy-detection.ts";
+import { WorldRender } from "../src/systems/rendering/world-render-system.ts";
 
 function arena() {
   const campaign = createCampaign(90210);
@@ -19,6 +20,104 @@ function arena() {
   campaign.player.x = 20; campaign.player.y = 20; campaign.player.pixel = cellCenter(campaign.player);
   return campaign;
 }
+
+test("open authored front and side doors make their doorway cells walkable", () => {
+  for (const { openGid, closedGid, doorwayCells, start, goal, direction } of [
+    { openGid: 155, closedGid: 154, doorwayCells: [{ x: 21, y: 20 }], start: { x: 21, y: 19 }, goal: { x: 21, y: 21 }, direction: "s" },
+    { openGid: 159, closedGid: 158, doorwayCells: [{ x: 21, y: 20 }, { x: 22, y: 20 }], start: { x: 20, y: 20 }, goal: { x: 23, y: 20 }, direction: "e" },
+  ]) {
+    const campaign = arena();
+    campaign.player.x = start.x; campaign.player.y = start.y;
+    campaign.floor.tiledDecorations = [{ x: 21, y: 20, gid: openGid }];
+    for (let y = 0; y < 100; y++) for (let x = 0; x < 100; x++) setCell(campaign.floor, x, y, { walkable: false });
+    setCell(campaign.floor, 21, 20, { walkable: false });
+    if (openGid === 159) setCell(campaign.floor, 22, 20, { walkable: false });
+    setCell(campaign.floor, start.x, start.y, { walkable: true }); setCell(campaign.floor, goal.x, goal.y, { walkable: true });
+    const route = getMousePathResult(goal, campaign);
+    assert.equal(route.reachable, true, `open door GID ${openGid} must admit a mouse route`);
+    assert.equal(resolveWorldCursor(campaign, goal, route.reachable, new Set()), "walk");
+    assert.equal(getMouseMovementFromSelectedCell({ ...goal, pressed: true }, campaign, route.path)?.direction, direction);
+    assert.ok(doorwayCells.every(cell => isWalkable(campaign.floor, cell.x, cell.y)));
+    let state = campaign;
+    const steps = Math.abs(goal.x - start.x) + Math.abs(goal.y - start.y);
+    for (let step = 0; step < steps; step++) {
+      const moved = applyAction(state, { type: "move", direction });
+      assert.equal(moved.accepted, true, `open door GID ${openGid} must allow crossing step ${step + 1}`);
+      state = moved.state;
+    }
+    assert.deepEqual({ x: state.player.x, y: state.player.y }, goal);
+    campaign.floor.tiledDecorations = [{ x: 21, y: 20, gid: closedGid }];
+    assert.ok(doorwayCells.every(cell => !isWalkable(campaign.floor, cell.x, cell.y)), `closed door GID ${closedGid} must block its aperture`);
+  }
+});
+
+test("mouse routes cross encounter doors whenever they are open", () => {
+  const campaign = arena();
+  for (let y = 0; y < 100; y++) for (let x = 0; x < 100; x++) setCell(campaign.floor, x, y, { walkable: y === 20 && x >= 20 && x <= 23 });
+  const door = { x: 21, y: 20 }, target = { x: 23, y: 20 };
+  campaign.floor.objectSets = [{ id: "arena", kind: "enemy-locked-door", doors: [door], triggers: [{ x: 22, y: 20 }], room: { x: 22, y: 20, w: 2, h: 1 }, enemyIds: [], regionRole: "optional-reward", activated: false, completed: false }];
+  const encounter = campaign.floor.objectSets[0];
+  for (const state of [{ activated: false, completed: false }, { activated: true, completed: true }]) {
+    Object.assign(encounter, state);
+    const route = getMousePathResult(target, campaign, cell => cell.x !== door.x);
+    assert.equal(route.reachable, true);
+    assert.deepEqual(route.path?.map(cell => cell.x), [20, 21, 22, 23]);
+    assert.equal(getMouseMovementFromSelectedCell({ ...target, pressed: true }, campaign, route.path, cell => cell.x !== door.x)?.direction, "e");
+  }
+  Object.assign(encounter, { activated: true, completed: false });
+  assert.equal(getMousePathResult(target, campaign).reachable, false);
+});
+
+test("open side puzzle doors keep both doorway cells passable until the player clears them", () => {
+  const campaign = arena();
+  for (let y = 0; y < 100; y++) for (let x = 0; x < 100; x++) setCell(campaign.floor, x, y, { walkable: y === 20 && x >= 20 && x <= 24 });
+  campaign.floor.objectSets = [{ id: "side-gate", kind: "barrel-panel-door", barrel: { x: 18, y: 20 }, trigger: { x: 21, y: 20 }, door: { x: 22, y: 20 }, regionRole: "optional-reward" }];
+  setCell(campaign.floor, 22, 20, { walkable: false }); setCell(campaign.floor, 23, 20, { walkable: false });
+  campaign.player.x = 21; campaign.player.y = 20;
+  const target = { x: 24, y: 20 };
+  const route = getMousePathResult(target, campaign);
+  assert.equal(route.reachable, true);
+  assert.equal(resolveWorldCursor(campaign, target, route.reachable, new Set()), "walk");
+  assert.equal(getMouseMovementFromSelectedCell({ ...target, pressed: true }, campaign, route.path)?.direction, "e");
+  assert.equal(isWalkable(campaign.floor, 22, 20), true);
+  assert.equal(isWalkable(campaign.floor, 23, 20), true);
+  let state = campaign;
+  for (let step = 0; step < 3; step++) {
+    const moved = applyAction(state, { type: "move", direction: "e" });
+    assert.equal(moved.accepted, true, `crossing step ${step + 1} must pass through the open side door`);
+    state = moved.state;
+    const door = state.floor.objectSets![0]!;
+    assert.equal(isObjectSetDoorOpen(door as Extract<typeof door, { kind: "barrel-panel-door" }>, state.player, state.floor.entities, [{ x: 22, y: 20 }, { x: 23, y: 20 }]), step < 2);
+    if (step === 1) {
+      const renderedDoor = WorldRender.Render({ cells: state.floor.cells, entities: state.floor.entities, objectSets: state.floor.objectSets, player: state.player }).puzzleObjects.find((object) => object.kind === "door");
+      assert.equal(renderedDoor?.active, true, "the door art remains open while the player occupies its second aperture cell");
+    }
+  }
+  assert.deepEqual({ x: state.player.x, y: state.player.y }, target);
+  assert.equal(isObjectSetBlocked(state.floor, state.player, 22, 20), true);
+  assert.equal(isObjectSetBlocked(state.floor, state.player, 23, 20), true);
+});
+
+test("open front puzzle doors allow vertical mouse routes and movement", () => {
+  const campaign = arena();
+  for (let y = 0; y < 100; y++) for (let x = 0; x < 100; x++) setCell(campaign.floor, x, y, { walkable: x === 20 && y >= 19 && y <= 23 });
+  campaign.floor.objectSets = [{ id: "front-gate", kind: "barrel-panel-door", barrel: { x: 18, y: 20 }, trigger: { x: 20, y: 20 }, door: { x: 20, y: 21 }, regionRole: "optional-reward" }];
+  setCell(campaign.floor, 20, 21, { walkable: false });
+  campaign.player.x = 20; campaign.player.y = 20;
+  const target = { x: 20, y: 23 };
+  const route = getMousePathResult(target, campaign);
+  assert.equal(route.reachable, true);
+  assert.equal(resolveWorldCursor(campaign, target, route.reachable, new Set()), "walk");
+  assert.equal(getMouseMovementFromSelectedCell({ ...target, pressed: true }, campaign, route.path)?.direction, "s");
+  let state = campaign;
+  for (let step = 0; step < 3; step++) {
+    const moved = applyAction(state, { type: "move", direction: "s" });
+    assert.equal(moved.accepted, true, `crossing step ${step + 1} must pass through the open front door`);
+    state = moved.state;
+  }
+  assert.deepEqual({ x: state.player.x, y: state.player.y }, target);
+  assert.equal(isObjectSetBlocked(state.floor, state.player, 20, 21), true);
+});
 
 test("Gridless locomotion follows displacement, loops directional run clips, and idles after stopping", () => {
   const before = arena(); const after = structuredClone(before); after.player.pixel!.x += 2;
@@ -156,7 +255,7 @@ test("cursor resolution respects detection and legal barrel pushes", () => {
   campaign.floor.entities.push({ id: "crate", kind: "crate", health: 100, x: 21, y: 20 });
   assert.equal(resolveWorldCursor(campaign, { x: 21, y: 20 }, false, new Set()), "interact");
   campaign.floor.entities = [];
-  campaign.floor.objectSets = [{ id: "barrel", kind: "floor-trigger-door-barrel", barrel: { x: 21, y: 20 }, trigger: { x: 23, y: 20 }, door: { x: 25, y: 20 }, regionRole: "optional-reward" }];
+  campaign.floor.objectSets = [{ id: "barrel", kind: "barrel-panel-door", barrel: { x: 21, y: 20 }, trigger: { x: 23, y: 20 }, door: { x: 25, y: 20 }, regionRole: "optional-reward" }];
   assert.equal(resolveWorldCursor(campaign, { x: 21, y: 20 }, false, new Set()), "interact");
   setCell(campaign.floor, 22, 20, { walkable: false });
   assert.equal(resolveWorldCursor(campaign, { x: 21, y: 20 }, false, new Set()), "blocked");
@@ -164,7 +263,7 @@ test("cursor resolution respects detection and legal barrel pushes", () => {
 
 test("Gridless entry updates triggers and stairs once without an extra movement charge", () => {
   const campaign = arena();
-  campaign.floor.objectSets = [{ id: "gate", kind: "floor-trigger-door-barrel", barrel: { x: 18, y: 20 }, trigger: { x: 21, y: 20 }, door: { x: 25, y: 20 }, regionRole: "optional-reward" }];
+  campaign.floor.objectSets = [{ id: "gate", kind: "barrel-panel-door", barrel: { x: 18, y: 20 }, trigger: { x: 21, y: 20 }, door: { x: 25, y: 20 }, regionRole: "optional-reward" }];
   const entered = applyAction(campaign, { type: "move-pixels", to: { x: 674, y: 656 } });
   assert.equal(entered.state.player.x, 21); assert.equal(entered.ticks, 0);
   assert.equal(applyAction(entered.state, { type: "move", direction: "e" }).accepted, true);
@@ -177,7 +276,7 @@ test("closed doors block detection and fresh Battle entry until opened", () => {
   const enemy = createCampaign(4321).floor.entities.find(entity => entity.kind === "enemy")!;
   if (enemy.kind !== "enemy") throw Error("Missing enemy fixture");
   Object.assign(enemy, { x: 23, y: 20, awareness: 6 }); campaign.floor.entities = [enemy]; campaign.progression.attributes.perception = 5;
-  const gate = { id: "gate", kind: "floor-trigger-door-barrel" as const, barrel: { x: 18, y: 20 }, trigger: { x: 19, y: 20 }, door: { x: 22, y: 20 }, regionRole: "optional-reward" as const };
+  const gate = { id: "gate", kind: "barrel-panel-door" as const, barrel: { x: 18, y: 20 }, trigger: { x: 19, y: 20 }, door: { x: 22, y: 20 }, regionRole: "optional-reward" as const };
   campaign.floor.objectSets = [gate];
   assert.equal(detectedEnemyIds(campaign).size, 0); assert.equal(gameMode(campaign), "General");
   gate.barrel = { ...gate.trigger }; assert.equal(detectedEnemyIds(campaign).size, 1); assert.equal(gameMode(campaign), "Battle");
@@ -212,7 +311,7 @@ test("existing cardinal previews and closed-door approaches remain authoritative
   assert.equal(getMousePathResult({ x: 21, y: 20 }, campaign).path!.length - 1, 1);
   assert.equal(getMousePathResult({ x: 21, y: 21 }, campaign).path!.length - 1, 2);
   for (let y = 0; y < 100; y++) for (let x = 0; x < 100; x++) setCell(campaign.floor, x, y, { walkable: y === 20 && x >= 20 && x <= 26 });
-  campaign.floor.objectSets = [{ id: "gate", kind: "floor-trigger-door-barrel", barrel: { x: 18, y: 20 }, trigger: { x: 19, y: 20 }, door: { x: 23, y: 20 }, regionRole: "optional-reward" }];
+  campaign.floor.objectSets = [{ id: "gate", kind: "barrel-panel-door", barrel: { x: 18, y: 20 }, trigger: { x: 19, y: 20 }, door: { x: 23, y: 20 }, regionRole: "optional-reward" }];
   const result = getMousePathResult({ x: 26, y: 20 }, campaign);
   assert.equal(result.reachable, false); assert.deepEqual(result.path!.at(-1), { x: 22, y: 20 });
   assert.equal(getMouseMovementFromSelectedCell({ x: 26, y: 20, pressed: true }, campaign, result.path)!.direction, "e");

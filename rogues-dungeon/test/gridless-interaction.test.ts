@@ -107,7 +107,7 @@ for (const armed of [false, true]) test(`enemy contact ${armed ? "attacks" : "re
 
 test("barrel contact precedes synchronized player/barrel travel and plate consequences", () => {
   const state = arena();
-  state.floor.objectSets = [{ id: "gate", kind: "floor-trigger-door-barrel", barrel: target, trigger: { x: 22, y: 20 }, door: { x: 25, y: 20 }, regionRole: "optional-reward" }];
+  state.floor.objectSets = [{ id: "gate", kind: "barrel-panel-door", barrel: target, trigger: { x: 22, y: 20 }, door: { x: 25, y: 20 }, regionRole: "optional-reward" }];
   const flow = sequence(state, { type: "move", direction: "e" });
   flow.controller.update(INTERACTIVE_BUMP_APEX_MS);
   assert.equal(flow.commits(), 0);
@@ -127,7 +127,7 @@ test("barrel contact precedes synchronized player/barrel travel and plate conseq
 for (const obstacle of ["wall", "door", "barrel"] as const) test(`blocked ${obstacle} gives a bump without a turn`, () => {
   const state = arena();
   if (obstacle === "wall") state.floor.cells[20][21].walkable = false;
-  else state.floor.objectSets = [{ id: "gate", kind: "floor-trigger-door-barrel", barrel: obstacle === "barrel" ? target : { x: 30, y: 30 }, trigger: { x: 23, y: 20 }, door: obstacle === "door" ? target : { x: 25, y: 20 }, regionRole: "optional-reward" }];
+  else state.floor.objectSets = [{ id: "gate", kind: "barrel-panel-door", barrel: obstacle === "barrel" ? target : { x: 30, y: 30 }, trigger: { x: 23, y: 20 }, door: obstacle === "door" ? target : { x: 25, y: 20 }, regionRole: "optional-reward" }];
   if (obstacle === "barrel") state.floor.cells[20][22].walkable = false;
   const flow = sequence(state, { type: "move", direction: "e" });
   flow.controller.update(62); assert.equal(flow.commits(), 0);
@@ -148,7 +148,7 @@ test("trap damage waits for arrival and uses the arrival spike phase", () => {
 
 for (const leaving of [false, true]) test(`pressure plate ${leaving ? "release" : "activation"} waits for arrival`, () => {
   const state = arena();
-  state.floor.objectSets = [{ id: "gate", kind: "floor-trigger-door-barrel", barrel: { x: 18, y: 20 }, trigger: leaving ? { x: 20, y: 20 } : target, door: { x: 25, y: 20 }, regionRole: "optional-reward" }];
+  state.floor.objectSets = [{ id: "gate", kind: "barrel-panel-door", barrel: { x: 18, y: 20 }, trigger: leaving ? { x: 20, y: 20 } : target, door: { x: 25, y: 20 }, regionRole: "optional-reward" }];
   const flow = sequence(state, pixelEntry);
   flow.controller.update(249); assert.equal(flow.events.some(e => e.type === "floor-trigger.changed"), false);
   flow.controller.update(250);
@@ -158,9 +158,9 @@ for (const leaving of [false, true]) test(`pressure plate ${leaving ? "release" 
 
 test("encounter entry completes before the doors lock", () => {
   const state = arena();
-  state.floor.objectSets = [{ id: "encounter", kind: "encounter-lockdown", barrel: { x: 18, y: 20 }, trigger: target, door: { x: 19, y: 20 }, doors: [{ x: 19, y: 20 }], triggers: [target], room: { x: 20, y: 18, w: 5, h: 5 }, enemyIds: ["missing"], activated: false, completed: false, regionRole: "optional-reward" }];
+  state.floor.objectSets = [{ id: "encounter", kind: "enemy-locked-door", doors: [{ x: 19, y: 20 }], triggers: [target], room: { x: 20, y: 18, w: 5, h: 5 }, enemyIds: ["missing"], activated: false, completed: false, regionRole: "optional-reward" }];
   const flow = sequence(state, pixelEntry);
-  flow.controller.update(249); assert.equal(flow.session.getState().floor.objectSets![0].kind, "encounter-lockdown");
+  flow.controller.update(249); assert.equal(flow.session.getState().floor.objectSets![0].kind, "enemy-locked-door");
   assert.equal(flow.events.some(e => e.type === "encounter.locked"), false);
   flow.controller.update(250); assert.equal(flow.events.filter(e => e.type === "encounter.locked").length, 1);
 });
@@ -178,7 +178,7 @@ test("Battle entry finishes its approach before the first tactical action", () =
 
 test("diagonal blocked corners cannot become a cardinal push or attack", () => {
   const state = arena(); state.floor.cells[20][21].walkable = false;
-  state.floor.objectSets = [{ id: "barrel", kind: "floor-trigger-door-barrel", barrel: { x: 20, y: 21 }, trigger: { x: 20, y: 22 }, door: { x: 25, y: 20 }, regionRole: "optional-reward" }];
+  state.floor.objectSets = [{ id: "barrel", kind: "barrel-panel-door", barrel: { x: 20, y: 21 }, trigger: { x: 20, y: 22 }, door: { x: 25, y: 20 }, regionRole: "optional-reward" }];
   const flow = sequence(state, { type: "move-pixels", to: cellCenter({ x: 21, y: 21 }) });
   assert.equal(flow.plan.rejectOnly, true);
   flow.controller.update(250); flow.controller.update(313); flow.controller.update(375);

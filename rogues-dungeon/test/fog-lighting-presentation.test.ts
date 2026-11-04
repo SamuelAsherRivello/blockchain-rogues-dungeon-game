@@ -92,7 +92,7 @@ test("fog walking cannot attack, bump or collect hidden objects, including with 
     assert.equal(getMouseMovementFromSelectedCell(target, c, undefined, allowed), null, kind);
     assert.equal(getMouseMovementFromSelectedCell(target, c, [c.player, target], allowed), null, kind);
   }
-  const c = { player: { x: 1, y: 0 }, floor: { map: [[0, 0, 0, 0]], entities: [], objectSets: [{ kind: "floor-trigger-door-barrel", barrel: target }] } };
+  const c = { player: { x: 1, y: 0 }, floor: { map: [[0, 0, 0, 0]], entities: [], objectSets: [{ kind: "barrel-panel-door", barrel: target }] } };
   assert.equal(getMouseMovementFromSelectedCell(target, c, undefined, allowed), null);
   assert.equal(getMouseMovementFromSelectedCell(target, c, [c.player, target], allowed), null);
 });
@@ -107,7 +107,7 @@ test("fog walking intent cannot become an action when contents appear after sele
     const plan = planMouseTravel(target, c, null, position => position.x === 0);
     assert.equal(plan.destination.x, 3, "empty unknown destinations remain walkable");
     c.player.x = 2;
-    if (kind === "barrel") c.floor.objectSets.push({ kind: "floor-trigger-door-barrel", barrel: { x: 3, y: 0 } });
+    if (kind === "barrel") c.floor.objectSets.push({ kind: "barrel-panel-door", barrel: { x: 3, y: 0 } });
     else c.floor.entities.push({ kind, x: 3, y: 0 });
     const route = getMousePathResult(plan.destination, c, () => true);
     assert.equal(getMouseMovementFromSelectedCell(plan.destination, c, undefined, () => true), null, `${kind} must not become a queued action after reveal`);
