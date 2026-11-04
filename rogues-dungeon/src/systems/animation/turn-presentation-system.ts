@@ -7,6 +7,15 @@ export const CHARACTER_MOVEMENT_DURATION_MS = 250;
 export const INTERACTIVE_BUMP_DURATION_MS = CHARACTER_MOVEMENT_DURATION_MS / 2;
 export const INTERACTIVE_BUMP_APEX_MS = INTERACTIVE_BUMP_DURATION_MS / 2;
 export const DAMAGE_REACTION_DURATION_MS = CHARACTER_MOVEMENT_DURATION_MS;
+export const FLASH_PHASE_MS = 100;
+export const FLASH_DURATION_MS = FLASH_PHASE_MS * 3;
+export type FlashColor = "white" | "red";
+export function flashStrength(elapsed: number) {
+  if (elapsed < 0 || elapsed >= FLASH_DURATION_MS) return 0;
+  if (elapsed < FLASH_PHASE_MS) return elapsed / FLASH_PHASE_MS;
+  if (elapsed < FLASH_PHASE_MS * 2) return 1;
+  return (FLASH_DURATION_MS - elapsed) / FLASH_PHASE_MS;
+}
 export const SUB_GRID_MOVEMENT = true;
 
 export interface PresentedEnemy { id: string; from: Position; to: Position; rank: number; startAt: number; endAt: number }
@@ -38,6 +47,7 @@ export class TurnPresentationSystem {
   private floorKey: string | null = null;
   private bumps = new Map<string, { origin: Position; direction: Position; startAt: number }>();
   private damageReactions = new Map<string, number>();
+  private flashes = new Map<string, { color: FlashColor; startAt: number }>();
   private headings = new Map<string, Direction>();
   private pendingPlayerHeading: Direction | null = null;
   private playerMode: MovementMode = "grid-tween";
@@ -54,7 +64,7 @@ export class TurnPresentationSystem {
     this.floorKey = `${campaign.floor.seed}:${campaign.floor.level}`;
     this.playerPixelTraveling = false;
     this.interactionActors.clear();
-    this.ranks.clear(); this.nextRank = 0; this.active = null; this.motions.clear(); this.bumps.clear(); this.damageReactions.clear(); this.headings.clear(); this.pendingPlayerHeading = null;
+    this.ranks.clear(); this.nextRank = 0; this.active = null; this.motions.clear(); this.bumps.clear(); this.damageReactions.clear(); this.flashes.clear(); this.headings.clear(); this.pendingPlayerHeading = null;
     this.positions = new Map(subGridMovers(campaign).map((mover) => [mover.id, clonePosition(mover)]));
     this.positions.set("player", precisePlayerPosition(campaign.player));
   }
@@ -129,6 +139,7 @@ export class TurnPresentationSystem {
       running = true;
     }
     for (const [id, startedAt] of this.damageReactions) if (now - startedAt >= DAMAGE_REACTION_DURATION_MS) this.damageReactions.delete(id); else running = true;
+    for (const [id, flash] of this.flashes) if (now - flash.startAt >= FLASH_DURATION_MS) this.flashes.delete(id); else running = true;
     if (!running) this.active = null;
     return running;
   }
@@ -159,7 +170,9 @@ export class TurnPresentationSystem {
   isBumping(id: string, now: number) { const bump = this.bumps.get(id); return Boolean(bump && now - bump.startAt < INTERACTIVE_BUMP_DURATION_MS); }
   bumpDepthTieBreakOf(id: string, now: number) { const bump = this.bumps.get(id); return bump && bump.direction.x !== 0 && now - bump.startAt < INTERACTIVE_BUMP_DURATION_MS ? 1 : 0; }
   bumpApexAt(id: string) { const bump = this.bumps.get(id); return bump ? bump.startAt + INTERACTIVE_BUMP_APEX_MS : null; }
-  beginDamageReaction(id: string, now: number) { this.damageReactions.set(id, now); }
+  beginFlash(id: string, color: FlashColor, now: number) { this.flashes.set(id, { color, startAt: now }); }
+  flashOf(id: string, now: number) { const flash = this.flashes.get(id); return flash ? { color: flash.color, strength: flashStrength(now - flash.startAt) } : { color: "white" as const, strength: 0 }; }
+  beginDamageReaction(id: string, now: number) { this.damageReactions.set(id, now); this.beginFlash(id, "red", now); }
   damageScaleOf(id: string, now: number) { const start = this.damageReactions.get(id); if (start === undefined) return 1; const progress = Math.max(0, Math.min(1, (now - start) / DAMAGE_REACTION_DURATION_MS)); return 1 - .1 * Math.sin(Math.PI * progress); }
   headingOf(id: string, fallback: Direction): Direction { return this.headings.get(id) ?? fallback; }
   playerPositionOf(fallback: Position): Position { return this.positionOf("player", fallback); }

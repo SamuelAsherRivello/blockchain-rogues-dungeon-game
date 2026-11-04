@@ -1120,6 +1120,7 @@ export function Game() {
         const timer = setTimeout(() => { abilityTimers.current.delete(timer); setItemThrows([]); }, ITEM_THROW_DURATION_MS);
         abilityTimers.current.add(timer);
       }
+      if (result.events.some((event) => event.type === "combat.hit" && event.facts.source === "player")) turnPresentation.beginFlash("player", "white", performance.now());
       const playerTookDamage = result.events.some((event) => event.type === "resource.changed" && event.facts.resource === "health" && event.facts.current! < event.facts.previous!);
       if (playerTookDamage) turnPresentation.beginDamageReaction("player", performance.now());
       if (result.events.some((event) => event.type === "resource.changed" && event.facts.resource === "health" && event.facts.cause === "enemy-attack" && event.facts.current! < event.facts.previous!)) setCameraAnimationToken((token) => token + 1);
