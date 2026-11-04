@@ -25,7 +25,7 @@ export type EquipmentGroup = "weapons" | "armor" | "jewels";
 export type ConsumableResource = "health" | "stamina" | "mana";
 export type AbilityId = "heal" | "wand" | "throwing-knives";
 export type ItemCategory = "equipment" | "consumable" | "ability" | "capacity";
-export interface Item { id: string; name: string; group: EquipmentGroup; modifiers: Partial<Attributes>; slotSpan?: 1 | 2; hitChance?: number; critChance?: number; perks?: readonly string[]; category?: ItemCategory; abilityId?: AbilityId; capacityBonus?: number; consumableResource?: ConsumableResource; quickSlotAction?: "restore-resource" | "throwing-knives"; isStackable?: boolean; quantity?: number; keepInInventory?: boolean; containerSlot?: number }
+export interface Item { id: string; name: string; group: EquipmentGroup; modifiers: Partial<Attributes>; slotSpan?: 1 | 2; hitChance?: number; critChance?: number; perks?: readonly string[]; category?: ItemCategory; abilityId?: AbilityId; capacityBonus?: number; consumableResource?: ConsumableResource; quickSlotAction?: "restore-resource" | "throwing-knives" | "bomb" | "dagger"; isStackable?: boolean; quantity?: number; keepInInventory?: boolean; containerSlot?: number }
 export interface QuickSlot { item: Item; quantity: number }
 export interface ItemLot { id: string; quantity: number; offset?: number }
 export interface LockboxStorage { version: 1; legacyOverflow?: boolean; revision: number; containers: Record<string, Item[]>; provenance?: Record<string, ItemLot[]>; journal: { revision: number; direction: "deposit" | "withdraw"; lots: ItemLot[] }[] }
@@ -167,6 +167,7 @@ export type Action =
   | { type: 'acknowledge-world-growth'; id: string }
   | { type: "ability"; index: number }
   | { type: "resolve-ability"; abilityId: AbilityId; targetId?: string }
+  | { type: "resolve-bomb"; position: Position }
   | { type: "assign-ability"; from: number; to: number }
   | { type: "store-ability"; index: number }
   | { type: "assign-ability-from-inventory"; itemId: string; index: number }

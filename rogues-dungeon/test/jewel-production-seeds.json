@@ -50,8 +50,8 @@
     "seed": 27,
     "source": "item",
     "id": "world-item-4-2-sapphire-amulet",
-    "x": 21,
-    "y": 46
+    "x": 11,
+    "y": 71
   },
   {
     "name": "Prismatic Amulet",
@@ -77,8 +77,8 @@
     "seed": 27,
     "source": "item",
     "id": "world-item-7-2-star-sapphire-amulet",
-    "x": 21,
-    "y": 46
+    "x": 11,
+    "y": 71
   },
   {
     "name": "Gold Ring of Vigor",

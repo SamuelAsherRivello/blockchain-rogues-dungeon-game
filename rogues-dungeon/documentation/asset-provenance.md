@@ -54,7 +54,7 @@ On 2026-10-23, `public/assets/art/game-view/items/droppable-item-sprite-sheet.pn
 
 On 2026-10-26, the built-in image-generation tool created ten original transparent PNGs, one per Jewel, in `public/assets/art/game-view/items/jewels/`. These are project-owned generated artwork. The existing item atlas informed the pixel-art style. The exact common prompt, individual subjects, source output names, and final asset paths are retained in [jewel-art-prompts.json](jewel-art-prompts.json).
 
-The assembly script `scripts/assemble-jewel-art.py` crops transparent margins, fits each image into a 338-pixel square with nearest-neighbor sampling, and centers it in a transparent 362-pixel cell. The runtime atlas now has four columns and six rows, measuring 1448 by 2172 pixels. Frames 0 through 11 retain their prior decoded RGBA pixels exactly. Their combined SHA-256 is `7c593a910e7b535ee0f3457c9c41ac6488476aacefce432f1d7376fc6986d3e2`. Frames 22 and 23 are transparent.
+The assembly script `scripts/assemble-jewel-art.py` crops transparent margins, fits each image into a 338-pixel square with nearest-neighbor sampling, and centers it in a transparent 362-pixel cell. The runtime atlas now has four columns and six rows, measuring 1448 by 2172 pixels. Frames 0 through 11 were subsequently adjusted to keep the two-handed sword and suit of armor inside their own cells. Their combined decoded RGBA SHA-256 is `7e0eef63cbfce17e0260ed2bda70018025ab9a54654eec69800b848ea2a79def`. Frames 22 and 23 are transparent.
 
 | Frame | Jewel | Source PNG |
 | --- | --- | --- |
@@ -69,4 +69,5 @@ The assembly script `scripts/assemble-jewel-art.py` crops transparent margins, f
 | 20 | Star Sapphire Amulet | `star-sapphire-amulet.png` |
 | 21 | Prismatic Amulet | `prismatic-amulet.png` |
 
-The [contact sheet](jewel-item-art.png) shows every labeled frame enlarged and at its native 32-pixel item size. [jewel-art-validation.json](jewel-art-validation.json) records frame numbers, alpha bounds, native visible pixel counts, and the original-section hash. The Node Jewel art test independently decodes the final PNG, checks that hash, verifies ten distinct nonempty frames with transparent borders, and verifies that frames 22 and 23 remain empty.
+The [contact sheet](jewel-item-art.png) shows every labeled frame enlarged and at its native 32-pixel item size. [jewel-art-validation.json](jewel-art-validation.json) records frame numbers, alpha bounds, native visible pixel counts, and the legacy-section hash. The Node Jewel art test independently decodes the final PNG, checks that hash and the corrected cell boundaries, verifies ten distinct nonempty frames with transparent borders, and verifies that frames 22 and 23 remain empty.
+

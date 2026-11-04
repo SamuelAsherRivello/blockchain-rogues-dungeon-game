@@ -1,6 +1,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { applyOverworldScopedPass, generateOverworld } from "../src/systems/procedural/overworld-generation-system.ts";
+import { generateOverworldFloor } from "../src/systems/procedural/world-procedural-system.ts";
+
+test("overworld stairs have walkable terrain in every surrounding cell", () => {
+  for (const seed of [1, 17, 77, 914]) for (const level of [1, 2]) {
+    const floor = generateOverworldFloor(level, seed);
+    for (const stair of floor.entities.filter((entity) => entity.kind === "stairs")) {
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        assert.equal(floor.cells[stair.y + dy]?.[stair.x + dx]?.walkable, true, `${seed}/${level}/${stair.id}/${dx},${dy}`);
+      }
+    }
+  }
+});
 
 test("overworld generation is deterministic and exposes tuned dimensions", () => {
   const options = { seed: 4312, width: 48, height: 36, mountainDensity: 0.24, scale: 11 };

@@ -306,6 +306,19 @@ test('normalizes saved floors to directional stairs at the start', () => {
   assert.deepEqual(stairs, [{ id: 'stairs-forward', kind: 'stairs', direction: 'forward', name: 'Stairs up', x: floor.start.x + 2, y: floor.start.y }]);
 });
 
+test('relocates a saved stair when a diagonal neighbor is blocked', () => {
+  const floor = generateFloor(1, 77, 1, { level1TestMode: true });
+  const stair = floor.entities.find((entity) => entity.kind === 'stairs')!;
+  const original = { x: stair.x, y: stair.y };
+  floor.cells[stair.y - 1]![stair.x + 1]!.walkable = false;
+  assert.equal(isStairPlacementCell(floor, stair), false);
+  ensureNearbyStairs(floor);
+  const relocated = floor.entities.find((entity) => entity.kind === 'stairs')!;
+  assert.ok(relocated);
+  assert.notDeepEqual({ x: relocated.x, y: relocated.y }, original);
+  assert.equal(isStairPlacementCell(floor, relocated), true);
+});
+
 test('keeps stairs out of cardinal door-adjacent cells', () => {
   for (const seed of [17, 77, 914]) {
     for (const floor of [generateFloor(1, seed, 1), generateFloor(1, seed, 1, { level1TestMode: true })]) {
@@ -318,13 +331,16 @@ test('keeps stairs out of cardinal door-adjacent cells', () => {
   }
 });
 
-test('keeps every generated stair away from cardinal non-walkable cells', () => {
+test('keeps every generated stair and all eight neighbors walkable', () => {
   for (const level of [1, 2, 3, 5]) {
     for (const seed of [1, 17, 77, 914, 13579, 2818867945]) {
       const floors = [generateFloor(level, seed, level), ...(level === 1 ? [generateFloor(level, seed, level, { level1TestMode: true })] : [])];
       for (const floor of floors) {
         for (const stair of floor.entities.filter((entity) => entity.kind === 'stairs')) {
-          assert.equal(isStairPlacementCell(floor, stair), true, `${level}:${seed}:${stair.id} must have walkable cardinal neighbors`);
+          for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+            assert.equal(floor.cells[stair.y + dy]?.[stair.x + dx]?.walkable, true, `${level}:${seed}:${stair.id} at offset ${dx},${dy}`);
+          }
+          assert.equal(isStairPlacementCell(floor, stair), true);
         }
       }
     }

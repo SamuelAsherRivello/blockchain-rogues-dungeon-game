@@ -4,7 +4,13 @@ const LOG_RULES: Readonly<Partial<Record<string, (facts: EventFacts) => string>>
   "item.dropped": (facts) => `You drop ${facts.name}.`,
   "item.drop.rejected": (facts) => `You cannot drop ${facts.name ?? "that item"}.`,
   "potion.consumed": (facts) => `You restore ${facts.resource === "health" ? "Health" : facts.resource === "stamina" ? "Stamina" : "Mana"}.`,
-  "quick-slot.use.rejected": (facts) => `${facts.item ?? "Potion"} cannot be used while ${facts.resource === "health" ? "Health" : facts.resource === "stamina" ? "Stamina" : "Mana"} is full.`,
+  "quick-slot.use.rejected": (facts) => facts.reason === "bomb-out-of-range"
+    ? "Bomb range too far."
+    : facts.reason === "no-valid-target"
+    ? `${facts.item ?? "That item"} needs an enemy in a clear row or column${facts.amount ? ` within ${facts.amount} tiles` : ""}.`
+    : facts.reason === "resource-full" && facts.resource
+      ? `${facts.item ?? "Potion"} cannot be used while ${facts.resource === "health" ? "Health" : facts.resource === "stamina" ? "Stamina" : "Mana"} is full.`
+      : `${facts.item ?? "That item"} cannot be used.`,
   "equipment.changed": (facts) => facts.item ? facts.action === "swapped" ? `You swap ${facts.item} for ${facts.displacedItems?.map((item) => item.name).join(" and ") ?? "equipped gear"}.` : `You ${facts.action === "enabled" ? "equip" : facts.action === "returned to inventory" ? "return" : "rearrange"} ${facts.item}.` : "You change your equipment.",
   "ability.used": (facts) => `You use ${facts.title}.`,
   "combat.hit": (facts) => facts.targetId === "player" ? `${facts.sourceName ?? "An enemy"} hits you for ${facts.damage ?? 0}.` : `You hit ${facts.target ?? "an enemy"} for ${facts.damage ?? 0}.`,

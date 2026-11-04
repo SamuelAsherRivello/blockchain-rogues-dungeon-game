@@ -2,11 +2,11 @@ import type { Campaign, Entity, Floor } from "../../game/types.ts";
 import type { Grid } from "../procedural/level-grid-system.ts";
 import type { TerrainCell } from "../../game/types.ts";
 export interface TiledProperty { name: string; type?: string; value: unknown }
-export interface TiledObject { id: number; name: string; type: string; x: number; y: number; width?: number; height?: number; properties?: TiledProperty[] }
+export interface TiledObject { id: number; name: string; type: string; class?: string; gid?: number; rotation?: number; x: number; y: number; width?: number; height?: number; properties?: TiledProperty[] }
 export interface TileLayer { id: number; name: string; type: "tilelayer"; visible: boolean; opacity: number; width: number; height: number; data: number[] }
 export interface ObjectLayer { id: number; name: string; type: "objectgroup"; visible: boolean; opacity: number; draworder: string; objects: TiledObject[] }
 export interface TiledMap { type: string; version: string; tiledversion: string; orientation: string; renderorder: string; width: number; height: number; tilewidth: number; tileheight: number; infinite: boolean; properties: TiledProperty[]; tilesets: { firstgid: number; source: string }[]; layers: (TileLayer | ObjectLayer)[] }
-import { FLOOR_HEIGHT, FLOOR_WIDTH, GENERATOR_VERSION, generateFloor } from "../procedural/world-procedural-system.ts";
+import { FLOOR_HEIGHT, FLOOR_WIDTH, GENERATOR_VERSION, generateFloor, worldDroppableItemInstance } from "../procedural/world-procedural-system.ts";
 import { ensureSemanticCells, isWalkable, semanticCellsFromMap } from "../procedural/level-grid-system.ts";
 import { DUNGEON_CANONICAL_RULES } from "./tileset-dungeon-wang.generated.ts";
 import { ruleForMask, wallQuartersForMask, type WallQuarter } from "./tileset-wang-rules.ts";
@@ -137,7 +137,18 @@ export function floorFromTiledRepairMap(map: unknown, fallbackFloor: Floor | nul
   const mapData = Array.from({ length: FLOOR_HEIGHT }, (_, y) => checked.grounds!.data.slice(y * FLOOR_WIDTH, (y + 1) * FLOOR_WIDTH).map((cell, x) => Number(cell) > 0 ? 0 : Number(checked.walls!.data[y * FLOOR_WIDTH + x]) > 0 ? 1 : (fallbackCells?.[y]?.[x]?.walkable ? 0 : 1)));
   const markers = checked.markers!.objects; const player = objectCell(markers.find((object) => object.type === "player")!); const exit = objectCell(markers.find((object) => object.type === "exit")!);
   if (mapData[player.y]?.[player.x] !== 0 || mapData[exit.y]?.[exit.x] !== 0) throw new Error("player and exit markers must be on walkable cells");
-  const toEntity = (object: TiledObject): Entity => { const position = objectCell(object); const props = propertiesObject(object.properties); return { ...props, id: object.name || props.id, kind: object.type || props.kind, x: position.x, y: position.y } as Entity; };
+  const toEntity = (object: TiledObject): Entity => {
+    const props = propertiesObject(object.properties);
+    if ((object.class ?? object.type) === "dagger-pickup") {
+      const quantity = props.quantity ?? 3;
+      const x = object.x / TILED_TILE_SIZE, y = object.y / TILED_TILE_SIZE - 1;
+      if (!(map as TiledMap).tilesets?.some(tileset => tileset.firstgid === object.gid && /(?:^|\/)dagger\.tsx$/.test(tileset.source)) || object.width !== TILED_TILE_SIZE || object.height !== TILED_TILE_SIZE || object.rotation || !Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0 || x >= FLOOR_WIDTH || y >= FLOOR_HEIGHT || !Number.isSafeInteger(quantity) || Number(quantity) < 1 || props.walkable !== true || mapData[y]?.[x] !== 0) throw new Error("Invalid dagger pickup");
+      const id = `tiled-dagger-${object.id}`;
+      return { id, kind: "item", x, y, item: { ...worldDroppableItemInstance("Throwing Knife", id), quantity: Number(quantity) } };
+    }
+    const position = objectCell(object);
+    return { ...props, id: object.name || props.id, kind: object.type || props.kind, x: position.x, y: position.y } as Entity;
+  };
   const entities = [...(checked.pickups!.objects ?? []), ...(checked.decorations!.objects ?? [])].filter((object) => !["player", "exit"].includes(object.type)).map(toEntity);
   if (!entities.some((entity) => entity.kind === "stairs")) entities.push({ id: "stairs", kind: "stairs", x: exit.x, y: exit.y });
   const floor = { ...(fallbackFloor ?? generateFloor(Number(checked.properties.level ?? 1), Number(checked.properties.seed ?? 0), Number(checked.properties.level ?? 1))), seed: Number(checked.properties.seed ?? fallbackFloor?.seed ?? 0), width: FLOOR_WIDTH, height: FLOOR_HEIGHT, cells: semanticCellsFromMap(mapData), start: player, entities, level: Number(checked.properties.level ?? fallbackFloor?.level ?? 1), scenario: typeof checked.properties.scenario === "string" ? checked.properties.scenario : fallbackFloor?.scenario, generatorVersion: GENERATOR_VERSION, tiledGrounds: checked.grounds!.data.slice(), tiledWalls: checked.walls!.data.slice() };

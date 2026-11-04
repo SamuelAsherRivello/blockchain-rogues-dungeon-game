@@ -2,7 +2,7 @@ import type { WorldAttributes } from '../../game/types.ts';
 import { effectiveWorldRank } from './world-attributes.ts';
 import { JEWEL_CATALOG, jewelDefinition } from '../../content/items/jewel-catalog.ts';
 
-export const WORLD_BALANCE_VERSION = 'world-balance-2-jewels';
+export const WORLD_BALANCE_VERSION = 'world-balance-4-throwing-knife';
 export const WORLD_BALANCE_LEVEL_MAX = 10;
 
 export type WorldBalanceRarity = 'common' | 'uncommon' | 'rare' | 'very-rare';
@@ -43,6 +43,8 @@ const FLOOR_BUDGETS = Object.freeze([
 ] as const);
 
 export const WORLD_ITEM_UNLOCK_LEVELS = Object.freeze({
+  'Bomb': 1,
+  'Throwing Knife': 1,
   'Wooden Stick': 1,
   'Wooden Vest': 1,
   'Dagger (Magic)': 2,
@@ -59,6 +61,7 @@ export const WORLD_ITEM_UNLOCK_LEVELS = Object.freeze({
 });
 
 export const WORLD_ITEM_RARITIES: Readonly<Record<string, WorldBalanceRarity>> = Object.freeze({
+  'Throwing Knife': 'common',
   'Wooden Stick': 'common',
   'Wooden Vest': 'common',
   'Dagger (Magic)': 'uncommon',

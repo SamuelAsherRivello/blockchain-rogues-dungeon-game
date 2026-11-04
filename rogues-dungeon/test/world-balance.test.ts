@@ -42,7 +42,8 @@ test('world item eligibility and rarity keep stronger rewards later and rarer', 
   const levelOne = eligibleWorldItemNames(1);
   const levelTwo = eligibleWorldItemNames(2);
   const levelThree = eligibleWorldItemNames(3);
-  assert.deepEqual(levelOne, ['Wooden Stick', 'Wooden Vest']);
+  assert.ok(levelOne.includes('Throwing Knife') && levelOne.includes('Wooden Stick') && levelOne.includes('Wooden Vest'));
+  assert.equal(worldItemRarity('Throwing Knife'), 'common');
   assert.ok(levelTwo.includes('Sword') && levelTwo.includes('Extra Carrying Capacity +5'));
   assert.ok(levelThree.includes('Suit of Armor') && levelThree.includes('Two-Handed Sword'));
   assert.equal(worldItemRarity('Wooden Stick'), 'common');

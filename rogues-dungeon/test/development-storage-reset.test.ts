@@ -21,9 +21,10 @@ class MemoryStorage implements StorageCollection {
 
 test('Jewel generation has its own epoch and refuses stale regenerated balance profiles', () => {
   assert.ok(DEVELOPMENT_STORAGE_COMPATIBILITY_EPOCH.includes('flexible-jewels-1'));
-  assert.equal(WORLD_BALANCE_VERSION, 'world-balance-2-jewels');
+  assert.equal(WORLD_BALANCE_VERSION, 'world-balance-4-throwing-knife');
+  assert.ok(DEVELOPMENT_STORAGE_COMPATIBILITY_EPOCH.includes('dagger-2'));
   const state = compactCampaignForSave(createRunCampaign(875, 1, 1, 1, 2, { worldAttributes: DEFAULT_WORLD_ATTRIBUTES }));
-  state.floorProfiles!['2'].tuningVersion = 'world-attributes-1:world-balance-1';
+  state.floorProfiles!['2'].tuningVersion = 'world-attributes-1:world-balance-2-jewels';
   const bytes = JSON.stringify(state);
   const storage = new MemoryStorage([['rogues-dungeon.slot.1', bytes]]);
   assert.throws(() => readSlot(storage, '1'), /Unsupported saved world generator/);

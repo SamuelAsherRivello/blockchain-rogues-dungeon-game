@@ -1,6 +1,6 @@
 import type { AbilityId, Position } from "../../game/types.ts";
 
-export interface ParticleEffect extends Position { id: string; name: "smoke-poff"; startedAt: number; kind?: "movement" | "heal" | "wand" | "damage"; targetId?: string; direction?: Position; sizePx?: number; rotation?: number }
+export interface ParticleEffect extends Position { id: string; name: "smoke-poff"; startedAt: number; kind?: "movement" | "heal" | "wand" | "damage" | "bomb-fire"; targetId?: string; direction?: Position; sizePx?: number; rotation?: number }
 export interface ParticleRenderBounds { x: number; y: number; width: number; height: number }
 export interface TileParticleRenderRequest { row: number; column: number; worldZoom: number; relativeScale?: number; tileSize?: number; tileCenter: Position }
 export const SMOKE_POFF = Object.freeze({ frameCount: 9, frameDurationMs: 80, sizePx: 20 });
@@ -29,7 +29,7 @@ export function createLevelUpSparkles(position: Position, levelCount = 1, starte
   return Array.from({ length: levelCount }, (_, level) => offsets.map((offset) => createAbilityParticle("wand", { x: position.x + offset.x, y: position.y + offset.y }, "player", startedAt + level))).flat();
 }
 export function createDamageParticles(position: Position, random = Math.random, startedAt = performance.now()): ParticleEffect[] { return Array.from({ length: 4 }, (_, index) => { const angle = random() * Math.PI * 2; const sizePx = DAMAGE_PARTICLE_MIN_SIZE_PX + random() * (DAMAGE_PARTICLE_MAX_SIZE_PX - DAMAGE_PARTICLE_MIN_SIZE_PX); const rotation = (random() * 2 - 1) * DAMAGE_PARTICLE_MAX_ROTATION_DEGREES * Math.PI / 180; return { id: `damage-${startedAt}-${position.x}-${position.y}-${index}`, name: "smoke-poff", kind: "damage", x: position.x, y: position.y, direction: { x: Math.cos(angle), y: Math.sin(angle) }, sizePx, rotation, startedAt }; }); }
-export function particleDurationMs(effect: ParticleEffect) { return effect.kind === "damage" ? DAMAGE_PARTICLE_PERSISTENCE_MS : effect.kind === "heal" ? HEAL_PARTICLE_DURATION_MS : smokePuffDurationMs; }
+export function particleDurationMs(effect: ParticleEffect) { return effect.kind === "bomb-fire" ? 350 : effect.kind === "damage" ? DAMAGE_PARTICLE_PERSISTENCE_MS : effect.kind === "heal" ? HEAL_PARTICLE_DURATION_MS : smokePuffDurationMs; }
 /** Movement finishes quickly; damage decal fade uses the longer effect duration. */
 export function particleProgress(effect: ParticleEffect, now = performance.now()) { const duration = effect.kind === "damage" ? DAMAGE_PARTICLE_DURATION_MS : particleDurationMs(effect); return Math.max(0, Math.min(1, (now - effect.startedAt) / duration)); }
 export function particleScale(effect: ParticleEffect, now = performance.now()) { const progress = particleProgress(effect, now); if (effect.kind === "movement") return MOVEMENT_PARTICLE_SCALE; if (effect.kind === "heal") return progress === 1 ? HEAL_PARTICLE_END_SCALE : HEAL_PARTICLE_START_SCALE + progress * (HEAL_PARTICLE_END_SCALE - HEAL_PARTICLE_START_SCALE); if (effect.kind === "wand") return .5; return 1; }

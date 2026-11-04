@@ -29,12 +29,12 @@ function atlasPixels() {
   return { width, height, pixels };
 }
 
-test('the packed atlas preserves legacy pixels and contains ten distinct transparent Jewel frames', () => {
+test('the packed atlas contains isolated legacy art and ten distinct transparent Jewel frames', () => {
   ['Extra Carrying Capacity +5', 'Heal', 'Wand', 'Dagger (Magic)', 'Sword', 'Two-Handed Sword', 'Leg Armor (Magic)', 'Chest Armor', 'Suit of Armor', 'Oak Shield 03', 'Wooden Stick', 'Wooden Vest'].forEach((name, frame) => assert.equal(droppableItemSpriteFrame(name), frame));
   const { width, height, pixels } = atlasPixels();
   const { cellWidthPx: cell, columns, rows } = DROPPABLE_ITEM_ATLAS_LAYOUT;
   assert.equal(width, cell * columns); assert.equal(height, cell * rows);
-  assert.equal(createHash('sha256').update(pixels.subarray(0, width * cell * 3 * 4)).digest('hex'), '7c593a910e7b535ee0f3457c9c41ac6488476aacefce432f1d7376fc6986d3e2');
+  assert.equal(createHash('sha256').update(pixels.subarray(0, width * cell * 3 * 4)).digest('hex'), '7e0eef63cbfce17e0260ed2bda70018025ab9a54654eec69800b848ea2a79def');
   const hashes = new Set<string>();
   for (const jewel of JEWEL_CATALOG) {
     const frame = droppableItemSpriteFrame(jewel.name); assert.equal(frame, jewel.frame);
@@ -53,6 +53,15 @@ test('the packed atlas preserves legacy pixels and contains ten distinct transpa
     assert.equal(pixels[(((Math.floor(frame / columns) * cell + y) * width) + (frame % columns) * cell + x) * 4 + 3], 0);
   }
   assert.equal(droppableItemSpriteFrame('constructor'), null);
+});
+
+test('the healing icon and sword exclude artwork from the following atlas row', () => {
+  const { width, pixels } = atlasPixels();
+  for (const [x0, x1, y0, y1] of [[427, 710, 354, 362], [70, 362, 694, 724]]) {
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+      assert.ok(pixels[(y * width + x) * 4 + 3] <= 1, `unexpected pixel at ${x},${y}`);
+    }
+  }
 });
 
 test('only the shield and full suit shift left while Jewels retain their accepted half size', () => {
@@ -79,3 +88,4 @@ test('GPU, settled/throw presentation, and DOM transfer share the complete atlas
   assert.match(renderer, /droppableItemSpriteFrame\(throwItem\?\.itemName\)/);
   assert.match(css, /width:var\(--droppable-atlas-width\); height:var\(--droppable-atlas-height\)/);
 });
+

@@ -115,7 +115,11 @@ test('graph quality survives extreme world controls and an authored home without
     const floor = generateFloor(level, seed, level, { worldAttributes: attributes, topologyVersion: DUNGEON_TOPOLOGY_VERSION });
     assert.equal(floor.generation!.quality!.valid, true, `${seed}/${rank}/${level}`);
     assert.ok((floor.generation!.repairs ?? 0) <= 1);
-    for (const stair of floor.entities.filter(entity => entity.kind === 'stairs')) assert.equal(floor.cells[stair.y]![stair.x]!.walkable, true);
+    for (const stair of floor.entities.filter(entity => entity.kind === 'stairs')) {
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        assert.equal(floor.cells[stair.y + dy]?.[stair.x + dx]?.walkable, true, `${seed}/${rank}/${level}/${stair.id}/${dx},${dy}`);
+      }
+    }
   }
   const home = generateFloor(1, 42, 1, { worldAttributes: DEFAULT_WORLD_ATTRIBUTES, topologyVersion: DUNGEON_TOPOLOGY_VERSION, playerHouse: true });
   assert.equal(home.generation!.quality!.valid, true);

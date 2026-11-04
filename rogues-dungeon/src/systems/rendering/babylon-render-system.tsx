@@ -84,6 +84,7 @@ const texturePaths = {
   items: `${import.meta.env.BASE_URL}assets/art/game-view/tilesets/art/items-static.png`,
   droppableItems: `${import.meta.env.BASE_URL}assets/art/game-view/items/droppable-item-sprite-sheet.png`,
   itemsAnimated: `${import.meta.env.BASE_URL}assets/art/game-view/tilesets/art/items-animated.png`,
+  goldCoin: `${import.meta.env.BASE_URL}assets/art/game-view/items/gold-coin-mid-res.png`,
   campfire: campfireIdleSpriteSheetPath(import.meta.env.BASE_URL),
   propsAnimated: `${import.meta.env.BASE_URL}assets/art/game-view/tilesets/art/props-animated.png`,
   propsStatic: `${import.meta.env.BASE_URL}assets/art/game-view/tilesets/art/props-static.png`,
@@ -100,6 +101,9 @@ function dungeonTileTexturePath(theme: DungeonTheme) {
 }
 
 const torchFramePaths = Array.from({ length: 3 }, (_, index) => `${import.meta.env.BASE_URL}assets/art/game-view/props/animated/frames/torch/${String(index).padStart(2, "0")}.png`);
+const POTION_SPRITE_SIZE_PX = 25.6;
+const GOLD_COIN_SCALE = 0.3;
+const GOLD_COIN_SIZE_PX = 32 * GOLD_COIN_SCALE;
 const smokePuffFramePaths = Array.from({ length: 9 }, (_, index) => `${import.meta.env.BASE_URL}assets/art/game-view/particles/smoke-poff/smoke-poff-${index + 1}.png`);
 const projectileFramePaths = {
   arrow: `${import.meta.env.BASE_URL}assets/art/game-view/enemies/skeleton-archer/arrow.png`,
@@ -470,7 +474,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
       const { rect, center, tileCssSize } = projection;
       const cellOrigin = getWorldCellScreenCenter({ ...flight, center, viewportWidth: rect.width, viewportHeight: rect.height, tileCssSize });
       const pixelScale = tileCssSize / 32;
-      const origin = { left: cellOrigin.left + (flight.mainOffsetPx.x + droppableItemMainOffsetXPx(flight.itemName)) * pixelScale, top: cellOrigin.top + flight.mainOffsetPx.y * pixelScale };
+      const origin = { left: cellOrigin.left + (flight.mainOffsetPx.x + droppableItemMainOffsetXPx(flight.itemName)) * pixelScale, top: cellOrigin.top + flight.mainOffsetPx.y * pixelScale * (flight.kind === "gold" ? GOLD_COIN_SCALE : 1) };
       const target = visibleTarget(flight.target);
       const destinationLayer = target?.closest<HTMLElement>(flight.destination === "counter" ? ".game-screen" : ".game-screen__middle");
       if (!target || !destinationLayer) { onUiAnimationRest?.(flight.id); onUiAnimationComplete?.(flight.id); continue; }
@@ -478,11 +482,12 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
       const transfer = document.createElement("span"); transfer.className = "world-view__ui-animation"; transfer.setAttribute("aria-hidden", "true");
       const goldCoin = flight.kind === "gold";
       const droppableFrame = droppableItemSpriteFrame(flight.itemName);
-      const staminaPotion = flight.kind === "potion" && flight.resource === "stamina";
+      const potionResource = flight.kind === "potion" ? flight.resource : null;
       const dedicatedItem = !goldCoin && droppableFrame !== null;
-      const image = document.createElement("img"); image.className = `world-view__ui-animation-sprite${goldCoin ? " world-view__ui-animation-sprite--gold" : dedicatedItem ? " world-view__ui-animation-sprite--droppable" : ""}`; image.src = goldCoin ? texturePaths.itemsAnimated : dedicatedItem ? texturePaths.droppableItems : texturePaths.items; image.alt = "";
-      if (staminaPotion) { image.src = `${import.meta.env.BASE_URL}assets/art/game-view/items/stamina-potion.png`; image.style.width = "100%"; image.style.height = "100%"; }
-      if (!goldCoin && !staminaPotion) {
+      const image = document.createElement("img"); image.className = `world-view__ui-animation-sprite${goldCoin ? " world-view__ui-animation-sprite--gold" : dedicatedItem ? " world-view__ui-animation-sprite--droppable" : ""}`; image.src = goldCoin ? texturePaths.goldCoin : dedicatedItem ? texturePaths.droppableItems : texturePaths.items; image.alt = "";
+      if (potionResource) { image.src = `${import.meta.env.BASE_URL}assets/art/game-view/items/${potionResource}-potion-mid-res.png`; image.style.width = "100%"; image.style.height = "100%"; }
+      if (flight.itemName === "Bomb") { image.src = `${import.meta.env.BASE_URL}assets/art/game-view/items/bomb-idle-mid-res.png`; image.style.width = "200%"; image.style.height = "100%"; }
+      if (!goldCoin && !potionResource && flight.itemName !== "Bomb") {
         const columns = dedicatedItem ? DROPPABLE_ITEM_ATLAS_LAYOUT.columns : 3;
         const rows = dedicatedItem ? DROPPABLE_ITEM_ATLAS_LAYOUT.rows : 3;
         if (dedicatedItem) { image.style.setProperty('--droppable-atlas-width', `${columns * 100}%`); image.style.setProperty('--droppable-atlas-height', `${rows * 100}%`); }
@@ -490,14 +495,15 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
         image.style.transform = `translate(${-100 * (frame % columns) / columns}%, ${-100 * Math.floor(frame / columns) / rows}%)`;
       }
       transfer.append(image);
-      const mainSize = flight.mainSizePx * pixelScale * (dedicatedItem ? droppableItemSpriteSizePx(flight.itemName) / 32 : 1);
+      const mainSize = flight.mainSizePx * pixelScale * (goldCoin ? GOLD_COIN_SCALE : potionResource ? 0.8 : dedicatedItem ? droppableItemSpriteSizePx(flight.itemName) / 32 : 1);
       Object.assign(transfer.style, { left: `${rect.left + origin.left}px`, top: `${rect.top + origin.top}px`, width: `${mainSize}px`, height: `${mainSize}px`, transform: "translate(-50%, -50%)" });
       destinationLayer.append(transfer);
       requestAnimationFrame(() => {
         const targetRect = target.getBoundingClientRect();
         const counter = flight.destination === "counter";
         const targetHeight = targetRect.height;
-        Object.assign(transfer.style, counter ? { left: `${targetRect.left + targetRect.width / 2}px`, top: `${targetRect.top + targetRect.height / 2}px`, width: `${Math.min(targetRect.width, targetHeight)}px`, height: `${Math.min(targetRect.width, targetHeight)}px`, transform: "translate(-50%, -50%)" } : { left: `${targetRect.left}px`, top: `${targetRect.top + targetHeight / 2}px`, width: `${targetHeight}px`, height: `${targetHeight}px`, transform: "translate(-50%, -50%)" });
+        const counterSize = Math.min(targetRect.width, targetHeight);
+        Object.assign(transfer.style, counter ? { left: `${targetRect.left + targetRect.width / 2}px`, top: `${targetRect.top + targetRect.height / 2}px`, width: `${counterSize}px`, height: `${counterSize}px`, transform: "translate(-50%, -50%)" } : { left: `${targetRect.left}px`, top: `${targetRect.top + targetHeight / 2}px`, width: `${targetHeight}px`, height: `${targetHeight}px`, transform: "translate(-50%, -50%)" });
       });
       // The transfer reaches its target at 500ms and holds at the slot's
       // height briefly before the destination glimmer and in-place shrink.
@@ -860,10 +866,29 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
         const teleportArrowAtlas = createGridSpriteAtlas(textures.teleportArrow, { cellWidthPx: 32, cellHeightPx: 32, columns: 4, rows: 1, pivot: [0.5, 0.5] });
         const droppableItemAtlas = createGridSpriteAtlas(textures.droppableItems, { ...DROPPABLE_ITEM_ATLAS_LAYOUT, pivot: [0.5, 0.5] });
         const specialItemFramePaths = [
-          `${import.meta.env.BASE_URL}assets/art/game-view/items/stamina-potion.png`,
+          `${import.meta.env.BASE_URL}assets/art/game-view/items/stamina-potion-mid-res.png`,
           `${import.meta.env.BASE_URL}assets/art/game-view/items/throwing-knives.png`,
+          `${import.meta.env.BASE_URL}assets/art/game-view/items/health-potion-mid-res.png`,
+          `${import.meta.env.BASE_URL}assets/art/game-view/items/mana-potion-mid-res.png`,
         ];
-        const specialItemAtlas = createSpriteAtlasFromFrames(engine, await loadFrames(specialItemFramePaths), { paddingPx: 1, sampling: "nearest" });
+        const specialItemFrames = await loadFrames(specialItemFramePaths);
+        const normalizedSpecialItemFrames = specialItemFrames.map((frame) => {
+          if (frame.width <= 128 && frame.height <= 128) return frame;
+          const source = document.createElement("canvas"); source.width = frame.width; source.height = frame.height;
+          source.getContext("2d")!.putImageData(new ImageData(new Uint8ClampedArray(frame.pixels), frame.width, frame.height), 0, 0);
+          const canvas = document.createElement("canvas"); canvas.width = 128; canvas.height = 128;
+          const context = canvas.getContext("2d")!; context.drawImage(source, 0, 0, 128, 128);
+          return { ...frame, width: 128, height: 128, pixels: new Uint8Array(context.getImageData(0, 0, 128, 128).data) };
+        });
+        const bombPath = `${import.meta.env.BASE_URL}assets/art/game-view/items/bomb-idle-mid-res.png`;
+        const bombBitmap = await createImageBitmap(await (await fetch(bombPath)).blob());
+        for (let frame = 0; frame < 2; frame++) {
+          const canvas = document.createElement("canvas"); canvas.width = 128; canvas.height = 128;
+          const context = canvas.getContext("2d")!; context.drawImage(bombBitmap, frame * bombBitmap.width / 2, 0, bombBitmap.width / 2, bombBitmap.height, 0, 0, 128, 128);
+          normalizedSpecialItemFrames.push({ name: `${bombPath}#${frame}`, width: 128, height: 128, pixels: new Uint8Array(context.getImageData(0, 0, 128, 128).data) });
+        }
+        bombBitmap.close();
+        const specialItemAtlas = createSpriteAtlasFromFrames(engine, normalizedSpecialItemFrames, { paddingPx: 1, sampling: "nearest" });
         atlases.push(specialItemAtlas);
         const propsAnimatedAtlas = createGridSpriteAtlas(textures.propsAnimated, { cellWidthPx: 32, cellHeightPx: 32, columns: 7, rows: 5, pivot: [0.5, 1] });
         const propsStaticAtlas = createGridSpriteAtlas(textures.propsStatic, { cellWidthPx: 32, cellHeightPx: 32, columns: 4, rows: 2, pivot: [0.5, 1] });
@@ -873,13 +898,14 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
         if (cancelled) throw new Error("Renderer setup cancelled");
         const heroAtlas = createSpriteAtlasFromFrames(engine, heroPixels, { paddingPx: 1, sampling: "nearest" });
         if (heroAtlas) atlases.push(heroAtlas);
-        const goldCoinAtlas = createGridSpriteAtlas(textures.itemsAnimated, { cellWidthPx: 32, cellHeightPx: 32, columns: 4, rows: 2, pivot: [0.5, 0.5] });
+        const animatedItemsAtlas = createGridSpriteAtlas(textures.itemsAnimated, { cellWidthPx: 32, cellHeightPx: 32, columns: 4, rows: 2, pivot: [0.5, 0.5] });
+        const goldCoinAtlas = createGridSpriteAtlas(textures.goldCoin, { cellWidthPx: 256, cellHeightPx: 256, columns: 4, rows: 1, pivot: [0.5, 0.5] });
         const authoredDecorations = campaign.floor.tiledDecorations ?? [];
         const authoredObjectAtlas = authoredDecorations.some(({ gid }) => gid >= 144 && gid <= 163)
           ? createSpriteAtlasFromFrames(engine, await loadFrames(AUTHORED_OBJECT_IMAGES.map(([name]) => `${import.meta.env.BASE_URL}assets/art/game-view/props/static/${name}.png`)), { paddingPx: 1, sampling: "nearest" })
           : null;
         if (authoredObjectAtlas) atlases.push(authoredObjectAtlas);
-        const authoredAtlases = { tiles: tileAtlas, propsAnimated: propsAnimatedAtlas, authoredObjects: authoredObjectAtlas, itemsAnimated: goldCoinAtlas, items: itemAtlas, propsStatic: propsStaticAtlas };
+        const authoredAtlases = { tiles: tileAtlas, propsAnimated: propsAnimatedAtlas, authoredObjects: authoredObjectAtlas, itemsAnimated: animatedItemsAtlas, items: itemAtlas, propsStatic: propsStaticAtlas };
         const authoredDecorationLayers: Sprite2DLayer[] = [];
         let authoredFloorLayer: Sprite2DLayer | undefined;
         const authoredSprites = authoredDecorations.map(({ gid, x, y }, index) => {
@@ -899,7 +925,15 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
         const torchAtlas = createSpriteAtlasFromFrames(engine, await loadFrames(torchFramePaths), { paddingPx: 1, sampling: "nearest" });
         const campfireAtlas = createGridSpriteAtlas(textures.campfire, { cellWidthPx: CAMPFIRE_IDLE_FRAME_SIZE_PX, cellHeightPx: CAMPFIRE_IDLE_FRAME_SIZE_PX, columns: CAMPFIRE_IDLE_FRAME_COUNT, rows: 1, pivot: [0.5, 0.5] });
         atlases.push(torchAtlas);
-        const particleAtlas = minimap ? null : createSpriteAtlasFromFrames(engine, await loadFrames(smokePuffFramePaths), { paddingPx: 1, sampling: "nearest" });
+        const particleFrames = minimap ? [] : await loadFrames(smokePuffFramePaths);
+        if (!minimap) {
+          const path = `${import.meta.env.BASE_URL}assets/art/game-view/particles/bomb-fire.png`;
+          const bitmap = await createImageBitmap(await (await fetch(path)).blob());
+          const canvas = document.createElement("canvas"); canvas.width = 128; canvas.height = 128;
+          const context = canvas.getContext("2d")!; context.drawImage(bitmap, 0, 0, 128, 128); bitmap.close();
+          particleFrames.push({ name: path, width: 128, height: 128, pixels: new Uint8Array(context.getImageData(0, 0, 128, 128).data) });
+        }
+        const particleAtlas = minimap ? null : createSpriteAtlasFromFrames(engine, particleFrames, { paddingPx: 1, sampling: "nearest" });
         if (particleAtlas) atlases.push(particleAtlas);
         const projectileAtlasPaths = Object.values(projectileFramePaths);
         const projectileAtlas = createSpriteAtlasFromFrames(engine, await loadFrames(projectileAtlasPaths), { paddingPx: 1, sampling: "nearest" });
@@ -1024,11 +1058,11 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
         const triggers = triggerLayers.map((layer) => addSprite2D(layer, { positionPx: [-10000, -10000], sizePx: [32, 32], frame: 0 }));
         let previousTriggerDrawAt = performance.now();
         const goldCoins = goldCoinLayers.map((layers) => createCharacterSprite(
-          { handle: addSprite2D(layers.main, { positionPx: [-10000, -10000], sizePx: [32, 32], frame: 0 }), offsetPx: [0, 0] },
+          { handle: addSprite2D(layers.main, { positionPx: [-10000, -10000], sizePx: [GOLD_COIN_SIZE_PX, GOLD_COIN_SIZE_PX], frame: 0 }), offsetPx: [0, 0] },
           { handle: addSprite2D(layers.shadow, { positionPx: [-10000, -10000], sizePx: [32, 32], frame: 0 }), offsetPx: [0, 0] },
         ));
         const chestCoinLayers = Array.from({ length: 3 }, () => createSprite2DLayer(goldCoinAtlas, { pivot: [0.5, 0.5] }));
-        const chestCoins = chestCoinLayers.map((layer) => addSprite2D(layer, { positionPx: [-10000, -10000], sizePx: [32, 32], frame: 0 }));
+        const chestCoins = chestCoinLayers.map((layer) => addSprite2D(layer, { positionPx: [-10000, -10000], sizePx: [GOLD_COIN_SIZE_PX, GOLD_COIN_SIZE_PX], frame: 0 }));
         const itemThrowLayers = Array.from({ length: 3 }, () => createSprite2DLayer(itemAtlas, { pivot: [0.5, 0.5] }));
         const itemThrowSprites = itemThrowLayers.map((layer) => addSprite2D(layer, { positionPx: [-10000, -10000], sizePx: [32, 32], frame: 0 }));
         const staminaPotionThrowLayers = Array.from({ length: 3 }, () => createSprite2DLayer(specialItemAtlas, { pivot: [0.5, 0.5] }));
@@ -1283,7 +1317,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
           const activeItemThrows = latestRef.current.itemThrows.filter((throwItem) => !itemThrowExpired(throwItem, performance.now()));
           const flightIds = new Set(activeItemThrows.map((throwItem) => throwItem.id));
           const itemObjects = world.objects.filter((entity) => (entity.kind === "item" || entity.kind === "potion" || entity.kind === "key" || entity.kind === "discovery") && !flightIds.has(entity.id) && dynamicVisible(entity));
-          const specialItemObjects = itemObjects.filter((entity) => (entity.kind === "potion" && entity.resource === "stamina") || (entity.kind === "item" && entity.item?.name === "Throwing Knives"));
+          const specialItemObjects = itemObjects.filter((entity) => entity.kind === "potion" || (entity.kind === "item" && (entity.item?.name === "Throwing Knives" || entity.item?.name === "Bomb")));
           const droppableItemObjects = itemObjects.filter((entity) => entity.kind === "item" && droppableItemSpriteFrame(entity.item?.name) !== null);
           const standardItemObjects = itemObjects.filter((entity) => !specialItemObjects.includes(entity) && !droppableItemObjects.includes(entity));
           const chestObjects = world.objects.filter((entity) => entity.kind === "chest" && dynamicVisible(entity));
@@ -1297,7 +1331,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
           const teleportArrowObjects = world.objects.filter((entity) => entity.kind === "teleport-arrow" && dynamicVisible(entity));
           items.forEach((pickup, i) => { const entity = standardItemObjects[i]; itemLayers[i].shadow.visible = Boolean(entity); itemLayers[i].main.visible = Boolean(entity); if (!entity) { hideCharacterSprite(pickup); return; } const kind = entity.kind as "item" | "potion" | "key" | "discovery"; const presentation = pickupMainArtPresentation(kind, entity.resource); const oscillationPx = isMinimap ? 0 : pickupOscillationOffset(now, presentation.oscillationAmplitudePx); const shadowWidthScale = presentation.shadowWidthScale * (isMinimap ? 1 : pickupShadowWidthScale(oscillationPx, presentation.oscillationAmplitudePx)); updateCharacterSprite(pickup, [entity.worldX, entity.worldY], 0, { frame: itemSpriteFrame(kind, entity.resource), sizePx: kind === "key" ? [16, 16] : [32, 32], positionPx: [entity.worldX, entity.worldY + presentation.mainOffsetPx + oscillationPx] }, 0, 0, 1, [32 * shadowWidthScale, 32 * presentation.shadowHeightScale]); addPickupDepth(entity.id, groundContactY(entity), pickup); });
           droppableItems.forEach((pickup, i) => { const entity = droppableItemObjects[i]; droppableItemLayers[i].shadow.visible = Boolean(entity); droppableItemLayers[i].main.visible = Boolean(entity); if (!entity) { hideCharacterSprite(pickup); return; } const frame = droppableItemSpriteFrame(entity.item?.name) ?? 0; const sizePx = droppableItemSpriteSizePx(entity.item?.name); const oscillationPx = isMinimap ? 0 : pickupOscillationOffset(now, 1.5); updateCharacterSprite(pickup, [entity.worldX, entity.worldY], 0, { frame, sizePx: [sizePx, sizePx], positionPx: [entity.worldX + droppableItemMainOffsetXPx(entity.item?.name), entity.worldY - 8 + oscillationPx] }, 0, 0, 1, [sizePx * pickupShadowWidthScale(oscillationPx, 1.5), sizePx]); addPickupDepth(entity.id, groundContactY(entity), pickup); });
-          specialItems.forEach((pickup, i) => { const entity = specialItemObjects[i]; specialItemLayers[i].shadow.visible = Boolean(entity); specialItemLayers[i].main.visible = Boolean(entity); if (!entity) { hideCharacterSprite(pickup); return; } const resource = entity.kind === "potion" ? entity.resource : null; const presentation = pickupMainArtPresentation(entity.kind as "potion" | "item", resource); const oscillationPx = isMinimap ? 0 : pickupOscillationOffset(now, presentation.oscillationAmplitudePx); const shadowWidthScale = presentation.shadowWidthScale * (isMinimap ? 1 : pickupShadowWidthScale(oscillationPx, presentation.oscillationAmplitudePx)); updateCharacterSprite(pickup, [entity.worldX, entity.worldY], 0, { frame: entity.kind === "potion" ? 0 : 1, sizePx: [32, 32], positionPx: [entity.worldX, entity.worldY + presentation.mainOffsetPx + oscillationPx] }, 0, 0, 1, [32 * shadowWidthScale, 32 * presentation.shadowHeightScale]); addPickupDepth(entity.id, groundContactY(entity), pickup); });
+          specialItems.forEach((pickup, i) => { const entity = specialItemObjects[i]; specialItemLayers[i].shadow.visible = Boolean(entity); specialItemLayers[i].main.visible = Boolean(entity); if (!entity) { hideCharacterSprite(pickup); return; } const resource = entity.kind === "potion" ? entity.resource : null; const presentation = entity.kind === "item" && entity.item?.name === "Bomb" ? { mainOffsetPx: -8, oscillationAmplitudePx: 1.5, shadowWidthScale: 1, shadowHeightScale: 1 } : pickupMainArtPresentation(entity.kind as "potion" | "item", resource); const oscillationPx = isMinimap ? 0 : pickupOscillationOffset(now, presentation.oscillationAmplitudePx); const shadowWidthScale = presentation.shadowWidthScale * (isMinimap ? 1 : pickupShadowWidthScale(oscillationPx, presentation.oscillationAmplitudePx)); updateCharacterSprite(pickup, [entity.worldX, entity.worldY], 0, { frame: entity.kind === "potion" ? entity.resource === "health" ? 2 : entity.resource === "mana" ? 3 : 0 : entity.item?.name === "Bomb" ? 4 + Math.floor(now / 250) % 2 : 1, sizePx: entity.kind === "potion" ? [POTION_SPRITE_SIZE_PX, POTION_SPRITE_SIZE_PX] : [32, 32], positionPx: [entity.worldX, entity.worldY + presentation.mainOffsetPx + oscillationPx] }, 0, 0, 1, [32 * shadowWidthScale, 32 * presentation.shadowHeightScale]); addPickupDepth(entity.id, groundContactY(entity), pickup); });
           const doorObjects = world.puzzleObjects.filter((entity): entity is Extract<PuzzleObjectPresentation, { kind: "door" }> => entity.kind === "door" && dynamicVisible(entity));
           doors.forEach((sprite, i) => {
             const door = doorObjects[i]; doorLayers[i].visible = Boolean(door);
@@ -1327,10 +1361,10 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
           });
           barrels.forEach((barrel, i) => { const entity = barrelObjects[i]; const position = entity && (turnPresentation?.positionOf(entity.id, entity) ?? entity); barrelLayers[i].shadow.visible = Boolean(position); barrelLayers[i].main.visible = Boolean(position); if (!position) { hideCharacterSprite(barrel); return; } const positionPx: [number, number] = [position.x * 32 + 16, position.y * 32 + 16]; updateCharacterSprite(barrel, positionPx, 0, { sizePx: [32, 32], frame: 0 }); addCharacterDepth(entity.id, groundContactY(position), barrel); });
           const goldCoinFrame = Math.floor(now / 120) % 4;
-          goldCoins.forEach((pickup, i) => { const entity = goldObjects[i]; goldCoinLayers[i].shadow.visible = Boolean(entity); goldCoinLayers[i].main.visible = Boolean(entity); if (!entity) { hideCharacterSprite(pickup); return; } updateCharacterSprite(pickup, [entity.worldX, entity.worldY - 10], 0, { frame: goldCoinFrame }, 0, 0); updateSprite2D(pickup.shadow.handle, { positionPx: [entity.worldX, entity.worldY], sizePx: [16, 16], color: [1, 1, 1, 0.5] }); addPickupDepth(entity.id, groundContactY(entity), pickup); });
-          chestCoins.forEach((sprite, i) => { const throwItem = activeItemThrows[i]; const position = throwItem ? itemThrowPosition(throwItem, performance.now()) : null; const visible = Boolean(position && dynamicVisible(position) && throwItem?.kind === "gold"); chestCoinLayers[i].visible = visible; if (!visible || !position || !throwItem) return; updateSprite2D(sprite, { frame: goldCoinFrame, positionPx: [position.x * 32 + 16, position.y * 32 + 16] }); addLayerDepth(throwItem.id, groundContactY(position), WORLD_TIE_BREAK.effect, chestCoinLayers[i]); });
-          itemThrowSprites.forEach((sprite, i) => { const throwItem = activeItemThrows[i]; const position = throwItem ? itemThrowPosition(throwItem, performance.now()) : null; const visible = Boolean(position && dynamicVisible(position) && throwItem?.kind !== "gold" && throwItem?.resource !== "stamina" && droppableItemSpriteFrame(throwItem?.itemName) === null); itemThrowLayers[i].visible = visible; if (!visible || !position || !throwItem) return; updateSprite2D(sprite, { frame: itemSpriteFrame(throwItem.kind as "item" | "potion", throwItem.resource), positionPx: [position.x * 32 + 16, position.y * 32 + 16] }); addLayerDepth(throwItem.id, groundContactY(position), WORLD_TIE_BREAK.effect, itemThrowLayers[i]); });
-          staminaPotionThrowSprites.forEach((sprite, i) => { const throwItem = activeItemThrows[i]; const position = throwItem ? itemThrowPosition(throwItem, performance.now()) : null; const visible = Boolean(position && dynamicVisible(position) && throwItem?.resource === "stamina"); staminaPotionThrowLayers[i].visible = visible; if (!visible || !position || !throwItem) return; updateSprite2D(sprite, { frame: 0, positionPx: [position.x * 32 + 16, position.y * 32 + 16] }); addLayerDepth(throwItem.id, groundContactY(position), WORLD_TIE_BREAK.effect, staminaPotionThrowLayers[i]); });
+          goldCoins.forEach((pickup, i) => { const entity = goldObjects[i]; goldCoinLayers[i].shadow.visible = Boolean(entity); goldCoinLayers[i].main.visible = Boolean(entity); if (!entity) { hideCharacterSprite(pickup); return; } updateCharacterSprite(pickup, [entity.worldX, entity.worldY - 10 * GOLD_COIN_SCALE], 0, { frame: goldCoinFrame, sizePx: [GOLD_COIN_SIZE_PX, GOLD_COIN_SIZE_PX] }, 0, 0); updateSprite2D(pickup.shadow.handle, { positionPx: [entity.worldX, entity.worldY], sizePx: [16 * GOLD_COIN_SCALE, 16 * GOLD_COIN_SCALE], color: [1, 1, 1, 0.5] }); addPickupDepth(entity.id, groundContactY(entity), pickup); });
+          chestCoins.forEach((sprite, i) => { const throwItem = activeItemThrows[i]; const position = throwItem ? itemThrowPosition(throwItem, performance.now()) : null; const visible = Boolean(position && dynamicVisible(position) && throwItem?.kind === "gold"); chestCoinLayers[i].visible = visible; if (!visible || !position || !throwItem) return; updateSprite2D(sprite, { frame: goldCoinFrame, sizePx: [GOLD_COIN_SIZE_PX, GOLD_COIN_SIZE_PX], positionPx: [position.x * 32 + 16, position.y * 32 + 16] }); addLayerDepth(throwItem.id, groundContactY(position), WORLD_TIE_BREAK.effect, chestCoinLayers[i]); });
+          itemThrowSprites.forEach((sprite, i) => { const throwItem = activeItemThrows[i]; const position = throwItem ? itemThrowPosition(throwItem, performance.now()) : null; const visible = Boolean(position && dynamicVisible(position) && throwItem?.kind !== "gold" && !throwItem?.resource && throwItem?.itemName !== "Bomb" && droppableItemSpriteFrame(throwItem?.itemName) === null); itemThrowLayers[i].visible = visible; if (!visible || !position || !throwItem) return; updateSprite2D(sprite, { frame: itemSpriteFrame(throwItem.kind as "item" | "potion", throwItem.resource), positionPx: [position.x * 32 + 16, position.y * 32 + 16] }); addLayerDepth(throwItem.id, groundContactY(position), WORLD_TIE_BREAK.effect, itemThrowLayers[i]); });
+          staminaPotionThrowSprites.forEach((sprite, i) => { const throwItem = activeItemThrows[i]; const position = throwItem ? itemThrowPosition(throwItem, performance.now()) : null; const visible = Boolean(position && dynamicVisible(position) && (throwItem?.kind === "potion" && Boolean(throwItem.resource) || throwItem?.itemName === "Bomb")); staminaPotionThrowLayers[i].visible = visible; if (!visible || !position || !throwItem) return; updateSprite2D(sprite, { frame: throwItem.itemName === "Bomb" ? 4 + Math.floor(now / 250) % 2 : throwItem.resource === "health" ? 2 : throwItem.resource === "mana" ? 3 : 0, sizePx: throwItem.itemName === "Bomb" ? [32, 32] : [POTION_SPRITE_SIZE_PX, POTION_SPRITE_SIZE_PX], positionPx: [position.x * 32 + 16, position.y * 32 + 16] }); addLayerDepth(throwItem.id, groundContactY(position), WORLD_TIE_BREAK.effect, staminaPotionThrowLayers[i]); });
           droppableItemThrowSprites.forEach((sprite, i) => { const throwItem = activeItemThrows[i]; const position = throwItem ? itemThrowPosition(throwItem, performance.now()) : null; const frame = droppableItemSpriteFrame(throwItem?.itemName); const visible = Boolean(position && dynamicVisible(position) && frame !== null); droppableItemThrowLayers[i].visible = visible; if (!visible || !position || frame === null || !throwItem) return; const sizePx = droppableItemSpriteSizePx(throwItem.itemName); updateSprite2D(sprite, { frame, sizePx: [sizePx, sizePx], positionPx: [position.x * 32 + 16 + droppableItemMainOffsetXPx(throwItem.itemName), position.y * 32 + 16] }); addLayerDepth(throwItem.id, groundContactY(position), WORLD_TIE_BREAK.effect, droppableItemThrowLayers[i]); });
           const torchFrame = Math.floor(now / 200) % torchFramePaths.length;
           const wallTorches = world.wallDecorations.filter((decoration) => decoration.kind === "torch" && dynamicVisible(decoration));
@@ -1340,9 +1374,9 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
           traps.forEach((sprite, i) => { const decoration = wallTraps[i]; trapLayers[i].visible = Boolean(decoration); trapLayers[i].order = FLOOR_TRAP_RENDER_ORDER; if (decoration) shadeJobs.push({ handles: [sprite], position: decoration }); updateSprite2D(sprite, { frame: trapFrame, positionPx: decoration ? [decoration.worldX, decoration.worldY] : [-10000,-10000] }); });
           const campfireFrame = Math.floor(now / CAMPFIRE_IDLE_FRAME_DURATION_MS) % CAMPFIRE_IDLE_FRAME_COUNT;
           const campfireObjects = world.objects.filter((entity) => entity.kind === "campfire" && dynamicVisible(entity));
-          campfires.forEach((sprite, i) => { const campfire = campfireObjects[i]; campfireLayers[i].visible = Boolean(campfire); campfireLayers[i].order = FLOOR_TRAP_RENDER_ORDER; if (campfire) shadeJobs.push({ handles: [sprite], position: campfire }); updateSprite2D(sprite, { frame: campfireFrame, positionPx: campfire ? [campfire.worldX, campfire.worldY] : [-10000, -10000] }); });
+          campfires.forEach((sprite, i) => { const campfire = campfireObjects[i]; campfireLayers[i].visible = Boolean(campfire); if (campfire) addLayerDepth(campfire.id, groundContactY(campfire), WORLD_TIE_BREAK.prop, campfireLayers[i]); updateSprite2D(sprite, { frame: campfireFrame, positionPx: campfire ? [campfire.worldX, campfire.worldY] : [-10000, -10000] }); });
           const visibleStairObjects = stairObjects.filter(dynamicVisible);
-          stairs.forEach((sprite, i) => { const entity = visibleStairObjects[i]; stairLayers[i].visible = Boolean(entity); updateSprite2D(sprite, { frame: DUNGEON_STAIR_UP_FRAME, positionPx: entity ? [entity.worldX, entity.worldY] : [-10000,-10000], flipY: entity?.direction === "back" }); if (entity) addLayerDepth(entity.id, groundContactY(entity), WORLD_TIE_BREAK.stair, stairLayers[i]); });
+          stairs.forEach((sprite, i) => { const entity = visibleStairObjects[i]; stairLayers[i].visible = Boolean(entity); updateSprite2D(sprite, { frame: DUNGEON_STAIR_UP_FRAME, positionPx: entity ? [entity.worldX, entity.worldY] : [-10000,-10000], flipY: entity?.direction === "back" }); stairLayers[i].order = FLOOR_DECAL_RENDER_ORDER; if (entity) shadeJobs.push({ handles: [sprite], position: entity }); });
           teleportArrows.forEach((sprite, i) => { const entity = teleportArrowObjects[i]; teleportArrowLayers[i].visible = Boolean(entity); const frame = entity?.direction === "e" ? 1 : entity?.direction === "s" ? 2 : entity?.direction === "w" ? 3 : 0; updateSprite2D(sprite, { frame, positionPx: entity ? [entity.worldX, entity.worldY] : [-10000, -10000], sizePx: [32, 32], color: [1, 1, 1, 1] }); if (entity) addLayerDepth(entity.id, groundContactY(entity), WORLD_TIE_BREAK.stair, teleportArrowLayers[i]); });
           const activeProjectiles = state.floor.projectiles ?? [];
           const activeProjectileIds = new Set(activeProjectiles.map((projectile) => projectile.id));
@@ -1364,7 +1398,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
             addLayerDepth(projectile.id, y * 32 + 16, WORLD_TIE_BREAK.effect, projectileLayers[index]!);
           });
           const activeParticles = (performanceOptions().animated && performanceOptions().dynamic ? latestRef.current.particleEffects : []).filter((effect) => !particleExpired(effect)).slice(-particleLayers.length);
-          particles.forEach((sprite, i) => { const effect = activeParticles[i]; const now = performance.now(); const target = effect?.targetId ? world.actors.find((actor) => actor.id === effect.targetId) ?? null : null; const position = effect ? particlePosition(effect, target, now) : null; const offscreen = !isMinimap && position && isPositionOffscreen(position, cameraCenter, rect.width / cellSizeAt(rect) / 2 + 1, rect.height / cellSizeAt(rect) / 2 + 1); const visible = Boolean(effect && position && !offscreen && allowed(position)); particleLayers[i].visible = visible; if (!visible || !effect || !position) return; shadeJobs.push({ handles: [sprite], position }); const progress = particleProgress(effect, now); const ramp = effect.kind === "damage" ? particleOpacity(effect, now) : progress < .25 ? progress / .25 : progress > .75 ? (1 - progress) / .25 : 1; const sizePx = particleSizePx(effect, now); const purple = effect.kind === "heal" || effect.kind === "wand"; const damage = effect.kind === "damage"; if (effect.kind === "heal" || (damage && progress < 1)) particleLayers[i].order = OVERLAY_RENDER_ORDER - 1; else if (damage) particleLayers[i].order = LANDED_DAMAGE_PARTICLE_RENDER_ORDER; else addLayerDepth(effect.id, groundContactY(position), WORLD_TIE_BREAK.effect, particleLayers[i]); updateSprite2D(sprite, { positionPx: [position.x * 32 + 16, position.y * 32 + 16], sizePx: [sizePx, sizePx], frame: particleFrame(effect, now), rotation: effect.rotation, color: purple ? [.72, .48, 1, ramp] : damage ? [1, .16, .08, ramp] : [1, 1, 1, ramp] }); });
+          particles.forEach((sprite, i) => { const effect = activeParticles[i]; const now = performance.now(); const target = effect?.targetId ? world.actors.find((actor) => actor.id === effect.targetId) ?? null : null; const position = effect ? particlePosition(effect, target, now) : null; const offscreen = !isMinimap && position && isPositionOffscreen(position, cameraCenter, rect.width / cellSizeAt(rect) / 2 + 1, rect.height / cellSizeAt(rect) / 2 + 1); const visible = Boolean(effect && position && !offscreen && allowed(position)); particleLayers[i].visible = visible; if (!visible || !effect || !position) return; shadeJobs.push({ handles: [sprite], position }); const progress = particleProgress(effect, now); const ramp = effect.kind === "damage" ? particleOpacity(effect, now) : progress < .25 ? progress / .25 : progress > .75 ? (1 - progress) / .25 : 1; const sizePx = particleSizePx(effect, now); const purple = effect.kind === "heal" || effect.kind === "wand"; const damage = effect.kind === "damage"; if (effect.kind === "heal" || (damage && progress < 1)) particleLayers[i].order = OVERLAY_RENDER_ORDER - 1; else if (damage) particleLayers[i].order = LANDED_DAMAGE_PARTICLE_RENDER_ORDER; else addLayerDepth(effect.id, groundContactY(position), WORLD_TIE_BREAK.effect, particleLayers[i]); updateSprite2D(sprite, { positionPx: [position.x * 32 + 16, position.y * 32 + 16], sizePx: [sizePx, sizePx], frame: effect.kind === "bomb-fire" ? 9 : particleFrame(effect, now), rotation: effect.rotation, color: purple ? [.72, .48, 1, ramp] : damage ? [1, .16, .08, ramp] : [1, 1, 1, ramp] }); });
           // Only active layers follow the camera. Hidden chunks and dormant
           // sprite-pool entries are deliberately excluded from per-frame work.
           viewLayers.forEach((layer) => {

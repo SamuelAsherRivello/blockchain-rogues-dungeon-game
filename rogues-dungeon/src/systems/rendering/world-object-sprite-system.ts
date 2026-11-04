@@ -31,6 +31,7 @@ const WORLD_DROPPABLE_SPRITE_FRAMES = Object.freeze({
   Heal: 1,
   Wand: 2,
   "Dagger (Magic)": 3,
+  "Throwing Knife": 3,
   Sword: 4,
   "Two-Handed Sword": 5,
   "Leg Armor (Magic)": 6,

@@ -1,3 +1,4 @@
+import { bombBlastCells, bombThrowRange } from "./bomb-blast-system.ts";
 import { copyCampaignMutableState } from "./campaign-copy-system.ts";
 import { applyStorageExclusions, consumeItemProvenance, mergeItemProvenance } from "./item-provenance-system.ts";
 import { normalizeDiscovery, revealDiscovery } from "./map-discovery-system.ts";
@@ -204,8 +205,7 @@ export function isBlockingPathCell(floor: Parameters<typeof isWalkable>[0], cell
   return [[0, -1], [1, 0], [0, 1], [-1, 0]].filter(([dx, dy]) => isWalkable(floor, cell.x + dx, cell.y + dy)).length === 2;
 }
 export function isStairPlacementCell(floor: Parameters<typeof isWalkable>[0], position: Position) {
-  return isWalkable(floor, position.x, position.y)
-    && [[0, -1], [1, 0], [0, 1], [-1, 0]].every(([dx, dy]) => isWalkable(floor, position.x + dx, position.y + dy));
+  return [-1, 0, 1].every((dy) => [-1, 0, 1].every((dx) => isWalkable(floor, position.x + dx, position.y + dy)));
 }
 
 interface EncounterEntrance { door: Position; trigger: Position }
@@ -279,7 +279,25 @@ function stairsForLevel(level: number, start: Position, forward: Position): Extr
 export function ensureNearbyStairs(floor: Floor) {
   const level = floor.level ?? floor.depth ?? 1;
   const forward = floor.entities?.find((entity) => entity.kind === "stairs" && entity.direction !== "back") ?? { x: floor.start.x + 3, y: floor.start.y };
-  const expected = stairsForLevel(level, floor.start, forward).filter((stair) => isStairPlacementCell(floor, stair));
+  const occupied = new Set((floor.entities ?? []).filter((entity) => entity.kind !== "stairs").map((entity) => `${entity.x},${entity.y}`));
+  occupied.add(`${floor.start.x},${floor.start.y}`);
+  const reachable = new Set([`${floor.start.x},${floor.start.y}`]);
+  const queue = [floor.start];
+  for (let i = 0; i < queue.length; i++) for (const [dx, dy] of [[0, -1], [1, 0], [0, 1], [-1, 0]]) {
+    const next = { x: queue[i].x + dx, y: queue[i].y + dy }, key = `${next.x},${next.y}`;
+    if (isWalkable(floor, next.x, next.y) && !reachable.has(key)) { reachable.add(key); queue.push(next); }
+  }
+  const expected = stairsForLevel(level, floor.start, forward).flatMap((stair) => {
+    const candidates: Position[] = [];
+    for (let y = 1; y < floor.height - 1; y++) for (let x = 1; x < floor.width - 1; x++) {
+      if (reachable.has(`${x},${y}`) && !occupied.has(`${x},${y}`) && isStairPlacementCell(floor, { x, y })) candidates.push({ x, y });
+    }
+    candidates.sort((a, b) => Math.abs(a.x - stair.x) + Math.abs(a.y - stair.y) - Math.abs(b.x - stair.x) - Math.abs(b.y - stair.y));
+    const position = candidates[0];
+    if (!position) return [];
+    occupied.add(`${position.x},${position.y}`);
+    return [{ ...stair, ...position }];
+  });
   if (!expected.length) {
     floor.entities = (floor.entities ?? []).filter((entity) => entity.kind !== "stairs");
     return floor;
@@ -294,7 +312,8 @@ export function generateOverworldFloor(level: number, seed: number): Floor {
   const start = { x: 50, y: 50 };
   const exit = { x: 68, y: 62 };
   const world = generateOverworld({ width, height, seed, mountainDensity: 0.24, scale: 18, start, exit,
-    protectedCells: level > 1 ? [{ x: start.x - 2, y: start.y }] : [] });
+    protectedCells: [exit, ...(level > 1 ? [{ x: start.x - 2, y: start.y }] : [])].flatMap((stair) =>
+      [-1, 0, 1].flatMap((dy) => [-1, 0, 1].map((dx) => ({ x: stair.x + dx, y: stair.y + dy })))) });
   const entities: Entity[] = [
     ...(level > 1 ? [{ id: "stairs-back", kind: "stairs" as const, direction: "back" as const, name: "Return stairs", x: start.x - 2, y: start.y }] : []),
     { id: "stairs-forward", kind: "stairs", direction: "forward", name: "Forward stairs", ...exit },
@@ -337,12 +356,14 @@ export const itemCatalog: readonly Omit<Item, "id">[] = Object.freeze([
   { name: "Wooden Vest", group: "armor", modifiers: { defense: 1 }, isStackable: false },
   { name: "Oak Shield 03", group: "weapons", modifiers: { defense: 3 }, perks: ["Shield"], isStackable: false },
   { name: "Wooden Stick", group: "weapons", modifiers: { offense: 1 }, isStackable: false },
+  { name: "Bomb", group: "weapons", modifiers: {}, category: "consumable", quickSlotAction: "bomb", isStackable: true, quantity: 3 },
+  { name: "Throwing Knife", group: "weapons", modifiers: {}, category: "consumable", abilityId: "throwing-knives", quickSlotAction: "dagger", isStackable: true, quantity: 3 },
   { name: "Throwing Knives", group: "weapons", modifiers: {}, category: "consumable", abilityId: "throwing-knives", quickSlotAction: "throwing-knives", isStackable: true, quantity: 3 },
   ...jewelItemDefinitions,
 ]);
 export const WORLD_DROPPABLE_ITEM_NAMES = Object.freeze([
   "Extra Carrying Capacity +5", "Heal", "Wand", "Dagger (Magic)", "Sword", "Two-Handed Sword",
-  "Leg Armor (Magic)", "Chest Armor", "Suit of Armor", "Oak Shield 03", "Wooden Stick", "Wooden Vest",
+  "Leg Armor (Magic)", "Chest Armor", "Suit of Armor", "Oak Shield 03", "Wooden Stick", "Wooden Vest", "Bomb", "Throwing Knife",
   ...JEWEL_NAMES,
 ] as const);
 export type WorldDroppableItemName = typeof WORLD_DROPPABLE_ITEM_NAMES[number];
@@ -363,7 +384,7 @@ export const consumableCatalog = Object.freeze({
 export function quickSlotKey(item: Pick<Item, "consumableResource" | "quickSlotAction" | "id">) {
   return item.consumableResource ?? item.quickSlotAction ?? item.id;
 }
-export function isQuickSlottableItem(item: Item | null | undefined): item is Item & { category: "consumable"; consumableResource?: ConsumableResource; quickSlotAction?: "restore-resource" | "throwing-knives" } {
+export function isQuickSlottableItem(item: Item | null | undefined): item is Item & { category: "consumable"; consumableResource?: ConsumableResource; quickSlotAction?: "restore-resource" | "throwing-knives" | "bomb" | "dagger" } {
   return item?.isStackable === true && item.category === "consumable" && Boolean(item.consumableResource || item.quickSlotAction);
 }
 function consumableInstance(resource: ConsumableResource, id: string, quantity = 1): Item { return { id, name: consumableCatalog[resource].name, group: "weapons", modifiers: {}, category: "consumable", consumableResource: resource, quickSlotAction: "restore-resource", isStackable: true, quantity }; }
@@ -390,9 +411,9 @@ export function normalizeQuickSlots(campaign: Campaign) {
   return campaign;
 }
 function normalizeItem(item: Item): Item {
-  const stackable = item.category === "consumable" && (item.consumableResource === "health" || item.consumableResource === "stamina" || item.consumableResource === "mana" || item.quickSlotAction === "throwing-knives");
+  const stackable = item.category === "consumable" && (item.consumableResource === "health" || item.consumableResource === "stamina" || item.consumableResource === "mana" || (item.quickSlotAction === "throwing-knives" || item.quickSlotAction === "bomb" || item.quickSlotAction === "dagger"));
   const legacyCapacity = item.name === "Extra Space";
-  const category = item.category === "ability" && item.abilityId ? "ability" : legacyCapacity || item.category === "capacity" && Number.isFinite(item.capacityBonus) ? "capacity" : item.category === "consumable" && (item.consumableResource === "health" || item.consumableResource === "stamina" || item.consumableResource === "mana" || item.quickSlotAction === "throwing-knives") ? "consumable" : "equipment";
+  const category = item.category === "ability" && item.abilityId ? "ability" : legacyCapacity || item.category === "capacity" && Number.isFinite(item.capacityBonus) ? "capacity" : item.category === "consumable" && (item.consumableResource === "health" || item.consumableResource === "stamina" || item.consumableResource === "mana" || (item.quickSlotAction === "throwing-knives" || item.quickSlotAction === "bomb" || item.quickSlotAction === "dagger")) ? "consumable" : "equipment";
   return { ...item, ...(legacyCapacity ? { name: EXTRA_SPACE_ITEM.name } : {}), category, isStackable: stackable, ...(stackable ? { quantity: Math.max(1, Math.floor(item.quantity ?? 1)) } : {}), ...(category === "capacity" ? { capacityBonus: EXTRA_SPACE_CAPACITY_BONUS, quantity: undefined } : {}) };
 }
 function normalizeEquipmentItem(item: Item): Item { const { quantity: _quantity, ...equipment } = item; return { ...equipment, isStackable: false }; }
@@ -827,8 +848,8 @@ export function generateFloor(level: number, seed = seedNow(), difficulty = leve
     connectRooms(map, start, bypass, corridorWidth);
     connectRooms(map, bypass, routeForward, corridorWidth);
   }
-  const isClearStairMapCell = (position: Position) => map[position.y]?.[position.x] === 0
-    && [map[position.y - 1]?.[position.x], map[position.y]?.[position.x + 1], map[position.y + 1]?.[position.x], map[position.y]?.[position.x - 1]].every((cell) => cell === 0);
+  const isClearStairMapCell = (position: Position) => [-1, 0, 1].every((dy) =>
+    [-1, 0, 1].every((dx) => map[position.y + dy]?.[position.x + dx] === 0));
   // The Level One test fixture deliberately keeps its sole forward stair in
   // the opening room. It is a fixture-only interaction target, distinct from
   // production's distant exit and starter-pack distribution.
@@ -1502,7 +1523,7 @@ function generationProfileForCampaign(campaign: GenerationCampaign, level: numbe
     difficulty: Math.max(campaign.progression.difficulty ?? 1, level),
     attributes: campaign.worldAttributes ? { ...campaign.worldAttributes } : undefined,
     generatorVersion: campaign.worldAttributes ? WORLD_RULES_VERSION : GENERATOR_VERSION,
-    tuningVersion: campaign.worldAttributes ? WORLD_RULES_VERSION : undefined,
+    tuningVersion: WORLD_GENERATION_TUNING_VERSION,
     ...(campaign.topologyVersion !== undefined ? { topologyVersion: campaign.topologyVersion } : {}),
     ...(campaign.portalLayoutVersion !== undefined ? { portalLayoutVersion: campaign.portalLayoutVersion } : {}),
   };
@@ -1599,6 +1620,7 @@ export function compactCampaignForSave(campaign: Campaign): Campaign {
   }
   const level = copy.floor.level ?? copy.floor.depth ?? 1;
   const base = baselineForSave(copy, level);
+  if (copy.floorProfiles?.[String(level)] && !copy.floorProfiles[String(level)].tuningVersion) copy.floorProfiles[String(level)].tuningVersion = WORLD_GENERATION_TUNING_VERSION;
   copy.levelStates = { ...(copy.levelStates ?? {}), [String(level)]: createLevelStateDelta(base, copy.floor) };
   copy.generatorVersion = campaign.generatorVersion ?? GENERATOR_VERSION;
   copy.version = 6;
@@ -1611,6 +1633,8 @@ export function compactCampaignForSave(campaign: Campaign): Campaign {
 
 export function restoreCompactCampaign(campaign: Campaign) {
   assertCampaignPortalLayoutsResolved(campaign);
+  const profiles = Object.values(campaign.floorProfiles ?? {});
+  if (!profiles.length || profiles.some(profile => profile.tuningVersion !== WORLD_GENERATION_TUNING_VERSION)) throw new Error("Unsupported saved world generator. Saved data was left unchanged.");
   const level = campaign.floor.level ?? campaign.floor.depth ?? 1;
   campaign.floor = rebuildCampaignFloor(campaign, level);
   campaign.realm = campaign.realm || `Underground ${level}`;
@@ -1635,7 +1659,7 @@ export function createRunCampaign(worldSeed: number, slot: number, run: number, 
     campaign.floor.generationProfile = structuredClone(profile);
   }
   campaign.floorProfiles ??= {};
-  campaign.floorProfiles[String(level)] ??= { seed: campaign.floor.seed, difficulty, generatorVersion: GENERATOR_VERSION, topologyVersion, portalLayoutVersion };
+  campaign.floorProfiles[String(level)] ??= { seed: campaign.floor.seed, difficulty, generatorVersion: GENERATOR_VERSION, tuningVersion: WORLD_GENERATION_TUNING_VERSION, topologyVersion, portalLayoutVersion };
   campaign.floors = undefined;
   campaign.discovery = {};
   revealDiscovery(campaign, campaign.player);
@@ -2245,17 +2269,50 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
     emit(events, "quick-slot.changed", { action: "returned", itemId: slot.item.id, item: slot.item.name, source: { quickSlot: index }, destination: "inventory", quickSlot: index, quantity: slot.quantity }, state);
     tick(state, events); return { state, events, accepted: true, ticks: 1 };
   }
+  if (action.type === "resolve-bomb") {
+    const cells = bombBlastCells(state.floor, action.position);
+    const affected = (position: Position) => cells.some(cell => samePosition(cell, position));
+    if (affected(state.player)) {
+      const previousHealth = state.player.resources.health.current;
+      changeResource(state, events, "health", previousHealth - 10, "bomb");
+      emit(events, "combat.hit", { target: "You", targetId: "player", targetPosition: { x: state.player.x, y: state.player.y }, damage: previousHealth - state.player.resources.health.current, previousHealth, currentHealth: state.player.resources.health.current, source: "bomb", sourceName: "Your bomb" }, state);
+    }
+    for (const crate of state.floor.entities.filter((entry): entry is Extract<Entity, { kind: "crate" }> => entry.kind === "crate" && !entry.opened && affected(entry))) {
+      emit(events, "crate.bumped", { id: crate.id, position: { x: crate.x, y: crate.y } }, state);
+      crate.health = Math.max(0, crate.health - 10);
+      if (crate.health === 0) openCrate(state, events, crate);
+    }
+    for (const target of state.floor.entities.filter((entry): entry is Enemy => entry.kind === "enemy" && affected(entry))) {
+      const health = target.resources.health; const previousHealth = health.current; const damage = 10;
+      health.current = Math.max(0, health.current - damage); target.hp = health.current;
+      emit(events, "combat.hit", { target: target.name, targetId: target.id, targetPosition: { x: target.x, y: target.y }, damage, previousHealth, currentHealth: health.current, source: "bomb", sourceName: "You" }, state);
+      if (health.current <= 0) { state.floor.entities = state.floor.entities.filter((entry) => entry.id !== target.id); gainXp(state, events, target.resources.xp.current, "kill"); emit(events, "enemy.defeated", { name: target.name, xp: target.resources.xp.current }, state); }
+    }
+    resetPlayerAfterDeath(state, events);
+    tick(state, events, state.player.resources.health.current <= 0); return { state, events, accepted: true, ticks: 1 };
+  }
   if (action.type === "use-quick-slot") {
     const { index } = action; const slot = state.player.quickSlots![index];
     if (!Number.isInteger(index) || index < 0 || index > 1 || !slot) return { state: campaign, events: [], accepted: false, ticks: 0 };
-    if (slot.item.quickSlotAction === "throwing-knives") {
+    if (slot.item.quickSlotAction === "bomb") {
+      const range = bombThrowRange(effectiveAttributes(state).strength);
+      const enemy = [...state.floor.entities.filter((entry): entry is Enemy => entry.kind === "enemy" && Math.abs(entry.x - state.player.x) + Math.abs(entry.y - state.player.y) <= range && hasClearCardinalLine(state.floor, state.player, entry))].sort((a, b) => Math.abs(a.x - state.player.x) + Math.abs(a.y - state.player.y) - Math.abs(b.x - state.player.x) - Math.abs(b.y - state.player.y) || a.id.localeCompare(b.id))[0];
+      if (!enemy) {
+        const distantEnemy = state.floor.entities.some((entry) => entry.kind === "enemy" && Math.abs(entry.x - state.player.x) + Math.abs(entry.y - state.player.y) > range && hasClearCardinalLine(state.floor, state.player, entry));
+        return reject(distantEnemy ? "bomb-out-of-range" : "no-valid-target", { itemId: slot.item.id, item: slot.item.name, quickSlot: index, amount: range }, "quick-slot.use.rejected");
+      }
+      consumeItemProvenance(state, slot.item, slot.quantity); slot.quantity -= 1; if (slot.quantity <= 0) state.player.quickSlots![index] = null;
+      emit(events, "bomb.thrown", { itemId: slot.item.id, position: { x: state.player.x, y: state.player.y }, targetPosition: { x: enemy.x, y: enemy.y }, quickSlot: index }, state);
+      return { state, events, accepted: true, ticks: 0 };
+    }
+    if (slot.item.quickSlotAction === "throwing-knives" || slot.item.quickSlotAction === "dagger") {
       const ability = abilityCatalog["throwing-knives"];
       const enemy = [...state.floor.entities.filter((entry): entry is Enemy => entry.kind === "enemy" && Math.abs(entry.x - state.player.x) + Math.abs(entry.y - state.player.y) <= ability.range && hasClearCardinalLine(state.floor, state.player, entry))].sort((a, b) => Math.abs(a.x - state.player.x) + Math.abs(a.y - state.player.y) - Math.abs(b.x - state.player.x) - Math.abs(b.y - state.player.y) || a.id.localeCompare(b.id))[0];
       if (!enemy) return reject("no-valid-target", { itemId: slot.item.id, item: slot.item.name, quickSlot: index }, "quick-slot.use.rejected");
       const direction = cardinalDirection(state.player, enemy) ?? state.player.heading ?? "e";
       state.floor.projectiles = [...(state.floor.projectiles ?? []), { id: `projectile-${state.floor.time}-${slot.item.id}`, sourceId: "player", from: { x: state.player.x, y: state.player.y }, to: { x: enemy.x, y: enemy.y }, direction, createdAt: state.floor.time, kind: "throwing-knife" }];
       consumeItemProvenance(state, slot.item, slot.quantity); slot.quantity -= 1; if (slot.quantity <= 0) state.player.quickSlots![index] = null;
-      emit(events, "ability.used", { id: ability.id, abilityId: ability.id, title: ability.title, manaCost: 0, target: ability.target, targetId: enemy.id, position: { x: state.player.x, y: state.player.y }, quickSlot: index, quantity: Math.max(0, slot.quantity) }, state);
+      emit(events, "ability.used", { id: ability.id, abilityId: ability.id, title: slot.item.name, manaCost: 0, target: ability.target, targetId: enemy.id, position: { x: state.player.x, y: state.player.y }, quickSlot: index, quantity: Math.max(0, slot.quantity) }, state);
       return { state, events, accepted: true, ticks: 0 };
     }
     const resource = slot.item.consumableResource;

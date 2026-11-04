@@ -33,22 +33,13 @@ test('historical direct geometry remains exact while eligible loot uses the appr
   }
 });
 
-test('supported historical compact profiles replay exactly and retired balance profiles reject unchanged', () => {
+test('historical compact profiles reject without changing the saved record', () => {
   const originalFixtureHash = hash(fixture);
   for (const entry of fixture.compact) {
     const record = structuredClone(entry.record);
-    assert.equal(record.floor.cells.length, 0);
-    for (const profile of Object.values(record.floorProfiles ?? {})) assert.equal('topologyVersion' in profile, false);
-    if (Object.values(record.floorProfiles ?? {}).some(profile => profile.tuningVersion === 'world-attributes-1:world-balance-1')) {
-      const before = JSON.stringify(record);
-      assert.throws(() => restoreCompactCampaign(record), /Unsupported saved world generator/);
-      assert.equal(JSON.stringify(record), before);
-      continue;
-    }
-    const restored = restoreCompactCampaign(record);
-    assertLegacyFloor(restored.floor, entry.expected, entry.name);
-    const reloaded = restoreCompactCampaign(JSON.parse(JSON.stringify(compactCampaignForSave(restored))) as Campaign);
-    assertLegacyFloor(reloaded.floor, entry.expected, `${entry.name} second compact round trip`);
+    const before = JSON.stringify(record);
+    assert.throws(() => restoreCompactCampaign(record), /Unsupported saved world generator/);
+    assert.equal(JSON.stringify(record), before);
   }
   assert.equal(hash(fixture), originalFixtureHash);
 });

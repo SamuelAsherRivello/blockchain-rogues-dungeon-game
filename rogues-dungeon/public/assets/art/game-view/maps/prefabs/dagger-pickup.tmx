@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.11" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="1" height="1" tilewidth="32" tileheight="32" infinite="0" nextlayerid="3" nextobjectid="2">
+ <tileset firstgid="1" source="../../tilesets/data/dagger.tsx"/>
+ <layer id="1" name="Ground" width="1" height="1">
+  <data encoding="csv">
+0
+</data>
+ </layer>
+ <objectgroup id="2" name="Pickups">
+  <object id="1" name="Throwing Knife" type="dagger-pickup" gid="1" x="0" y="32" width="32" height="32">
+   <properties>
+    <property name="quantity" type="int" value="3"/>
+    <property name="walkable" type="bool" value="true"/>
+   </properties>
+  </object>
+ </objectgroup>
+</map>
