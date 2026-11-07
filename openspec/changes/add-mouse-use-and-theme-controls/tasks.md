@@ -12,5 +12,7 @@
 
 ## 3. Integrated verification
 
-- [ ] 3.1 Run `npm test` and `npm run typecheck`; resolve relevant failures and verify the implemented behavior against both delta specs.
-- [ ] 3.2 Complete the three-context browser verification required by `rogues-dungeon/AGENTS.md` for input and layout changes, and record results; reserve the full applicable browser suite for finalization.
+- [x] 3.1 Run `npm test` and `npm run typecheck`; resolve relevant failures and verify the implemented behavior against both delta specs.
+- [x] 3.2 Complete the three-context browser verification required by `rogues-dungeon/AGENTS.md` for input and layout changes, and record results; reserve the full applicable browser suite for finalization.
+
+  Verification: On the muted port 6080 route, Playwright Edge, desktop Edge through `cua_repl`, and the in-app browser each showed the game with two canvases and no console errors. Desktop Edge and the in-app browser displayed the dungeon after loading.

@@ -18,7 +18,7 @@
 
 - [ ] 3.1 Run npm test and npm run typecheck, and perform the repository-required three-context browser verification; record results and any unavailable WebGPU or fullscreen capability.
 
-  Focused Edge layout checks passed and the in-app browser showed the dungeon with two canvases and no console errors. The separate desktop Edge computer-use browser was unavailable. The full Node suite reported 569 passing and 21 failing tests across existing world-generation, pathfinding, UI and rendering areas; typecheck reported errors in mouse-selection.ts and world-procedural-system.ts. These need reconciliation before this task can be completed.
+  The full Node suite passed 593/593, typecheck passed, and focused Playwright Edge checks passed 3/3. The in-app browser showed the dungeon with two canvases and no console errors. The separate desktop Edge computer-use context was unavailable in the browser inventory, so its required visual check remains outstanding.
 - [x] 3.2 Verify on the Galaxy A56 when available, including safe areas, side bars, touch and usable controls; record any device-dependent limitation. Reserve the full applicable browser suite for finalization.
 
   The user confirmed the edge-to-edge change removed the black strip and that tapping a square and the Panels button work on the Galaxy A56. The phone separately reported a WebGPU warning on the local HTTP origin; secure-origin configuration is needed for local testing.

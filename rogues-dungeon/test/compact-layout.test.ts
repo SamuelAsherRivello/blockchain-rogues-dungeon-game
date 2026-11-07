@@ -6,7 +6,7 @@ import { preferencesForLayout } from "../src/game/layout-preferences.ts";
 import type { Preferences } from "../src/game/types.ts";
 
 test("mobile defaults do not mutate or replace saved desktop preferences", () => {
-  const saved: Preferences = { movementMode: "grid-snap", zoom: 2, camera: "deadzone", fullscreenDesired: false, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false };
+  const saved: Preferences = { mobileMovementSpeed: "walk", movementMode: "grid-snap", zoom: 2, camera: "deadzone", fullscreenDesired: false, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false };
   const mobile = preferencesForLayout(saved, "mobile");
   assert.deepEqual([mobile.zoom, mobile.camera, mobile.movementMode], [1, "center", "grid-tween"]);
   assert.deepEqual([saved.zoom, saved.camera, saved.movementMode], [2, "deadzone", "grid-snap"]);

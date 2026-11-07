@@ -97,6 +97,19 @@ test("fog walking cannot attack, bump or collect hidden objects, including with 
   assert.equal(getMouseMovementFromSelectedCell(target, c, [c.player, target], allowed), null);
 });
 
+test("clicking visible collectibles walks to the pickup", () => {
+  for (const kind of ["item", "potion", "key", "gold"]) {
+    const target = { x: 3, y: 0, pressed: true };
+    const c = { player: { x: 0, y: 0 }, floor: { map: [[0, 0, 0, 0]], entities: [{ kind, ...target }] } };
+    const plan = planMouseTravel(target, c);
+    assert.equal(plan.reachable, true, kind);
+    assert.equal(plan.destination.x, 3, kind);
+    assert.equal(getMouseMovementFromSelectedCell(plan.destination, c)?.direction, "e", kind);
+    c.player.x = 2;
+    assert.equal(getMouseMovementFromSelectedCell(planMouseTravel(target, c).destination, c)?.direction, "e", kind);
+  }
+});
+
 test("fog walking intent cannot become an action when contents appear after selection", () => {
   const target = { x: 3, y: 0, pressed: true };
   for (const kind of ["enemy", "chest", "crate", "campfire", "item", "potion", "key", "gold", "stairs", "teleport-arrow", "barrel"]) {
@@ -116,13 +129,56 @@ test("fog walking intent cannot become an action when contents appear after sele
   }
 });
 
-test("fresh revealed interactive selections retain ordinary mouse actions", () => {
-  for (const kind of ["enemy", "chest", "crate", "campfire", "item", "potion", "key", "gold", "stairs", "teleport-arrow"]) {
-    const target = { x: 1, y: 0, pressed: true };
-    const c = { player: { x: 0, y: 0 }, floor: { map: [[0, 0]], entities: [{ kind, ...target }] } };
+test("clicking distant interactive selections approaches, then an adjacent click interacts", () => {
+  for (const kind of ["enemy", "crate", "chest", "campfire", "stairs", "teleport-arrow"]) {
+    const target = { x: 3, y: 0, pressed: true };
+    const c = { player: { x: 0, y: 0 }, floor: { map: [[0, 0, 0, 0]], entities: [{ kind, ...target }] } };
     const plan = planMouseTravel(target, c, null, () => true);
+    assert.equal(plan.reachable, true, kind);
+    assert.equal(plan.destination.x, 2, kind);
     assert.equal(getMouseMovementFromSelectedCell(plan.destination, c)?.direction, "e", kind);
+    c.player.x = 2;
+    assert.equal(getMouseMovementFromSelectedCell(planMouseTravel(target, c).destination, c)?.direction, "e", kind);
   }
+});
+
+test("lockboxes and puzzle triggers use guarded interaction", () => {
+  const target = { x: 3, y: 0, pressed: true };
+  for (const feature of [
+    { lockboxes: [target], objectSets: [] },
+    { lockboxes: [], objectSets: [{ kind: "barrel-panel-door", trigger: target }] },
+    { lockboxes: [], objectSets: [{ kind: "enemy-locked-door", triggers: [target] }] },
+  ]) {
+    const c = { player: { x: 0, y: 0 }, floor: { map: [[0, 0, 0, 0]], entities: [], ...feature } };
+    const plan = planMouseTravel(target, c);
+    assert.equal(plan.reachable, true);
+    assert.equal(plan.destination.x, 2);
+    c.player.x = 2;
+    assert.equal(getMouseMovementFromSelectedCell(planMouseTravel(target, c).destination, c)?.direction, "e");
+  }
+});
+
+test("guarded travel follows the previewed route and stops before its target", () => {
+  const target = { x: 3, y: 1, pressed: true, kind: "enemy", pathEntryDirection: "n" as const };
+  const c = { player: { x: 0, y: 1 }, floor: { map: Array.from({ length: 3 }, () => [0, 0, 0, 0]), entities: [{ kind: "enemy", x: 3, y: 1 }] } };
+  const result = getMousePathResult(target, c);
+  const preview = result.path!;
+  assert.deepEqual(result.destination, { x: 3, y: 1 });
+  assert.deepEqual(result.guardedDestination, { x: 3, y: 2 });
+  assert.deepEqual(preview.at(-1), result.destination);
+  assert.deepEqual(preview.at(-2), result.guardedDestination);
+  const plan = planMouseTravel(target, c);
+  assert.equal(plan.reachable, true);
+  assert.deepEqual(plan.destination.travelPath, preview.slice(0, -1));
+  assert.deepEqual({ x: plan.destination.x, y: plan.destination.y }, { x: 3, y: 2 });
+  for (let i = 0; i < preview.length - 2; i++) {
+    c.player = { ...preview[i] };
+    const next = preview[i + 1];
+    const expected = next.x > c.player.x ? "e" : next.x < c.player.x ? "w" : next.y > c.player.y ? "s" : "n";
+    assert.equal(getMouseMovementFromSelectedCell(plan.destination, c)?.direction, expected);
+  }
+  c.player = { x: 3, y: 2 };
+  assert.equal(getMouseMovementFromSelectedCell(plan.destination, c), null);
 });
 
 test("unknown terrain cannot route through a hidden trap", () => {

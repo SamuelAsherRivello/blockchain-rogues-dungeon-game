@@ -1,5 +1,5 @@
 import type { Item } from "../types.ts";
-import { ScrollArea } from "../../ui/ScrollArea.tsx";
+import { ScrollArea } from "../../ui/scroll-area.tsx";
 import { SlotItem, type SlotShineTokens } from "./slot-item.tsx";
 import { inventoryItemHelp, itemDisplayName, itemPresentation, itemSlotCategory, stackInventoryItems } from "../inventory-presentation.ts";
 import type { DragPresentation } from "../game.tsx";

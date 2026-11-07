@@ -27,7 +27,7 @@ test("campfire confirmation preserves the bump timing and protected rest-time tu
   assert.match(renderer, /CAMPFIRE_REST_SHIMMER_COUNT = 2/);
   assert.match(renderer, /onCampfireRestReplenish\?\.\(shimmerPass \/ CAMPFIRE_REST_SHIMMER_COUNT\)/);
   assert.match(game, /campfireMenu=\{campfireMenu\}/);
-  assert.match(renderer, /findWorldTooltipPosition\(rect, \{ width: panel\.offsetWidth, height: panel\.offsetHeight \}, \[cellRect\(campfireMenu\.x, campfireMenu\.y\), cellRect\(campaign\.player\.x, campaign\.player\.y\)\], size \+ 8\)/);
+  assert.match(renderer, /findWorldTooltipPosition\(rect, panelSize, protectedCells, size \+ 8\)/);
   assert.match(world, /if \(action\.type === "rest"\) \{\s+if \(state\.counters\.gold < REST_GOLD_COST\) return reject\("insufficient-gold"/);
   assert.match(world, /state\.counters\.gold -= REST_GOLD_COST/);
   assert.match(world, /changeResource\(state, events, key, effectiveAttributes\(state\)\[key\], "campfire-rest"\)/);

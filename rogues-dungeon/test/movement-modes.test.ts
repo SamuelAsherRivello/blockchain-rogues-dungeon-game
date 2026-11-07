@@ -150,6 +150,9 @@ test("Gridless locomotion follows displacement, loops directional run clips, and
   }
 });
 test("movement preference validation and precise position migration", () => {
+  assert.equal(normalizePreferences({}).mobileMovementSpeed, "walk");
+  assert.equal(normalizePreferences({ mobileMovementSpeed: "run" }).mobileMovementSpeed, "run");
+  assert.equal(normalizePreferences({ mobileMovementSpeed: "invalid" }).mobileMovementSpeed, "walk");
   for (const movementMode of ["grid-snap", "grid-tween", "gridless"] as const) assert.equal(normalizePreferences({ movementMode }).movementMode, movementMode);
   for (const movementMode of [undefined, "bad", null, 1]) assert.equal(normalizePreferences({ movementMode }).movementMode, "grid-tween");
   const campaign = arena(); delete campaign.player.pixel;
@@ -321,7 +324,7 @@ test("existing cardinal previews and closed-door approaches remain authoritative
   for (const color of ["#f5f1e6", "#6dd873", "#dc3d40", "#090909"]) assert.ok(palette.includes(color));
 });
 
-test("traps and stairs require an explicit adjacent click", () => {
+test("clicking traps and stairs approaches without entering", () => {
   const campaign = arena();
   for (let y = 0; y < 100; y++) for (let x = 0; x < 100; x++) setCell(campaign.floor, x, y, { walkable: y === 20 && x >= 20 && x <= 26 });
   for (const kind of ["trap", "stairs"] as const) {
@@ -330,6 +333,9 @@ test("traps and stairs require an explicit adjacent click", () => {
     campaign.player.x = 20;
     assert.equal(getMousePathResult({ x: 26, y: 20 }, campaign).reachable, false);
     assert.equal(getMousePathResult({ x: 23, y: 20 }, campaign).reachable, false);
+    const approach = planMouseTravel({ x: 23, y: 20, pressed: true }, campaign);
+    assert.equal(approach.reachable, true);
+    assert.equal(approach.destination.x, 22);
     campaign.player.x = 22;
     assert.equal(getMousePathResult({ x: 26, y: 20 }, campaign).reachable, false);
     const explicit = planMouseTravel({ x: 23, y: 20, pressed: true }, campaign);

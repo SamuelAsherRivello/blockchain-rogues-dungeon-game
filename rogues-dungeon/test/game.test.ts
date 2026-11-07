@@ -831,12 +831,12 @@ test('resource maxima and derived offense track current stamina', () => {
 
 test('saved campaigns and preferences remain independent', () => {
   const storage = new MemoryStorage(); const campaign = createCampaign(7);
-  writeSlot(storage, '1', campaign); writePreferences(storage, { movementMode: "grid-tween", zoom: 2, camera: 'deadzone', fullscreenDesired: true });
+  writeSlot(storage, '1', campaign); writePreferences(storage, { mobileMovementSpeed: "walk", movementMode: "grid-tween", zoom: 2, camera: 'deadzone', fullscreenDesired: true });
   assert.equal(present(readSlot(storage, '1')).worldSeed, 7);
   assert.deepEqual(readSlotSummary(storage).map((entry) => entry.occupied), [true, false, false]);
-  assert.deepEqual(readPreferences(storage), { movementMode: "grid-tween", zoom: 2, camera: 'deadzone', fullscreenDesired: true, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
-  assert.deepEqual(writePreferences(storage, { movementMode: "grid-tween", zoom: 0.5, camera: 'screen', fullscreenDesired: false, sfxVolume: 0, musicVolume: 63, muteAll: true, urlArgs: true }), { movementMode: "grid-tween", zoom: 0.5, camera: 'screen', fullscreenDesired: false, sfxVolume: 0, musicVolume: 63, muteAll: true, urlArgs: true });
-  assert.deepEqual(readPreferences(storage), { movementMode: "grid-tween", zoom: 0.5, camera: 'screen', fullscreenDesired: false, sfxVolume: 0, musicVolume: 63, muteAll: true, urlArgs: true });
+  assert.deepEqual(readPreferences(storage), { mobileMovementSpeed: "walk", movementMode: "grid-tween", zoom: 2, camera: 'deadzone', fullscreenDesired: true, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
+  assert.deepEqual(writePreferences(storage, { mobileMovementSpeed: "run", movementMode: "grid-tween", zoom: 0.5, camera: 'screen', fullscreenDesired: false, sfxVolume: 0, musicVolume: 63, muteAll: true, urlArgs: true }), { mobileMovementSpeed: "run", movementMode: "grid-tween", zoom: 0.5, camera: 'screen', fullscreenDesired: false, sfxVolume: 0, musicVolume: 63, muteAll: true, urlArgs: true });
+  assert.deepEqual(readPreferences(storage), { mobileMovementSpeed: "run", movementMode: "grid-tween", zoom: 0.5, camera: 'screen', fullscreenDesired: false, sfxVolume: 0, musicVolume: 63, muteAll: true, urlArgs: true });
 });
 
 test('formats saved-game ages with rounded short units', () => {
@@ -875,12 +875,12 @@ test('migrates and persists quick-slot stacks without invalid zero quantities', 
 test('preferences validate malformed, out-of-range, and unavailable storage', () => {
   const storage = new MemoryStorage();
   storage.setItem('rogues-dungeon.preferences.v1', '{broken');
-  assert.deepEqual(readPreferences(storage), { movementMode: "grid-tween", zoom: 1, camera: 'center', fullscreenDesired: false, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
-  storage.setItem('rogues-dungeon.preferences.v1', JSON.stringify({ movementMode: "grid-tween", zoom: 7, camera: 'follow', fullscreenDesired: 'yes' }));
-  assert.deepEqual(readPreferences(storage), { movementMode: "grid-tween", zoom: 1, camera: 'center', fullscreenDesired: false, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
-  storage.setItem('rogues-dungeon.preferences.v1', JSON.stringify({ movementMode: "grid-tween", zoom: 2, camera: 'screen', fullscreenDesired: true, sfxVolume: 101, musicVolume: -1, muteAll: 'yes' }));
-  assert.deepEqual(readPreferences(storage), { movementMode: "grid-tween", zoom: 2, camera: 'screen', fullscreenDesired: true, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
-  assert.deepEqual(readPreferences(Object.assign(new MemoryStorage(), { getItem: () => { throw new Error('blocked'); } })), { movementMode: "grid-tween", zoom: 1, camera: 'center', fullscreenDesired: false, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
+  assert.deepEqual(readPreferences(storage), { mobileMovementSpeed: "walk", movementMode: "grid-tween", zoom: 1, camera: 'center', fullscreenDesired: false, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
+  storage.setItem('rogues-dungeon.preferences.v1', JSON.stringify({ mobileMovementSpeed: "walk", movementMode: "grid-tween", zoom: 7, camera: 'follow', fullscreenDesired: 'yes' }));
+  assert.deepEqual(readPreferences(storage), { mobileMovementSpeed: "walk", movementMode: "grid-tween", zoom: 1, camera: 'center', fullscreenDesired: false, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
+  storage.setItem('rogues-dungeon.preferences.v1', JSON.stringify({ mobileMovementSpeed: "walk", movementMode: "grid-tween", zoom: 2, camera: 'screen', fullscreenDesired: true, sfxVolume: 101, musicVolume: -1, muteAll: 'yes' }));
+  assert.deepEqual(readPreferences(storage), { mobileMovementSpeed: "walk", movementMode: "grid-tween", zoom: 2, camera: 'screen', fullscreenDesired: true, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
+  assert.deepEqual(readPreferences(Object.assign(new MemoryStorage(), { getItem: () => { throw new Error('blocked'); } })), { mobileMovementSpeed: "walk", movementMode: "grid-tween", zoom: 1, camera: 'center', fullscreenDesired: false, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false });
 });
 
 test('migrates legacy campaigns without losing world progress or duplicating equipment', () => {
@@ -1808,7 +1808,8 @@ test('player routes avoid walkable objects only within a five-tile total detour'
     const endpoint = getMousePathResult(object, campaign);
     if (stopTile) {
       assert.equal(endpoint.reachable, false, 'traps and stairs require an adjacent explicit click');
-      assert.notDeepEqual(endpoint.path?.at(-1), object);
+      assert.deepEqual(endpoint.path?.at(-1), object);
+      assert.deepEqual(endpoint.path?.at(-2), endpoint.guardedDestination);
     } else assert.deepEqual(endpoint.path?.at(-1), object, 'other explicit object destinations remain reachable');
   }
 });
@@ -1846,7 +1847,7 @@ test('selected grid cell follows only the next A* route step', () => {
 test('mouse selection previews an approach to non-walkable destinations', () => {
   const campaign = { player: { x: 0, y: 0 }, floor: { map: [[0, 0, 0], [0, 1, 0]], entities: [] } };
   const selected = { x: 1, y: 1, pressed: true };
-  assert.deepEqual(getMousePathResult(selected, campaign), { path: [{ x: 0, y: 0 }, { x: 1, y: 0 }], reachable: false });
+  assert.deepEqual(getMousePathResult(selected, campaign), { path: [{ x: 0, y: 0 }, { x: 1, y: 0 }], reachable: false, destination: { x: 1, y: 1 }, guardedDestination: null });
   assert.deepEqual(getMousePathFromSelectedCell(selected, campaign)?.at(-1), { x: 1, y: 0 });
   assert.equal(getMouseMovementFromSelectedCell(selected, campaign), null);
 });

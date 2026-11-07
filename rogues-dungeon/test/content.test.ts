@@ -86,6 +86,7 @@ test('derives CSS tile size from the same backing scale used by the sprite view'
 
 test('rounds cutscene bars to zoom-aware grid rows', () => {
   assert.deepEqual(gameZoomPresets.map((zoom) => getCutsceneBarHeightPx(zoom)), [64, 64, 64, 128, 128]);
+  assert.deepEqual(gameZoomPresets.map((zoom) => getCutsceneBarHeightPx(zoom, 32, 'mobile')), [64, 64, 32, 128, 128]);
 });
 
 test('mounts the dungeon and minimap in Babylon Lite from the same world component', async () => {

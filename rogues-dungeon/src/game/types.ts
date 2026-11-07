@@ -149,7 +149,7 @@ export interface Campaign {
   starterConsumablesSeeded?: boolean;
   counters: { keys: number; gold: number }; objective: string; quest?: Quest; log: LogEntry[]; savedAt?: number;
 }
-export interface Preferences { movementMode: MovementMode; zoom: number; camera: "center" | "deadzone" | "screen"; fullscreenDesired: boolean; sfxVolume: number; musicVolume: number; muteAll: boolean; urlArgs: boolean }
+export interface Preferences { mobileMovementSpeed: "walk" | "run"; movementMode: MovementMode; zoom: number; camera: "center" | "deadzone" | "screen"; fullscreenDesired: boolean; sfxVolume: number; musicVolume: number; muteAll: boolean; urlArgs: boolean }
 export interface StorageAccess { getItem(key: string): string | null; setItem(key: string, value: string): void; removeItem(key: string): void }
 export interface StorageCollection extends StorageAccess { length: number; key(index: number): string | null }
 export type Action =
@@ -199,7 +199,7 @@ export interface EventFacts {
 export interface GameEvent { type: string; facts: EventFacts; source?: string; gameTime: number; sequence: number; eventId?: string; transactionId?: string | null; outcome?: string }
 export interface ActionResult { state: Campaign; events: GameEvent[]; accepted: boolean; ticks: number; transactionId?: string; system?: boolean; recovery?: Campaign | null }
 export interface LogEntry { id?: string; text: string }
-export interface SelectedCell extends Position { pixel?: Position; pressed?: boolean; sprint?: boolean; left?: number; top?: number; size?: number; kind?: string; pathEntryDirection?: Direction }
+export interface SelectedCell extends Position { pixel?: Position; pressed?: boolean; sprint?: boolean; left?: number; top?: number; size?: number; kind?: string; pathEntryDirection?: Direction; travelPath?: readonly Position[] }
 export interface Feedback extends Position { id?: string; kind: string; text: string; color: string; duration: number }
 export type DragSource = { kind: "inventory"; item: Item } | { kind: "lockbox"; item: Item; boxId: string } | { kind: "slot"; item: Item; group: EquipmentGroup; index: number } | { kind: "quick-slot"; item: Item; index: number } | { kind: "ability"; item: Item; index: number };
 export type DropDestination = { kind: "inventory"; index?: number } | { kind: "lockbox"; boxId: string; index?: number } | { kind: "slot"; group: EquipmentGroup; index: number } | { kind: "quick-slot"; index: number } | { kind: "ability"; index: number } | { kind: "drop-item" };

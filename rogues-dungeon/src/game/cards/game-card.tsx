@@ -28,8 +28,9 @@ const cardHelp: Partial<Record<string, string>> = {
   Inventory: "Carried items; drag gear to equipment to equip it.",
 };
 
-export function GameCard({ title, children, className = "", showTab = false, tabOffsetY = "0px", tabExpanded, onTabClick, tabAriaLabel, contentHidden = false, panelPopup, shineToken, titleTooltip, isExpandable = false, focused = false, onTitleClick, onCollapse }: {
+export function GameCard({ title, children, className = "", showTab = false, tabOffsetY = "0px", tabExpanded, onTabClick, tabAriaLabel, contentHidden = false, panelPopup, shineToken, titleTooltip, isExpandable = false, focused = false, onTitleClick, onCollapse, minimized = false }: {
   title: string;
+  minimized?: boolean;
   children: ReactNode;
   className?: string;
   showTab?: boolean;
@@ -50,14 +51,14 @@ export function GameCard({ title, children, className = "", showTab = false, tab
   const handleTitleClick = onTitleClick ? () => { dismissTooltips(); onTitleClick(); } : undefined;
   const titleContent = <>{isExpandable && <svg className="game-card__expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="6" /><path d="m15 15 6 6" /></svg>}{title}</>;
   const titleTrigger = <Tooltip content={titleTooltip ?? cardHelp[key] ?? title}><button tabIndex={onTitleClick ? 0 : -1} type="button" onClick={handleTitleClick} className="game-card__title-trigger">{titleContent}</button></Tooltip>;
-  const cardContent = <><h2>{titleTrigger}</h2>{children}</>;
+  const cardContent = <><h2>{titleTrigger}</h2>{!minimized && children}</>;
   const centeredCard = focused && typeof document !== "undefined" ? document.querySelector<HTMLElement>(".world-view-region") : null;
   const centered = focused && centeredCard ? createPortal(<section className={`game-card game-card--centered ${className}`} aria-label={`${key} centered view`}>
     <h2><button type="button" className="game-card__title-trigger" onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); onCollapse?.(); }} onPointerUp={(event) => { event.preventDefault(); event.stopPropagation(); onCollapse?.(); }} onMouseDown={(event) => { event.preventDefault(); event.stopPropagation(); onCollapse?.(); }} onMouseUp={(event) => { event.preventDefault(); event.stopPropagation(); onCollapse?.(); }} onClick={onCollapse}>{titleContent}</button></h2>
     <div>{children}</div>
   </section>, centeredCard) : null;
   return <>
-    <section key={shineToken} className={`game-card ${shineToken ? "game-card--shine" : ""} ${className}`}>
+    <section key={shineToken} className={`game-card ${shineToken ? "game-card--shine" : ""} ${minimized ? "game-card--minimized" : ""} ${className}`}>
     {showTab && onTabClick && <div className="game-card__tab-placement" style={{ top: tabOffsetY }}><TabControl ariaLabel={tabAriaLabel} expanded={tabExpanded} onClick={onTabClick} /></div>}
     <div aria-hidden={contentHidden || undefined}>{cardContent}</div>
     {focused && <section className="panel-popup panel-popup--collapse" aria-label={`${key} panel controls`}><div className="panel-popup__content"><button type="button" onClick={onCollapse}>Back</button></div></section>}

@@ -147,7 +147,7 @@ test('uses a command desk and removes template corner units', async () => {
   assert.match(game, /keyboardControlRows/); assert.match(game, /collapsedKeyboardGroups/); assert.match(controlsArea, /aria-label="Keyboard controls"/); assert.match(titleBar, /mobile-panels-button/);
   assert.match(titleBar, /<option value="deadzone">Deadzone<\/option>/);
   assert.doesNotMatch(app, /AppCorner/); assert.match(css, /data-layout="mobile"/);
-  assert.match(css, /grid-template-rows:4% 92% 4%/); assert.match(css, /grid-template-rows:4% 96%/);
+  assert.match(css, /grid-template-rows:4% 92% 4%/); assert.match(css, /grid-template-rows:var\(--slot-height\) minmax\(0,1fr\)/);
   assert.match(css, /grid-template-columns:minmax\(0,56%\) minmax\(0,44%\)/);
   assert.match(css, /\.title-bar__identity \{[^}]*background:#1a1720/); assert.match(css, /\.title-bar__progress \{[^}]*justify-content:center/);
   assert.match(css, /align-items:center/);
@@ -307,13 +307,13 @@ test('fills unused inventory capacity with empty plus slots', async () => {
 });
 test('uses permanent in-game scrollbars for the log and inventory', async () => {
   const css = await readFile(new URL('../src/ui/style.css', import.meta.url), 'utf8');
-  assert.match(css, /\.log_scroll,\.inventory_scroll \{ position:relative; height:100%; min-height:0;[^}]*overflow:visible/);
+  assert.match(css, /\.log_scroll,\.inventory_scroll,\.slot_scroll \{ position:relative; height:100%; min-height:0;[^}]*overflow:visible/);
   assert.doesNotMatch(css, /\.scroll-area__viewport \{[^}]*border:/);
   assert.match(css, /\.info-panel--primary \.inventory_scroll,\.info-panel__log-card \.log_scroll \{ height:calc\(100% - 4px\); margin-top:0; \}/);
-  assert.match(css, /\.scroll-area__track \{ position:absolute; top:0; right:-2px; bottom:0; width:4px;/);
-  assert.match(css, /\.scroll-area__thumb \{ width:4px; min-height:12px;[^}]*background:#e4b85e;/);
+  assert.match(css, /\.scroll-area__track \{ position:absolute; z-index:2; top:0; right:0; bottom:0; width:4px;/);
+  assert.match(css, /\.scroll-area__thumb \{ position:relative; width:4px; min-height:24px;[^}]*background:#e4b85e;/);
   assert.match(css, /\.inventory_drop_item \{ justify-content:center; color:var\(--slot-disabled-color\); text-align:center; \}/);
-  assert.match(css, /\.slot_scroll \{ height:100%; min-height:0;[^}]*overflow-y:auto/);
+  assert.match(css, /\.scroll-area__thumb::after \{[^}]*width:36px; background:transparent;/);
 });
 test('cycles one green Game View shader over only the primary game canvas', async () => {
   const [game, renderer, shaderSystem, css] = await Promise.all(['src/game/game.tsx', 'src/systems/rendering/babylon-render-system.tsx', 'src/systems/rendering/game-view-shader-system.ts', 'src/ui/style.css'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));

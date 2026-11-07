@@ -1,4 +1,4 @@
-import { bombBlastCells, bombThrowRange } from "./bomb-blast-system.ts";
+import { BOMB_DAMAGE, bombBlastCells, bombThrowRange } from "./bomb-blast-system.ts";
 import { copyCampaignMutableState } from "./campaign-copy-system.ts";
 import { applyStorageExclusions, consumeItemProvenance, mergeItemProvenance } from "./item-provenance-system.ts";
 import { normalizeDiscovery, revealDiscovery } from "./map-discovery-system.ts";
@@ -1365,6 +1365,7 @@ function integerDamage(amount: number) { return Math.max(0, Math.round(amount));
 function cardinalDistance(from: Position, to: Position) { return Math.abs(from.x - to.x) + Math.abs(from.y - to.y); }
 function cardinalDirection(from: Position, to: Position): Direction | null { if (from.x === to.x && from.y !== to.y) return to.y < from.y ? "n" : "s"; if (from.y === to.y && from.x !== to.x) return to.x < from.x ? "w" : "e"; return null; }
 function hasClearCardinalLine(floor: Floor, from: Position, to: Position) { const direction = cardinalDirection(from, to); if (!direction) return false; const [dx, dy] = directions[direction]; for (let x = from.x + dx, y = from.y + dy; x !== to.x || y !== to.y; x += dx, y += dy) if (!isWalkable(floor, x, y)) return false; return true; }
+export function nearestRangedEnemy(state: Campaign, range: number): Enemy | undefined { return state.floor.entities.filter((entry): entry is Enemy => entry.kind === "enemy" && Math.abs(entry.x - state.player.x) + Math.abs(entry.y - state.player.y) <= range && hasClearCardinalLine(state.floor, state.player, entry)).sort((a, b) => Math.abs(a.x - state.player.x) + Math.abs(a.y - state.player.y) - Math.abs(b.x - state.player.x) - Math.abs(b.y - state.player.y) || a.id.localeCompare(b.id))[0]; }
 function nextCombatRoll(state: Campaign) { const prior = state.combatRollState ?? state.floor.seed; state.combatRollState = (Math.imul(prior >>> 0, 1664525) + 1013904223) >>> 0; return state.combatRollState % 100 + 1; }
 function hasPerk(state: Campaign, perk: string) { return uniqueItems(Object.values(state.player.equipment).flat()).some((item) => item.perks?.includes(perk)); }
 function incomingDefense(state: Campaign, enemy: Enemy) { const direction = cardinalDirection(state.player, enemy) ?? "n"; const heading = state.player.heading ?? "e"; const side = direction === "n" || direction === "s" ? ["e", "w"] : ["n", "s"]; const multiplier = direction === heading ? 1 : side.includes(heading) ? .7 : .4; return { direction, multiplier, defense: resourceState(state).defense.current * multiplier }; }
@@ -2214,7 +2215,7 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
     if (!options.freeEntry) tick(state, events);
     return { state, events, accepted: true, ticks: options.freeEntry ? 0 : 1 };
   }
-  if (action.type === "ability") { if (!Number.isInteger(action.index) || action.index < 0 || action.index >= 3) return reject("invalid-ability-slot"); const abilityId = state.player.abilities[action.index]; const ability = abilityId ? abilityCatalog[abilityId] : null; if (!ability) return reject("empty-ability"); if (ability.kind === "heal" && state.player.resources.health.current >= state.player.resources.health.currentMax) return reject("health-full"); if (state.player.resources.mana.current < ability.manaCost) return reject("insufficient-mana"); const enemy = ability.kind === "wand" ? [...state.floor.entities.filter((entry): entry is Enemy => entry.kind === "enemy" && Math.abs(entry.x - state.player.x) + Math.abs(entry.y - state.player.y) <= ability.range && hasClearCardinalLine(state.floor, state.player, entry))].sort((a, b) => Math.abs(a.x - state.player.x) + Math.abs(a.y - state.player.y) - Math.abs(b.x - state.player.x) - Math.abs(b.y - state.player.y) || a.id.localeCompare(b.id))[0] : null; if (ability.kind === "wand" && !enemy) return reject("no-valid-target"); changeResource(state, events, "mana", state.player.resources.mana.current - ability.manaCost, "ability"); emit(events, "ability.used", { id: ability.id, abilityId: ability.id, title: ability.title, manaCost: ability.manaCost, target: ability.target, targetId: enemy?.id, position: { x: state.player.x, y: state.player.y } }, state); return { state, events, accepted: true, ticks: 0 }; }
+  if (action.type === "ability") { if (!Number.isInteger(action.index) || action.index < 0 || action.index >= 3) return reject("invalid-ability-slot"); const abilityId = state.player.abilities[action.index]; const ability = abilityId ? abilityCatalog[abilityId] : null; if (!ability) return reject("empty-ability"); if (ability.kind === "heal" && state.player.resources.health.current >= state.player.resources.health.currentMax) return reject("health-full"); if (state.player.resources.mana.current < ability.manaCost) return reject("insufficient-mana"); const enemy = ability.kind === "wand" ? nearestRangedEnemy(state, ability.range) : null; if (ability.kind === "wand" && !enemy) return reject("no-valid-target"); changeResource(state, events, "mana", state.player.resources.mana.current - ability.manaCost, "ability"); emit(events, "ability.used", { id: ability.id, abilityId: ability.id, title: ability.title, manaCost: ability.manaCost, target: ability.target, targetId: enemy?.id, position: { x: state.player.x, y: state.player.y } }, state); return { state, events, accepted: true, ticks: 0 }; }
   if (action.type === "resolve-ability") { const ability = abilityCatalog[action.abilityId]; if (!ability) return reject("unknown-ability"); if (ability.kind === "heal") changeResource(state, events, "health", state.player.resources.health.current + ability.amount, "heal"); else { const target = state.floor.entities.find((entry): entry is Enemy => entry.kind === "enemy" && entry.id === action.targetId); if (target) { const health = target.resources.health; const damage = integerDamage(ability.damage); const previousHealth = health.current; health.current = Math.max(0, health.current - damage); target.hp = health.current; emit(events, "combat.hit", { target: target.name, targetId: target.id, targetPosition: { x: target.x, y: target.y }, damage, previousHealth, currentHealth: health.current, source: ability.id, sourceName: "You" }, state); if (health.current <= 0) { state.floor.entities = state.floor.entities.filter((entry) => entry.id !== target.id); gainXp(state, events, target.resources.xp.current, "kill"); emit(events, "enemy.defeated", { name: target.name, xp: target.resources.xp.current }, state); } } } tick(state, events); return { state, events, accepted: true, ticks: 1 }; }
   if (action.type === "assign-ability") { const { from, to } = action; if (![from, to].every((index) => Number.isInteger(index) && index >= 0 && index < 3) || from === to) return reject("invalid-ability-slot"); [state.player.abilities[from], state.player.abilities[to]] = [state.player.abilities[to], state.player.abilities[from]]; emit(events, "ability.assignment.changed", { from, to }, state); tick(state, events); return { state, events, accepted: true, ticks: 1 }; }
   if (action.type === "store-ability") {
@@ -2288,16 +2289,16 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
     const affected = (position: Position) => cells.some(cell => samePosition(cell, position));
     if (affected(state.player)) {
       const previousHealth = state.player.resources.health.current;
-      changeResource(state, events, "health", previousHealth - 10, "bomb");
+      changeResource(state, events, "health", previousHealth - BOMB_DAMAGE, "bomb");
       emit(events, "combat.hit", { target: "You", targetId: "player", targetPosition: { x: state.player.x, y: state.player.y }, damage: previousHealth - state.player.resources.health.current, previousHealth, currentHealth: state.player.resources.health.current, source: "bomb", sourceName: "Your bomb" }, state);
     }
     for (const crate of state.floor.entities.filter((entry): entry is Extract<Entity, { kind: "crate" }> => entry.kind === "crate" && !entry.opened && affected(entry))) {
       emit(events, "crate.bumped", { id: crate.id, position: { x: crate.x, y: crate.y } }, state);
-      crate.health = Math.max(0, crate.health - 10);
+      crate.health = Math.max(0, crate.health - BOMB_DAMAGE);
       if (crate.health === 0) openCrate(state, events, crate);
     }
     for (const target of state.floor.entities.filter((entry): entry is Enemy => entry.kind === "enemy" && affected(entry))) {
-      const health = target.resources.health; const previousHealth = health.current; const damage = 10;
+      const health = target.resources.health; const previousHealth = health.current; const damage = BOMB_DAMAGE;
       health.current = Math.max(0, health.current - damage); target.hp = health.current;
       emit(events, "combat.hit", { target: target.name, targetId: target.id, targetPosition: { x: target.x, y: target.y }, damage, previousHealth, currentHealth: health.current, source: "bomb", sourceName: "You" }, state);
       if (health.current <= 0) { state.floor.entities = state.floor.entities.filter((entry) => entry.id !== target.id); gainXp(state, events, target.resources.xp.current, "kill"); emit(events, "enemy.defeated", { name: target.name, xp: target.resources.xp.current }, state); }
@@ -2310,7 +2311,7 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
     if (!Number.isInteger(index) || index < 0 || index > 1 || !slot) return { state: campaign, events: [], accepted: false, ticks: 0 };
     if (slot.item.quickSlotAction === "bomb") {
       const range = bombThrowRange(effectiveAttributes(state).strength);
-      const enemy = [...state.floor.entities.filter((entry): entry is Enemy => entry.kind === "enemy" && Math.abs(entry.x - state.player.x) + Math.abs(entry.y - state.player.y) <= range && hasClearCardinalLine(state.floor, state.player, entry))].sort((a, b) => Math.abs(a.x - state.player.x) + Math.abs(a.y - state.player.y) - Math.abs(b.x - state.player.x) - Math.abs(b.y - state.player.y) || a.id.localeCompare(b.id))[0];
+      const enemy = nearestRangedEnemy(state, range);
       if (!enemy) {
         const distantEnemy = state.floor.entities.some((entry) => entry.kind === "enemy" && Math.abs(entry.x - state.player.x) + Math.abs(entry.y - state.player.y) > range && hasClearCardinalLine(state.floor, state.player, entry));
         return reject(distantEnemy ? "bomb-out-of-range" : "no-valid-target", { itemId: slot.item.id, item: slot.item.name, quickSlot: index, amount: range }, "quick-slot.use.rejected");
@@ -2321,7 +2322,7 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
     }
     if (slot.item.quickSlotAction === "throwing-knives" || slot.item.quickSlotAction === "dagger") {
       const ability = abilityCatalog["throwing-knives"];
-      const enemy = [...state.floor.entities.filter((entry): entry is Enemy => entry.kind === "enemy" && Math.abs(entry.x - state.player.x) + Math.abs(entry.y - state.player.y) <= ability.range && hasClearCardinalLine(state.floor, state.player, entry))].sort((a, b) => Math.abs(a.x - state.player.x) + Math.abs(a.y - state.player.y) - Math.abs(b.x - state.player.x) - Math.abs(b.y - state.player.y) || a.id.localeCompare(b.id))[0];
+      const enemy = nearestRangedEnemy(state, ability.range);
       if (!enemy) return reject("no-valid-target", { itemId: slot.item.id, item: slot.item.name, quickSlot: index }, "quick-slot.use.rejected");
       const direction = cardinalDirection(state.player, enemy) ?? state.player.heading ?? "e";
       state.floor.projectiles = [...(state.floor.projectiles ?? []), { id: `projectile-${state.floor.time}-${slot.item.id}`, sourceId: "player", from: { x: state.player.x, y: state.player.y }, to: { x: enemy.x, y: enemy.y }, direction, createdAt: state.floor.time, kind: "throwing-knife" }];

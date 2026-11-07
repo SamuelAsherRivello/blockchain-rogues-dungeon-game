@@ -1,6 +1,8 @@
 import type { Floor, Position } from '../../game/types.ts';
 import { isWalkable } from './level-grid-system.ts';
 
+export const BOMB_DAMAGE = 10;
+
 /** The center and cardinal neighbors whose underlying terrain admits movement. */
 export function bombBlastCells(floor: Floor, center: Position): Position[] {
   return [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }]

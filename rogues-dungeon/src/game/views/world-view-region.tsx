@@ -4,7 +4,7 @@ import { useUiMotion } from "../../ui/ui-transition-system.tsx";
 
 export function WorldViewRegion({ children, primaryOpen, secondaryOpen, dimmed = false }: { children: ReactNode; primaryOpen: boolean; secondaryOpen: boolean; dimmed?: boolean }) {
   const { layout } = useContext(LayoutContext);
-  const width = layout === "mobile" ? "calc(100% - 39.111111cqh)" : primaryOpen ? secondaryOpen ? "calc(100% - 78.222222cqh)" : "calc(100% - 39.111111cqh)" : secondaryOpen ? "calc(100% - 39.111111cqh)" : "100%";
+  const width = layout === "mobile" ? "calc(100% - 58.666667cqh)" : primaryOpen ? secondaryOpen ? "calc(100% - 78.222222cqh)" : "calc(100% - 39.111111cqh)" : secondaryOpen ? "calc(100% - 39.111111cqh)" : "100%";
   const motion = useUiMotion("game-view", { opacity: 1 });
   return <section className="world-view-region" style={{ ...motion, width }}>{children}{dimmed && <div className="world-view-region__backdrop" aria-hidden="true" />}</section>;
 }

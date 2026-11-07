@@ -4,8 +4,9 @@ export function availableGameZoomPresets(zoomTest = false) { return zoomTest ? g
 export function getTileCssSize(zoom = 1, tileSize = 32) { return tileSize * (gameZoomPresets.includes(zoom) ? zoom : 1); }
 
 /** Keep cutscene bars close to one source row while rounding their height to whole grid rows. */
-export function getCutsceneBarHeightPx(zoom = 1, tileSize = 32) {
+export function getCutsceneBarHeightPx(zoom = 1, tileSize = 32, layout: "desktop" | "mobile" = "desktop") {
   const normalizedZoom = gameZoomPresets.includes(zoom) ? zoom : 1;
+  if (layout === "mobile" && normalizedZoom === 1) return getTileCssSize(normalizedZoom, tileSize);
   const rows = normalizedZoom >= 4 ? 1 : normalizedZoom >= 2 ? 2 : Math.max(1, Math.round(2 / normalizedZoom));
   return rows * getTileCssSize(normalizedZoom, tileSize);
 }

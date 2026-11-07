@@ -16,6 +16,8 @@ test("desktop and mobile preview retain playable landscape layouts", async ({ pa
   await page.getByRole("button", { name: "L:D" }).click();
   await expect(viewport).toHaveAttribute("data-layout", "mobile");
   await expect(page.locator(".status-bar")).toHaveCount(0);
+  const heights = await page.locator(".title-bar").evaluate((bar) => ({ bar: bar.getBoundingClientRect().height, slot: document.querySelector(".mobile-information-panels .slot_item")!.getBoundingClientRect().height }));
+  expect(heights.bar).toBeCloseTo(heights.slot, 0);
   await expect(page.locator(".mobile-information-panels .info-panel--primary")).toBeVisible();
   await expect(page.locator(".mobile-minimap-hud")).toBeVisible();
   expect((await viewport.boundingBox())!.width).toBeCloseTo(975, 0);
