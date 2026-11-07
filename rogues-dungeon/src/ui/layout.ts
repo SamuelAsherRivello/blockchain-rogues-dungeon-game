@@ -18,11 +18,6 @@ export function classifyPlatform({ userAgentDataMobile, userAgent = "", maxTouch
   if (userAgentDataMobile === true || mobileUserAgent.test(userAgent) || touchViewport || desktopIpad) return "mobile";
   return "pc";
 }
-export function layoutForPlatform(platform: string, developerAspect: Orientation | null = null) {
-  const orientation = platform === "mobile" ? "portrait" : developerAspect === "portrait" ? "portrait" : "landscape";
-  return Object.freeze({ orientation, ...aspectRatioPresets[orientation] });
-}
-
 export function validateLayout(layout: Layout) {
   const { width, height, orientation } = layout;
   if (![width, height].every((value) => Number.isFinite(value) && value > 0)) {

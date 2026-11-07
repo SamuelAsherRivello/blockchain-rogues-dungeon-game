@@ -242,6 +242,18 @@ export interface GameViewToUiAnimation extends Position {
 export const STAIR_DEPARTURE_DURATION_MS = STAIR_DESCENT_DURATION_MS;
 function mapContextKey(campaign: Campaign) { return `${campaign.floor.seed}:${campaign.floor.level}:${campaign.activePrefab?.id ?? "dungeon"}`; }
 
+function rotatedMobileSurface() {
+  return document.querySelector('#browser_surface[data-platform="mobile"]') !== null && window.matchMedia("(orientation: portrait)").matches;
+}
+function localViewRect(element: HTMLElement) {
+  const rect = element.getBoundingClientRect();
+  return rotatedMobileSurface() ? new DOMRect(rect.left, rect.top, rect.height, rect.width) : rect;
+}
+function localViewPoint(point: Position, element: HTMLElement) {
+  const rect = element.getBoundingClientRect();
+  return rotatedMobileSurface() ? { x: point.y - rect.top, y: rect.right - point.x } : { x: point.x - rect.left, y: point.y - rect.top };
+}
+
 function visibleTarget(selector: string) {
   return [...document.querySelectorAll<HTMLElement>(`${selector}, [data-ui-pickup-fallback]`)].find((element) => {
     const rect = element.getBoundingClientRect();
@@ -458,7 +470,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
     if (minimap || !worldAlive || !turnPresentation) return;
     const host = hostRef.current;
     if (!host) return;
-    const rect = host.getBoundingClientRect();
+    const rect = localViewRect(host);
     const center = getViewCenter(rect, campaign);
     const cellSize = cellSizeAt(rect);
     const visibleEnemyIds = new Set(campaign.floor.entities.filter((entity): entity is Enemy => entity.kind === "enemy" && Math.abs(entity.x - center.x) <= rect.width / cellSize / 2 + 1 && Math.abs(entity.y - center.y) <= rect.height / cellSize / 2 + 1).map((enemy) => enemy.id));
@@ -467,7 +479,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
   }, [campaign, minimap, turnPresentation, worldAlive]);
   useEffect(() => {
     if (!worldAlive || minimap || !uiAnimations.length || !hostRef.current) return undefined;
-    const host = hostRef.current; const fallbackRect = host.getBoundingClientRect();
+    const host = hostRef.current; const fallbackRect = localViewRect(host);
     const projection = renderedProjectionRef.current ?? { rect: fallbackRect, center: renderedCameraCenterRef.current ?? getViewCenter(fallbackRect), tileCssSize: cellSizeAt(fallbackRect) };
     for (const flight of uiAnimations) {
       if (launchedFlightsRef.current.has(flight.id)) continue;
@@ -560,8 +572,8 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
     if (!mouseInteraction || !worldAlive) return null;
     const bounds = interactionBounds();
     if (!bounds) return null;
-    const rect = bounds.getBoundingClientRect();
-    const point = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    const rect = localViewRect(bounds);
+    const point = localViewPoint({ x: event.clientX, y: event.clientY }, bounds);
     pointerRef.current = { x: event.clientX, y: event.clientY };
     return targetAtScreenPosition(point, rect);
   };
@@ -623,7 +635,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
       const viewButtonPressed = Boolean(input.buttons?.[8]);
       if (viewButtonPressed && !previousViewButtonPressed.current) onToggleZoom?.();
       previousViewButtonPressed.current = viewButtonPressed;
-      const rect = interactionBounds()?.getBoundingClientRect();
+      const rect = (interactionBounds() ? localViewRect(interactionBounds()!) : undefined);
       if (!rect || !rect.width || !rect.height) return;
       const target = selectedCellRef.current;
       const update = reticleInput.current.advance(input, movementPrompts?.revision ?? 0, movementPrompts?.hasRightStickPrompt ?? false);
@@ -649,7 +661,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
     if (minimap || !mouseInteraction || !mouseScreenEdgeTarget || !mouseDirection || !onMouseScreenEdgeAdvance) return;
     const host = hostRef.current;
     if (!host) return;
-    const rect = host.getBoundingClientRect();
+    const rect = localViewRect(host);
     const size = cellSizeAt(rect);
     const center = getViewCenter(rect, campaign);
     const direction = getMouseScreenEdgeExit({ mode: camera, player: campaign.player, target: mouseScreenEdgeTarget, direction: mouseDirection, previousCenter: center, visibleWidth: rect.width / size, visibleHeight: rect.height / size, mapWidth: campaign.floor.width, mapHeight: campaign.floor.height });
@@ -721,7 +733,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
           let detectedKey = "", detectedMarkers: ReadonlySet<string> = new Set();
           const prepareMinimap = () => {
             if (cancelled) return;
-            const rect = host.getBoundingClientRect();
+            const rect = localViewRect(host);
             const mode = performanceOptions().minimap;
             canvas.style.visibility = mode === "off" ? "hidden" : "visible";
             const visible = rect.width > 0 && rect.height > 0 && mode !== "off";
@@ -765,7 +777,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
           const animate = () => { if (cancelled) return; prepareMinimap(); animationFrameId = requestAnimationFrame(animate); };
           const activate = () => { if (activated) return; activated = true; animationFrameId = requestAnimationFrame(animate); };
           sceneRef.current = { draw, activate, beginStairClip: () => {}, clearStairClip: () => {}, setTheme: () => {} };
-          const resizeAndDraw = () => { const rect = host.getBoundingClientRect(); if (rect.width <= 0 || rect.height <= 0) return; resizeSurface(surface!); draw(); };
+          const resizeAndDraw = () => { const rect = localViewRect(host); if (rect.width <= 0 || rect.height <= 0) return; resizeSurface(surface!); draw(); };
           const observer = new ResizeObserver(resizeAndDraw); observer.observe(host); observers.push(observer); resizeAndDraw();
           await acquired.start();
           if (cancelled) { releaseSetup(); return; }
@@ -1152,7 +1164,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
           const scale = typeof zoomNow === "number" ? zoomNow : 1;
           const renderWidth = canvas.width || canvas.clientWidth || host.clientWidth || 320;
           const renderHeight = canvas.height || canvas.clientHeight || host.clientHeight || 180;
-          const boundsRect = host.getBoundingClientRect();
+          const boundsRect = localViewRect(host);
           const boundsCenter = getViewCenter(boundsRect, state);
           const cameraBounds = getVisibleWorldCellBounds(boundsCenter, boundsRect.width / cellSizeAt(boundsRect), boundsRect.height / cellSizeAt(boundsRect));
           const bounds = performanceOptions().local ? performanceCellBounds(state.player, cameraBounds, state.floor.width, state.floor.height) : cameraBounds;
@@ -1162,7 +1174,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
           const mapScale = Math.min(renderWidth / mapWidth, renderHeight / mapHeight) * 0.92;
           const cameraTransform = cameraTransformRef.current;
           const viewScale = isMinimap ? mapScale : scale * cameraTransform.scale * (window.devicePixelRatio || 1);
-          const rect = host.getBoundingClientRect(); const cameraCenter = isMinimap ? state.player : getViewCenter(rect, state); if (!isMinimap) {
+          const rect = localViewRect(host); const cameraCenter = isMinimap ? state.player : getViewCenter(rect, state); if (!isMinimap) {
             const tileCssSize = cellSizeAt(rect);
             renderedCameraCenterRef.current = cameraCenter;
             renderedProjectionRef.current = { rect, center: cameraCenter, tileCssSize };
@@ -1498,11 +1510,11 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
   useEffect(() => {
     if (!worldAlive) return;
     sceneRef.current?.draw();
-    const rect = interactionBounds()?.getBoundingClientRect();
+    const rect = (interactionBounds() ? localViewRect(interactionBounds()!) : undefined);
     if (!mouseInteraction || !rect) return;
     if (reticleInput.current.source === "gamepad" && reticleInput.current.offset) selectCell(targetAtNeighbor(reticleInput.current.offset, rect));
     else if (!mouseDownRef.current && pointerRef.current) {
-      const point = { x: pointerRef.current.x - rect.left, y: pointerRef.current.y - rect.top };
+      const point = localViewPoint(pointerRef.current, interactionBounds()!);
       if (point.x >= 0 && point.x < rect.width && point.y >= 0 && point.y < rect.height) selectCell(targetAtScreenPosition(point, rect));
       else selectCell(null);
     }
@@ -1512,8 +1524,8 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
     if (!worldAlive || !mouseInteraction || !bounds || typeof ResizeObserver === "undefined") return undefined;
     const refreshPointerSelection = () => {
       if (mouseDownRef.current || reticleInput.current.source !== "mouse" || !pointerRef.current) return;
-      const rect = bounds.getBoundingClientRect();
-      const point = { x: pointerRef.current.x - rect.left, y: pointerRef.current.y - rect.top };
+      const rect = localViewRect(bounds);
+      const point = localViewPoint(pointerRef.current, bounds);
       if (point.x >= 0 && point.x < rect.width && point.y >= 0 && point.y < rect.height) selectCell(targetAtScreenPosition(point, rect));
       else selectCell(null);
     };
@@ -1521,7 +1533,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
     observer.observe(bounds);
     return () => observer.disconnect();
   }, [mouseInteraction, worldAlive]);
-  const rect = interactionBounds()?.getBoundingClientRect();
+  const rect = (interactionBounds() ? localViewRect(interactionBounds()!) : undefined);
   const reticleProjection = rect ? projectionAt(rect) : null;
   const reticleCellSize = reticleProjection?.tileCssSize ?? 32;
   const reticleCenter = rect && selectedCell && reticleProjection ? getWorldCellScreenCenter({ x: selectedCell.x, y: selectedCell.y, center: reticleProjection.center, viewportWidth: rect.width, viewportHeight: rect.height, tileCssSize: reticleCellSize }) : null;
@@ -1541,7 +1553,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
     })()
     : [];
   mousePathOverlayRef.current = displayedMousePath;
-  const feedbackRect = hostRef.current?.getBoundingClientRect();
+  const feedbackRect = (hostRef.current ? localViewRect(hostRef.current) : undefined);
   const feedbackCenter = feedbackRect && !minimap ? getViewCenter(feedbackRect) : null;
   const feedbackCellSize = feedbackRect ? cellSizeAt(feedbackRect) : 32;
   const hoveredEnemy = mouseInteraction && selectedCell && presentationAllowed(selectedCell) && !selectedCell.pressed ? campaign.floor.entities.find((entry): entry is Enemy => entry.kind === "enemy" && detected.has(entry.id) && entry.x === selectedCell.x && entry.y === selectedCell.y) : null;
@@ -1564,7 +1576,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
     const update = () => {
       const host = hostRef.current; const panel = tooltipRef.current;
       if (!host || !panel) return;
-      const rect = host.getBoundingClientRect(); const size = cellSizeAt(rect); const center = getViewCenter(rect);
+      const rect = localViewRect(host); const size = cellSizeAt(rect); const center = getViewCenter(rect);
       const cellRect = (x: number, y: number) => { const point = getWorldCellScreenCenter({ x, y, center, viewportWidth: rect.width, viewportHeight: rect.height, tileCssSize: size }); return { left: rect.left + point.left - size / 2, top: rect.top + point.top - size / 2, width: size, height: size }; };
       const placement = findWorldTooltipPosition(rect, { width: panel.offsetWidth, height: panel.offsetHeight }, [cellRect(tooltipEnemy.x, tooltipEnemy.y), cellRect(campaign.player.x, campaign.player.y)], size + 8);
       setTooltipPosition(placement);
@@ -1580,7 +1592,7 @@ export function BabylonWorld({ campaign, theme = 1, gameViewShader = 0, renderTe
     const update = () => {
       const host = hostRef.current; const panel = campfireMenuRef.current;
       if (!host || !panel) return;
-      const rect = host.getBoundingClientRect(); const size = cellSizeAt(rect); const center = getViewCenter(rect);
+      const rect = localViewRect(host); const size = cellSizeAt(rect); const center = getViewCenter(rect);
       const cellRect = (x: number, y: number) => { const point = getWorldCellScreenCenter({ x, y, center, viewportWidth: rect.width, viewportHeight: rect.height, tileCssSize: size }); return { left: rect.left + point.left - size / 2, top: rect.top + point.top - size / 2, width: size, height: size }; };
       setCampfireMenuPosition(findWorldTooltipPosition(rect, { width: panel.offsetWidth, height: panel.offsetHeight }, [cellRect(campfireMenu.x, campfireMenu.y), cellRect(campaign.player.x, campaign.player.y)], size + 8));
     };

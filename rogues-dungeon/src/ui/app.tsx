@@ -1,10 +1,9 @@
 import type { ReactNode } from "react";
-import type { Orientation } from "./layout.ts";
 import { useEffect, useMemo, useState } from "react";
 import { BrowserSurface } from "./browser-surface.tsx";
-import { classifyPlatform, layoutForPlatform } from "./layout.ts";
+import { classifyPlatform, defaultLayout } from "./layout.ts";
 import { LayoutContext } from "./layout-context.ts";
-import { DEV_SETTINGS_STORAGE_KEYS, readDevAspect, readDevBoolean, writeDevAspect, writeDevBoolean } from "./dev-settings.ts";
+import { DEV_SETTINGS_STORAGE_KEYS, readDevBoolean, writeDevBoolean } from "./dev-settings.ts";
 const SEQUENTIALLY_FOCUSABLE_SELECTOR = "a[href], area[href], button, input, select, textarea, iframe, object, embed, [contenteditable]:not([contenteditable=\"false\"]), [tabindex]";
 function scrollStepHeight(scroller: HTMLElement) {
   const candidates = scroller.querySelectorAll<HTMLElement>(".slot_item, p, li, button, [role=\"option\"]");
@@ -92,15 +91,12 @@ export function App({ content = null, gutters = {} }: { content?: ReactNode; gut
   }, []);
   const platform = classifyPlatform({ userAgentDataMobile: navigator.userAgentData?.mobile, userAgent: navigator.userAgent });
   const canOverride = platform === "pc" && import.meta.env.DEV;
-  const [aspectRatio, setAspectRatioState] = useState<Orientation | null>(readDevAspect);
   const [showPivotPoints, setShowPivotPoints] = useState(readShowPivotPoints);
   const setPersistentShowPivotPoints = (value: boolean | ((current: boolean) => boolean)) => setShowPivotPoints((current) => {
     const next = typeof value === "function" ? value(current) : value;
     writeDevBoolean(DEV_SETTINGS_STORAGE_KEYS.pivots, next);
     return next;
   });
-  const setAspectRatio = (value: Orientation) => { writeDevAspect(value); setAspectRatioState(value); };
-  const layout = layoutForPlatform(platform, aspectRatio);
-  const context = useMemo(() => ({ platform, orientation: layout.orientation, canOverride, showPivotPoints: canOverride && showPivotPoints, setShowPivotPoints: setPersistentShowPivotPoints, setAspectRatio }), [platform, layout.orientation, canOverride, showPivotPoints]);
-  return <LayoutContext.Provider value={context}><BrowserSurface layout={layout} gutters={gutters}>{content}</BrowserSurface></LayoutContext.Provider>;
+  const context = useMemo(() => ({ platform, orientation: defaultLayout.orientation, canOverride, showPivotPoints: canOverride && showPivotPoints, setShowPivotPoints: setPersistentShowPivotPoints }), [platform, canOverride, showPivotPoints]);
+  return <LayoutContext.Provider value={context}><BrowserSurface layout={defaultLayout} platform={platform} gutters={gutters}>{content}</BrowserSurface></LayoutContext.Provider>;
 }

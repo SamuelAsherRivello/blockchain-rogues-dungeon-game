@@ -16,6 +16,10 @@ test('Throwing Knife is a separate stack of three and hits the nearest eligible 
   const rejected = applyAction(result.state, {type:'use-quick-slot', index:0}, {enemyLogicDisabled:true});
   assert.equal(formatLogEvent(rejected.events.find(event => event.type === 'quick-slot.use.rejected')!), 'Throwing Knife disabled. Enemy out of range.');
   const enemy = (id:string, x:number): Enemy => ({id, kind:'enemy', name:id, x, y, hp:20, maxHp:20, damage:0, xp:0, resources:createResourcesModel({health:{current:20,currentMax:20}}), awareness:0, actionCooldown:99, nextActionAt:999, ai:{state:'idle',targetId:null}});
+  result.state.floor.entities = [enemy('out-of-range', x+9)];
+  const distant = applyAction(result.state, {type:'use-quick-slot', index:0}, {enemyLogicDisabled:true});
+  assert.equal(distant.accepted, false);
+  assert.equal(formatLogEvent(distant.events.find(event => event.type === 'quick-slot.use.rejected')!), 'Throwing Knife disabled. Enemy out of range.');
   result.state.floor.entities = [enemy('far', x+4), enemy('near', x+2)];
   result = applyAction(result.state, {type:'use-quick-slot', index:0}, {enemyLogicDisabled:true});
   assert.equal(result.accepted, true);
@@ -25,6 +29,10 @@ test('Throwing Knife is a separate stack of three and hits the nearest eligible 
   result = applyAction(result.state, {type:'resolve-ability', abilityId:cast!.facts.abilityId!, targetId:'near'}, {enemyLogicDisabled:true});
   assert.ok((result.state.floor.entities.find(e => e.id === 'near') as Enemy).hp < 20);
   assert.equal((result.state.floor.entities.find(e => e.id === 'far') as Enemy).hp, 20);
+});
+
+test('ranged quick-slot items share the no-target message', () => {
+  assert.equal(formatLogEvent({ type: 'quick-slot.use.rejected', facts: { reason: 'no-valid-target', item: 'Future ranged item' } }), 'Future ranged item disabled. Enemy out of range.');
 });
 
 import { serializeFloorToTiled, floorFromTiledRepairMap } from '../src/systems/rendering/tile-map-system.ts';

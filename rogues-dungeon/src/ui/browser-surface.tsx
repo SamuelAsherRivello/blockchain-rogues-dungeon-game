@@ -7,7 +7,7 @@ function rectangle(x: number, y: number, width: number, height: number) {
   return { left: x, top: y, width, height };
 }
 
-export function BrowserSurface({ layout = defaultLayout, children, ui, gutters = {}, onViewportResize }: { layout?: Layout; children?: ReactNode; ui?: ReactNode; gutters?: Partial<Record<string, ReactNode>>; onViewportResize?: (rect: DOMRect) => void }) {
+export function BrowserSurface({ layout = defaultLayout, platform = "pc", children, ui, gutters = {}, onViewportResize }: { layout?: Layout; platform?: string; children?: ReactNode; ui?: ReactNode; gutters?: Partial<Record<string, ReactNode>>; onViewportResize?: (rect: DOMRect) => void }) {
   const surfaceRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [fullscreen, setFullscreen] = useState(() => Boolean(document.fullscreenElement));
@@ -50,12 +50,12 @@ export function BrowserSurface({ layout = defaultLayout, children, ui, gutters =
   };
 
   return (
-    <div ref={surfaceRef} id="browser_surface" data-fullscreen={fullscreen} style={activeLayout.gutterBackground ? { "--gutter-color": activeLayout.gutterBackground } : undefined}>
+    <div ref={surfaceRef} id="browser_surface" data-fullscreen={fullscreen} data-platform={platform} style={activeLayout.gutterBackground ? { "--gutter-color": activeLayout.gutterBackground } : undefined}>
       {error ? <div className="layout_error" role="alert">{error}</div> : <>
         {Object.entries(regions ?? {}).map(([side, style]) => (
           <div key={side} className={`gutter gutter_${side}`} style={style}>{gutters[side]}</div>
         ))}
-        <div id="viewport" data-orientation={activeLayout.orientation} style={{ ...rectangle(viewport!.x, viewport!.y, viewport!.width, viewport!.height), "--project-viewport-width": `${viewport!.width}px`, "--project-viewport-height": `${viewport!.height}px` }}>
+        <div id="viewport" inert={platform === "mobile" && !fullscreen} data-orientation={activeLayout.orientation} style={{ ...rectangle(viewport!.x, viewport!.y, viewport!.width, viewport!.height), "--project-viewport-width": `${viewport!.width}px`, "--project-viewport-height": `${viewport!.height}px` }}>
           {/* Babylon Lite content mounts here beneath the independent UI layer. Its renderer
               owns a DPR-aware backing buffer while this viewport stays in CSS pixels. The
               2D preset uses nearest filtering, no mipmaps, and no MSAA. See the integration
@@ -64,6 +64,7 @@ export function BrowserSurface({ layout = defaultLayout, children, ui, gutters =
           <div id="ui_layer">{ui}</div>
         </div>
       </>}
+      {platform === "mobile" && !fullscreen && <div className="fullscreen-prompt"><button type="button" onClick={() => { if (!document.documentElement.requestFullscreen) return; void document.documentElement.requestFullscreen().then(() => { const orientation = screen.orientation as ScreenOrientation & { lock?: (orientation: string) => Promise<void> }; return orientation?.lock?.("landscape"); }).catch(() => {}); }}>Fullscreen</button></div>}
     </div>
   );
 }

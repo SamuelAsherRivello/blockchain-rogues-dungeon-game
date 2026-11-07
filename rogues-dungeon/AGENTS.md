@@ -11,6 +11,13 @@ framework, tool, or platform requires an exact filename.
 
 Any automated browser session that launches or navigates to Rogue's Dungeon must include `?mute=1` so audio stays silent during testing. Keep the public player demo and normal human sessions unmuted.
 
+## Ranged item messages
+
+Ranged quick-slot items must report an unavailable enemy target using the
+`quick-slot.use.rejected` event with reason `no-valid-target` and the item's
+name. The shared log policy displays `<item> disabled. Enemy out of range.`
+for missing, obstructed, or out-of-range targets.
+
 ## World Object Placement
 
 Every persistent world object must be placed by the appropriate world-generation

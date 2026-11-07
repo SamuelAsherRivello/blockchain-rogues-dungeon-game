@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import viteConfig from '../../vite.config.ts';
-import { aspectRatioPresets, classifyPlatform, defaultLayout, fitViewport, layoutForPlatform, validateLayout } from '../src/ui/layout.ts';
+import { aspectRatioPresets, classifyPlatform, defaultLayout, fitViewport, validateLayout } from '../src/ui/layout.ts';
 import { statusCapMarker } from '../src/game/status-cap-marker.ts';
 
 test("builds Rogue's Dungeon from its GitHub Pages base", () => {
@@ -75,32 +75,18 @@ test('recovers a wall-adjacent barrel only when its current and starting cells a
   assert.match(renderer, /const startOffscreen = Boolean\(set\.barrelStart && isPositionOffscreen\(set\.barrelStart, cameraCenter, halfWidth, halfHeight\)\)/);
   assert.match(renderer, /if \(barrelOffscreen && startOffscreen && isBlockingPathCell/);
 });
-test('selects aspect by mobile platform signal with a PC-only developer preview override', () => {
-  assert.equal(classifyPlatform({ userAgentDataMobile: false, userAgent: 'iPhone' }), 'mobile');
-  assert.equal(classifyPlatform({ userAgentDataMobile: false, userAgent: 'Windows NT 10.0' }), 'pc');
-  assert.equal(classifyPlatform({ userAgentDataMobile: true, userAgent: 'Desktop' }), 'mobile');
-  assert.equal(classifyPlatform({ userAgent: 'Mozilla/5.0 (Linux; Android 14) Mobile' }), 'mobile');
-  const landscape = layoutForPlatform('pc');
-  const portraitPreview = layoutForPlatform('pc', 'portrait');
-  const mobile = layoutForPlatform('mobile', 'landscape');
-  assert.equal(landscape.orientation, 'landscape'); assert.equal(landscape.minAspectRatio, 16 / 10); assert.equal(landscape.maxAspectRatio, 16 / 9);
-  assert.equal(portraitPreview.orientation, 'portrait'); assert.equal(portraitPreview.minAspectRatio, 9 / 16); assert.equal(portraitPreview.maxAspectRatio, 10 / 16);
-  assert.equal(mobile.orientation, 'portrait'); assert.equal(mobile.minAspectRatio, 9 / 16); assert.equal(mobile.maxAspectRatio, 10 / 16);
-});
-test('keeps the saved aspect ratio control within developer settings', async () => {
-  const app = await readFile(new URL('../src/ui/app.tsx', import.meta.url), 'utf8');
-  assert.match(app, /platform === "pc" && import\.meta\.env\.DEV/);
-  assert.match(app, /layoutForPlatform\(platform, aspectRatio\)/);
-  const [game, gameScreen] = await Promise.all(['../src/game/game.tsx', '../src/game/screens/game-screen.tsx'].map((path) => readFile(new URL(path, import.meta.url), 'utf8')));
-  assert.match(game, /D Settings[\s\S]*AR: \{orientation === "landscape" \? "L" : "P"\}/);
-  assert.match(game, /className="mobile_status"[\s\S]*canOverride[\s\S]*AR: \{orientation === "landscape" \? "L" : "P"\}/);
-  assert.match(game, /setAspectRatio\(orientation === "landscape" \? "portrait" : "landscape"\)/);
-  const settings = await readFile(new URL("../src/game/windows/settings-window.tsx", import.meta.url), "utf8");
-  assert.doesNotMatch(settings, /AR: |LayoutContext/);
-  assert.match(gameScreen, /className="game-screen" data-orientation=\{orientation\}/);
-  const css = await readFile(new URL('../src/ui/style.css', import.meta.url), 'utf8');
-  assert.match(css, /\.game-screen\[data-orientation="portrait"\]/);
-  assert.doesNotMatch(css, /@media\s*\(max-aspect-ratio|@container\s*\(max-aspect-ratio/);
+test('requires landscape on mobile without a portrait preview', async () => {
+  assert.equal(classifyPlatform({ userAgent: 'iPhone' }), 'mobile');
+  assert.equal(classifyPlatform({ userAgent: 'Windows NT 10.0' }), 'pc');
+  assert.equal(defaultLayout.orientation, 'landscape');
+  const [app, game, surface, css] = await Promise.all(['../src/ui/app.tsx', '../src/game/game.tsx', '../src/ui/browser-surface.tsx', '../src/ui/style.css'].map((path) => readFile(new URL(path, import.meta.url), 'utf8')));
+  assert.match(app, /layout=\{defaultLayout\} platform=\{platform\}/);
+  assert.doesNotMatch(game, /setAspectRatio|AR: \{/);
+  assert.doesNotMatch(surface, /Turn your device sideways/);
+  assert.match(surface, /platform === "mobile" && !fullscreen/);
+  assert.match(surface, />Fullscreen<\/button>/);
+  assert.match(surface, /requestFullscreen\(\)/);
+  assert.match(css, /@media \(orientation: portrait\)[\s\S]*?data-platform="mobile"[\s\S]*?rotate\(90deg\)/);
 });
 test('persists the developer character-pivot overlay and renders it above game art only when enabled', async (t) => {
   const { DEV_SETTINGS_STORAGE_KEYS, readDevBoolean, writeDevBoolean } = await import('../src/ui/dev-settings.ts');

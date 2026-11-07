@@ -31,21 +31,31 @@ test("@smoke landscape aspect range preserves panel widths and a ready world", a
   }
 });
 
-test("@smoke portrait aspect range preserves the full-width game section", async ({ page }) => {
-  await page.setViewportSize({ width: 900, height: 1600 });
-  await page.addInitScript(() => localStorage.setItem("rogues-dungeon.dev.aspect", "portrait"));
-  await page.goto(gameUrl);
-  await expect(page.locator('.world-view[data-renderer-ready="true"]')).toBeVisible({ timeout: 30_000 });
-
-  for (const size of [{ width: 900, height: 1600 }, { width: 600, height: 1000 }, { width: 800, height: 1000 }]) {
-    await page.setViewportSize(size);
-    await expectFittedRatio(page, 9 / 16, 10 / 16);
-    await expect.poll(() => page.evaluate(() => {
-      const section = document.querySelector(".game-screen__middle")!.getBoundingClientRect();
-      const world = document.querySelector(".world-view")!.getBoundingClientRect();
-      const canvas = document.querySelector(".world-view canvas")!.getBoundingClientRect();
-      return Math.max(Math.abs(section.left - world.left), Math.abs(section.width - world.width), Math.abs(section.width - canvas.width));
-    })).toBeLessThan(1);
-    await expect(page.locator('.world-view[data-renderer-ready="true"]')).toBeVisible();
+test("@smoke mobile keeps the landscape game visible in either device orientation", async ({ browser }) => {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    userAgent: "Mozilla/5.0 (Linux; Android 14) Mobile",
+    isMobile: true,
+    hasTouch: true,
+  });
+  const page = await context.newPage();
+  try {
+    await page.goto("/blockchain-rogues-dungeon-game/?mute=1");
+    await expect(page.locator("#viewport")).toBeVisible();
+    await expect(page.locator("#viewport")).toHaveAttribute("data-orientation", "landscape");
+    await expect(page.getByText("Turn your device sideways to play.")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Fullscreen", exact: true })).toBeVisible();
+    await expect(page.locator("#viewport")).toHaveAttribute("inert", "");
+    await page.getByRole("button", { name: "Fullscreen", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Fullscreen", exact: true })).toHaveCount(0);
+    await expect(page.locator("#viewport")).not.toHaveAttribute("inert", "");
+    await expect.poll(() => page.locator("#browser_surface").evaluate((element) => ({ width: element.clientWidth, height: element.clientHeight }))).toEqual({ width: 844, height: 390 });
+    await expect(page.getByRole("button", { name: /Saved Game 1/ })).toBeVisible();
+    await page.setViewportSize({ width: 844, height: 390 });
+    await expect(page.locator("#viewport")).toBeVisible();
+    await expect(page.locator("#viewport")).toHaveAttribute("data-orientation", "landscape");
+    await expect.poll(() => page.locator("#browser_surface").evaluate((element) => ({ width: element.clientWidth, height: element.clientHeight }))).toEqual({ width: 844, height: 390 });
+  } finally {
+    await context.close();
   }
 });
