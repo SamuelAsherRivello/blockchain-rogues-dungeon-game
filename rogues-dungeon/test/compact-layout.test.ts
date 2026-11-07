@@ -1,7 +1,33 @@
 import { strict as assert } from "node:assert";
 import { readFile } from "node:fs/promises";
 import { test } from "node:test";
-import { aspectRatioPresets, fitViewport } from "../src/ui/layout.ts";
+import { aspectRatioPresets, fitViewport, mobileLandscapeLayout, selectGameLayout } from "../src/ui/layout.ts";
+import { preferencesForLayout } from "../src/game/layout-preferences.ts";
+import type { Preferences } from "../src/game/types.ts";
+
+test("mobile defaults do not mutate or replace saved desktop preferences", () => {
+  const saved: Preferences = { movementMode: "grid-snap", zoom: 2, camera: "deadzone", fullscreenDesired: false, sfxVolume: 80, musicVolume: 1, muteAll: false, urlArgs: false };
+  const mobile = preferencesForLayout(saved, "mobile");
+  assert.deepEqual([mobile.zoom, mobile.camera, mobile.movementMode], [1, "center", "grid-tween"]);
+  assert.deepEqual([saved.zoom, saved.camera, saved.movementMode], [2, "deadzone", "grid-snap"]);
+  assert.equal(preferencesForLayout(saved, "desktop"), saved);
+});
+
+test("layout selection distinguishes physical mobile from desktop preview", () => {
+  assert.equal(selectGameLayout("pc", null, true), "desktop");
+  assert.equal(selectGameLayout("pc", "mobile", true), "mobile");
+  assert.equal(selectGameLayout("pc", "invalid", true), "desktop");
+  assert.equal(selectGameLayout("pc", "mobile", false), "desktop");
+  assert.equal(selectGameLayout("mobile", "desktop", false), "mobile");
+});
+
+test("mobile fits landscape surfaces from 16:10 through 20:9", () => {
+  for (const ratio of [16 / 10, 16 / 9, 19.5 / 9, 20 / 9]) {
+    const fitted = fitViewport(ratio * 900, 900, mobileLandscapeLayout);
+    assert.equal(fitted.width / fitted.height, ratio);
+    assert.equal(fitted.x, 0);
+  }
+});
 
 const css = await readFile(new URL("../src/ui/style.css", import.meta.url), "utf8");
 
@@ -40,15 +66,6 @@ test("responsive CSS uses the fitted landscape container and staged budgets", ()
   assert.match(css, /--landscape-panels-width:78\.222222cqh/);
   assert.match(css, /#viewport\[data-orientation="landscape"\] \.information-panels[^}]*width:var\(--landscape-panels-width\)/);
   assert.doesNotMatch(css, /#viewport\[data-orientation="portrait"\][^}]*@container/);
-});
-
-test("portrait keeps its game rows and full-width world view through its aspect range", () => {
-  for (const [width, height, ratio] of [[900, 1600, 9 / 16], [600, 1000, 3 / 5], [800, 1000, 10 / 16]] as const) {
-    const fitted = fitViewport(width, height, { orientation: "portrait", ...aspectRatioPresets.portrait });
-    assert.equal(fitted.width / fitted.height, ratio);
-  }
-  assert.match(css, /\.game-screen\[data-orientation="portrait"\] \{ grid-template-rows:4% 46% 4% 46%; \}/);
-  assert.match(css, /\.game-screen\[data-orientation="portrait"\] \.world-view-region \{ height:100%; \}/);
 });
 
 test("compact layout keeps page scrolling disabled and existing scroll areas owned", () => {

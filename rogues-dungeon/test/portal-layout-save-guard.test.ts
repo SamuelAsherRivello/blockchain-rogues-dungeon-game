@@ -96,13 +96,13 @@ test("known tagged single and paired saves use ordinary storage load and save pa
   }
 });
 
-test("unversioned chain records remain unambiguous and available", () => {
+test("incompatible unversioned chain records remain unambiguous and are not overwritten", () => {
   const chain = (JSON.parse(readFileSync(new URL("./fixtures/legacy-generation-fixtures.json", import.meta.url), "utf8")) as { compact: { record: Campaign }[] }).compact[0].record;
   assert.deepEqual(unresolvedPortalLayoutPaths(chain), []);
   const raw = JSON.stringify(chain);
   const storage = new MemoryStorage([["rogues-dungeon.slot.2", raw]]);
   assert.equal(readSlotSummary(storage)[1].invalid, undefined);
-  assert.ok(readSlot(storage, "2"));
+  assert.throws(() => readSlot(storage, "2"), /Unsupported saved world generator/);
   assert.equal(storage.getItem("rogues-dungeon.slot.2"), raw);
 });
 

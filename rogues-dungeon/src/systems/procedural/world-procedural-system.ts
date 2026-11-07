@@ -145,9 +145,10 @@ export function normalizeStartRoomMetadata(floor: Floor) {
 export function normalizeObjectSets(floor: Floor) {
   const raw = Array.isArray(floor.objectSets) ? floor.objectSets : [];
   floor.objectSets = raw.flatMap((storedSet): ObjectSet[] => {
-    const set = storedSet.kind === "floor-trigger-door-barrel"
+    const savedKind: string = (storedSet as { kind: string }).kind;
+    const set = savedKind === "floor-trigger-door-barrel"
       ? { ...storedSet, kind: "barrel-panel-door" } as ObjectSet
-      : storedSet.kind === "encounter-lockdown"
+      : savedKind === "encounter-lockdown"
         ? { ...storedSet, kind: "enemy-locked-door" } as ObjectSet
         : storedSet;
     if (set?.kind === "barrel-panel-door" && typeof set.id === "string" && validPosition(set.barrel) && validPosition(set.trigger) && validPosition(set.door) && objectSetRoles.includes(set.regionRole)) {
@@ -2039,6 +2040,19 @@ function applyDomainAction(campaign: Campaign, action: Action, options: { freeEn
     for (const key of ["health", "stamina", "mana"] as const) if (RESOURCE_WILL_REPLENISH[key]) changeResource(state, events, key, effectiveAttributes(state)[key], "campfire-rest");
     const replenishedStatus = resourceState(state);
     for (const key of ["offense", "defense"] as const) if (previousStatus[key].current !== replenishedStatus[key].current) emit(events, "resource.changed", { resource: key, previous: previousStatus[key].current, current: replenishedStatus[key].current, currentMax: replenishedStatus[key].currentMax, cause: "campfire-rest" }, state);
+    if (!state.activePrefab) {
+      const baseline = baselineForSave(state, state.floor.level ?? state.floor.depth ?? 1);
+      const existingIds = new Set(state.floor.entities.map((entity) => entity.id));
+      for (const enemy of baseline.entities) {
+        if (enemy.kind !== "enemy" || existingIds.has(enemy.id)) continue;
+        const positions: Position[] = [];
+        for (let y = 0; y < state.floor.height; y++) for (let x = 0; x < state.floor.width; x++) {
+          if (isWalkable(state.floor, x, y) && !samePosition(state.player, { x, y }) && !entityAt(state.floor.entities, x, y) && !isObjectSetBlocked(state.floor, state.player, x, y)) positions.push({ x, y });
+        }
+        positions.sort((a, b) => (Math.abs(a.x - enemy.x) + Math.abs(a.y - enemy.y)) - (Math.abs(b.x - enemy.x) + Math.abs(b.y - enemy.y)) || a.y - b.y || a.x - b.x);
+        if (positions[0]) state.floor.entities.push({ ...structuredClone(enemy), ...positions[0] });
+      }
+    }
     tick(state, events, true);
     if (state.mode === "journey") state.journeyCheckpoint = prepareJourneyCheckpoint(state);
     return { state, events, accepted: true, ticks: 1 };

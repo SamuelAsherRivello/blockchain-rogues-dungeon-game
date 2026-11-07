@@ -30,7 +30,7 @@ function hiddenMouseInteractions(campaign: MouseCampaign, allowed: (position: Po
 
 export function getMousePathResult(selectedCell: MouseTravelSelection | null, campaign: MouseCampaign | null, allowed: (position: Position) => boolean = () => true): MousePathResult {
   if (!selectedCell || !campaign?.player || !campaign?.floor) return { path: null, reachable: false };
-  const lockbox = !selectedCell.walkOnly && allowed(selectedCell) && campaign.floor.lockboxes?.some(box => box.x === selectedCell.x && box.y === selectedCell.y);
+  const lockbox = !selectedCell.walkOnly && allowed(selectedCell) && (campaign.floor.lockboxes?.some(box => box.x === selectedCell.x && box.y === selectedCell.y) ?? false);
   const hidden = hiddenMouseInteractions(campaign, allowed, selectedCell.walkOnly ? selectedCell : undefined);
   const selectedIsAdjacentStop = isMouseStopTile(campaign.floor, selectedCell)
     && Math.abs(selectedCell.x - campaign.player.x) + Math.abs(selectedCell.y - campaign.player.y) === 1;
@@ -67,12 +67,26 @@ export function getMousePathResult(selectedCell: MouseTravelSelection | null, ca
   return { path: preview, reachable: Boolean((path || reachesBox) && preview && preview.length <= MAX_MOUSE_TRAVEL_STEPS + 1) };
 }
 
-/** Mouse travel always stops before traps and stairs unless one is the adjacent selected destination. */
+/** Clicking an interaction or hazard approaches it without entering its cell. */
 export function planMouseTravel(selected: MouseTravelSelection, campaign: MouseCampaign, _warnedHazard: Position | null = null, allowed: (position: Position) => boolean = () => true) {
   const selection = selected.walkOnly || !allowed(selected) ? { ...selected, walkOnly: true } : selected;
+  const same = (a: Position, b: Position) => a.x === b.x && a.y === b.y;
+  const targetNeedsApproach = allowed(selection) && (isMouseHazard(campaign.floor, selection)
+    || campaign.floor.lockboxes?.some(box => same(box, selection))
+    || campaign.floor.entities?.some(entity => same(entity, selection) && entity.kind !== "discovery" && !((entity.kind === "crate" || entity.kind === "chest") && entity.opened))
+    || campaign.floor.objectSets?.some(set => set.kind !== "enemy-locked-door" && set.barrel && same(set.barrel, selection)));
+  if (targetNeedsApproach) {
+    const hidden = hiddenMouseInteractions(campaign, allowed);
+    const path = findCardinalApproachPath(campaign.floor, campaign.player, selection, {
+      respectObjectSets: true, avoidObjects: true,
+      isBlocked: cell => same(cell, selection) || hidden.has(`${cell.x},${cell.y}`) || isMouseStopTile(campaign.floor, cell),
+    });
+    const approach = path?.at(-1);
+    const adjacent = approach && Math.abs(approach.x - selection.x) + Math.abs(approach.y - selection.y) === 1;
+    return { destination: { ...selection, ...(approach ?? campaign.player), pixel: undefined, kind: undefined, pathEntryDirection: undefined, walkOnly: true }, warnedHazard: null, confirmedHazard: null, reachable: Boolean(adjacent && path && path.length <= MAX_MOUSE_TRAVEL_STEPS + 1) };
+  }
   const result = getMousePathResult(selection, campaign, allowed);
   const path = result.path?.slice(0, MAX_MOUSE_TRAVEL_STEPS + 1) ?? null;
-  const same = (a: Position, b: Position) => a.x === b.x && a.y === b.y;
   const targetIsStopTile = isMouseStopTile(campaign.floor, selection);
   const targetIsAdjacent = Math.abs(selection.x - campaign.player.x) + Math.abs(selection.y - campaign.player.y) === 1;
   const allowSelectedStopTile = targetIsStopTile && targetIsAdjacent && same(path?.at(-1) ?? campaign.player, selection);

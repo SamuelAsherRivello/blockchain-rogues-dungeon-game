@@ -52,7 +52,7 @@ test("@smoke fog permission conceals wall quarters after RT cycling and leaves s
   expect(errors).toEqual([]);
 });
 
-test("Render Test remains session state through Perf regeneration and PC portrait preview", async ({ page }) => {
+test("Render Test remains session state through Perf regeneration and mobile preview", async ({ page }) => {
   const campaign = createRunCampaign(17, 1, 1);
   await page.addInitScript(saved => localStorage.setItem("rogues-dungeon.slot.1", JSON.stringify(saved)), campaign);
   await page.goto("/blockchain-rogues-dungeon-game/?mute=1"); await openSavedGame(page);
@@ -65,7 +65,11 @@ test("Render Test remains session state through Perf regeneration and PC portrai
   await expect(page.locator(".world-view")).toHaveAttribute("data-render-test-mode", "0");
   await page.getByRole("button", { name: "Exit Perf", exact: true }).click();
   await expect(page.locator(".world-view")).toHaveAttribute("data-render-test-mode", "0");
-  await page.getByRole("button", { name: "AR: L", exact: true }).click();
+  await page.getByRole("button", { name: "L:D", exact: true }).click();
+  await expect(page.locator(".world-view")).toHaveAttribute("data-render-test-mode", "3");
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await page.getByRole("button", { name: "Layout: Desktop", exact: true }).click();
+  await page.getByRole("button", { name: "Close dialog" }).click();
   await expect(page.getByRole("button", { name: "RT:0", exact: true })).toBeVisible();
   await mode(page, 3);
   await expect(page.getByRole("button", { name: "RT:3", exact: true })).toBeVisible();

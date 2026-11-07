@@ -3,7 +3,7 @@
 - `src/game/types.ts` owns serializable domain contracts: campaigns, floors, entities, items, actions, events, and preferences. Pure game helpers and the simulation/persistence/map systems must not acquire React or renderer dependencies. `src/game/Game.tsx` is the existing React composition layer.
 - `src/systems/procedural/` owns generation and turn rules; `persistence/`, `animation/`, `audio/`, and `rendering/` own their corresponding integrations.
 - `src/content/` mounts the active game experience.
-- `src/ui/` owns the PC-landscape/mobile-portrait browser surface, developer-only PC aspect preview, command desk, and styles. Keep primary game UI inside the fitted viewport; do not restore template corner units. Portrait uses a statusbar Control/Info toggle to switch the bottom content.
+- `src/ui/` owns the desktop and mobile landscape surfaces, developer-only desktop layout preview, command desk, and styles. Keep primary game UI inside the fitted viewport; do not restore template corner units. Scope layout changes to desktop, mobile, or both deliberately.
 - Keep movement, enemy phases, persistence, and choices deterministic from explicit state where practical.
 - Keep supplied Tiled tile sources and sample maps together under `public/assets/` so their relative references remain valid.
 - Use `.ts` for executable modules and `.tsx` for React JSX. Keep explicit typed extension imports and use `import type` for contracts with no runtime value. Tiled `.tsx` files under `public/` are XML tile sources, not TypeScript inputs.

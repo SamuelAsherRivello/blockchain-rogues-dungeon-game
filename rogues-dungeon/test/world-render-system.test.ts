@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { applyAction, createCampaign } from "../src/systems/procedural/world-procedural-system.ts";
-import { OBJECTS_OVERLAY_DOOR_CLOSED_FRAME, puzzleObjectSpriteFrame, worldPickupPresentation } from "../src/systems/rendering/world-object-sprite-system.ts";
+import { OBJECTS_OVERLAY_SIDE_DOOR_CLOSED_FRAME, puzzleObjectSpriteFrame, worldPickupPresentation } from "../src/systems/rendering/world-object-sprite-system.ts";
 import { throwItems } from "../src/systems/animation/item-throw-animation-system.ts";
 import { WorldRender, compileStaticWorldPresentation, getVisibleWorldCellBounds, isWorldCellVisible, isWorldChunkVisible } from "../src/systems/rendering/world-render-system.ts";
 
@@ -43,7 +43,7 @@ test("discovery does not remove static dungeon geometry", () => {
   assert.equal(model.grounds.length, 4);
 });
 
-test("a closed door in a vertical wall keeps the closed front-door frame", () => {
+test("a closed door in a vertical wall uses the closed side-door frame", () => {
   const map = [
     [1, 1, 1],
     [0, 1, 0],
@@ -59,7 +59,7 @@ test("a closed door in a vertical wall keeps the closed front-door frame", () =>
   assert.ok(door);
   assert.equal(door.active, false);
   assert.equal(door.wallAxis, "vertical");
-  assert.equal(puzzleObjectSpriteFrame("door", door.active, door.wallAxis), OBJECTS_OVERLAY_DOOR_CLOSED_FRAME);
+  assert.equal(puzzleObjectSpriteFrame("door", door.active, door.wallAxis), OBJECTS_OVERLAY_SIDE_DOOR_CLOSED_FRAME);
 });
 
 for (const resource of ["health", "mana", "stamina"] as const) {

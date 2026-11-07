@@ -4,7 +4,7 @@ Four positional bindings appear as 01–04 and map to keyboard keys 1–4 and th
 
 Heal targets the player and restores up to 8 Health for 5 Mana. Wand chooses the nearest enemy within eight Manhattan tiles, breaking equal-distance ties by stable enemy ID; it deals 7 deterministic damage for 4 Mana. These values and target rules are centralized in the ability catalog. An ability without enough Mana or a valid effect target is rejected without a message or tick.
 
-Press C or the mobile Sneak control to toggle Sneak mode without advancing time. Sneak reduces enemy awareness by three tiles, after the character's Stealth reduction, and never reduces awareness below one tile. Enemy movement or attacks are also gated by each enemy's action cooldown.
+On desktop, press C to toggle Sneak mode without advancing time. Sneak reduces enemy awareness by three tiles, after the character's Stealth reduction, and never reduces awareness below one tile. Enemy movement or attacks are also gated by each enemy's action cooldown.
 
 ## Held movement timing
 

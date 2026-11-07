@@ -2,21 +2,18 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import viteConfig from '../../vite.config.ts';
-import { aspectRatioPresets, classifyPlatform, defaultLayout, fitViewport, validateLayout } from '../src/ui/layout.ts';
+import { classifyPlatform, defaultLayout, fitViewport, validateLayout } from '../src/ui/layout.ts';
 import { statusCapMarker } from '../src/game/status-cap-marker.ts';
 
 test("builds Rogue's Dungeon from its GitHub Pages base", () => {
   assert.equal(viteConfig.root, 'rogues-dungeon'); assert.equal(viteConfig.base, '/blockchain-rogues-dungeon-game/');
 });
-test('fits landscape and portrait command-desk aspect ranges', () => {
-  assert.equal(defaultLayout.label, '16:10–16:9'); assert.equal(aspectRatioPresets.portrait.label, '9:16–10:16');
+test('fits the desktop landscape aspect range', () => {
+  assert.equal(defaultLayout.label, '16:10–16:9');
   const cases = [
     { name: 'landscape minimum', layout: defaultLayout, surface: [1600, 1000], ratio: 16 / 10 },
     { name: 'landscape intermediate', layout: defaultLayout, surface: [1680, 1000], ratio: 168 / 100 },
     { name: 'landscape maximum', layout: defaultLayout, surface: [1920, 1000], ratio: 16 / 9 },
-    { name: 'portrait minimum', layout: { orientation: 'portrait' as const, ...aspectRatioPresets.portrait }, surface: [900, 1600], ratio: 9 / 16 },
-    { name: 'portrait intermediate', layout: { orientation: 'portrait' as const, ...aspectRatioPresets.portrait }, surface: [600, 1000], ratio: 3 / 5 },
-    { name: 'portrait maximum', layout: { orientation: 'portrait' as const, ...aspectRatioPresets.portrait }, surface: [800, 1000], ratio: 10 / 16 },
   ] as const;
   for (const { name, layout, surface: [width, height], ratio } of cases) {
     const fitted = fitViewport(width, height, layout);
@@ -25,9 +22,8 @@ test('fits landscape and portrait command-desk aspect ranges', () => {
     assert.ok(Math.abs(fitted.x * 2 + fitted.width - width) < 1e-10, name);
     assert.ok(Math.abs(fitted.y * 2 + fitted.height - height) < 1e-10, name);
   }
-  assert.throws(() => validateLayout({ orientation: 'portrait', width: 16, height: 9 }));
+  assert.throws(() => validateLayout({ orientation: 'landscape', width: 9, height: 16 }));
   assert.throws(() => validateLayout({ orientation: 'landscape', width: 16, height: 9, minAspectRatio: 16 / 9, maxAspectRatio: 16 / 10 }));
-  assert.throws(() => validateLayout({ orientation: 'portrait', width: 9, height: 16, minAspectRatio: 9 / 16, maxAspectRatio: 16 / 10 }));
 });
 test('status capacity markers make creation ranks legible without reaching the full track early', () => {
   assert.equal(statusCapMarker(1), 10);
@@ -80,7 +76,7 @@ test('requires landscape on mobile without a portrait preview', async () => {
   assert.equal(classifyPlatform({ userAgent: 'Windows NT 10.0' }), 'pc');
   assert.equal(defaultLayout.orientation, 'landscape');
   const [app, game, surface, css] = await Promise.all(['../src/ui/app.tsx', '../src/game/game.tsx', '../src/ui/browser-surface.tsx', '../src/ui/style.css'].map((path) => readFile(new URL(path, import.meta.url), 'utf8')));
-  assert.match(app, /layout=\{defaultLayout\} platform=\{platform\}/);
+  assert.match(app, /gameLayout=\{layout\} platform=\{platform\}/);
   assert.doesNotMatch(game, /setAspectRatio|AR: \{/);
   assert.doesNotMatch(surface, /Turn your device sideways/);
   assert.match(surface, /platform === "mobile" && !fullscreen/);
@@ -137,8 +133,8 @@ test('preserves the selected aspect ratio while the browser surface is fullscree
   assert.doesNotMatch(surface, /size\.height > size\.width/);
 });
 test('uses a command desk and removes template corner units', async () => {
-  const [game, controlsArea, app, css, settingsWindow, mobileControls, titleBar, informationPanels] = await Promise.all(['src/game/game.tsx', 'src/ui/ControlsArea.tsx', 'src/ui/app.tsx', 'src/ui/style.css', 'src/game/windows/settings-window.tsx', 'src/game/controls/mobile-controls.tsx', 'src/game/panels/title-bar.tsx', 'src/game/panels/information-panels.tsx'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));
-  assert.match(informationPanels, /PrimaryInfoPanel/); assert.match(informationPanels, /SecondaryInfoPanel/); assert.match(game, /Start Game/); assert.match(game, /D Settings/);
+  const [game, controlsArea, app, css, settingsWindow, titleBar, informationPanels] = await Promise.all(['src/game/game.tsx', 'src/ui/ControlsArea.tsx', 'src/ui/app.tsx', 'src/ui/style.css', 'src/game/windows/settings-window.tsx', 'src/game/panels/title-bar.tsx', 'src/game/panels/information-panels.tsx'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));
+  assert.match(informationPanels, /PrimaryInfoPanel/); assert.match(informationPanels, /SecondaryInfoPanel/); assert.match(game, /Start Game/); assert.match(game, /dev_settings_label/);
   assert.match(titleBar, /className="title-bar__left"/); assert.match(titleBar, /className="title-bar__right"/); assert.match(titleBar, /className="title-bar__identity"/); assert.match(titleBar, /className="title-bar__progress"/); assert.match(titleBar, /World: \{campaign\.world === "One" \? 1 : campaign\.world\}/);
   assert.match(titleBar, /aria-label="Time">⏱️<\/span>/); assert.match(titleBar, /data-ui-counter-icon="gold" role="img" aria-label="Gold"><span className="title-bar__icon-image title-bar__icon-sprite title-bar__icon-sprite--gold" style=\{\{ backgroundImage: `url\(\$\{import\.meta\.env\.BASE_URL\}assets\/art\/game-view\/items\/gold-coin-mid-res\.png\)` \}\} \/><\/span><span className="title-bar__counter-value">\{counters\.gold\}/); assert.match(titleBar, /data-ui-counter-icon="key" role="img" aria-label="Keys"><span className="title-bar__icon-image title-bar__icon-sprite title-bar__icon-sprite--key" style=\{\{ backgroundImage: `url\(\$\{itemAtlasBase\}items-static\.png\)` \}\} \/><\/span><span className="title-bar__counter-value">\{String\(counters\.keys\)/);
   assert.doesNotMatch(titleBar, /titlebar_icon_group/); assert.doesNotMatch(css, /titlebar_icon_group/);
@@ -148,10 +144,10 @@ test('uses a command desk and removes template corner units', async () => {
   assert.match(settingsWindow, /Clear Local Storage/); assert.match(game, /clearRoguesDungeonBrowserStorage\(\)/); assert.match(game, /window\.location\.reload\(\)/);
   assert.match(css, /\.title-bar \.title-bar__select-utility \{ width:9\.5em; flex:0 0 9\.5em/); assert.match(css, /\.title-bar \.title-bar__select-utility select \{ width:7\.4em/);
   assert.match(titleBar, /const selectPreference = \(event: SyntheticEvent<HTMLElement>, preference: Partial<Preferences>\) => \{/);
-  assert.match(game, /keyboardControlRows/); assert.match(game, /collapsedKeyboardGroups/); assert.match(controlsArea, /aria-label="Keyboard controls"/); assert.match(mobileControls, /dispatch\(\{ type: "wait" \}\)/); assert.match(mobileControls, /Quick 1/); assert.match(mobileControls, /Quick 2/); assert.match(mobileControls, />Wait<\/button>/); assert.match(game, /X: "Wait 1 time tick"/); assert.match(game, /key === "X" \? onWait/); assert.match(game, /onWait=\{\(\) => dispatch\(\{ type: "wait" \}\)\}/); assert.doesNotMatch(mobileControls, /Sprint:/); assert.doesNotMatch(mobileControls, /Sneak:/); assert.doesNotMatch(mobileControls, /\[1, 2, 3, 4\]/); assert.match(game, /<InputKey key=\{key\}/); assert.match(css, /\.mobile-controls__actions \{ display:grid; grid-template-columns:repeat\(3,1fr\)/); assert.match(css, /\.keyboard_tray_keys \{[^}]*grid-template-columns:repeat\(3,2\.25rem\)/);
+  assert.match(game, /keyboardControlRows/); assert.match(game, /collapsedKeyboardGroups/); assert.match(controlsArea, /aria-label="Keyboard controls"/); assert.match(titleBar, /mobile-panels-button/);
   assert.match(titleBar, /<option value="deadzone">Deadzone<\/option>/);
-  assert.doesNotMatch(app, /AppCorner/); assert.match(css, /mobile-controls/);
-  assert.match(css, /grid-template-rows:4% 92% 4%/); assert.match(css, /grid-template-rows:4% 46% 4% 46%/);
+  assert.doesNotMatch(app, /AppCorner/); assert.match(css, /data-layout="mobile"/);
+  assert.match(css, /grid-template-rows:4% 92% 4%/); assert.match(css, /grid-template-rows:4% 96%/);
   assert.match(css, /grid-template-columns:minmax\(0,56%\) minmax\(0,44%\)/);
   assert.match(css, /\.title-bar__identity \{[^}]*background:#1a1720/); assert.match(css, /\.title-bar__progress \{[^}]*justify-content:center/);
   assert.match(css, /align-items:center/);
@@ -168,7 +164,7 @@ test('hands pickups from the rendered Babylon projection into their destination 
   assert.match(renderer, /flight\.destination === "counter" \? "\.game-screen" : "\.game-screen__middle"/); assert.match(renderer, /destinationLayer\.append\(transfer\)/);
   assert.match(css, /width 500ms/); assert.match(css, /animation:world-view-ui-animation-flight 500ms/); assert.match(css, /0% \{ opacity:0; transform:translate\(-50%,-50%\) scale\(1\); \} 20% \{ opacity:1; transform:translate\(-50%,-50%\) scale\(1\.25\); \} 100% \{ opacity:1; transform:translate\(-50%,-50%\) scale\(1\); \}/); assert.match(renderer, /window\.setTimeout\(\(\) => \{ transfer\.remove\(\);/);
   assert.match(game, /data-ui-counter-icon/); assert.match(game, /destination = entity\.kind === "gold" \|\| entity\.kind === "key" \? "counter" : "row"/);
-  assert.match(game, /data-ui-pickup-fallback/);
+  assert.match(await readFile(new URL("../src/game/panels/title-bar.tsx", import.meta.url), "utf8"), /data-ui-pickup-fallback/);
   assert.match(css, /z-index:10000/);
 });
 test('centers a new screen-mode page on the player', async () => {
@@ -255,7 +251,7 @@ test('uses the inventory grabber as a cue while the whole row is draggable', asy
   assert.match(game, /key=\{`\$\{item\.id\}-\$\{secondary \? 1 : 0\}`\} type="inventory"/);
   assert.match(game, /"data-drag-kind": storage \? "lockbox" : "inventory"/);
   assert.match(game, /"aria-label": `Drag \$\{name\}`/);
-  assert.match(game, /\{\.\.\.dropTarget\} \{\.\.\.dragSource\}/);
+  assert.match(game, /\.\.\.dropTarget, \.\.\.dragSource/);
   const css = await readFile(new URL('../src/ui/style.css', import.meta.url), 'utf8');
   assert.match(css, /\.slot_item\[data-drag-kind\]\{cursor:grab/);
 });
@@ -279,12 +275,9 @@ test('uses SlotItem for vertically aligned abilities and equipment', async () =>
   assert.doesNotMatch(css, /\.slot_item--ability \{/);
 });
 
-test('limits ability presentation and mobile controls to three positions', async () => {
-  const [game, mobileControls, css] = await Promise.all(['src/game/game.tsx', 'src/game/controls/mobile-controls.tsx', 'src/ui/style.css'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));
+test('limits ability presentation to three positions', async () => {
+  const game = await readFile(new URL('../src/game/game.tsx', import.meta.url), 'utf8');
   assert.match(game, /campaign\.player\.abilities\.slice\(0, 3\)/);
-  assert.match(mobileControls, /\{\[0, 1, 2\]\.map/);
-  assert.doesNotMatch(mobileControls, /\{\[0, 1, 2, 3\]\.map/);
-  assert.match(css, /\.mobile-controls__abilities \{ display:grid; grid-template-columns:repeat\(3,1fr\)/);
 });
 test('centers plus markers for empty equipment and ability slots', async () => {
   const [game, css] = await Promise.all(['src/game/controls/slot-item.tsx', 'src/ui/style.css'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));
@@ -294,7 +287,7 @@ test('centers plus markers for empty equipment and ability slots', async () => {
 });
 test('renders UI tooltips above every content-layer panel', async () => {
   const css = await readFile(new URL('../src/ui/style.css', import.meta.url), 'utf8');
-  assert.match(css, /\.game-card__tab-placement \{ position:absolute; z-index:1;[^}]*pointer-events:none; \}/);
+  assert.match(css, /\.game-card__tab-placement \{ position:absolute; z-index:10;[^}]*pointer-events:auto; \}/);
   assert.match(css, /#ui_layer \{[^}]*z-index:\s*2147483647;/);
   assert.match(css, /\.ui_tooltip \{ position:absolute; z-index:10000;/);
 });
@@ -366,7 +359,7 @@ test('renders item comparison over the world with an inventory anchor', async ()
 });
 test('dims keyboard inputs while their ability or quick slot is being dragged', async () => {
   const [game, css] = await Promise.all(['src/game/game.tsx', 'src/ui/style.css'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));
-  assert.match(game, /drag\?\.source\.kind === "ability"/); assert.match(game, /drag\?\.source\.kind === "quick-slot"/); assert.match(game, /<StatusControls[^>]*drag=\{dragPresentation\}/);
+  assert.match(game, /drag\?\.source\.kind === "ability"/); assert.match(game, /drag\?\.source\.kind === "quick-slot"/); assert.match(game, /<StatusControls[\s\S]*?drag=\{dragPresentation\}/);
   assert.match(css, /\.input-key--unavailable \{ --input-key-color:var\(--slot-disabled-color\)/);
 });
 
@@ -403,7 +396,7 @@ test('adds a nested How To Play reference dialog to Settings', async () => {
   const [game, settingsWindow, helpWindow, dialog, css] = await Promise.all(['src/game/game.tsx', 'src/game/windows/settings-window.tsx', 'src/game/windows/how-to-play-window.tsx', 'src/ui/dialog.tsx', 'src/ui/style.css'].map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));
   for (const topic of ['The Basics', 'Movement', 'Combat', 'Exploration', 'Quests', 'Items', 'Leveling Up', 'Saving Your Game', 'Tips']) assert.match(helpWindow, new RegExp(`\\["${topic}"`));
   assert.match(helpWindow, /title="How To Play"/); assert.match(helpWindow, /aria-haspopup="listbox"/); assert.match(helpWindow, /role="option"/); assert.match(helpWindow, /\{index \+ 1\}\. \{topic\}/); assert.match(helpWindow, /Left-click to walk or attack\. Right-click to run or attack\./);
-  assert.match(helpWindow, /heading: "Keyboard"/); assert.match(helpWindow, /heading: "Mouse"/); assert.match(helpWindow, /heading: "Mobile"/); assert.match(helpWindow, /Mobile currently disabled\./);
+  assert.match(helpWindow, /heading: "Keyboard"/); assert.match(helpWindow, /heading: "Mouse"/); assert.match(helpWindow, /heading: "Mobile"/); assert.doesNotMatch(helpWindow, /Mobile currently disabled\./);
   assert.match(helpWindow, /setSelectedTopic\(\(topic\) => topic - 1\)/); assert.match(helpWindow, /setSelectedTopic\(\(topic\) => topic \+ 1\)/); assert.match(helpWindow, /disabled=\{selectedTopic === 0\}/); assert.match(helpWindow, /disabled=\{selectedTopic === topics\.length - 1\}/);
   assert.match(settingsWindow, /How To Play/); assert.match(settingsWindow, /onOpenHowToPlay/); assert.match(settingsWindow, /dismissible=\{!helpOpen\}/);
   assert.match(settingsWindow, /bounds=\{bounds\}/); assert.match(settingsWindow, /onClick=\{\(event\) => openHowToPlay\(event\.currentTarget\)\}/); assert.match(settingsWindow, /onOpenHowToPlay\(bounds\)/); assert.match(helpWindow, /bounds=\{bounds\}/);

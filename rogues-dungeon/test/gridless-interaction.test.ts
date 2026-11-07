@@ -3,7 +3,7 @@ import test from "node:test";
 import type { Action, Campaign, Entity, GameEvent } from "../src/game/types.ts";
 import { GridlessInteractionController, planGridlessInteraction, resolveGridlessInteraction } from "../src/game/gridless-interaction.ts";
 import { cellCenter, precisePlayerPosition } from "../src/game/player-position.ts";
-import { applyAction, createCampaign, createGameSession, gameMode, isObjectSetDoorOpen } from "../src/systems/procedural/world-procedural-system.ts";
+import { barrelPanelDoorPuzzles, applyAction, createCampaign, createGameSession, gameMode, isObjectSetDoorOpen } from "../src/systems/procedural/world-procedural-system.ts";
 import { CHARACTER_MOVEMENT_DURATION_MS, INTERACTIVE_BUMP_APEX_MS, INTERACTIVE_BUMP_DURATION_MS, TurnPresentationSystem } from "../src/systems/animation/turn-presentation-system.ts";
 
 function arena() {
@@ -114,11 +114,11 @@ test("barrel contact precedes synchronized player/barrel travel and plate conseq
   flow.controller.update(INTERACTIVE_BUMP_APEX_MS + 125);
   assert.ok(flow.presentation.positionOf("gate-barrel", target).x > 21);
   assert.ok(flow.presentation.playerPositionOf(state.player).x > 20.5);
-  assert.deepEqual(flow.session.getState().floor.objectSets![0].barrel, target);
+  assert.deepEqual(barrelPanelDoorPuzzles(flow.session.getState().floor)[0].barrel, target);
   flow.controller.update(INTERACTIVE_BUMP_APEX_MS + 250);
   const after = flow.session.getState();
   assert.equal(after.floor.time, state.floor.time + 1);
-  assert.equal(isObjectSetDoorOpen(after.floor.objectSets![0], after.player), true);
+  assert.equal(isObjectSetDoorOpen(barrelPanelDoorPuzzles(after.floor)[0], after.player), true);
   assert.equal(flow.events.filter(e => e.type === "floor-trigger.changed").length, 1);
   flow.presentation.begin(state, after, new Set(), 313);
   assert.equal(flow.presentation.isPlayerMoving, false, "the completed push must not tween a second time");
@@ -153,7 +153,7 @@ for (const leaving of [false, true]) test(`pressure plate ${leaving ? "release" 
   flow.controller.update(249); assert.equal(flow.events.some(e => e.type === "floor-trigger.changed"), false);
   flow.controller.update(250);
   assert.equal(flow.events.filter(e => e.type === "floor-trigger.changed").length, 1);
-  assert.equal(isObjectSetDoorOpen(flow.session.getState().floor.objectSets![0], flow.session.getState().player), !leaving);
+  assert.equal(isObjectSetDoorOpen(barrelPanelDoorPuzzles(flow.session.getState().floor)[0], flow.session.getState().player), !leaving);
 });
 
 test("encounter entry completes before the doors lock", () => {
@@ -183,8 +183,8 @@ test("diagonal blocked corners cannot become a cardinal push or attack", () => {
   assert.equal(flow.plan.rejectOnly, true);
   flow.controller.update(250); flow.controller.update(313); flow.controller.update(375);
   assert.equal(flow.events.some(e => e.type === "barrel.pushed"), false);
-  assert.equal(flow.session.getState().floor.objectSets![0].barrel.x, 20);
-  assert.equal(flow.session.getState().floor.objectSets![0].barrel.y, 21);
+  assert.equal(barrelPanelDoorPuzzles(flow.session.getState().floor)[0].barrel.x, 20);
+  assert.equal(barrelPanelDoorPuzzles(flow.session.getState().floor)[0].barrel.y, 21);
 });
 
 test("cancellation and changed sessions prevent stale consequences and duplicate input", () => {

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { Layout } from "./layout.ts";
+import type { GameLayout, Layout } from "./layout.ts";
 import { useLayoutEffect, useRef, useState } from "react";
 import { defaultLayout, fitViewport, validateLayout } from "./layout.ts";
 
@@ -7,7 +7,7 @@ function rectangle(x: number, y: number, width: number, height: number) {
   return { left: x, top: y, width, height };
 }
 
-export function BrowserSurface({ layout = defaultLayout, platform = "pc", children, ui, gutters = {}, onViewportResize }: { layout?: Layout; platform?: string; children?: ReactNode; ui?: ReactNode; gutters?: Partial<Record<string, ReactNode>>; onViewportResize?: (rect: DOMRect) => void }) {
+export function BrowserSurface({ layout = defaultLayout, gameLayout = "desktop", platform = "pc", children, ui, gutters = {}, onViewportResize }: { layout?: Layout; gameLayout?: GameLayout; platform?: string; children?: ReactNode; ui?: ReactNode; gutters?: Partial<Record<string, ReactNode>>; onViewportResize?: (rect: DOMRect) => void }) {
   const surfaceRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [fullscreen, setFullscreen] = useState(() => Boolean(document.fullscreenElement));
@@ -55,7 +55,7 @@ export function BrowserSurface({ layout = defaultLayout, platform = "pc", childr
         {Object.entries(regions ?? {}).map(([side, style]) => (
           <div key={side} className={`gutter gutter_${side}`} style={style}>{gutters[side]}</div>
         ))}
-        <div id="viewport" inert={platform === "mobile" && !fullscreen} data-orientation={activeLayout.orientation} style={{ ...rectangle(viewport!.x, viewport!.y, viewport!.width, viewport!.height), "--project-viewport-width": `${viewport!.width}px`, "--project-viewport-height": `${viewport!.height}px` }}>
+        <div id="viewport" inert={platform === "mobile" && !fullscreen} data-layout={gameLayout} data-orientation={activeLayout.orientation} style={{ ...rectangle(viewport!.x, viewport!.y, viewport!.width, viewport!.height), "--project-viewport-width": `${viewport!.width}px`, "--project-viewport-height": `${viewport!.height}px` }}>
           {/* Babylon Lite content mounts here beneath the independent UI layer. Its renderer
               owns a DPR-aware backing buffer while this viewport stays in CSS pixels. The
               2D preset uses nearest filtering, no mipmaps, and no MSAA. See the integration

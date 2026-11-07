@@ -316,44 +316,34 @@ test("existing cardinal previews and closed-door approaches remain authoritative
   assert.equal(result.reachable, false); assert.deepEqual(result.path!.at(-1), { x: 22, y: 20 });
   assert.equal(getMouseMovementFromSelectedCell({ x: 26, y: 20, pressed: true }, campaign, result.path)!.direction, "e");
   const renderer = await readFile(new URL("../src/systems/rendering/babylon-render-system.tsx", import.meta.url), "utf8");
-  assert.ok(renderer.includes('kind === "item" ? " world-view__path-dot--interactive"'));
   assert.ok(renderer.includes('targetKind === "item" || targetKind === "enemy" ? targetKind : selectedCellReachable === false ? "invalid" : targetKind'));
   const palette = await readFile(new URL("../src/ui/interaction-colors.ts", import.meta.url), "utf8");
   for (const color of ["#f5f1e6", "#6dd873", "#dc3d40", "#090909"]) assert.ok(palette.includes(color));
 });
 
-test("mouse previews cross hazards but each fresh gesture pauses before an unconfirmed trap", () => {
+test("traps and stairs require an explicit adjacent click", () => {
   const campaign = arena();
-  campaign.floor.decorations = [{ id: "trap", kind: "trap", x: 23, y: 20, wallMounted: false }];
   for (let y = 0; y < 100; y++) for (let x = 0; x < 100; x++) setCell(campaign.floor, x, y, { walkable: y === 20 && x >= 20 && x <= 26 });
-  for (const target of [{ x: 23, y: 20 }, { x: 26, y: 20 }]) {
-    const result = getMousePathResult(target, campaign);
-    assert.equal(result.reachable, true);
-    assert.ok(result.path?.some(cell => cell.x === 23));
-    assert.equal(getMouseMovementFromSelectedCell({ ...target, pressed: true }, campaign, result.path)?.direction, "e");
-    const plan = planMouseTravel({ ...target, pressed: true }, campaign);
-    assert.equal(plan.destination.x, 22); assert.deepEqual(plan.warnedHazard, { x: 23, y: 20 });
-    campaign.player.x = 22; campaign.player.pixel = cellCenter(campaign.player);
-    assert.equal(getMouseMovementFromSelectedCell(planMouseTravel({ ...target, pressed: true }, campaign).destination, campaign), null);
-    const confirmed = planMouseTravel({ ...target, pressed: true }, campaign, plan.warnedHazard);
-    assert.equal(confirmed.destination.x, target.x); assert.deepEqual(confirmed.confirmedHazard, { x: 23, y: 20 });
-    campaign.player.x = 20; campaign.player.pixel = cellCenter(campaign.player);
+  for (const kind of ["trap", "stairs"] as const) {
+    campaign.floor.decorations = kind === "trap" ? [{ id: "trap", kind: "trap", x: 23, y: 20, wallMounted: false }] : [];
+    campaign.floor.entities = kind === "stairs" ? [{ id: "stairs", kind: "stairs", x: 23, y: 20, direction: "forward" }] : [];
+    campaign.player.x = 20;
+    assert.equal(getMousePathResult({ x: 26, y: 20 }, campaign).reachable, false);
+    assert.equal(getMousePathResult({ x: 23, y: 20 }, campaign).reachable, false);
+    campaign.player.x = 22;
+    assert.equal(getMousePathResult({ x: 26, y: 20 }, campaign).reachable, false);
+    const explicit = planMouseTravel({ x: 23, y: 20, pressed: true }, campaign);
+    assert.equal(explicit.reachable, true);
+    assert.equal(getMouseMovementFromSelectedCell(explicit.destination, campaign)?.direction, "e");
   }
-  campaign.floor.decorations.push({ id: "second-trap", kind: "trap", x: 25, y: 20, wallMounted: false });
-  campaign.player.x = 22; campaign.player.pixel = cellCenter(campaign.player);
-  const nextHazard = planMouseTravel({ x: 26, y: 20, pressed: true }, campaign, { x: 23, y: 20 });
-  assert.equal(nextHazard.destination.x, 24); assert.deepEqual(nextHazard.warnedHazard, { x: 25, y: 20 });
-  // Deliberate keyboard/domain movement still permits entering a trap.
-  campaign.player.x = 22; campaign.player.pixel = cellCenter(campaign.player);
-  assert.equal(applyAction(campaign, { type: "move", direction: "e", hazardElapsedMs: 0 }).state.player.x, 23);
 });
 
-test("mouse previews and click destinations have a thirty-step UX limit", () => {
+test("mouse click destinations have a thirty-step travel limit", () => {
   const campaign = arena();
   const target = { x: 80, y: 20, pressed: true };
   const preview = getMousePathResult(target, campaign);
-  assert.equal(MAX_MOUSE_TRAVEL_STEPS, 30); assert.equal(preview.path!.length, 31);
-  assert.equal(preview.reachable, false); assert.deepEqual(preview.path!.at(-1), { x: 50, y: 20 });
+  assert.equal(MAX_MOUSE_TRAVEL_STEPS, 30); assert.equal(preview.path!.length, 61);
+  assert.equal(preview.reachable, false); assert.deepEqual(preview.path!.at(-1), { x: 80, y: 20 });
   assert.equal(planMouseTravel(target, campaign).destination.x, 50);
   assert.equal(getMousePathResult({ x: 50, y: 20 }, campaign).reachable, true);
 });

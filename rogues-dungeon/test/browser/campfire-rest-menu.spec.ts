@@ -26,7 +26,7 @@ test("opens the campfire rest menu without a turn and rests for exactly one turn
   await page.keyboard.press("ArrowRight");
   await expect(page.getByRole("heading", { name: "Interact" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Campfire" })).toBeVisible();
-  await expect(page.getByText("Spend 20 gold to rest and replenish status.", { exact: true })).toBeVisible();
+  await expect(page.locator(".movement-prompt__body")).toHaveText("Spend 20 gold to rest and replenish status.All enemies respawn. Items & puzzles do not.");
   await expect(page.getByRole("button", { name: "Bump to rest (walk to cancel)" })).toHaveJSProperty("disabled", false);
   await expect(page.locator(".movement-prompt button.movement-prompt__action")).toHaveCount(1);
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("rogues-dungeon.slot.3")!).floor.time)).toBe(beforeRest.time);

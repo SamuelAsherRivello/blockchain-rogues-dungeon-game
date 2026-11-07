@@ -73,7 +73,7 @@ test('Jewel ownership follows Adventure reset, Journey checkpoint, and Classic d
 
 test('a Jewel save survives subsequent startups under the current development epoch', () => {
   const storage = new MemoryStorage(); storage.setItem('unrelated', 'keep'); storage.setItem('rogues-dungeon.slot.1', 'obsolete');
-  assert.equal(resetDevelopmentStorageCompatibility(storage), true); assert.equal(storage.getItem('unrelated'), 'keep');
+  assert.equal(resetDevelopmentStorageCompatibility(storage), true); assert.equal(storage.getItem('unrelated'), null);
   const state = mixedLoadout(); writeSlot(storage, '1', state); const bytes = storage.getItem('rogues-dungeon.slot.1');
   assert.equal(resetDevelopmentStorageCompatibility(storage), false); assert.equal(storage.getItem('rogues-dungeon.slot.1'), bytes); assertMixed(readSlot(storage, '1')!, state);
 });

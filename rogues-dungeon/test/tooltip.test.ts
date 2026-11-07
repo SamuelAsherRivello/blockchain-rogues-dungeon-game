@@ -91,8 +91,7 @@ test("wires UI tooltips to pointer and keyboard focus with accessible descriptio
   assert.match(game, /tooltip=\{secondary \? `\$\{item\.name\} occupies this position\.` : storage \? "Drag to your Inventory\." : inventoryItemHelp\(item\)\}/);
   assert.match(game, /No stats · Drag to equip\./);
   assert.doesNotMatch(game, /onDoubleClick|Double-click/);
-  assert.match(game, /<Tooltip content="Show movement and ability controls\."/);
-  assert.match(game, /<Tooltip content="Show stats, gear, quest, and log\."/);
+  assert.match(titleBar, /mobile-panels-button/);
   assert.match(titleBar, /<Tooltip content="Time advances 1 per tick\."/);
   assert.match(titleBar, /<Tooltip content="Gold pays for goods\."/);
   assert.match(titleBar, /<Tooltip content="Keys open doors\."/);

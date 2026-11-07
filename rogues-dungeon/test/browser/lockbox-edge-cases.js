@@ -10,7 +10,7 @@ async page => {
   check(Math.abs(rect.width - settings.width) < 1 && Math.abs(rect.height - settings.height) < 1, 'Settings and Lockbox share settled portrait size');
   await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
   await page.locator('.settings-window').waitFor({ state: 'hidden' });
-  await page.getByRole('button', { name: 'AR: P', exact: true }).click();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click(); await page.getByRole('button', { name: 'Layout: Desktop', exact: true }).click(); await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
   await page.setViewportSize({ width: 1600, height: 1000 });
   for (const mode of ['grid-snap', 'grid-tween', 'gridless']) {
     await page.getByLabel('Movement mode', { exact: true }).selectOption(mode);

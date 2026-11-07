@@ -1,8 +1,8 @@
 # Rogue's Dungeon project guidance
 
-This is an existing game project with an explicit two-aspect requirement. Support 16:9 landscape on PC and 9:16 portrait on mobile, with a session-only developer aspect override on PC. This project-specific requirement supersedes the generic template rule that new projects choose one aspect.
+This existing game uses separate desktop and mobile landscape layouts. Desktop supports 16:10 through 16:9; mobile supports 16:10 through 20:9. A persisted desktop developer layout preview selects mobile or desktop, while physical mobile devices select mobile automatically.
 
-Keep primary game UI within the fitted viewport. In portrait, preserve the order Title, Game, Status (with Control/Info toggle), and Bottom Content. The bottom shows either mobile controls or the information panels, starting on Control. Keep only the Log, equipment Slots, and Inventory content internally scrollable. Preserve the Babylon Lite WebGPU-only renderer and the `/blockchain-rogues-dungeon-game/` Vite deployment base.
+Keep primary game UI within the fitted viewport. Mobile retains the title bar, uses one right-hand information column selected by the Panels button, and overlays the minimap at the game view's upper right. Tap a world square to use the existing left-click action. Mobile uses zoom 1, centered camera, and grid-tween movement. Keep only the Log, equipment Slots, and Inventory content internally scrollable. Preserve the Babylon Lite WebGPU-only renderer and the `/blockchain-rogues-dungeon-game/` Vite deployment base. Specify whether layout changes affect all layouts, desktop, or mobile.
 
 Name every new file with lowercase kebab case in the form `blah-foo.extension`.
 For compound extensions, retain each extension, such as `turn-rules.test.ts`.
@@ -35,11 +35,11 @@ test-mode generation, with one additional crate beside the level-one entrance.
 ## Development save compatibility
 
 During early development, the user authorizes incompatible game changes together
-with clearing this game's local storage. When a change invalidates saved content,
-bump the compatibility epoch in `development-storage-system.ts` so the next app
-startup clears the game's `rogues-dungeon.` keys once. Preserve unrelated origin
-data and saves created after that reset. Fresh browser fixtures must declare the
-current epoch before seeding their data.
+with clearing all local storage on the game's browser origin. When a change
+invalidates saved content, bump the compatibility epoch in
+`development-storage-system.ts` so the next app startup clears every localStorage
+key once. Preserve saves created after that reset. Fresh browser fixtures must
+declare the current epoch before seeding their data.
 
 ## Browser verification
 

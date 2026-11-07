@@ -1,15 +1,20 @@
-export type Orientation = "landscape" | "portrait";
+export type Orientation = "landscape";
+export type GameLayout = "desktop" | "mobile";
 export interface Layout { orientation: Orientation; width: number; height: number; minAspectRatio?: number; maxAspectRatio?: number; label?: string; gutterBackground?: string }
 // Layout dimensions are CSS pixels; renderer resolution and DPR belong to a future integration.
 export const aspectRatioPresets = Object.freeze({
   landscape: Object.freeze({ width: 16, height: 9, minAspectRatio: 16 / 10, maxAspectRatio: 16 / 9, label: "16:10–16:9" }),
-  portrait: Object.freeze({ width: 9, height: 16, minAspectRatio: 9 / 16, maxAspectRatio: 10 / 16, label: "9:16–10:16" }),
 });
 
 export const defaultLayout: Readonly<Layout> = Object.freeze({
   orientation: "landscape",
   ...aspectRatioPresets.landscape,
 });
+export const mobileLandscapeLayout: Readonly<Layout> = Object.freeze({ orientation: "landscape", width: 16, height: 9, minAspectRatio: 16 / 10, maxAspectRatio: 20 / 9 });
+
+export function selectGameLayout(platform: string, preview: string | null, developer: boolean): GameLayout {
+  return platform === "mobile" || (developer && preview === "mobile") ? "mobile" : "desktop";
+}
 
 const mobileUserAgent = /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i;
 export function classifyPlatform({ userAgentDataMobile, userAgent = "", maxTouchPoints = 0, coarsePointer = false, viewportWidth = Infinity, viewportHeight = Infinity }: { userAgentDataMobile?: boolean; userAgent?: string; maxTouchPoints?: number; coarsePointer?: boolean; viewportWidth?: number; viewportHeight?: number } = {}) {
@@ -32,7 +37,7 @@ export function validateLayout(layout: Layout) {
   if (minAspectRatio > maxAspectRatio) {
     throw new Error("Viewport minimum aspect ratio must not exceed its maximum aspect ratio.");
   }
-  const matchesOrientation = orientation === "landscape" ? minAspectRatio > 1 : maxAspectRatio < 1;
+  const matchesOrientation = orientation === "landscape" && minAspectRatio > 1;
   if (!matchesOrientation) {
     throw new Error("Rogue's Dungeon layout aspect bounds must match its named orientation.");
   }

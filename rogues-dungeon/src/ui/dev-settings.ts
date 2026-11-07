@@ -1,5 +1,6 @@
 export const DEV_SETTINGS_STORAGE_KEYS = Object.freeze({
   pivots: "rogues-dungeon.dev.show-pivot-points",
+  layout: "rogues-dungeon.dev.layout",
   urlArgs: "rogues-dungeon.dev.url-args",
   mapTest: "rogues-dungeon.dev.map-test",
   itemTest: "rogues-dungeon.dev.item-test",

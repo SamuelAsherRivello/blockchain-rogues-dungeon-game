@@ -14,7 +14,7 @@ const topics: ReadonlyArray<readonly [string, readonly HelpSection[]]> = [
   ["Abilities and Quick Slots", [{ heading: "Keyboard", content: "Drag ability items into empty Abilities slots, then press 1, 2, or 3 to cast. Spells need Mana; ranged attacks need a target in a clear row or column. Drag potions or Throwing Knives into Quick Slots, then press Q or E to use one item. Matching pickups refill their stack." }, { heading: "Mouse", content: "Click an ability to cast it. Click a Quick Slot to use its item." }]],
   ["Leveling Up", [{ content: "Combat, discoveries, containers, and first visits to dungeon levels grant experience. Each level gives 3 attribute points. Open Progression from Attributes to spend them. Your level and attributes persist after death; spending points also develops the world." }]],
   ["Saving Your Game", [{ content: "The game autosaves your progress in the selected save slot. Open Settings for audio, How To Play, or returning to the main menu. Title-bar controls adjust fullscreen, camera mode, and zoom." }]],
-  ["Tips", [{ content: "Walking restores Stamina. Interact with a campfire and confirm Rest to replenish Health, Stamina, and Mana for 20 gold. Sneak reduces enemy awareness." }, { heading: "Mobile", content: "On mobile, switch between Control and Info to reach movement controls or manage your items.", warning: "Mobile currently disabled." }]],
+  ["Tips", [{ content: "Walking restores Stamina. Interact with a campfire and confirm Rest to replenish Health, Stamina, and Mana for 20 gold. Sneak reduces enemy awareness." }, { heading: "Mobile", content: "Tap the game view to move or interact. Use Panels to switch between your inventory and character information." }]],
 ];
 
 const topicBanners = [

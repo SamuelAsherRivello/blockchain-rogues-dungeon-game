@@ -4,15 +4,24 @@ export const DEVELOPMENT_STORAGE_COMPATIBILITY_KEY = "rogues-dungeon.compatibili
 // Bump for an authorized development change that invalidates saved game content.
 export const DEVELOPMENT_STORAGE_COMPATIBILITY_EPOCH = "dungeon-graph-1:prefab-portal-paired-1:flexible-jewels-1:bomb-1:dagger-2:stairs-clearance-1";
 
-/** One reset per compatibility epoch, limited to this game's storage namespace. */
+/** One origin-wide localStorage reset per incompatible development epoch. */
 export function resetDevelopmentStorageCompatibility(storage: StorageCollection): boolean {
-  if (storage.getItem(DEVELOPMENT_STORAGE_COMPATIBILITY_KEY) === DEVELOPMENT_STORAGE_COMPATIBILITY_EPOCH) return false;
+  const previousEpoch = storage.getItem(DEVELOPMENT_STORAGE_COMPATIBILITY_KEY);
+  if (previousEpoch === DEVELOPMENT_STORAGE_COMPATIBILITY_EPOCH) return false;
   const keys: string[] = [];
   for (let index = 0; index < storage.length; index++) {
     const key = storage.key(index);
-    if (key?.startsWith("rogues-dungeon.")) keys.push(key);
+    if (key !== null) keys.push(key);
   }
-  for (const key of keys) storage.removeItem(key);
+  // An origin with no prior game data is a first visit, not an incompatible update.
+  if (previousEpoch === null && !keys.some((key) => key.startsWith("rogues-dungeon."))) {
+    storage.setItem(DEVELOPMENT_STORAGE_COMPATIBILITY_KEY, DEVELOPMENT_STORAGE_COMPATIBILITY_EPOCH);
+    return false;
+  }
+  // Preserve a retry marker until every other key has been removed. Without it,
+  // a partially completed reset could look like a first visit on retry.
+  if (previousEpoch === null) storage.setItem(DEVELOPMENT_STORAGE_COMPATIBILITY_KEY, `${DEVELOPMENT_STORAGE_COMPATIBILITY_EPOCH}:pending`);
+  for (const key of keys) if (key !== DEVELOPMENT_STORAGE_COMPATIBILITY_KEY) storage.removeItem(key);
   // Failed cleanup must not stamp the epoch as complete.
   storage.setItem(DEVELOPMENT_STORAGE_COMPATIBILITY_KEY, DEVELOPMENT_STORAGE_COMPATIBILITY_EPOCH);
   return true;

@@ -26,8 +26,8 @@ async page => {
   await page.getByRole("button",{name:"Fullscreen",exact:true}).click();
   const fullscreen=await page.evaluate(()=>Boolean(document.fullscreenElement));
   await page.getByRole("button",{name:"Fullscreen",exact:true}).click();
-  await page.getByRole("button",{name:"AR: L",exact:true}).click();
-  await page.getByRole("button",{name:"AR: P",exact:true}).click();
+  await page.getByRole("button",{name:"L:D",exact:true}).click();
+  await page.getByRole("button",{name:"Settings",exact:true}).click(); await page.getByRole("button",{name:"Layout: Desktop",exact:true}).click(); await page.getByRole("button",{name:"Close dialog",exact:true}).click();
   await page.locator(".world-view .ui_iris_transition").waitFor({state:"hidden"});
   await page.keyboard.press(key);
   await page.waitForFunction(()=>document.querySelector(".title-bar")?.textContent?.includes("Level: 2"),null,{timeout:20000});

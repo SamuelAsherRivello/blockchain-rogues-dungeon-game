@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { BrowserSurface } from "./browser-surface.tsx";
-import { classifyPlatform, defaultLayout } from "./layout.ts";
+import { classifyPlatform, defaultLayout, mobileLandscapeLayout, selectGameLayout, type GameLayout } from "./layout.ts";
 import { LayoutContext } from "./layout-context.ts";
 import { DEV_SETTINGS_STORAGE_KEYS, readDevBoolean, writeDevBoolean } from "./dev-settings.ts";
 const SEQUENTIALLY_FOCUSABLE_SELECTOR = "a[href], area[href], button, input, select, textarea, iframe, object, embed, [contenteditable]:not([contenteditable=\"false\"]), [tabindex]";
@@ -89,14 +89,17 @@ export function App({ content = null, gutters = {} }: { content?: ReactNode; gut
       document.removeEventListener("contextmenu", preventContextMenu, true);
     };
   }, []);
-  const platform = classifyPlatform({ userAgentDataMobile: navigator.userAgentData?.mobile, userAgent: navigator.userAgent });
+  const platform = classifyPlatform({ userAgentDataMobile: navigator.userAgentData?.mobile, userAgent: navigator.userAgent, maxTouchPoints: navigator.maxTouchPoints });
   const canOverride = platform === "pc" && import.meta.env.DEV;
+  const [layoutPreview, setLayoutPreview] = useState(() => { try { return localStorage.getItem(DEV_SETTINGS_STORAGE_KEYS.layout); } catch { return null; } });
+  const layout = selectGameLayout(platform, layoutPreview, canOverride);
+  const setLayout = (next: GameLayout) => { if (!canOverride) return; setLayoutPreview(next); try { localStorage.setItem(DEV_SETTINGS_STORAGE_KEYS.layout, next); } catch { /* session fallback */ } };
   const [showPivotPoints, setShowPivotPoints] = useState(readShowPivotPoints);
   const setPersistentShowPivotPoints = (value: boolean | ((current: boolean) => boolean)) => setShowPivotPoints((current) => {
     const next = typeof value === "function" ? value(current) : value;
     writeDevBoolean(DEV_SETTINGS_STORAGE_KEYS.pivots, next);
     return next;
   });
-  const context = useMemo(() => ({ platform, orientation: defaultLayout.orientation, canOverride, showPivotPoints: canOverride && showPivotPoints, setShowPivotPoints: setPersistentShowPivotPoints }), [platform, canOverride, showPivotPoints]);
-  return <LayoutContext.Provider value={context}><BrowserSurface layout={defaultLayout} platform={platform} gutters={gutters}>{content}</BrowserSurface></LayoutContext.Provider>;
+  const context = useMemo(() => ({ platform, layout, setLayout, orientation: defaultLayout.orientation, canOverride, showPivotPoints: canOverride && showPivotPoints, setShowPivotPoints: setPersistentShowPivotPoints }), [platform, layout, canOverride, showPivotPoints]);
+  return <LayoutContext.Provider value={context}><BrowserSurface layout={layout === "mobile" ? mobileLandscapeLayout : defaultLayout} gameLayout={layout} platform={platform} gutters={gutters}>{content}</BrowserSurface></LayoutContext.Provider>;
 }

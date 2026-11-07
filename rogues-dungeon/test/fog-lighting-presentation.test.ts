@@ -125,13 +125,13 @@ test("fresh revealed interactive selections retain ordinary mouse actions", () =
   }
 });
 
-test("unknown terrain retains mouse travel and hazard limits without revealing hidden traps", () => {
+test("unknown terrain cannot route through a hidden trap", () => {
   const target = { x: 39, y: 0, pressed: true };
   const c = { player: { x: 0, y: 0 }, floor: { map: [Array(40).fill(0)], entities: [], decorations: [{ kind: "trap", x: 2, y: 0 }] } };
   const hidden = planMouseTravel(target, c, null, () => false);
-  assert.equal(hidden.destination.x, 30); assert.equal(hidden.warnedHazard, null);
+  assert.equal(hidden.destination.x, 1); assert.equal(hidden.warnedHazard, null);
   const visible = planMouseTravel(target, c);
-  assert.equal(visible.destination.x, 1); assert.deepEqual(visible.warnedHazard, { x: 2, y: 0 });
+  assert.equal(visible.reachable, false); assert.equal(visible.warnedHazard, null);
   assert.equal(getMousePathResult(target, c, () => false).reachable, false);
 });
 

@@ -108,8 +108,8 @@ async page => {
   if ((await saved()).player.x !== modal) throw Error("Settings retained a clicked destination");
   await reset("gridless", true);
   await page.screenshot({ path: ".impeccable/review/desktop.png", fullPage: true });
-  await page.getByRole("button", { name: "AR: L" }).click();
-  await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(600);
+  await page.getByRole("button", { name: "L:D" }).click();
+  await page.setViewportSize({ width: 975, height: 450 }); await page.waitForTimeout(600);
   await page.screenshot({ path: ".impeccable/review/mobile.png", fullPage: true });
   if (errors.length) throw Error(JSON.stringify(errors));
   return { reports, battle: "one press per cell and selection restored", errors };

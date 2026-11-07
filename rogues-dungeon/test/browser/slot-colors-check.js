@@ -36,7 +36,7 @@ async page => {
     check(await page.locator("canvas").count() > 0, "No game canvas");
     check(await page.getByText(/WebGPU.*unavailable|WebGPU.*not supported/i).count() === 0, "WebGPU unavailable");
   };
-  const panel = () => page.locator('.game-screen[data-orientation="portrait"]').count().then(p => page.locator(p ? ".mobile-information-panels .info-panel--primary" : ".information-panels .info-panel--primary"));
+  const panel = () => page.locator('.game-screen[data-orientation="mobile"]').count().then(p => page.locator(p ? ".mobile-information-panels .info-panel--primary" : ".information-panels .info-panel--primary"));
   const strip = async locator => locator.evaluate(el => getComputedStyle(el, "::before").backgroundColor);
   const color = { ability: "rgb(192, 170, 255)", quick: "rgb(121, 200, 120)", equipment: "rgb(103, 183, 232)" };
   await seed(true);
@@ -128,16 +128,16 @@ async page => {
   check(await strip(primary.locator('[data-slot-type="ability"]').first()) === color.ability, "Fullscreen lost palette");
   await page.screenshot({ path: "output/slot-colors-fullscreen.png" });
   await page.evaluate(() => document.exitFullscreen());
-  await page.getByRole("button", { name: "AR: L", exact: true }).click();
-  await page.getByRole("button", { name: "Info", exact: true }).click();
+  await page.getByRole("button", { name: "L:D", exact: true }).click();
+
   primary = await panel();
-  check(await strip(primary.locator('[data-slot-type="ability"]').first()) === color.ability, "Portrait lost palette");
+  check(await strip(primary.locator('[data-slot-type="ability"]').first()) === color.ability, "Mobile lost palette");
   const overlap = await primary.locator('[data-slot-category]').evaluateAll(rows => rows.some(el => {
     const name = el.querySelector(".slot_item_text");
     return name && name.getBoundingClientRect().left < el.getBoundingClientRect().left + 1;
   }));
-  check(!overlap, "Strip overlaps portrait text");
-  await page.screenshot({ path: "output/slot-colors-portrait.png" });
+  check(!overlap, "Strip overlaps mobile text");
+  await page.screenshot({ path: "output/slot-colors-mobile.png" });
   check(errors.length === 0, "Browser errors: " + errors.join("; "));
-  return { errors, checkedContrast: ratios.length, minimumTextContrast: Math.min(...ratios.filter(r => r.kind === "text").map(r => r.value)), screenshots: ["landscape", "fullscreen", "portrait"] };
+  return { errors, checkedContrast: ratios.length, minimumTextContrast: Math.min(...ratios.filter(r => r.kind === "text").map(r => r.value)), screenshots: ["landscape", "fullscreen", "mobile"] };
 }

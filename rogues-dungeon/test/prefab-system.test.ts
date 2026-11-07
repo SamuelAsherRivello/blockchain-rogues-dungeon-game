@@ -210,7 +210,7 @@ test("preserves the home's authored furniture variants and bottom-left tile alig
     ["table-1", "table", 162, "table1"], ["table-2", "table", 163, "table2"],
   ] as const;
   for (const [name, type, gid, asset] of expected) {
-    const object = homeTmx.match(new RegExp(`<object[^>]*name="${name}" type="${type}" x="(\\d+)" y="(\\d+)"[^>]*gid="${gid}"`))!;
+    const object = homeTmx.match(new RegExp(`<object(?=[^>]*name="${name}")(?=[^>]*type="${type}")(?=[^>]*gid="${gid}")[^>]* x="(\\d+)" y="(\\d+)"`))!;
     assert.ok(object, name);
     const x = Number(object[1]) / 32; const y = Number(object[2]) / 32 - 1;
     const decoration = PLAYER_HOME_PREFAB.tiledDecorations!.filter((entry) => entry.x === x && entry.y === y && entry.gid === gid);

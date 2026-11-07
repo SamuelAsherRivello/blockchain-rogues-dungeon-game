@@ -44,7 +44,7 @@ test('actor, puzzle, resource, discovery and recovery state remain independently
   assert.strictEqual(copy.floor.generation, copy.journeyCheckpoint!.floor.generation);
   assert.strictEqual(copy.floor.cells, source.floor.cells);
   copy.floor.entities[0]!.x = -1;
-  copy.floor.objectSets![0]!.barrel.x = -2;
+  const copySet = copy.floor.objectSets![0]!; assert.equal(copySet.kind, 'barrel-panel-door'); copySet.barrel.x = -2;
   copy.player.resources.health.current = 0;
   copy.discovery!['copy-fixture'] = 'new';
   copy.adventureBaseline!.player.resources.health.current = 0;

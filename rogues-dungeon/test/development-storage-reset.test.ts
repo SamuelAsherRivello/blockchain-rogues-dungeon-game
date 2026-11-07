@@ -41,20 +41,27 @@ function browserStorage<T>(storage: StorageCollection, run: () => T): T {
   }
 }
 
-test("the development compatibility reset clears every game key and preserves unrelated origin data", () => {
+test("the development compatibility reset clears every origin key", () => {
   const gameKeys = [
     "rogues-dungeon.slot.1", "rogues-dungeon.slot.2", "rogues-dungeon.slot.3",
     "rogues-dungeon.slot.v1-backup.1", "rogues-dungeon.slot.discovery-v2-backup.2",
     "rogues-dungeon.world-seed.v1", "rogues-dungeon.preferences.v1", "rogues-dungeon.dev.leveltest",
-    "rogues-dungeon.dev.aspect", "rogues-dungeon.future-game-key", DEVELOPMENT_STORAGE_COMPATIBILITY_KEY,
+    "rogues-dungeon.dev.layout", "rogues-dungeon.future-game-key", DEVELOPMENT_STORAGE_COMPATIBILITY_KEY,
   ];
   const unrelated: [string, string][] = [["other-app.preferences", "keep"], ["rogues-dungeon-other-project", "keep too"], ["rogues-dungeon", "also keep"]];
   const storage = new MemoryStorage([...gameKeys.map((key): [string, string] => [key, "old data"]), ...unrelated]);
   assert.equal(resetDevelopmentStorageCompatibility(storage), true);
   for (const key of gameKeys.filter((key) => key !== DEVELOPMENT_STORAGE_COMPATIBILITY_KEY)) assert.equal(storage.getItem(key), null, key);
-  for (const [key, value] of unrelated) assert.equal(storage.getItem(key), value);
+  for (const [key] of unrelated) assert.equal(storage.getItem(key), null);
   assert.equal(storage.getItem(DEVELOPMENT_STORAGE_COMPATIBILITY_KEY), DEVELOPMENT_STORAGE_COMPATIBILITY_EPOCH);
-  assert.deepEqual(storage.removed, gameKeys);
+  assert.deepEqual(storage.removed, [...gameKeys.filter((key) => key !== DEVELOPMENT_STORAGE_COMPATIBILITY_KEY), ...unrelated.map(([key]) => key)]);
+});
+
+test("a first visit without game data does not clear unrelated origin storage", () => {
+  const storage = new MemoryStorage([["other-app.key", "keep"]]);
+  assert.equal(resetDevelopmentStorageCompatibility(storage), false);
+  assert.equal(storage.getItem("other-app.key"), "keep");
+  assert.equal(storage.getItem(DEVELOPMENT_STORAGE_COMPATIBILITY_KEY), DEVELOPMENT_STORAGE_COMPATIBILITY_EPOCH);
 });
 
 test("new saves, preferences, and seed survive every subsequent startup in the same epoch", () => {
@@ -96,7 +103,7 @@ test("the existing browser startup readers reset obsolete data before parsing it
     ]);
     browserStorage(storage, () => firstRead(storage));
     assert.equal(storage.getItem("rogues-dungeon.slot.1"), null);
-    assert.equal(storage.getItem("other-app.key"), "unrelated");
+    assert.equal(storage.getItem("other-app.key"), null);
     assert.equal(storage.getItem(DEVELOPMENT_STORAGE_COMPATIBILITY_KEY), DEVELOPMENT_STORAGE_COMPATIBILITY_EPOCH);
   }
 });
@@ -114,7 +121,18 @@ test("failed cleanup does not mark the epoch complete and retries on the next st
   assert.equal(resetDevelopmentStorageCompatibility(storage), true);
   assert.equal(resetDevelopmentStorageCompatibility(storage), false);
   assert.equal(storage.getItem("rogues-dungeon.slot.2"), null);
-  assert.equal(storage.getItem("other-app.key"), "keep");
+  assert.equal(storage.getItem("other-app.key"), null);
+});
+
+test("a partial reset without an old epoch retries after game keys were removed", () => {
+  const storage = new MemoryStorage([["rogues-dungeon.slot.1", "old"], ["other-app.key", "old"]]);
+  const remove = storage.removeItem.bind(storage);
+  storage.removeItem = (key) => { if (key === "other-app.key") throw new Error("blocked removal"); remove(key); };
+  assert.throws(() => resetDevelopmentStorageCompatibility(storage), /blocked removal/);
+  assert.equal(storage.getItem("rogues-dungeon.slot.1"), null);
+  storage.removeItem = remove;
+  assert.equal(resetDevelopmentStorageCompatibility(storage), true);
+  assert.equal(storage.getItem("other-app.key"), null);
 });
 
 test("shared browser fixture state stamps the current epoch before intentional seeded data", () => {
@@ -127,13 +145,13 @@ test("shared browser fixture state stamps the current epoch before intentional s
     const saved = JSON.stringify(compactCampaignForSave(createRunCampaign(875, 1, 1, 1, 1, { worldAttributes: DEFAULT_WORLD_ATTRIBUTES })));
     storage.setItem("rogues-dungeon.slot.1", saved);
     storage.setItem("rogues-dungeon.preferences.v1", JSON.stringify({ ...DEFAULT_PREFERENCES, muteAll: true }));
-    storage.setItem("rogues-dungeon.dev.aspect", "portrait");
+    storage.setItem("rogues-dungeon.dev.layout", "mobile");
     browserStorage(storage, () => {
       assert.equal(readPreferences(storage).muteAll, true);
       assert.deepEqual(readSlotSummary(storage).map(({ occupied }) => occupied), [true, false, false]);
       assert.equal(readSlot(storage, "1")!.portalLayoutVersion, PORTAL_LAYOUT_VERSION);
     });
-    assert.equal(storage.getItem("rogues-dungeon.dev.aspect"), "portrait");
+    assert.equal(storage.getItem("rogues-dungeon.dev.layout"), "mobile");
     assert.equal(storage.getItem("rogues-dungeon.slot.1"), saved);
     assert.deepEqual(storage.removed, []);
   }
